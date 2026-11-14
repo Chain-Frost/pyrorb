@@ -14,10 +14,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, cast
 
+from .engine_types import EngineSelection
 from .rorb_codec import FormatProblem, parse_catg, parse_cmd_par, parse_design_stm
 from .rorb_model import RunModel, from_dict, to_dict, to_json
 
-PROJECT_VERSION = 1
+PROJECT_VERSION = 2
 PROJECT_FORMAT = "python-runoff-routing-project"
 MAX_SOURCE_BYTES = 64 * 1024 * 1024
 _HASH = re.compile(r"[a-f0-9]{64}\Z")
@@ -133,6 +134,7 @@ class Project:
     rainfall_profile: RainfallProfile
     model_source: EmbeddedRun | LegacyRunFiles
     assets: tuple[ExternalAsset, ...] = ()
+    engine: EngineSelection = EngineSelection()
 
     def __post_init__(self) -> None:
         _identifier(self.identifier, "Project ID")
@@ -246,6 +248,7 @@ def project_to_dict(project: Project) -> dict[str, Any]:
         "schema_version": PROJECT_VERSION,
         "project_id": project.identifier,
         "rainfall_profile": project.rainfall_profile,
+        "engine": {"id": project.engine.engine, "numerical_profile": project.engine.numerical_profile},
         "model_source": source,
         "external_assets": [
             {
@@ -284,14 +287,27 @@ def project_from_json(text: str) -> Project:
         raw: object = json.loads(text, object_pairs_hook=_unique_pairs, parse_constant=_reject_nonfinite)
     except (TypeError, ValueError) as exc:
         raise ProjectError(str(exc)) from exc
-    data = _object(
-        raw,
-        {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"},
-        "project",
-    )
-    if data["format"] != PROJECT_FORMAT or type(data["schema_version"]) is not int or data["schema_version"] != 1:
+    if not isinstance(raw, dict):
+        message = "Project must be a JSON object"
+        raise ProjectError(message)
+    header = cast("dict[str, object]", raw)
+    version = header.get("schema_version")
+    if header.get("format") != PROJECT_FORMAT or type(version) is not int or version not in (1, 2):
         message = "Unsupported JSON project format or version"
         raise ProjectError(message)
+    fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
+    data = _object(raw, fields if version == 1 else fields | {"engine"}, "project")
+    if version == 1:
+        engine = EngineSelection()
+    else:
+        raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
+        try:
+            engine = EngineSelection.for_engine(
+                _string(raw_engine["id"], "Engine ID"),
+                _string(raw_engine["numerical_profile"], "Numerical profile"),
+            )
+        except ValueError as exc:
+            raise ProjectError(str(exc)) from exc
     profile = _string(data["rainfall_profile"], "Rainfall profile")
     if profile not in {"explicit", "legacy-rorb", "arr-2026v1"}:
         message = f"Unknown rainfall-method profile: {profile}"
@@ -305,6 +321,7 @@ def project_from_json(text: str) -> Project:
         cast("RainfallProfile", profile),
         _model_source(data["model_source"]),
         tuple(_asset(item) for item in cast("list[object]", items)),
+        engine,
     )
 
 
@@ -423,6 +440,7 @@ class ProjectComparison:
     rainfall_profile_equal: bool
     external_assets_equal: bool
     external_asset_paths_equal: bool
+    engine_selection_equal: bool
     configuration_equal: bool
     first_differences: tuple[str, ...]
     numerical_parity: Literal["not_assessed"] = "not_assessed"
@@ -478,6 +496,7 @@ def compare_project_files(left: Path, right: Path) -> ProjectComparison:
     model_equal = a.run == b.run
     profile_equal = a.project.rainfall_profile == b.project.rainfall_profile
     assets_equal = asset_signatures(a.project.assets) == asset_signatures(b.project.assets)
+    engine_equal = a.project.engine == b.project.engine
     asset_paths_equal = tuple(item.source.path for item in a.project.assets) == tuple(
         item.source.path for item in b.project.assets
     )
@@ -486,6 +505,8 @@ def compare_project_files(left: Path, right: Path) -> ProjectComparison:
         _first_differences(to_dict(a.run), to_dict(b.run), "run", differences)
     if not profile_equal:
         differences.append("rainfall_profile")
+    if not engine_equal:
+        differences.append("engine")
     if not assets_equal:
         _first_differences(
             list(asset_signatures(a.project.assets)),
@@ -502,7 +523,8 @@ def compare_project_files(left: Path, right: Path) -> ProjectComparison:
         profile_equal,
         assets_equal,
         asset_paths_equal,
-        model_equal and profile_equal and assets_equal,
+        engine_equal,
+        model_equal and profile_equal and assets_equal and engine_equal,
         tuple(differences[:MAX_DIFFERENCE_PATHS]),
     )
 
@@ -530,6 +552,10 @@ def _validated_profile(value: str) -> RainfallProfile:
 def main(argv: list[str] | None = None) -> int:
     """Small Windows-friendly CLI without argparse, native calls or side effects."""
     args = sys.argv[1:] if argv is None else argv
+    if args and args[0] == "run":
+        from .engine_execution import run_cli  # noqa: PLC0415 -- avoids a JSON/dispatch import cycle
+
+        return run_cli(args[1:])
     try:
         if len(args) == 8 and args[0] == "review-native":
             from .project_native_review import (  # noqa: PLC0415 -- CLI-only, depends on S5 source validation
@@ -555,26 +581,6 @@ def main(argv: list[str] | None = None) -> int:
                         "manifest_sha256": review.manifest_sha256,
                         "native_output_sha256": review.native_output_sha256,
                         "printed_within_budget": review.printed.printed_discharge_parity.within_print_budget,
-                    },
-                    sort_keys=True,
-                )
-            )
-            return 0
-        if len(args) == 3 and args[0] == "run":
-            from .project_execution import (  # noqa: PLC0415 -- CLI-only import avoids project_json execution cycle
-                run_project,
-                write_execution_json,
-            )
-
-            calculation = run_project(Path(args[1]))
-            write_execution_json(Path(args[2]), calculation)
-            print(
-                json.dumps(
-                    {
-                        "status": calculation.calculation_status,
-                        "native_parity_status": calculation.native_parity_status,
-                        "model_sha256": calculation.model_sha256,
-                        "project_sha256": calculation.project_sha256,
                     },
                     sort_keys=True,
                 )
@@ -610,6 +616,8 @@ def main(argv: list[str] | None = None) -> int:
                         "status": loaded.validation_status,
                         "project_id": loaded.project.identifier,
                         "rainfall_profile": loaded.project.rainfall_profile,
+                        "engine": loaded.project.engine.engine,
+                        "numerical_profile": loaded.project.engine.numerical_profile,
                         "source_files": len(loaded.file_hashes),
                         "subareas": len(loaded.run.catchment.subareas),
                         "print_locations": len(loaded.run.catchment.print_locations),
@@ -641,7 +649,8 @@ def main(argv: list[str] | None = None) -> int:
         "Usage: python -m runoff_routing.project_json (validate|inspect) <project.json> "
         "| import-rorb <id> <rainfall-profile> <par> <catg> <stm> <project.json> "
         "| export-run <project.json> <run.json> | compare <left.json> <right.json> "
-        "| run <project.json> <result.json> | compare-runs <left.json> <right.json> "
+        "| run <project.json> <result.json> [--engine ID --numerical-profile PROFILE] "
+        "[--native-config LOCAL.json] | compare-runs <left.json> <right.json> "
         "| review-native <project.json> <manifest.json> <manifest-sha256> "
         "<engine-sha256> <print-id> <native-column> <review.json>",
         file=sys.stderr,

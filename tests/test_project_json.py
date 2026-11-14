@@ -100,7 +100,7 @@ def test_inline_json_roundtrip_reuses_exact_s1_typed_model() -> None:
     encoded = project_to_json(project)
     assert project_from_json(encoded) == project
     assert project_from_json(encoded).model_source == EmbeddedRun(_run())
-    assert '"schema_version": 1' in encoded
+    assert '"schema_version": 2' in encoded
     assert '"rainfall_profile": "explicit"' in encoded
 
 
@@ -177,7 +177,7 @@ def test_unsafe_relative_references_rejected(path: str) -> None:
 def test_json_schema_rejects_malformed_or_unsupported_values(alteration: str) -> None:
     data = json.loads(project_to_json(_inline()))
     if alteration == "version":
-        data["schema_version"] = 2
+        data["schema_version"] = 3
     elif alteration == "format":
         data["format"] = "unrelated"
     elif alteration == "missing":

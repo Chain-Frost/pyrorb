@@ -91,6 +91,9 @@ def _validated_profile(loaded: LoadedProject) -> Literal["explicit", "legacy-ror
 
 def execute_loaded_project(loaded: LoadedProject) -> ExecutedProject:
     """Use S1's RunModel with the existing pure S2 single-storm solver only."""
+    if loaded.project.engine.engine != "python":
+        message = "Legacy run_project is Python-only; use run_engine_project for selected CMD engines"
+        raise ProjectError(message)
     profile = _validated_profile(loaded)
     try:
         calculated = run_model(loaded.run)
@@ -144,6 +147,9 @@ def compare_routed_projects(left: Path, right: Path) -> ComputedProjectCompariso
     """
     original = load_project(left)
     alternative = load_project(right)
+    if original.project.engine != alternative.project.engine or original.project.engine.engine != "python":
+        message = "Legacy compare-runs requires both projects to select the same python engineering engine"
+        raise ProjectError(message)
     if original.project.rainfall_profile != alternative.project.rainfall_profile:
         message = "Cannot run a cross-method comparison: rainfall profiles differ"
         raise ProjectError(message)

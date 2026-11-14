@@ -15,6 +15,18 @@ S6 ARR Data Hub source intake [#38](https://github.com/Chain-Frost/python-runoff
 - `python -m runoff_routing.project_json` provides `validate`, `inspect`, `import-rorb`, `compare`, `export-run`, `run`, `compare-runs` and `review-native`. The last command reviews an existing SHA-pinned CMD capture; it does **not** launch RORB. See [JSON project usage](docs/PROJECT_JSON.md) and [native review limitations](docs/S5_RECORDED_NATIVE_REVIEW.md).
 - `repo-scripts/rorb_inspect.py` and `repo-scripts/rorb_reference.py` are developer scripts, not a general accepted native-compatible routing CLI. No `[project.scripts]` console entry point is configured.
 
+## Three selectable computation engines (issue #74)
+
+The versioned product selector is `python` (default, existing unvalidated
+engineering reference), `python-cmd` (explicitly unavailable until #75
+integrates the qualified compatible backend), and `rorb-cmd` (optional
+user-installed native RORB CMD 6.44 with a reviewed local executable hash).
+New JSON project schema 2 records the numerical engine/profile separately
+from rainfall preparation; engine-less schema-1 files migrate to `python`.
+The new `run_engine_project` API and `project_json run --engine ...`
+report stored/effective choices and never silently substitute a backend.
+See [engine contract, capability matrix and local CLI configuration](docs/ENGINES.md).
+
 ## Development and smoke example
 
 Windows / CPython 3.14 is the acceptance environment. The project does not require a virtual environment, although using one is supported.
