@@ -1,0 +1,383 @@
+{
+  "format": "runoff-public-cmd-integration-receipt-v1",
+  "reviewed_on": "2026-11-15",
+  "source_revision": "e7b4978fe81d94ca9cb646b07d9d0579f32a2942",
+  "run_id": 43637009435,
+  "run_url": "https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43637009435",
+  "interpreted_as": "fresh public installed python-cmd computation vs original retained native printed interval, not full native/physical acceptance",
+  "retained_candidate_snapshot_not_used": true,
+  "original_CMD_executable_processes": 0,
+  "original_reference_population": "50 authentic native printed full-horizon reports from the public versioned register",
+  "written_to_repo_public": "reduced audit receipt only, no unpublished or private data",
+  "cases_checked": 50,
+  "status_counts": {
+    "printed_pass": 36,
+    "source_unsupported": 14
+  },
+  "supported_printed_cases": 36,
+  "supported_full_original_ordinates": 16836,
+  "unsupported_case_count": 14,
+  "native_numerical_acceptance": "unassessed",
+  "physical_conservation_acceptance": "unassessed",
+  "source_file_ids_exclusion_preserved": true,
+  "original_case_results": [
+    {
+      "case_id": "review-design-baseline",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp10",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp1",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp3",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp5",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp6",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp7",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp8",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "review-ensemble-tp9",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-design-baseline-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-design-baseline-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp1-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp1-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp10-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp10-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp2-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp2-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp3-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp3-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp4-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp4-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp5-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp5-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp6-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp6-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp7-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp7-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp8-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp8-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp9-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "timestep-ensemble-tp9-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f1",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 201,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f2",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 401,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f4",
+      "first_mismatch": null,
+      "mismatch_count": 0,
+      "reason": null,
+      "rows": 801,
+      "status": "printed_pass"
+    },
+    {
+      "case_id": "failure-baseline-after",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "failure-baseline-before",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "fig67-ilcl-confirmed",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "fig67-ilcl-low",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "fig67-ilcl-probe",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "fig67-zero",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "wheel-ilcl-confirmed",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "wheel-zero",
+      "reason": "Temporal pattern percentages must total 100 within recorded precision",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "H1-three-source-asymmetric",
+      "reason": "Missing temporal pattern marker",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "H2-four-source-nested-odd-rain",
+      "reason": "Missing temporal pattern marker",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "H3-single-source-equality-chain",
+      "reason": "Missing temporal pattern marker",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "N4-six-source-serial-nested",
+      "reason": "New subarea would overwrite an unstored running hydrograph",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "pyromb-pr2-full",
+      "reason": "Only a single RORB_GE 002 graphical header is characterised",
+      "status": "source_unsupported"
+    },
+    {
+      "case_id": "pyromb-novel-storm",
+      "reason": "Only a single RORB_GE 002 graphical header is characterised",
+      "status": "source_unsupported"
+    }
+  ]
+}

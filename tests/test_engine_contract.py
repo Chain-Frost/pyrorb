@@ -101,12 +101,13 @@ def test_v1_engine_less_migrates_to_default_python_and_v2_round_trip() -> None:
 def test_explicit_persisted_engine_and_override_precedence(tmp_path: Path) -> None:
     persisted = EngineSelection.for_engine("python-cmd")
     source = _project(tmp_path, persisted)
-    unavailable = run_engine_project(source)
-    assert unavailable.status == "unavailable_engine"
-    assert unavailable.effective_selection == persisted
-    assert unavailable.stored_selection == persisted
-    assert unavailable.hydrographs == ()
-    assert unavailable.diagnostics[0].code == "python_cmd_pending"
+    cmd_result = run_engine_project(source)
+    assert cmd_result.status == "computed_unvalidated"
+    assert cmd_result.effective_selection == persisted
+    assert cmd_result.stored_selection == persisted
+    assert cmd_result.hydrographs[0].print_id == "print_1"
+    assert cmd_result.python_diagnostics is not None
+    assert cmd_result.python_diagnostics["cmd_profile"] == "cmd-6.44"
     with pytest.raises(ProjectError, match="Python-only"):
         run_project(source)
     computed = run_engine_project(source, selection=EngineSelection())
@@ -159,13 +160,13 @@ def test_cli_records_stored_and_effective_engine_and_failure(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source = _project(tmp_path, EngineSelection.for_engine("python-cmd"))
-    failure = tmp_path / "unavailable.json"
-    assert main(["run", str(source), str(failure)]) == 2
+    output = tmp_path / "cmd.json"
+    assert main(["run", str(source), str(output)]) == 0
     receipt = json.loads(capsys.readouterr().out)
     assert receipt["effective_engine"] == "python-cmd"
-    report = json.loads(failure.read_text(encoding="utf-8"))
-    assert report["status"] == "unavailable_engine"
-    assert report["hydrographs"] == []
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["status"] == "computed_unvalidated"
+    assert len(report["hydrographs"][0]["discharge_m3_s"]) == 6
     success = tmp_path / "python.json"
     assert main(["run", str(source), str(success), "--engine", "python"]) == 0
     capsys.readouterr()
@@ -419,7 +420,6 @@ def test_relative_native_executable_is_absolute_in_staged_spec(tmp_path: Path, m
     assert result.capture_manifest_path is not None
     manifest = json.loads(Path(result.capture_manifest_path).read_text(encoding="utf-8"))
     assert manifest["engine"]["executable"]["sha256"] == config.executable_sha256
-
 
 def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_path: Path) -> None:
     original = _model()

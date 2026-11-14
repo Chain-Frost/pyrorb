@@ -14,6 +14,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
+from .cmd_engine import CMD_PROFILE, CmdBoundaryError, run_cmd_model
 from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
@@ -124,6 +125,27 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     )
 
 
+def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: NativeConfiguration | None) -> EngineOutcome:
+    """Run only the selected CMD profile; never reuse the improved engine."""
+
+    if native_config is not None:
+        return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
+    if base.effective_selection.numerical_profile != CMD_PROFILE:
+        return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
+    try:
+        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
+    except CmdBoundaryError as exc:
+        return _failure(base, exc.status, exc.code, str(exc))
+    return replace(
+        base,
+        status="computed_unvalidated",
+        hydrographs=computed.hydrographs,
+        physical_time_hours=computed.physical_time_hours,
+        internal_quantities="python_available",
+        python_diagnostics=computed.diagnostics,
+    )
+
+
 def run_engine_project(
     project_path: Path,
     *,
@@ -149,12 +171,7 @@ def run_engine_project(
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
         return _python(loaded, base)
     if effective.engine == "python-cmd":
-        return _failure(
-            base,
-            "unavailable_engine",
-            "python_cmd_pending",
-            "python-cmd is not integrated: issue #75 must supply the qualified CMD event backend",
-        )
+        return _python_cmd(loaded, base, native_config)
     if native_config is None:
         return _failure(
             base,
