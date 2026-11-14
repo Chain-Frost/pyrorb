@@ -22,6 +22,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 from . import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
+from .engine_types import EngineOutcome
 from .regression_metrics import SiteMetrics
 from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_float
 from .rorb_documents import RorbSource
@@ -551,6 +552,45 @@ def _compare(
         "checked_ordinates": len(expected),
         "mismatches": differences,
     }
+
+
+def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
+    """Compare a freshly executed public CMD event with immutable printed evidence.
+
+    A result of "pass" means only that ordinates satisfy the case's frozen printed
+    interval policy. It neither changes the engine's computed_unvalidated status
+    nor establishes physical or general native numerical acceptance.
+    """
+    if outcome.effective_selection.engine != "python-cmd" or outcome.status != "computed_unvalidated":
+        message = "Only a freshly computed public python-cmd event is eligible for this diagnostic"
+        raise RegressionError(message)
+    for source in case["files"]:
+        _verify(root, source)
+    columns, rows = _reference(root, case)
+    if len(case["sites"]) != 1 or len(outcome.hydrographs) != 1 or len(columns) != 3:
+        return {"classification": "incomplete", "reason": "One physical outlet print is required"}
+    point = case["sites"][0]
+    native_column = point["native_column_id"]
+    printed = outcome.hydrographs[0]
+    if printed.print_id != point["model_print_id"] or columns[2] != native_column:
+        return {"classification": "invalid", "reason": "Source-to-native print-site mapping differs"}
+    if len(rows) != len(printed.discharge_m3_s):
+        return {"classification": "incomplete", "reason": "Full native horizon not computed"}
+    supplied = {
+        (case["case_id"], native_column, index): {
+            "case_id": case["case_id"],
+            "classification": "computed/pass",
+            "model_print_id": point["model_print_id"],
+            "native_column_id": native_column,
+            "sample_index": str(index),
+            "raw_native_increment": row[0],
+            "raw_native_time": row[1],
+            "native_discharge_token": row[2],
+            "python_discharge_m3_s": repr(value),
+        }
+        for index, (row, value) in enumerate(zip(rows, printed.discharge_m3_s, strict=True))
+    }
+    return _compare(case, columns, rows, supplied, "python-cmd")
 
 
 def _run(

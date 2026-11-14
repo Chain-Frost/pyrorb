@@ -78,9 +78,9 @@ CAPABILITIES: tuple[EngineCapability, ...] = (
     ),
     EngineCapability(
         "python-cmd",
-        "pending issue #75",
-        "Requires qualified named CMD numerical profile and complete backend preparation",
-        "Unavailable until source/wheel/native integration qualifies",
+        "installed bounded cmd-6.44 event backend; public native replay outstanding",
+        "One explicit DESIGN pluviograph, pervious ISA/burst, lumped kc, IL/CL, one terminal print",
+        "Full computed hydrograph with separate CMD states/diagnostics; public native parity unaccepted",
     ),
     EngineCapability(
         "rorb-cmd",

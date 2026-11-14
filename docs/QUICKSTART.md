@@ -37,7 +37,14 @@ python -m runoff_routing.project_json run project.json cmd-result.json --engine 
 python -m runoff_routing.project_json run project.json native-result.json --engine rorb-cmd --numerical-profile cmd-6.44 --native-config local-cmd.json
 ```
 
-The first execution is the default Python engine. On current `main`, `python-cmd` is **explicitly unavailable pending #79**: it must produce a clear failure rather than silently dispatching to `python`. Native `rorb-cmd` requires operator-supplied, hash-checked CMD 6.44 executable configuration and original source files; nothing is downloaded or bundled. The CLI uses exclusive-create output and structured failure states. See [engine selection](ENGINES.md) and [project import commands](PROJECT_JSON.md).
+The first execution selects the default Python engine. The merged bounded [CMD-compatible engine #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) computes supported DESIGN events separately and returns `computed_unvalidated`, **not** native equivalence. Unsupported features fail closed. To create and execute a complete publicly reproducible CMD example:
+
+```sh
+python examples/create_cmd_project.py
+python -m runoff_routing.project_json run cmd-example-project.json cmd-example-result.json
+```
+
+Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
 
 ## 4. Explicit-event batches
 

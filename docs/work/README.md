@@ -5,6 +5,7 @@
 ## Current implementation / regression receipts
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
+- [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
 - [Public reference dataset transfer and limits](2026-11-15-public-cmd-data.md) — merged #78/#82, approved source objects, authenticated historical snapshot and full index.
 - [Cached-regression index portability](2026-11-15-cmd81-native-index-portability.md) — merged #83, Linux checkout byte-preservation.
 - [CMD scalar metric transfer](2026-11-15-cmd56-public-scalar-transfer.md) and [scalar adapter record](2026-11-15-cmd56-scalar-adapter.md) — merged #80, existing original two incomplete peak times.
