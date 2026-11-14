@@ -10,3 +10,6 @@
 
 # Curated native derivatives and retained candidate snapshots use authenticated bytes.
 /tests/fixtures/regression-v1/native-cmd/** -text
+
+# This indexed attributes file itself must retain exact Git LF bytes on every OS.
+/tests/fixtures/regression-v1/.gitattributes -text
