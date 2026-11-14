@@ -287,6 +287,23 @@ def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
     return found
 
 
+def _candidate_computation_state(
+    expected: set[tuple[str, str, int]],
+    supplied: dict[tuple[str, str, int], dict[str, str]],
+) -> tuple[str, str]:
+    """Retain candidate execution states independently of discharge comparisons."""
+    states = {supplied[key]["classification"] for key in expected}
+    if len(states) != 1:
+        return "invalid", "inconsistent candidate computation states"
+    state = next(iter(states))
+    if state in {"invalid", "unsupported", "incomplete", "not_run"}:
+        reported = "incomplete" if state == "not_run" else state
+        return reported, f"candidate computation declared {state}; no eligible numerical acceptance"
+    if state not in {"computed/pass", "computed/fail"}:
+        return "invalid", f"unrecognised candidate computation state: {state}"
+    return "computed", state
+
+
 def _compare(
     case: dict[str, Any],
     columns: list[str],
@@ -309,19 +326,9 @@ def _compare(
             "reason": f"{len(expected - observed)} expected ordinates unavailable",
             "mismatches": [],
         }
-    states = {supplied[key]["classification"] for key in expected}
-    if len(states) != 1:
-        return {"classification": "invalid", "reason": "inconsistent candidate computation states", "mismatches": []}
-    state = next(iter(states))
-    if state in {"invalid", "unsupported", "incomplete", "not_run"}:
-        reported = "incomplete" if state == "not_run" else state
-        return {
-            "classification": reported,
-            "reason": f"candidate computation declared {state}; no eligible numerical acceptance",
-            "mismatches": [],
-        }
-    if state not in {"computed/pass", "computed/fail"}:
-        return {"classification": "invalid", "reason": f"unrecognised candidate computation state: {state}", "mismatches": []}
+    disposition, state_reason = _candidate_computation_state(expected, supplied)
+    if disposition != "computed":
+        return {"classification": disposition, "reason": state_reason, "mismatches": []}
     differences: list[dict[str, str | int]] = []
     for point in case["sites"]:
         column = point["native_column_id"]
@@ -358,7 +365,7 @@ def _compare(
                         "frozen_allowance": str(allowance),
                     }
                 )
-    declared_failure = state == "computed/fail"
+    declared_failure = state_reason == "computed/fail"
     return {
         "classification": "fail" if differences or declared_failure else "pass",
         "reason": "candidate declared computed/fail" if declared_failure else None,
