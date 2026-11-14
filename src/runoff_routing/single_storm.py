@@ -4,7 +4,7 @@ Supports explicit DESIGN storms, one uniform pervious ISA, IL/CL, natural
 reaches and the stack control-vector subset 1/3/4/5/7. No native process,
 I/O, GIS, fitted constants or inferred print-site identities are involved.
 The first output sample is at t=0; rainfall in a bin enters at its END sample.
-The time/phase and loss-crossing choices require native-profile acceptance.
+The time/phase and independently selected loss-crossing rules are not CMD parity claims.
 """
 
 import math
@@ -149,10 +149,11 @@ def distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
 
 
 def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float) -> tuple[float, ...]:
-    """Pervious IL/CL applied to individual rainfall bins; no carryover CL.
+    """Apply pervious initial then continuing loss at uniform within-bin intensity.
 
-    Initial loss is exhausted before CL applies to residual rain in that bin.
-    Exact within-increment crossing and native reporting remain under review.
+    CL acts only during the fraction of a bin after IL is exhausted. At exact
+    equality this fraction is zero. IL persists over dry bins; unused CL does
+    not carry to later bins. This is the engineering-v1 method, not CMD parity.
     """
     _check_finite_nonnegative(losses.initial_mm, "Initial loss")
     _check_finite_nonnegative(losses.continuing_mm_h, "Continuing loss")
@@ -169,7 +170,13 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
         _check_finite_nonnegative(rainfall, "Rainfall")
         consumed = min(initial_remaining, rainfall)
         initial_remaining -= consumed
-        excess.append(max(0.0, rainfall - consumed - continuing_per_bin))
+        post_initial_rain = rainfall - consumed
+        if post_initial_rain <= 0.0:
+            excess.append(0.0)
+        else:
+            # Uniform rainfall rate: CL operates only after the IL crossing.
+            post_initial_fraction = post_initial_rain / rainfall
+            excess.append(max(0.0, post_initial_rain - continuing_per_bin * post_initial_fraction))
     return tuple(excess)
 
 
@@ -246,6 +253,9 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
                     raise RoutingDomainError(message)
                 previous = stack.pop()
                 routed = tuple(a + b for a, b in zip(previous, routed, strict=True))
+                if any(not math.isfinite(value) for value in routed):
+                    message = "Confluence discharge overflowed."
+                    raise RoutingDomainError(message)
             case 5:
                 if routed is None:
                     message = "No running hydrograph to route."
