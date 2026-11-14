@@ -202,7 +202,9 @@ def test_cmd_rejects_decimal_underflow_without_emulating_zero_exponent(tmp_path:
     model = _model()
     value = Decimal(magnitude)
     assert value > 0 and float(value) == 0
-    altered = replace(model, parameters=replace(model.parameters, routing=(replace(model.parameters.routing[0], m=value),)))
+    routing = replace(model.parameters.routing[0], m=value)
+    parameters = replace(model.parameters, routing=(routing,))
+    altered = replace(model, parameters=parameters)
     project = _project(tmp_path, altered, cmd_stored=True)
     outcome = run_engine_project(project)
     assert outcome.status == "unsupported_feature"

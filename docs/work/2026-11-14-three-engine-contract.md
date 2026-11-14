@@ -62,3 +62,30 @@ this correction and exact-head Windows/source/wheel tests are required.
 The initial native-acceptance status above describes the original implementation
 handoff; later local evidence is held privately and is not a general acceptance
 claim. PR #77 remains draft; numerical equivalence remains unaccepted.
+
+## 2026-11-15 — Review failure-path corrections (pending exact-head checks)
+
+Independent review at `e7e2415806d80eaaabfab4704101f8b69cb3f8f3`
+identified two reproducible error-path defects, and the Codex inline review
+identified a third relative-native-executable path defect.
+
+- Reject encrypted ZIP wheel entries before reading them. Translate ZIP
+  reader failures into `invalid_input/wheel_identity` rather than allowing
+  an uncaught exception. A manufactured encrypted-entry regression proves
+  that native execution is not dispatched.
+- Catch invalid native configuration types in the CLI and return the
+  documented exit status 2, without a traceback, output write or engine launch.
+  Negative tests cover a JSON array, wrong print-column type and wrong
+  timeout type.
+- Preserve relative executable configuration at the API boundary but write
+  its `Path.absolute()` spelling to the temporary S0 capture specification.
+  An isolated mocked CMD run verifies that the executable is found and the
+  source-capture identity stays intact.
+
+The owner's separately recorded [private native acceptance PR #62](https://github.com/Chain-Frost/runoff-routing-investigations/pull/62)
+retains the latest exact-head 201-row token-matched native receipt. This
+software-only fix does not launch RORB, modify native inputs/captures, adjust
+numeric tolerances or claim Python/CMD equivalence. The latest Windows
+CI, source and installed-wheel checks must be attributed to the new PR
+revision separately before recommending integration. Do not merge or close
+issue #74 on the basis of software-only validation.

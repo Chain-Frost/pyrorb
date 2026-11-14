@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "0.50",
+          "0.000000000"
+        ],
+        [
+          "2",
+          "1.00",
+          "0.000000000"
+        ],
+        [
+          "3",
+          "1.50",
+          "0.000000000"
+        ],
+        [
+          "4",
+          "2.00",
+          "0.000000000"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Dry input/excess produces identically zero discharge"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "1.00",
+          "0.735758882"
+        ],
+        [
+          "2",
+          "2.00",
+          "0.270670566"
+        ],
+        [
+          "3",
+          "3.00",
+          "0.099574137"
+        ],
+        [
+          "4",
+          "4.00",
+          "0.036631278"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Exact continuous reservoir K=1h, initial Q0=2m3/s, I=0"
+    }
+  ]
+}

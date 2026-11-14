@@ -248,7 +248,7 @@ def run_cli(argv: list[str]) -> int:
             wheel_artifact=options.wheel_artifact,
         )
         write_engine_result(options.result, outcome)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, TypeError) as exc:
         print(f"Project execution failed: {exc}", file=sys.stderr)
         return 2
     print(

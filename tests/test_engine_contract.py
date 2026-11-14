@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -330,3 +331,91 @@ def test_missing_or_mismatched_wheel_fails_before_native_launch(
     assert result.verified_wheel_sha256 is None
     assert result.implementation_revision == identify_implementation().revision
     assert not config.output_root.exists()
+
+
+def _mark_first_wheel_entry_encrypted(wheel: Path) -> None:
+    """Manufacture the encrypted ZIP flag without using an encrypted archive or native data."""
+    data = bytearray(wheel.read_bytes())
+    assert data[:4] == b"PK\x03\x04"
+    central_header = data.index(b"PK\x01\x02")
+    data[6] |= 1  # local-header general-purpose flag
+    data[central_header + 8] |= 1  # matching central-directory flag
+    wheel.write_bytes(data)
+    with ZipFile(wheel) as archive:
+        assert archive.infolist()[0].flag_bits & 1
+
+
+def test_encrypted_wheel_is_structured_failure_before_native_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    config = _native_config(tmp_path)
+    wheel = _manufactured_wheel(tmp_path)
+    _mark_first_wheel_entry_encrypted(wheel)
+
+    def unexpected_execution(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Encrypted wheel must fail verification before native execution")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_native_cmd", unexpected_execution)
+    result = run_engine_project(source, native_config=config, wheel_artifact=wheel)
+    assert result.status == "invalid_input"
+    assert result.diagnostics[0].code == "wheel_identity"
+    assert "Encrypted wheel" in result.diagnostics[0].message
+    assert result.hydrographs == ()
+    assert result.verified_wheel_sha256 is None
+    assert not config.output_root.exists()
+
+
+@pytest.mark.parametrize("malformed", ["top-level-array", "print-columns", "timeout-seconds"])
+def test_malformed_native_config_returns_cli_exit_two_without_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    malformed: str,
+) -> None:
+    source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    config = _native_config(tmp_path)
+    settings: dict[str, object] = {
+        "schema_version": 1,
+        "executable": str(config.executable),
+        "executable_sha256": config.executable_sha256,
+        "observed_version": config.observed_version,
+        "observed_banner": config.observed_banner,
+        "numerical_profile": config.numerical_profile,
+        "output_root": str(config.output_root),
+        "print_columns": {"print_1": "Hyd001"},
+        "timeout_seconds": config.timeout_seconds,
+    }
+    if malformed == "print-columns":
+        settings["print_columns"] = ["Hyd001"]
+    elif malformed == "timeout-seconds":
+        settings["timeout_seconds"] = "not a number"
+    payload: object = [] if malformed == "top-level-array" else settings
+    local_config = tmp_path / "malformed-cmd.json"
+    local_config.write_text(json.dumps(payload), encoding="utf-8")
+    destination = tmp_path / "should-not-exist.json"
+
+    def unexpected_execution(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Malformed native configuration must not enter product dispatch")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_engine_project", unexpected_execution)
+    assert main(["run", str(source), str(destination), "--native-config", str(local_config)]) == 2
+    stderr = capsys.readouterr().err
+    assert "Project execution failed:" in stderr
+    assert "Traceback" not in stderr
+    assert not destination.exists()
+    assert not config.output_root.exists()
+
+
+def test_relative_native_executable_is_absolute_in_staged_spec(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    config = _native_config(tmp_path)
+    relative_config = replace(config, executable=Path(config.executable.name))
+    _mock_native(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    result = run_engine_project(source, native_config=relative_config)
+    assert result.status == "computed_unvalidated"
+    assert result.native_executable_sha256 == config.executable_sha256
+    assert result.capture_manifest_path is not None
+    manifest = json.loads(Path(result.capture_manifest_path).read_text(encoding="utf-8"))
+    assert manifest["engine"]["executable"]["sha256"] == config.executable_sha256

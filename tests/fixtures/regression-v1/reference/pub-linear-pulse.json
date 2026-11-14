@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "1.00",
+          "1.573877361"
+        ],
+        [
+          "2",
+          "2.00",
+          "0.954604874"
+        ],
+        [
+          "3",
+          "3.00",
+          "0.578997124"
+        ],
+        [
+          "4",
+          "4.00",
+          "0.351179508"
+        ],
+        [
+          "5",
+          "5.00",
+          "0.213001138"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Exact rectangular inflow 4m3/s for t=0..1h, K=2h, S0=0"
+    }
+  ]
+}

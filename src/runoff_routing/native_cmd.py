@@ -207,7 +207,7 @@ def _make_spec(
         "schema_version": 1,
         "case_id": f"{loaded.project.identifier[:40]}-{project_hash[:12]}",
         "engine_kind": "RORB_CMD",
-        "executable": str(config.executable),
+        "executable": str(config.executable.absolute()),
         "observed_banner": config.observed_banner,
         "observed_version": config.observed_version,
         "documentation_version": None,
