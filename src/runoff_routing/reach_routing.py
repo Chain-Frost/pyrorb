@@ -67,7 +67,9 @@ def _bracket_upper_bound(
     previous_inflow: float,
     current_inflow: float,
 ) -> float:
-    upper = max(1.0, previous_outflow, previous_inflow, current_inflow)
+    upper = max(previous_outflow, previous_inflow, current_inflow)
+    # Monotone storage and trapezoidal continuity bound the new outflow
+    # by the largest endpoint inflow/previous outflow; no arbitrary 1 m³/s floor.
     for _ in range(64):
         residual = _residual(
             upper, coefficient_k=coefficient_k, exponent_m=exponent_m, half_step=half_step, target=target
@@ -94,7 +96,8 @@ def _nonlinear_root(
 ) -> float:
     """Solve the monotone storage-continuity residual by bracketed false position.
 
-    Illinois endpoint damping avoids the well-known false-position stagnation.
+    Illinois endpoint damping avoids false-position stagnation. The residual
+    budget scales with target storage/time, including sub-unit hydrographs.
     The algorithm and its strict tolerance are *not* claimed to reproduce RORB's
     historical iteration stopping/convergence decisions.
     """
@@ -111,7 +114,7 @@ def _nonlinear_root(
     )
     f_upper = _residual(upper, coefficient_k=coefficient_k, exponent_m=exponent_m, half_step=half_step, target=target)
     side = 0
-    tolerance = 1e-12 * max(1.0, abs(target))
+    tolerance = 1e-12 * target
     for _ in range(256):
         candidate = (lower * f_upper - upper * f_lower) / (f_upper - f_lower)
         if not lower < candidate < upper:
