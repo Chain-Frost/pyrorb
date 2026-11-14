@@ -113,6 +113,52 @@ def _run(register: Path, csv: Path, series: Path, output: Path, *, custody: bool
     return rd.main(args)
 
 
+def test_one_case_diagnosis_accepts_full_registered_candidate_series(tmp_path: Path) -> None:
+    """One-case diagnosis must accept a full-population cached output without repacking it."""
+    register, csv, series = _scalar_fixture(tmp_path)
+    document = json.loads(register.read_text(encoding="utf-8"))
+    duplicate = json.loads(json.dumps(document["cases"][0]))
+    duplicate["case_id"] = "SYN-002"
+    document["cases"].append(duplicate)
+    _write(register, document)
+
+    rows = csv.read_text(encoding="utf-8").splitlines(keepends=True)[1:]
+    with csv.open("a", encoding="utf-8") as stream:
+        for row in rows:
+            stream.write(row.replace("SYN-001,", "SYN-002,", 1))
+
+    candidate = json.loads(series.read_text(encoding="utf-8"))
+    candidate["cases"].append({**candidate["cases"][0], "case_id": "SYN-002"})
+    _write(series, candidate)
+
+    report = tmp_path / "diagnose-one.json"
+    assert (
+        rd.main(
+            [
+                "diagnose",
+                str(register),
+                "--case",
+                "SYN-001",
+                "--csv",
+                str(csv),
+                "--series",
+                str(series),
+                "--custody-root",
+                str(tmp_path),
+                "--implementation",
+                REVISION,
+                "--output",
+                str(report),
+            ]
+        )
+        == 0
+    )
+    outcome = json.loads(report.read_text(encoding="utf-8"))
+    assert outcome["case_count"] == 1
+    assert outcome["cases"][0]["case_id"] == "SYN-001"
+    assert outcome["cases"][0]["classification"] == "pass"
+
+
 def test_scalar_native_end_to_end_and_original_field_details(tmp_path: Path) -> None:
     register, csv, series = _scalar_fixture(tmp_path)
     output = tmp_path / "result.json"

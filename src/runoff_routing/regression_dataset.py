@@ -511,10 +511,10 @@ def _run(
     candidates = _predictions(csv_path) if csv_path is not None else {}
     series_document, stored = _series(series_path, implementation, wheel)
     _verify_series_profile(register, series_document)
-    if set(stored) - {c["case_id"] for c in selected}:
-        message = "Stored-series includes undeclared or unselected case IDs"
-        raise RegressionError(message)
     all_case_ids = {entry["case_id"] for entry in register["cases"]}
+    if set(stored) - all_case_ids:
+        message = "Stored-series includes undeclared case IDs"
+        raise RegressionError(message)
     if {key[0] for key in candidates} - all_case_ids:
         message = "candidate CSV includes undeclared case IDs"
         raise RegressionError(message)
