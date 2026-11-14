@@ -10,7 +10,7 @@ The bundled Python output is an **immutable prior source-execution snapshot** at
 
 Frozen `cmd644-report-scalars-v1` is unchanged: **19,550 ordinate rows pass**, peak magnitude 50 pass, peak time 48 pass / two incomplete (`fig67-zero`, `wheel-zero`), reported volume 50 pass. Scalar aggregate returns **1**. Reported volume is the native **inclusive sample sum**, distinct from physical volume/conservation. Exact ties, sub-print clocks, physical acceptance and production-engine qualification remain open. No tolerances, defaults or goldens changed.
 
-## Windows / Python 3.14 commands
+## Example Windows / Python 3.14 commands (Python 3.13 also supported)
 
 Use fresh output names: existing destinations are rejected. Install only from the public checkout:
 

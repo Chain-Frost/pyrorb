@@ -1,63 +1,38 @@
-# Staged implementation plan
+# Implementation and acceptance sequence — CMD first
 
-Planning baseline: 2026-11-09. [Tracking issue](https://github.com/Chain-Frost/python-runoff-routing/issues/1).
+**Current authority:** [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1). See [backlog and owners](BACKLOG.md), [public quickstart](QUICKSTART.md), [engine contract](ENGINES.md) and the single CMD feature inventory in [draft PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84). Do not use old S0–S8 handoffs to reopen completed work.
 
-## Objective and boundary
+## Three numerical engines
 
-Build an independent Python calculation engine. Existing RORB files are the initial input contract and remain a permanent compatibility route. A new TOML/JSON format is added only after a stable internal model exists. GUI replacement, GIS editing and a complete historical feature clone are not prerequisites for a useful first solver.
+| Engine | Product role | Required acceptance |
+| --- | --- | --- |
+| **python** | Default improved engineering engine, maintained as a product implementation | Independent analytic/manufactured cases, conservation, refinement, stability, failure semantics and repeatable explicit batches; no CMD bit-for-bit obligation |
+| **python-cmd** | Explicit CMD 6.44-compatible Python implementation, isolated arithmetic | Correct versioned effective inputs, original ordering, full output horizons and native policy on the required CMD feature population |
+| **rorb-cmd** | Optional, explicit user-installed native CMD adapter | Verified executable/input identities, complete source/output/time controls and structured failures; no bundled binary or fallback |
 
-Separate three questions: can the file be parsed; can its features be executed; have its calculations been validated against a named reference build? A model can pass the first and fail the second. Unsupported numerical features must never be dropped silently.
+Installed software, supported input recognition, cached output matching, actual computation, native numerical equivalence and independent engineering accuracy are **not interchangeable**. Native inclusive reported volume is not by itself a physical water-balance measurement.
 
-## Stage gates
+## Current implementation order
 
-| Stage | Workpack | Deliverable | Exit gate |
-| --- | --- | --- | --- |
-| S0 | [Foundations and reference evidence #2](https://github.com/Chain-Frost/python-runoff-routing/issues/2) | Local quality tools, engine profiles, immutable captures and comparison contract. | Windows reference identities, effective inputs, failure cases and retained output evidence are verified. Scaffolding alone is insufficient. |
-| S1 | [RORB import #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3) | Source-aware readers and a typed domain model; inspect/validate interfaces. | Supported files map correctly; malformed/unsupported cases fail clearly; original order and bytes remain intact. |
-| S2 | [Single-storm MVP #4](https://github.com/Chain-Frost/python-runoff-routing/issues/4) | Readable deterministic solver, run/compare interfaces and CSV results. | Complete hydrographs, diagnostics and independent invariants pass for the declared subset. |
-| S3 | [Deterministic extensions #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) | Losses/ISAs, reach variants, storage/I-O and GUI-specific features in separate slices. | Every enabled slice has parser, solver and native regression evidence. |
-| S4 | [Ensembles and performance #6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) | Prepared model reused across events; bounded batches and optional acceleration. | Event-by-event parity, no state leakage, reproducibility and measured runtime/memory. |
-| S5 | [Native format #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7) | Versioned TOML/JSON and external tables. | Both input routes produce equivalent domain models and results. |
-| S6 | [ARR preparation #8](https://github.com/Chain-Frost/python-runoff-routing/issues/8) | Auditable design-storm generation, separate from routing. | Generated hyetographs/effective parameters agree before routed outputs are compared. |
-| S7 | [Monte Carlo #9](https://github.com/Chain-Frost/python-runoff-routing/issues/9) | Persisted stratified sample plans and weighted frequency analysis. | Replay, probability invariants, convergence and separate native GUI statistical evidence. |
-| S8 | [Optional completeness/readiness #10](https://github.com/Chain-Frost/python-runoff-routing/issues/10) | Selected legacy functions and a future publication review. | Explicit scope and owner approval; no publication is authorised by this plan. |
+1. **Already merged:** engine selector and native adapter via [#77](https://github.com/Chain-Frost/python-runoff-routing/pull/77), and public curated dataset/comparator/analytical controls via [#78](https://github.com/Chain-Frost/python-runoff-routing/pull/78), [#80](https://github.com/Chain-Frost/python-runoff-routing/pull/80), [#82](https://github.com/Chain-Frost/python-runoff-routing/pull/82) and [#83](https://github.com/Chain-Frost/python-runoff-routing/pull/83). Historical candidate snapshots remain explicitly separate from fresh execution.
+2. **A:** finish the bounded compatible whole-event implementation under [#75](https://github.com/Chain-Frost/python-runoff-routing/issues/75) / [draft #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79), verifying the exact integrated source and isolated installed wheel against authenticated native observations without weakening policies.
+3. **B:** maintain the one published regression register/CLI and independently distinguish computed, excluded and incomplete cases. Retire older [S5 draft #58](https://github.com/Chain-Frost/python-runoff-routing/pull/58) only after its unique evidence-status, hash, site/time and no-clobber protections have current tests or a deliberate migration.
+4. **C:** complete [CMD feature gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) / [draft #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84). Its **single** matrix distinguishes parsed, executable, output-supported and independently qualified cases for every engine, identifies missing CMD rows and assigns focused missing-feature work.
+5. **D:** validate the improved default method and explicit in-memory batch reuse under [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6); measure performance only after prospective numerical correctness, conservation, state isolation and error rules are met.
+6. **E and F:** public cleanup [#76](https://github.com/Chain-Frost/python-runoff-routing/issues/76) removes obsolete scripts/handoffs only after callers and migration are understood. Private investigations index unique historical evidence but are never a public package, solver, runtime dependency or required checkout.
+7. **CMD replacement gate:** both Python engines must meet every required CMD row for their declared policy, or have an owner-approved explicit exclusion. The native adapter cannot substitute for an absent Python implementation. An accepted subset is not a full replacement.
+8. **Only after CMD completion:** expand RORBwin-specific storm features [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8) and optional interoperability [#63](https://github.com/Chain-Frost/python-runoff-routing/issues/63). Stratified Monte Carlo [#9](https://github.com/Chain-Frost/python-runoff-routing/issues/9) and publication/release [#10](https://github.com/Chain-Frost/python-runoff-routing/issues/10) remain independent deferred stages.
 
-## First usable solver: S2
+## Existing stage boundaries
 
-Support DESIGN calculations using one supplied rainfall burst, uniform rainfall, wholly pervious subareas, one ISA and one kc/m pair, initial/continuing loss, natural reaches and branched networks. The initial control-code subset is 0, 1, 2, 3, 4, 5 and 7. Cover linear m=1 and nonlinear routing, zero-delay reaches and multiple requested print points.
+- **S0/S1 [#2](https://github.com/Chain-Frost/python-runoff-routing/issues/2)/[#3](https://github.com/Chain-Frost/python-runoff-routing/issues/3):** source-preserving restricted RORB inputs, typed model, capture/inspection and fail-closed unsupported dialects. General parser/native feature acceptance remains open.
+- **S2 [#4](https://github.com/Chain-Frost/python-runoff-routing/issues/4):** a bounded supplied-DESIGN storm calculation exists in the default Python engine; the historical native parity failures remain historical, and fresh compatible/default-engine acceptance is separately tracked.
+- **S3 [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5):** the current issue is the CMD feature-completeness gate, **not** an instruction to expand GUI-only storage and FIT features before CMD is complete.
+- **S4 [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6):** validated deterministic explicit-event computation precedes claimed in-memory batch acceleration.
+- **S5 [#7](https://github.com/Chain-Frost/python-runoff-routing/issues/7):** JSON schema-2 projects and current diagnostic adapters exist. TOML is **owner-deferred**; not a required current input or release format.
+- **S6 [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8):** bounded ARR/BoM rainfall source/method functions exist, but generated-input and routed native equivalence remains open.
+- **S7/S8 [#9](https://github.com/Chain-Frost/python-runoff-routing/issues/9)/[#10](https://github.com/Chain-Frost/python-runoff-routing/issues/10):** Monte Carlo and release are deferred; neither follows automatically from a green CI run.
 
-Read .cat/.catg plus .stm and CMD .par, and equivalent combined .dat inputs for this subset. A .catg variant is supported only when its structure is characterised by a fixture. GUI run-configuration .par files are a distinct dialect; recognising the extension does not establish interoperability.
+## Computational and verification safeguards
 
-Exclude FIT loss estimation, special storage, diversions, nonuniform rainfall, multiple bursts/ISAs, legacy impervious fractions, DCIA/ICIA, generated design rainfalls and Monte Carlo until their stages. Return a named unsupported-feature diagnostic rather than approximating them.
-
-Implement S = 3600*k*Q^m and k = kc*kr using the documented relationships, then prove the discrete conventions: dav/kr, initial-loss crossing within an increment, rainfall-excess timing, initial conditions, iterative stopping and calculation horizon. Do not replace RORB's method with an arbitrary ODE integrator and call it equivalent. Sources: R1 sections 2.2, 3.3.4, 3.4 and Table 5-2 in the source register.
-
-## Architecture
-
-```text
-RORB readers ------> source records + diagnostics --+
-                                                   +--> typed model --> prepared execution plan
-TOML/JSON reader (later) ---------------------------+                         |
-                                                                              v
-explicit event / ensemble / MC sample plan ------------------------> event solver
-                                                                              |
-                                                                              v
-                                                                results + diagnostics
-                                                                              |
-                                                                              v
-                                                         comparison / exports / frequency analysis
-```
-
-The source representation retains original ordering, locations and uninterpreted non-computational metadata. The domain model is not a new spelling of the RORB text format. The execution plan preserves all order-sensitive semantics. Kernels receive numerical values, not filenames or GUI objects. Start with small focused modules; do not create a plugin framework or empty pass-through layers.
-
-Keep rainfall preprocessing and random sampling outside the event solver. Retain a readable reference backend after introducing an accelerated backend. Select NumPy/Numba or alternatives only when justified and verified on Windows/Python 3.14; no backend or speed claim is pre-approved.
-
-## Work ordering and parallelism
-
-S0 evidence capture and S1 parsing can overlap after the capture/schema contract is agreed. S2 acceptance waits for both. S3 is feature-by-feature, not an all-or-nothing rewrite: S4 can use an explicitly accepted subset without waiting for unused storage or GUI features. S5 depends on the domain model and can move earlier after S2. S6 depends on the features required by its selected storms; S7 depends on accepted event computation, batches and rainfall policies, not every legacy feature.
-
-At most one owner edits a shared model/parser contract at a time. Parallel agents should own distinct workpacks or fixture collections and integrate through explicit dependencies. Every PR states accepted features, remaining exclusions and evidence. A passing scaffold suite never closes S0-S7.
-
-## Deferred work
-
-Automatic FIT/calibration, interactive special-storage design equivalents, uncommon I/O combinations, additional historical dialects and GIS/editor features require separately selected workpacks. Hosted CI, public visibility, redistribution/licensing choices and PyPI publication are independent owner decisions, not automatic consequences of a stage merge.
+Keep source, typed model, rainfall preparation, deterministic state and reporting distinct. Preserve input lexemes when compatibility requires them, original control/topological order, complete event horizons, raw native clocks/tokens and immutable source fingerprints. Existing [source citations](SOURCES.md), [compatibility requirements](COMPATIBILITY.md) and [regression policies](REGRESSION.md) govern detailed mathematics. Avoid duplicate legacy parsers, research runners, hidden private imports and unmeasured acceleration. The default engine's engineering policy is independent; do not fit its tolerance to CMD printing. No new hosted native workflow, licence/release decision, or native source modification is authorised here.
