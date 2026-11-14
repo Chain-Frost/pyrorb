@@ -73,13 +73,10 @@ def identify_implementation() -> ImplementationIdentity:
 def _compare_wheel_sources(wheel_bytes: bytes, sources: dict[str, bytes]) -> None:
     with ZipFile(BytesIO(wheel_bytes)) as archive:
         entries = tuple(
-            item for item in archive.infolist()
-            if item.filename.startswith("runoff_routing/") and not item.is_dir()
+            item for item in archive.infolist() if item.filename.startswith("runoff_routing/") and not item.is_dir()
         )
         names = tuple(item.filename for item in entries)
-        if len(names) != len(set(names)) or any(
-            not _source_file(name.rsplit("/", maxsplit=1)[-1]) for name in names
-        ):
+        if len(names) != len(set(names)) or any(not _source_file(name.rsplit("/", maxsplit=1)[-1]) for name in names):
             message = "Wheel has duplicate or unreviewed package source entries"
             raise ValueError(message)
         members = {item.filename: item for item in entries}
