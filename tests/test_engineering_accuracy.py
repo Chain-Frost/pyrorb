@@ -62,9 +62,9 @@ def test_sub_unit_nonlinear_flow_uses_relative_storage_residual() -> None:
 def test_exact_linear_continuous_solution_and_second_order_refinement() -> None:
     # For dQ/dt=(I-Q)/k, I(t)=a+b exp(-lambda*t), Q(0)=I(0), the integral is explicit.
     a, b, decay, coefficient, end_hour = 2.0, 3.0, 0.3, 1.0, 4.0
-    exact = a + b * (
-        math.exp(-decay * end_hour) - coefficient * decay * math.exp(-end_hour / coefficient)
-    ) / (1.0 - coefficient * decay)
+    exact = a + b * (math.exp(-decay * end_hour) - coefficient * decay * math.exp(-end_hour / coefficient)) / (
+        1.0 - coefficient * decay
+    )
     errors: list[float] = []
     for dt_hours in (0.5, 0.25, 0.125):
         steps = round(end_hour / dt_hours)
@@ -187,9 +187,7 @@ def test_long_timestep_error_preserves_recession_failure() -> None:
 def test_event_must_cover_all_forcing_and_returns_full_requested_grid() -> None:
     catchment = Catchment((Control(1, 3.0), Control(7)), (1.0,))
     with pytest.raises(RoutingDomainError, match="horizon"):
-        calculate_storm(
-            catchment, Storm(0.5, 1, (50.0, 50.0), (1.0,)), losses=Losses(0.0, 0.0), kc=1.0, m=1.0
-        )
+        calculate_storm(catchment, Storm(0.5, 1, (50.0, 50.0), (1.0,)), losses=Losses(0.0, 0.0), kc=1.0, m=1.0)
     event = Storm(0.5, 8, (50.0, 50.0), (1.0,))
     result = calculate_storm(catchment, event, losses=Losses(0.0, 0.0), kc=1.0, m=1.0)
     assert len(result.outlets_m3_s[0]) == 9
