@@ -5,7 +5,7 @@
   "role": "Independent analytical controls, original CMD observations and separately labelled candidate snapshots",
   "policies": {
     "python": "engineering-analytic-v1",
-    "python-cmd": "engineering-analytic-v1"
+    "python-cmd": "cmd644-printed-interval-v1"
   },
   "data_root": ".",
   "set_meanings": {

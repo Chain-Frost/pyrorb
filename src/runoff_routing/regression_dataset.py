@@ -549,7 +549,12 @@ def _run(
         raise RegressionError(message)
     results: list[dict[str, Any]] = []
     for item in selected:
-        case: dict[str, Any] = {"case_id": item["case_id"], "sets": item["sets"]}
+        case: dict[str, Any] = {
+            "case_id": item["case_id"],
+            "sets": item["sets"],
+            "policy_id": item.get("expectations", {}).get(engine, {}).get("policy_id", register["policies"][engine]),
+            "reference_kind": item.get("reference_kind"),
+        }
         try:
             case_root = _case_root(item, root, custody)
             for source in item["files"]:
@@ -585,6 +590,7 @@ def _run(
         "dataset_id": register["dataset_id"],
         "register_sha256": register_sha,
         "policy_sha256": policy_sha,
+        "scalar_policy_sha256": register.get("scalar_policy_file", {}).get("sha256"),
         "policy_id": register["policies"][engine],
         "engine_id": engine,
         "implementation_revision": implementation,

@@ -32,6 +32,9 @@ def test_curated_population_and_full_snapshot(tmp_path: Path) -> None:
     assert _run(tmp_path)["counts"] == {"verified": 50}
     result = _run(tmp_path, snapshot=True)
     assert result["counts"] == {"pass": 48, "incomplete": 2}
+    assert result["policy_id"] == "cmd644-printed-interval-v1"
+    assert {case["policy_id"] for case in result["cases"]} == {"cmd644-printed-interval-v1"}
+    assert result["scalar_policy_sha256"] == "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50"
     assert result["run_kind"] == "cached_candidate_snapshot"
     assert result["candidate_execution"].startswith("not_run")
     assert sum(case["reference_rows"] for case in result["cases"]) == 19_550
