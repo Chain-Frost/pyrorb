@@ -14,6 +14,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
+from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
 from .native_cmd import NativeBoundaryError, NativeConfiguration, run_native_cmd
@@ -113,6 +114,7 @@ def run_engine_project(
     selection: EngineSelection | None = None,
     selection_source: SelectionSource = "api_override",
     native_config: NativeConfiguration | None = None,
+    wheel_artifact: Path | None = None,
 ) -> EngineOutcome:
     """Load verified project bytes, then dispatch exactly one selected engine.
 
@@ -124,6 +126,17 @@ def run_engine_project(
     effective = loaded.project.engine if selection is None else selection
     provenance: SelectionSource = "project" if selection is None else selection_source
     base = _base(loaded, effective, provenance)
+    try:
+        identity = identify_implementation()
+    except (OSError, ValueError) as exc:
+        return _failure(base, "invalid_input", "implementation_identity", str(exc))
+    base = replace(base, implementation_revision=identity.revision, package_version=identity.package_version)
+    if wheel_artifact is not None:
+        try:
+            wheel_hash = verify_installed_wheel(wheel_artifact)
+        except (OSError, ValueError) as exc:
+            return _failure(base, "invalid_input", "wheel_identity", str(exc))
+        base = replace(base, verified_wheel_sha256=wheel_hash)
     if effective.engine == "python":
         if native_config is not None:
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
@@ -185,6 +198,7 @@ def run_cli(argv: list[str]) -> int:
     parser.add_argument("--engine", choices=("python", "python-cmd", "rorb-cmd"))
     parser.add_argument("--numerical-profile")
     parser.add_argument("--native-config", type=Path)
+    parser.add_argument("--wheel-artifact", type=Path)
     try:
         options = parser.parse_args(argv)
     except SystemExit as exc:
@@ -207,6 +221,7 @@ def run_cli(argv: list[str]) -> int:
             selection=chosen,
             selection_source="cli_override",
             native_config=config,
+            wheel_artifact=options.wheel_artifact,
         )
         write_engine_result(options.result, outcome)
     except (OSError, ValueError) as exc:
@@ -221,6 +236,8 @@ def run_cli(argv: list[str]) -> int:
                 "model_sha256": outcome.model_sha256,
                 "stored_engine": outcome.stored_selection.engine,
                 "effective_engine": outcome.effective_selection.engine,
+                "implementation_revision": outcome.implementation_revision,
+                "verified_wheel_sha256": outcome.verified_wheel_sha256,
                 "result": str(options.result),
             },
             sort_keys=True,

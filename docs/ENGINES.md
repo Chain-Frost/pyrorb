@@ -64,6 +64,47 @@ Python fallback. Exit code is 0 for a completed (still **unvalidated**)
 calculation, 2 for a reported failure or invalid usage/input. Reports use
 exclusive-create file writing and never overwrite an earlier run.
 
+## Exact implementation and installed-wheel identity
+
+The package version is not a source revision. Every `EngineOutcome` records
+`implementation_revision` as a **versioned SHA-256 fingerprint of the installed
+Python package source bytes** (`package-code-v1-sha256:<digest>`). The
+`package_version` field is separate. This works from a checkout or an installed
+wheel, without Git, private data or a native executable. It identifies the
+package's Python source files, **not** the Git commit, input dataset or compiled
+third-party libraries. Keep the actual Git commit in the accompanying validation
+receipt.
+
+For a stronger installed-wheel attribution, supply the exact wheel file in the
+API or CLI. The adapter reads the artifact and verifies that every
+`runoff_routing` source file in the wheel matches the installed package
+**byte-for-byte**, rejecting added, missing or duplicate package files. Only
+then does it populate `verified_wheel_sha256`; otherwise it remains `null`.
+An incorrect or missing artifact returns `invalid_input / wheel_identity`
+**before any computation or native CMD launch**. The wheel is never installed
+by this operation and cannot be silently assumed from a package version.
+
+```python
+from pathlib import Path
+from runoff_routing.engine_execution import run_engine_project
+
+outcome = run_engine_project(
+    Path("project.json"),
+    wheel_artifact=Path("dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl"),
+)
+print(outcome.implementation_revision, outcome.verified_wheel_sha256)
+```
+
+Equivalent CLI:
+
+```powershell
+py -3.14 -m runoff_routing.project_json run project.json result.json --wheel-artifact dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl
+```
+
+The installed-wheel quality workflow exercises this path with the actual built
+artifact and prints its SHA-256. Source-code and wheel content identity is
+distinct from numerical acceptance and physical output-site mapping.
+
 ## Optional local CMD configuration
 
 `local-cmd.json` is operator-supplied, machine-specific and **not** included in

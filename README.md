@@ -26,6 +26,8 @@ from rainfall preparation; engine-less schema-1 files migrate to `python`.
 The new `run_engine_project` API and `project_json run --engine ...`
 report stored/effective choices and never silently substitute a backend.
 See [engine contract, capability matrix and local CLI configuration](docs/ENGINES.md).
+Each selected-engine result records an exact installed-code SHA-256 identity,
+with optional byte-verified wheel SHA-256 when the artifact is supplied.
 
 ## Development and smoke example
 

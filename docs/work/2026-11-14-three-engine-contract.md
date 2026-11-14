@@ -49,9 +49,16 @@ is unavailable file-symlink creation. The software revision's wheel was built
 and exercised outside the checkout. Hosted checks must be attributed to the new
 remote head separately. Private native receipts and inputs are not transferred.
 
-Outstanding review finding: `implementation_revision` currently reports the
-package version `0.0.0.dev0`, not an exact source/build identity. Preserve external
-source/wheel attribution until a reviewed implementation-identity change lands.
+The original review identified `implementation_revision="0.0.0.dev0"` as
+insufficient exact-build provenance. The follow-up records a versioned,
+deterministic fingerprint of all installed Python package source bytes,
+separately from package version. An optionally supplied wheel is accepted as
+the running wheel identity only after its package-source bytes match the
+installation exactly. Missing or altered wheels fail before native launch;
+the exact wheel SHA-256 is then retained in the result. This is not a Git
+commit hash, so exact Git source attribution remains in the validation
+receipt, not in an invented package field. Independent software review of
+this correction and exact-head Windows/source/wheel tests are required.
 The initial native-acceptance status above describes the original implementation
 handoff; later local evidence is held privately and is not a general acceptance
 claim. PR #77 remains draft; numerical equivalence remains unaccepted.

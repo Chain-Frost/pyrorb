@@ -138,7 +138,9 @@ class EngineOutcome:
     capture_manifest_path: str | None = None
     internal_quantities: Literal["python_available", "native_unavailable", "not_computed"] = "not_computed"
     python_diagnostics: dict[str, object] | None = None
-    implementation_revision: str = "0.0.0.dev0"
+    implementation_revision: str | None = None
+    package_version: str | None = None
+    verified_wheel_sha256: str | None = None
     numerical_acceptance: Literal["unassessed"] = "unassessed"
     native_parity_status: Literal["not_assessed"] = "not_assessed"
 

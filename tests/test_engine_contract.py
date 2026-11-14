@@ -6,10 +6,12 @@ import hashlib
 import json
 import subprocess
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 
 from runoff_routing.engine_execution import run_engine_project, write_engine_result
+from runoff_routing.engine_provenance import identify_implementation
 from runoff_routing.engine_types import CAPABILITIES, EngineSelection
 from runoff_routing.integration import canonical_run_bytes
 from runoff_routing.native_cmd import NativeConfiguration
@@ -261,3 +263,69 @@ def test_zero_exit_is_not_sufficient_for_native_success(
     assert result.hydrographs == ()
     assert result.capture_manifest_path is not None
     assert Path(result.capture_manifest_path).exists()
+
+
+def _manufactured_wheel(root: Path, *, altered: bool = False) -> Path:
+    """Source-matched ZIP fixture; actual CI separately verifies a built wheel."""
+    package_root = Path(__file__).parents[1] / "src" / "runoff_routing"
+    wheel = root / "python_runoff_routing-0.0.0.dev0-py3-none-any.whl"
+    with ZipFile(wheel, mode="w") as archive:
+        for path in sorted(package_root.rglob("*")):
+            if not path.is_file() or not (path.suffix in (".py", ".pyi") or path.name == "py.typed"):
+                continue
+            contents = path.read_bytes()
+            if altered and path.name == "engine_execution.py":
+                contents += b"\n# manufactured mismatch\n"
+            archive.writestr(f"runoff_routing/{path.relative_to(package_root).as_posix()}", contents)
+    return wheel
+
+
+def test_implementation_identity_is_exact_code_content_not_package_version(tmp_path: Path) -> None:
+    project = _project(tmp_path)
+    python_result = run_engine_project(project)
+    unavailable = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    expected = identify_implementation()
+    assert python_result.implementation_revision == expected.revision
+    revision = python_result.implementation_revision
+    assert revision is not None
+    assert revision.startswith("package-code-v1-sha256:")
+    assert len(revision.split(":")[-1]) == 64
+    assert unavailable.implementation_revision == python_result.implementation_revision
+    assert python_result.package_version == expected.package_version
+    assert python_result.verified_wheel_sha256 is None
+
+
+def test_explicit_matching_wheel_is_verified_in_result_and_cli(tmp_path: Path) -> None:
+    source = _project(tmp_path)
+    wheel = _manufactured_wheel(tmp_path)
+    expected_sha = hashlib.sha256(wheel.read_bytes()).hexdigest()
+    outcome = run_engine_project(source, wheel_artifact=wheel)
+    assert outcome.status == "computed_unvalidated"
+    assert outcome.verified_wheel_sha256 == expected_sha
+    assert outcome.implementation_revision == identify_implementation().revision
+    target = tmp_path / "wheel-report.json"
+    assert main(["run", str(source), str(target), "--wheel-artifact", str(wheel)]) == 0
+    receipt = json.loads(target.read_text(encoding="utf-8"))
+    assert receipt["verified_wheel_sha256"] == expected_sha
+    assert receipt["implementation_revision"] == outcome.implementation_revision
+
+
+@pytest.mark.parametrize("altered", [True, False])
+def test_missing_or_mismatched_wheel_fails_before_native_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, altered: bool
+) -> None:
+    source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    config = _native_config(tmp_path)
+    wheel = _manufactured_wheel(tmp_path, altered=True) if altered else tmp_path / "missing.whl"
+
+    def prohibited(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Wrong wheel attribution must fail before starting native CMD")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_native_cmd", prohibited)
+    result = run_engine_project(source, native_config=config, wheel_artifact=wheel)
+    assert result.status == "invalid_input"
+    assert result.diagnostics[0].code == "wheel_identity"
+    assert result.hydrographs == ()
+    assert result.verified_wheel_sha256 is None
+    assert result.implementation_revision == identify_implementation().revision
+    assert not config.output_root.exists()
