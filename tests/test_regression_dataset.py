@@ -245,6 +245,37 @@ def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
     assert evaluated["cases"][0]["mismatches"][0]["site"] == "Hyd001"
 
 
+@pytest.mark.parametrize("token", ["NaN", "Infinity", "-Infinity", "not-a-number"])
+def test_candidate_invalid_numeric_tokens_fail_closed(tmp_path: Path, token: str) -> None:
+    register, candidate = _fixture(tmp_path)
+    with candidate.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream))
+    rows[-1][-1] = token
+    with candidate.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    assert rd.main(["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40]) == 2
+
+
+@pytest.mark.parametrize("mutation", ["missing_column", "extra_column", "duplicate_ordinate", "clock", "site"])
+def test_candidate_column_and_identity_corruption_fails_closed(tmp_path: Path, mutation: str) -> None:
+    register, candidate = _fixture(tmp_path)
+    with candidate.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream))
+    expected = 2
+    if mutation == "missing_column":
+        rows = [row[:-1] for row in rows]
+    elif mutation == "extra_column":
+        rows = [[*row, "unexpected"] for row in rows]
+    elif mutation == "duplicate_ordinate":
+        rows.append(rows[-1])
+    else:
+        rows[-1][6 if mutation == "clock" else 2] = "changed"
+        expected = 1
+    with candidate.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    assert rd.main(["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40]) == expected
+
+
 def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     def prohibited(*_args: object, **_kwargs: object) -> None:
         pytest.fail("cached comparison unexpectedly launched a native executable")
