@@ -169,6 +169,23 @@ def test_missing_candidate_horizon_is_incomplete(tmp_path: Path) -> None:
     assert outcome["cases"][0]["classification"] == "incomplete"
 
 
+def _independent_reference_value(case_id: str, position: int, time: float) -> float:
+    """Mathematically authored controls, never imported from expected hydrograph rows."""
+    controls: dict[str, float] = {
+        "pub-zero-runoff": 0.0,
+        "pub-equilibrium": 5.0,
+        "pub-linear-recession": 10.0 * math.exp(-time / 2),
+        "pub-linear-pulse": 4.0 * (1.0 - math.exp(-0.5)) * math.exp(-(time - 1.0) / 2),
+        "pub-junction": (1.0, 3.0, 3.0, 0.0)[(position - 1) % 4],
+        "pub-loss-equality": 0.0,
+        "pub-loss-crossing": 1000.0 / 3600.0 if position == 2 else 0.0,
+        "pub-initial-state": 2.0 * math.exp(-time),
+        "pub-branch-order": (0.0, 4.0, 1.0)[(position - 1) % 3],
+        "pub-full-recession": 3.0 * math.exp(-time / 2),
+    }
+    return controls[case_id]
+
+
 def test_authored_reference_tokens_follow_independent_equations() -> None:
     """Reference values are analytic, not snapshots copied from a routing engine."""
     root = REPO / "tests" / "fixtures" / "regression-v1"
@@ -185,27 +202,7 @@ def test_authored_reference_tokens_follow_independent_equations() -> None:
         for index, time_token, token in rows:
             time = float(time_token)
             position = int(index)
-            match case["case_id"]:
-                case "pub-zero-runoff" | "pub-loss-equality":
-                    expected = 0.0
-                case "pub-equilibrium":
-                    expected = 5.0
-                case "pub-linear-recession":
-                    expected = 10.0 * math.exp(-time / 2)
-                case "pub-linear-pulse":
-                    expected = 4.0 * (1.0 - math.exp(-0.5)) * math.exp(-(time - 1.0) / 2)
-                case "pub-junction":
-                    expected = (1.0, 3.0, 3.0, 0.0)[position - 1]
-                case "pub-loss-crossing":
-                    expected = 1000.0 / 3600.0 if position == 2 else 0.0
-                case "pub-initial-state":
-                    expected = 2.0 * math.exp(-time)
-                case "pub-branch-order":
-                    expected = (0.0, 4.0, 1.0)[position - 1]
-                case "pub-full-recession":
-                    expected = 3.0 * math.exp(-time / 2)
-                case _:
-                    pytest.fail(f"Unknown independent verification case: {case['case_id']}")
+            expected = _independent_reference_value(case["case_id"], position, time)
             assert abs(float(token) - expected) <= 0.000000001, (case["case_id"], position)
 
 
