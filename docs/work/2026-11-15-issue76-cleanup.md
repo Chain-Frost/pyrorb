@@ -35,3 +35,7 @@ This is **software-quality and packaging validation**, not native RORB execution
 ## Concurrent-main reconciliation
 
 Merged [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) introduced `docs/CMD_FEATURE_MATRIX.md` and the [CMD phase-A completion receipt](2026-11-15-cmd-phase-a-completion.md). The #76 branch was merged non-destructively with `main` `f3e8e8a12b96d9bcad4b07fe90b2d3f898395ee5`: both new files and C's feature-level evidence are preserved, and this cleanup's index now links the merged matrix rather than referring to its former draft. Other implementation owners #79/#97/#99 and B's #58 retirement dependency remain separate. Final merged-branch quality must be checked at its exact head before review/merge.
+
+## Private workspace handoff completion
+
+F's [private workspace issue #57](https://github.com/Chain-Frost/runoff-routing-investigations/issues/57) was subsequently **closed as completed** after [private PR #75](https://github.com/Chain-Frost/runoff-routing-investigations/pull/75) merged to private `main`. The selected references transferred from E are now independently owned by that private evidence index and immutable Git history. There is no remaining F prerequisite for this public documentation cleanup. B's public #58 preservation/migration decision still remains open and is **not** satisfied by F's separate completed archival work. This update does not modify any source, fixture or numerical policy.
