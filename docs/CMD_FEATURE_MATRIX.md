@@ -28,10 +28,10 @@ These failures occur **before calculation**; they are not 14 numerical mismatche
 
 | Cause | Exact retained IDs | Work item |
 | --- | --- | --- |
-| Eight original DESIGN storms have **102.10%** percentage totals, rejected by S1 strict 100% source validator | failure-baseline-before; failure-baseline-after; fig67-ilcl-confirmed; fig67-ilcl-low; fig67-ilcl-probe; fig67-zero; wheel-ilcl-confirmed; wheel-zero | [#86](https://github.com/Chain-Frost/python-runoff-routing/issues/86): independently establish native *effective* percentage interpretation; preserve original lexemes; **never silently normalise** |
-| Three supplementary DESIGN storm **pattern-marker dialects** | H1-three-source-asymmetric; H2-four-source-nested-odd-rain; H3-single-source-equality-chain | [#87](https://github.com/Chain-Frost/python-runoff-routing/issues/87): characterise source syntax, not fabricate markers |
-| One N4 **unstored running-hydrograph/source-control** stack restriction | N4-six-source-serial-nested | [#88](https://github.com/Chain-Frost/python-runoff-routing/issues/88): verify preserved source/control order, not invent reordering |
-| Two **PyRomb graphical-header** variants outside characterised RORB_GE 002 parser | pyromb-pr2-full; pyromb-novel-storm | [#89](https://github.com/Chain-Frost/python-runoff-routing/issues/89): qualify source version/header/control vector, not strip by heuristic |
+| Eight original DESIGN storms have **102.10%** percentage totals, rejected by S1 strict 100% source validator | failure-baseline-before; failure-baseline-after; fig67-ilcl-confirmed; fig67-ilcl-low; fig67-ilcl-probe; fig67-zero; wheel-ilcl-confirmed; wheel-zero | [#93](https://github.com/Chain-Frost/python-runoff-routing/issues/93): independently establish native *effective* percentage interpretation; preserve original lexemes; **never silently normalise** |
+| Three supplementary DESIGN storm **pattern-marker dialects** | H1-three-source-asymmetric; H2-four-source-nested-odd-rain; H3-single-source-equality-chain | [#94](https://github.com/Chain-Frost/python-runoff-routing/issues/94): characterise source syntax, not fabricate markers |
+| One N4 **unstored running-hydrograph/source-control** stack restriction | N4-six-source-serial-nested | [#95](https://github.com/Chain-Frost/python-runoff-routing/issues/95): verify preserved source/control order, not invent reordering |
+| Two **PyRomb graphical-header** variants outside characterised RORB_GE 002 parser | pyromb-pr2-full; pyromb-novel-storm | [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96): qualify source version/header/control vector, not strip by heuristic |
 | **Total** | **8 + 3 + 1 + 2 = 14** | Keep 36 current computed matches and all 14 exclusions as distinct case states; only fresh source/wheel computation may promote them |
 
 ## One matrix: required/observed CMD capabilities
@@ -43,15 +43,15 @@ These failures occur **before calculation**; they are not 14 numerical mismatche
 | ID / actual pinned CMD requirement and semantics | Observations, cases and grade | python-cmd R/X/O/Q | python R/X/O/Q | rorb-cmd R/X/O/Q | **One owner**; dependencies and verification |
 | --- | --- | --- | --- | --- | --- |
 | 01 Confirmed original .par, RORB_GE 002 .catg, DESIGN .stm supplied-source parsing, stable control order | C36 D/P | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **C** #3, A #75 and B #58; SRC + original CMD |
-| 02 Original 102.10%-total DESIGN patterns; native effective forcing must be established | F8 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #86, E #2 then A #75; SRC, CMD and ENG |
-| 03 Supplementary temporal marker dialects | H3 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #87, A #75; SRC, CMD and ENG |
-| 04 PyRomb graphical source/header dialect | P2 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #89, A #75; SRC then CMD |
-| 05 N4 nested source re-addition / running control-stack semantics | N4 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #88, E #2, A #75; SRC, control order, CMD |
+| 02 Original 102.10%-total DESIGN patterns; native effective forcing must be established | F8 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #93, E #2 then A #75; SRC, CMD and ENG |
+| 03 Supplementary temporal marker dialects | H3 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #94, A #75; SRC, CMD and ENG |
+| 04 PyRomb graphical source/header dialect | P2 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #96, A #75; SRC then CMD |
+| 05 N4 nested source re-addition / running control-stack semantics | N4 D, admission G | N/N/N/U | N/N/N/U | ?/?/?/U | **C** #95, E #2, A #75; SRC, control order, CMD |
 | 06 Bounded one supplied DESIGN event, one ISA/pluviograph/burst and lumped kc | C36 D/P; H3 D | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75; C #3, D #6; CMD vs independent ENG |
-| 07 IL/CL initial loss crossing/equality, continuing loss and dry/zero-loss | C36 D/P; F8 and H3 D; pub-loss-equality and pub-loss-crossing A | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #86/#87, D #6; CMD plus ENG |
+| 07 IL/CL initial loss crossing/equality, continuing loss and dry/zero-loss | C36 D/P; F8 and H3 D; pub-loss-equality and pub-loss-crossing A | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #93/#94, D #6; CMD plus ENG |
 | 08 **IL/runoff-coefficient flag 2:** S1 ParameterSet and .par codec already recognise/round-trip, bounded numerical adapter rejects | fig67-ilroc G; earlier supplemental evidence H | Y/N/N/U | Y/?/?/U | Y/N/N/U | **A** [#90](https://github.com/Chain-Frost/python-runoff-routing/issues/90), E #2, B #58; CMD, not a parser defect |
-| 09 Original rainfall/loss → source conversion, source distance/coefficients and original source membership/order | C36 D/P; H1/H2/H3/N4 D; historical separate native operands H | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #87/#88; CMD original order |
-| 10 Natural nonlinear m>0 reach routing/translation, control codes 1/3/4/5/7, confluences | C36 D/P; H1/H2/H3/N4 D | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #88/#92 and D #6; CMD and ENG separately |
+| 09 Original rainfall/loss → source conversion, source distance/coefficients and original source membership/order | C36 D/P; H1/H2/H3/N4 D; historical separate native operands H | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #94/#95; CMD original order |
+| 10 Natural nonlinear m>0 reach routing/translation, control codes 1/3/4/5/7, confluences | C36 D/P; H1/H2/H3/N4 D | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **A** #75, #95/#92 and D #6; CMD and ENG separately |
 | 11 Linear m=1, m=0 legacy constant-storage distinction, extreme exponent/rounding | fig67-kc5-m1, failure-m-above-one, failure-m-below-one G; pub-linear-pulse and pub-linear-recession A | Y/?/?/U (typed m=0 N) | Y/?/?/U | ?/?/?/U | **A** [#92](https://github.com/Chain-Frost/python-runoff-routing/issues/92), E #2, D #6; CMD + independent ENG |
 | 12 Zero/negative/omitted reaches, invalid control, nonconvergence and fallback vs rejected source | failure-zero-reach, failure-negative-reach, failure-negative-reach-repeat, failure-invalid-code G | ?/N/N/U | ?/?/?/U | ?/?/?/U | **A** #92; C #3 and E #2; ERR, valid CMD only if observed |
 | 13 One terminal code-7 original physical print and source-to-Hyd001 mapping | 50 original D, C36 P | Y/Y/Y/P36 | Y/Y/Y/U | Y/Y/Y/U | **B** #58; A #75 and E #2; OUT, no label-only claim |
@@ -94,7 +94,7 @@ Rows here are **conditional** pending a finite E/#2 assessment of the actual CMD
 
 ## Ordered dependency and exact CMD gate
 
-1. **C/parser:** #3 plus [#86](https://github.com/Chain-Frost/python-runoff-routing/issues/86), [#87](https://github.com/Chain-Frost/python-runoff-routing/issues/87), [#88](https://github.com/Chain-Frost/python-runoff-routing/issues/88), [#89](https://github.com/Chain-Frost/python-runoff-routing/issues/89) qualify all 14 exact original source dialects and guard against inventing corrections.
+1. **C/parser:** #3 plus [#93](https://github.com/Chain-Frost/python-runoff-routing/issues/93), [#94](https://github.com/Chain-Frost/python-runoff-routing/issues/94), [#95](https://github.com/Chain-Frost/python-runoff-routing/issues/95), [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96) qualify all 14 exact original source dialects and guard against inventing corrections.
 2. **A/compatible computation:** #75, [#90](https://github.com/Chain-Frost/python-runoff-routing/issues/90), [#92](https://github.com/Chain-Frost/python-runoff-routing/issues/92), [#91](https://github.com/Chain-Frost/python-runoff-routing/issues/91). Retain native-effective preparation/routing/output, classify missing CMD modes, repair #79's masked-failing CMD probe and demonstrate a deliberately failing baseline actually fails CI.
 3. **B/regression:** #58 and completed #81. Preserve all 85 cases with one register, exact original reference/source hashes, sites, clocks, scalar budget, per-engine status, actual new source and isolated wheel execution. No snapshot relabelling or native process in cached suites.
 4. **D/default:** #6. Independently validate improved python under ENG, physical full-horizon balance, timestep refinement, deterministic batches and deliberate departures from CMD. No comparison-only engineering acceptance.
