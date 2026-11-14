@@ -10,6 +10,12 @@
 
 These layers are complementary. A native engine is a compatibility oracle, not proof of hydrological correctness. Synthetic labels applied to one event are not independent native simulations.
 
+## Current development platform rule
+
+Per the owner decision of 2026-11-15, **Linux and Windows with Python 3.14 are equivalent verification environments for pure-Python work at this stage**. One complete platform run is enough for deterministic source tests, lint/type checks, pure-Python numerical checks, cached native regressions and an installed-wheel test on the chosen OS. Do not require both operating systems or repeat a passing Linux run under Windows merely for development signoff. Record which OS, interpreter and installed artifact actually ran; do not claim Windows-specific execution from Linux results. A later cross-platform test campaign is deferred.
+
+This platform equivalence does **not** conflate evidence layers: historical `--snapshot` replay is not a fresh engine run; comparing Python outputs with captured native results does not re-execute RORB. Actual RORB_CMD/RORBwin reference execution, Windows-specific path/process/GUI behaviour and native Windows-only integration still require an appropriate Windows host. Keep independent numerical, hydrological and profile-specific acceptance gates unchanged.
+
 ## Capture contract for the friend's ensembles
 
 Retain each catchment (.cat/.catg or combined .dat), storm (.stm), CMD .par, raw .out/.log and any available hydrograph CSV. Include the generator configuration/revision and event-to-file mapping, not just batch peak summaries. Original source bytes must remain unchanged. Runtime capture is explicit opt-in and uses isolated local directories; do not run reference binaries in ordinary tests.

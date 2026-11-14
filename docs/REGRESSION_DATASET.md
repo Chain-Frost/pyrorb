@@ -73,7 +73,7 @@ Owner approval on 2026-11-15 is prospective. Historical AUTHORIZATION.json and p
 
 ### Linux / Python 3.14 cached CMD verification
 
-The native cached regression is **cross-platform** and needs no RORB executable or private custody directory. From a clean Linux checkout with the public package installed in a Python 3.14 environment:
+The native cached regression is **cross-platform** and needs no RORB executable or private custody directory. Under the current development policy, a successful Linux/Python 3.14 pure-Python run is equivalent to Windows for this cached suite; do not require an additional Windows run. This does not certify a fresh numerical engine or native RORB execution. From a clean Linux checkout with the public package installed in a Python 3.14 environment:
 
 ~~~sh
 python3.14 -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index --output /tmp/cmd-preflight.json

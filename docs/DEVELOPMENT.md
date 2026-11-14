@@ -2,11 +2,11 @@
 
 ## Environment and layout
 
-Windows / Python 3.14 is the target. Use the normal user installation; a virtual environment is not mandatory. Install `py -3.14 -m pip install -e ".[dev]"`. The bootstrap deliberately has no numerical, GIS, pandas, Excel or acceleration dependencies. Add only what a selected feature needs; retain exact environment versions in acceptance records. Ruff is pinned to 0.16.6 in both its configuration and the development dependency. Other development tools are initially unpinned; reproducible lock/constraint selection is an S0 follow-up, not an assumed environment guarantee.
+Python 3.14 is the development target. For current **pure-Python** work, Linux and Windows verification are considered equivalent: one platform is sufficient, and a two-OS campaign is deferred until later development (owner decision 2026-11-15). Windows remains a supported deployment target and is required for native Windows-only executables or explicitly OS-dependent functionality. Use the normal user installation; a virtual environment is not mandatory. Install `py -3.14 -m pip install -e ".[dev]"` on Windows or `python3.14 -m pip install -e '.[dev]'` on Linux. The bootstrap deliberately has no numerical, GIS, pandas, Excel or acceleration dependencies. Add only what a selected feature needs; retain exact environment versions in acceptance records. Ruff is pinned to 0.16.6 in both its configuration and the development dependency. Other development tools are initially unpinned; reproducible lock/constraint selection is an S0 follow-up, not an assumed environment guarantee.
 
 Use src/runoff_routing for reusable code, tests for focused tests, repo-scripts for developer tools, docs for contracts and work records, and ignored .local for native/reference evidence. Add numerical submodules only when needed. Do not import ryan-tools as a dependency or copy its large workflow/dependency estate.
 
-Inspired by ryan-tools: Python 3.14 typing, Ruff at 120 columns, strict Pyright, Windows acceptance, installed-wheel checks, safe mapped/UNC paths, coherent batch pushes, focused tests and one authoritative work record. Do not inherit automatic version bumps, bundled wheels, broad GIS dependencies, submodules, recurring audits or release-on-main automation.
+Inspired by ryan-tools: Python 3.14 typing, Ruff at 120 columns, strict Pyright, single-platform pure-Python development verification, installed-wheel checks, safe mapped/UNC paths, coherent batch pushes, focused tests and one authoritative work record. Do not inherit automatic version bumps, bundled wheels, broad GIS dependencies, submodules, recurring audits or release-on-main automation.
 
 ## Ruff policy
 
@@ -23,11 +23,18 @@ py -3.14 repo-scripts/check_local.py
 py -3.14 -m build
 ```
 
+On Linux, use the equivalent Python 3.14 commands:
+
+```sh
+python3.14 repo-scripts/check_local.py
+python3.14 -m build
+```
+
 The first command runs repository hygiene, Ruff lint/format checks, strict Pyright, then non-native/non-benchmark tests. It stops on failure and does not install dependencies or launch reference programs. `check_local.cmd` is the double-click, pause-at-end equivalent. The source-only hygiene check can also run independently: `python repo-scripts/check_repository.py`.
 
 The build command is a separate package milestone check. Install the wheel outside the repository, verify import location and exercise the selected public API there. Record source and wheel outcomes separately. Main has S0 capture, S1 restricted parser APIs and the S2 Python-only routing/integration prototype, but **no accepted RORB-compatible numerical solver**. A green build, parser test or installed-wheel replay does not establish native numerical validity.
 
-Documentation changes require relative-link and factual-claim review. Numerical/parser changes require focused tests plus affected prior-stage regressions and native evidence where the contract changes. Linux checks are useful but never replace Windows/Python 3.14 acceptance. Report every missing tool, failed check and unexpected skip; do not downgrade the target interpreter to manufacture a pass.
+Documentation changes require relative-link and factual-claim review. Numerical/parser changes require focused tests plus affected prior-stage regressions and native evidence where the contract changes. For pure-Python software checks, deterministic cached regressions and installed-wheel tests, a complete Python 3.14 run on **either Linux or Windows** satisfies the current development gate; neither platform needs to be repeated on the other. Record the actual OS and interpreter, and retain separate source/wheel evidence. Windows is still required when the tested behaviour depends on RORB executables, Windows path/process/GUI semantics or platform-specific packaging. This does not substitute for fresh native observation or numerical acceptance. Report every missing tool, failed check and unexpected skip; do not downgrade the target interpreter to manufacture a pass.
 
 Planning/scaffold and S0/S1 code have merged after recorded Windows quality and package checks. These do not close independent S0-S7 native, hydrological or numerical acceptance gates.
 
@@ -37,7 +44,7 @@ The owner explicitly authorised adding helpful CI now that this repository is pu
 
 Do not execute RORB_CMD/RORBwin, use client fixtures, access private executables, run expensive benchmarks or publish packages on hosted runners. CI validates *software quality*, not native numerical equivalence or Windows permission-cleared reference execution. Native and historical acceptance must be recorded separately on an actual reference machine.
 
-The workflow is intentionally one Windows lane and no release/dependency-update job. Cache pip dependencies and cancel stale PR runs to limit costs. Keep the workflow explicitly reviewed, without unapproved matrix expansion, automatic publication or runtime secrets. A CI green result does not close S0-S7.
+The existing workflow intentionally has one Windows lane and no release/dependency-update job; it is **not** a requirement to duplicate an otherwise complete Linux/Python 3.14 pure-Python validation. Cache pip dependencies and cancel stale PR runs to limit costs. Keep the workflow explicitly reviewed, without unapproved matrix expansion, automatic publication or runtime secrets. A CI green result does not close S0-S7.
 
 ## Git and data safety
 
