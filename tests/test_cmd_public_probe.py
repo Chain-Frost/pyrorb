@@ -6,10 +6,10 @@ Keep these checks independent of the numerical kernel and original CMD reports.
 from __future__ import annotations
 
 import runpy
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
-from collections.abc import Callable
 
 import pytest
 

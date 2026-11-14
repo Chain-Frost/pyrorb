@@ -8,10 +8,10 @@ classes are NOT scientific acceptance or proof of full CMD support.
 from __future__ import annotations
 
 import hashlib
-from decimal import Decimal
 import json
 import sys
 from collections import Counter
+from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -52,12 +52,8 @@ def _typed_model(case: dict[str, Any]) -> RunModel:
     return RunModel(parameters, catchment, storm)
 
 
-def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome, project_text: str) -> str | None:
-    """Independently bind actual engine identity and elapsed time to the typed source.
-
-    This validates the *produced* axis, never borrowing original native Inc/Time
-    tokens. The registered native Hyd001 physical mapping still needs B's review.
-    """
+def _identity_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome, project_text: str) -> str | None:
+    """Bind produced event, typed source, control sequence and terminal outlet."""
     case_id = str(case["case_id"])
     if (
         outcome.status != "computed_unvalidated"
@@ -71,9 +67,7 @@ def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome
         return "Original typed project identity differs"
     if outcome.model_sha256 != hashlib.sha256(to_json(model).encode("utf-8")).hexdigest():
         return "Original typed source/model identity differs"
-    if not outcome.implementation_revision or not outcome.implementation_revision.startswith(
-        "package-code-v1-sha256:"
-    ):
+    if not outcome.implementation_revision or not outcome.implementation_revision.startswith("package-code-v1-sha256:"):
         return "Actual installed CMD package-code revision is unavailable"
     controls = tuple(step.code for step in model.catchment.controls)
     prints = tuple(site.identifier for site in model.catchment.print_locations)
@@ -86,13 +80,6 @@ def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome
         return "Terminal code-7 original source/print binding differs"
     if len(outcome.hydrographs) != 1 or outcome.hydrographs[0].print_id != prints[0]:
         return "Produced hydrograph is not the source's sole terminal print"
-    full_samples = model.storm.calculation_increments + 1
-    if (
-        len(outcome.hydrographs[0].discharge_m3_s) != full_samples
-        or case["clock"]["row_count"] != full_samples
-        or Decimal(case["clock"]["timestep_hours"]) != model.storm.timestep_hours
-    ):
-        return "Source or native registered full horizon/timestep differs"
     if outcome.effective_inputs != {
         "timestep_hours": str(model.storm.timestep_hours),
         "calculation_increments": model.storm.calculation_increments,
@@ -101,14 +88,32 @@ def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome
         "num_bursts": model.parameters.num_bursts,
     }:
         return "Effective CMD source/parameter metadata differs"
-    expected_elapsed = tuple(
-        str(index * model.storm.timestep_hours) for index in range(full_samples)
-    )
+    return None
+
+
+def _clock_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome) -> str | None:
+    """Check *produced* elapsed time, never native raw Inc/Time copied as output."""
+    full_samples = model.storm.calculation_increments + 1
+    if (
+        len(outcome.hydrographs[0].discharge_m3_s) != full_samples
+        or case["clock"]["row_count"] != full_samples
+        or Decimal(case["clock"]["timestep_hours"]) != model.storm.timestep_hours
+    ):
+        return "Source or native registered full horizon/timestep differs"
+    expected_elapsed = tuple(str(index * model.storm.timestep_hours) for index in range(full_samples))
     if outcome.physical_time_hours != expected_elapsed:
         return "Produced physical elapsed time axis differs from source timestep and full horizon"
     if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
         return "Python CMD must not invent observed native raw clock tokens"
     return None
+
+
+def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome, project_text: str) -> str | None:
+    """Fail closed on generated CMD metadata before the unchanged Q comparator.
+
+    The native Hyd001 *physical* site mapping still needs independent B review.
+    """
+    return _identity_error(case, model, outcome, project_text) or _clock_error(case, model, outcome)
 
 
 def _one(case: dict[str, Any]) -> dict[str, Any]:
