@@ -22,6 +22,11 @@ from .rorb_model import to_json
 CMD_PROFILE = "cmd-6.44"
 CANDIDATE_SOURCE = "fea9c80c521127325b779ea0ea87ddf77795b290"
 
+_INVALID_INPUT: EngineStatus = "invalid_input"
+_UNSUPPORTED_FEATURE: EngineStatus = "unsupported_feature"
+_NUMERICAL_ERROR: EngineStatus = "numerical_error"
+_INCOMPLETE_OUTPUT: EngineStatus = "incomplete_output"
+
 
 class CmdBoundaryError(ValueError):
     """A typed rejection before calculation or failure in bounded arithmetic."""
@@ -42,7 +47,7 @@ class CmdComputed:
 
 
 def _unsupported(code: str, description: str) -> None:
-    raise CmdBoundaryError("unsupported_feature", code, description)
+    raise CmdBoundaryError(_UNSUPPORTED_FEATURE, code, description)
 
 
 def _number(value: Decimal) -> NumberInput:
@@ -52,13 +57,13 @@ def _number(value: Decimal) -> NumberInput:
     try:
         widened = float(lexeme)
     except (OverflowError, ValueError) as exc:
-        raise CmdBoundaryError("invalid_input", "cmd_decimal_input", f"Cannot convert {lexeme!r}") from exc
+        raise CmdBoundaryError(_INVALID_INPUT, "cmd_decimal_input", f"Cannot convert {lexeme!r}") from exc
     if not math.isfinite(widened):
-        raise CmdBoundaryError("invalid_input", "cmd_nonfinite_input", "Nonfinite binary64 CMD operand")
+        raise CmdBoundaryError(_INVALID_INPUT, "cmd_nonfinite_input", "Nonfinite binary64 CMD operand")
     try:
         stored = store(widened)
     except UnsupportedNumericPath as exc:
-        raise CmdBoundaryError("unsupported_feature", "cmd_input_representation", str(exc)) from exc
+        raise CmdBoundaryError(_UNSUPPORTED_FEATURE, "cmd_input_representation", str(exc)) from exc
     return NumberInput(lexeme, widened, stored)
 
 
@@ -109,7 +114,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
             length = Decimal(0)
         control_values.append(Control(step.code, _number(length)))
     if reach_index != len(run.catchment.reaches):
-        raise CmdBoundaryError("invalid_input", "cmd_reach_order", "Reach/control count differs")
+        raise CmdBoundaryError(_INVALID_INPUT, "cmd_reach_order", "Reach/control count differs")
     pattern = (Decimal(0),) * run.storm.start_increment + run.storm.percentages
     weights = tuple(_number(value) for value in pattern)
     if not any(weight.stored > 0 for weight in weights):
@@ -141,11 +146,11 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
     try:
         result = execute(event, implementation_revision)
     except UnsupportedNumericPath as exc:
-        raise CmdBoundaryError("numerical_error", "cmd_arithmetic", str(exc)) from exc
+        raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
     if len(result.network.outlet) != event.n + 1:
-        raise CmdBoundaryError("incomplete_output", "cmd_horizon", "CMD backend returned a truncated horizon")
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_horizon", "CMD backend returned a truncated horizon")
     if len(result.network.reaches) != event.reach_count:
-        raise CmdBoundaryError("incomplete_output", "cmd_reach_count", "CMD backend omitted a physical reach")
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_reach_count", "CMD backend omitted a physical reach")
     print_location = loaded.run.catchment.print_locations[0]
     reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
     per_reach: list[dict[str, object]] = []

@@ -125,6 +125,27 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     )
 
 
+def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: NativeConfiguration | None) -> EngineOutcome:
+    """Run only the selected CMD profile; never reuse the improved engine."""
+
+    if native_config is not None:
+        return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
+    if base.effective_selection.numerical_profile != CMD_PROFILE:
+        return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
+    try:
+        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
+    except CmdBoundaryError as exc:
+        return _failure(base, exc.status, exc.code, str(exc))
+    return replace(
+        base,
+        status="computed_unvalidated",
+        hydrographs=computed.hydrographs,
+        physical_time_hours=computed.physical_time_hours,
+        internal_quantities="python_available",
+        python_diagnostics=computed.diagnostics,
+    )
+
+
 def run_engine_project(
     project_path: Path,
     *,
@@ -150,22 +171,7 @@ def run_engine_project(
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
         return _python(loaded, base)
     if effective.engine == "python-cmd":
-        if native_config is not None:
-            return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
-        if effective.numerical_profile != CMD_PROFILE:
-            return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
-        try:
-            computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
-        except CmdBoundaryError as exc:
-            return _failure(base, exc.status, exc.code, str(exc))
-        return replace(
-            base,
-            status="computed_unvalidated",
-            hydrographs=computed.hydrographs,
-            physical_time_hours=computed.physical_time_hours,
-            internal_quantities="python_available",
-            python_diagnostics=computed.diagnostics,
-        )
+        return _python_cmd(loaded, base, native_config)
     if native_config is None:
         return _failure(
             base,

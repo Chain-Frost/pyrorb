@@ -17,7 +17,7 @@ from runoff_routing._cmd644.precision import direct_binary32, internal_store, st
 from runoff_routing._cmd644.routing import route_reach
 from runoff_routing.cmd_engine import CMD_PROFILE, CmdBoundaryError, adapt_event
 from runoff_routing.engine_execution import run_engine_project
-from runoff_routing.engine_types import EngineSelection
+from runoff_routing.engine_types import EngineSelection, EngineStatus
 from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
 from runoff_routing.rorb_model import ControlStep, PrintLocation, RunModel, from_json
 
@@ -44,7 +44,8 @@ def test_single_source_typed_event_preserves_decimal_and_order(tmp_path: Path) -
     assert event.h.lexeme == "0.5"
     assert event.depths[0].lexeme == "20.0"
     assert tuple(item.code for item in event.controls) == (1, 7)
-    assert len(event.weights) == 2 and event.weights[0].stored == 60.0
+    assert len(event.weights) == 2
+    assert event.weights[0].stored == 60.0
     assert event.n == 5
     assert event.impervious[0].stored == 0.0
 
@@ -139,10 +140,12 @@ def test_delayed_rainfall_preserves_full_horizon(tmp_path: Path) -> None:
 def test_stored_binary32_core_separates_linear_and_nonlinear() -> None:
     geometry = ReachGeometry(1, 1.0, 1.0, 1.0, 3600.0)
     linear = route_reach((0.0, 1.0, 0.0, 0.0), geometry, 900, (1,), exponent=1.0, hours=0.25)
-    assert linear.is_linear and not linear.steps
+    assert linear.is_linear
+    assert not linear.steps
     assert linear.q[1] == store(0.25 / 2.25)
     nonlinear = route_reach((0.0, 1.0, 0.0), geometry, 900, (1,), exponent=store(0.8), hours=0.25)
-    assert not nonlinear.is_linear and nonlinear.steps
+    assert not nonlinear.is_linear
+    assert nonlinear.steps
     assert nonlinear.q[0] == 0
 
 
@@ -162,12 +165,11 @@ def test_integer_power_stores_at_each_step(exponent: int) -> None:
 
 def test_no_reference_fallback_or_output_substitution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     project = _project(tmp_path, _model())
-    import runoff_routing.cmd_engine as target
-
     def interrupt(*_args: object, **_kwargs: object) -> None:
-        raise CmdBoundaryError("numerical_error", "forced_computation_failure", "Forced fresh calculation failure")
+        status: EngineStatus = "numerical_error"
+        raise CmdBoundaryError(status, "forced_computation_failure", "Forced fresh calculation failure")
 
-    monkeypatch.setattr(target, "execute", interrupt)
+    monkeypatch.setattr("runoff_routing.cmd_engine.execute", interrupt)
     outcome = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
     assert outcome.status == "numerical_error"
     assert outcome.diagnostics[0].code == "forced_computation_failure"
