@@ -5,6 +5,7 @@ Keep these checks independent of the numerical kernel and original CMD reports.
 
 from __future__ import annotations
 
+import json
 import runpy
 from collections.abc import Callable
 from dataclasses import replace
@@ -88,3 +89,60 @@ def test_fresh_probe_rejects_wrong_registered_clock_and_print_mapping(tmp_path: 
     case["clock"]["timestep_hours"] = str(model.storm.timestep_hours)
     case["sites"][0]["model_print_id"] = "other"
     assert _check()(case, model, outcome, text) is not None
+
+
+def test_scalar_failure_forces_nonzero_even_when_every_retained_q_passes(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Exercise the actual bounded CLI exit gate with one manufactured failed scalar."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    main = cast("Callable[[], int]", namespace["main"])
+
+    def fake_one(case: dict[str, Any]) -> dict[str, Any]:
+        retained = "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]
+        if not retained:
+            return {"case_id": case["case_id"], "status": "source_unsupported"}
+        return {
+            "case_id": case["case_id"],
+            "status": "printed_pass",
+            "rows": case["clock"]["row_count"],
+            "fresh_reporting": {
+                "classification": "fail" if case["case_id"] == "review-design-baseline" else "pass"
+            },
+        }
+
+    monkeypatch.setitem(main.__globals__, "_one", fake_one)
+    assert main() == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["retained_36_case_printed_baseline"] == "pass"
+    assert report["retained_36_case_fresh_scalar_baseline"] == "fail"
+    assert report["retained_scalar_baseline_failures"] == ["review-design-baseline"]
+    assert report["fresh_reporting_full_population"] == "fail"
+    assert report["cases_checked"] == 50
+
+
+def test_scalar_baseline_pass_retains_full_population_incomplete(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """All admitted scalar passes cannot erase 14 explicitly uncomputed source cases."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    main = cast("Callable[[], int]", namespace["main"])
+
+    def fake_one(case: dict[str, Any]) -> dict[str, Any]:
+        retained = "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]
+        if not retained:
+            return {"case_id": case["case_id"], "status": "source_unsupported"}
+        return {
+            "case_id": case["case_id"],
+            "status": "printed_pass",
+            "rows": case["clock"]["row_count"],
+            "fresh_reporting": {"classification": "pass"},
+        }
+
+    monkeypatch.setitem(main.__globals__, "_one", fake_one)
+    assert main() == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["retained_36_case_printed_baseline"] == "pass"
+    assert report["retained_36_case_fresh_scalar_baseline"] == "pass"
+    assert report["retained_scalar_baseline_failures"] == []
+    assert report["fresh_reporting_full_population"] == "incomplete"
