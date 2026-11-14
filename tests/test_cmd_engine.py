@@ -165,6 +165,7 @@ def test_integer_power_stores_at_each_step(exponent: int) -> None:
 
 def test_no_reference_fallback_or_output_substitution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     project = _project(tmp_path, _model())
+
     def interrupt(*_args: object, **_kwargs: object) -> None:
         status: EngineStatus = "numerical_error"
         raise CmdBoundaryError(status, "forced_computation_failure", "Forced fresh calculation failure")
