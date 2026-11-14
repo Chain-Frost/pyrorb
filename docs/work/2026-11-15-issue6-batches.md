@@ -1,0 +1,11 @@
+# Issue #6 — explicit-event batch implementation and verification
+
+- **Status:** Draft Phase 2 (scientific and performance acceptance pending); stacked on phase-1 default engineering method PR #97, head `1673fdede3fd9a721c5d6d37f5e76d39a2f68236`.
+- **Method preserved:** the existing readable `calculate_storm` remains the single-event reference and delegates to the same `calculate_prepared_storm` numerical route. No acceleration or hidden faster solver. No CMD arithmetic, optional native execution or private research code is imported.
+- **Preparation:** immutable `PreparedCatchment` caches original control/source order, area-weighted path factor and reach coefficients only. All event/storm/loss/source/control/route/output data stay local to each computation.
+- **Batch contract:** explicit event IDs; one ordered result per event; `computed_unvalidated`, `invalid_input`, `numerical_error`; duplicate IDs become visible invalid records; streaming or materialised API.
+- **Evidence:** new `test_engineering_batch.py` covers event-alone equality, repeat/reversal, failure isolation, numerical failure, zero flows, complete horizons, frozen preparation, valid coefficients and rejection of unsupported models. Independent mathematical testing remains in phase 1, not reset by the batch API.
+- **Installed wheel:** extends the existing, approved Windows quality workflow with one non-native installed-wheel batch API smoke. This does not change runner schema or native reference acceptance.
+- **Performance:** opt-in `benchmark_engineering_batch.py` records prepare, cold event, warm batch, reporting costs and Python allocation peak, separately, at declared batch sizes and repeat counts. Do not claim speed or broader engineering qualification until actual measurements and independent review are attached.
+- **Owners:** B retains common offline comparator/schema and dataset, C retains the CMD feature/capability matrix, #75 retains CMD-compatible arithmetic. The batch API is a default-`python` feature only.
+- **Next action:** Run exact-head Windows Python 3.13 or 3.14 lint/type/tests/wheel; review any failures. Record an actual bounded benchmark before making a performance claim. Do not merge automatically.
