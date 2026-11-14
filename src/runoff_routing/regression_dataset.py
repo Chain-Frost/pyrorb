@@ -594,11 +594,7 @@ def _run(
                     case, item, stored.get(item["case_id"]), candidates, site, engine, enabled=series_path is not None
                 )
         except (OSError, KeyError, IndexError, TypeError, ValueError) as exc:
-            status = _evidence_status(exc)
-            if case.get("classification") == "fail":
-                _record_scalar_unavailable(case, status, str(exc))
-            else:
-                case.update(classification=status, reason=str(exc), mismatches=[])
+            _record_case_exception(case, exc)
         results.append(case)
     counts = Counter(case["classification"] for case in results)
     complete = all(case["classification"] == ("pass" if csv_path is not None else "verified") for case in results)
@@ -632,6 +628,15 @@ def _run(
         "cases": results,
     }
     return outcome, complete
+
+
+def _record_case_exception(case: dict[str, Any], error: Exception) -> None:
+    """Protect an already demonstrated ordinate failure when scalar comparison raises."""
+    status = _evidence_status(error)
+    if case.get("classification") == "fail":
+        _record_scalar_unavailable(case, status, str(error))
+    else:
+        case.update(classification=status, reason=str(error), mismatches=[])
 
 
 def _evidence_status(error: Exception) -> str:

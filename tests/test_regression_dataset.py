@@ -298,9 +298,7 @@ def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.Monke
         ("computed_unvalidated", "invalid"),
     ],
 )
-def test_candidate_computation_status_cannot_be_promoted_to_pass(
-    tmp_path: Path, state: str, expected: str
-) -> None:
+def test_candidate_computation_status_cannot_be_promoted_to_pass(tmp_path: Path, state: str, expected: str) -> None:
     register, csv_path = dataset_fixture(tmp_path)
     with csv_path.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.reader(stream))
@@ -309,7 +307,12 @@ def test_candidate_computation_status_cannot_be_promoted_to_pass(
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         csv.writer(stream).writerows(rows)
     output = tmp_path / "candidate-status.json"
-    assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]) == 1
+    assert (
+        rd.main(
+            ["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]
+        )
+        == 1
+    )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["cases"][0]["classification"] == expected
     assert result["complete"] is False
@@ -323,7 +326,12 @@ def test_mixed_candidate_computation_states_are_invalid(tmp_path: Path) -> None:
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         csv.writer(stream).writerows(rows)
     output = tmp_path / "mixed-status.json"
-    assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]) == 1
+    assert (
+        rd.main(
+            ["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]
+        )
+        == 1
+    )
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["cases"][0]["classification"] == "invalid"
 
@@ -342,4 +350,3 @@ def test_candidate_row_width_must_match_header(tmp_path: Path, mutation: str) ->
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         csv.writer(stream).writerows(rows)
     assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40]) == 2
-
