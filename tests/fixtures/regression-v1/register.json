@@ -5,7 +5,7 @@
   "role": "Independent public analytical evidence and coverage gaps; no private dependency",
   "policies": {
     "python": "engineering-analytic-v1",
-    "python-cmd": "cmd644-printed-interval-v1"
+    "python-cmd": "engineering-analytic-v1"
   },
   "data_root": ".",
   "set_meanings": {
@@ -78,7 +78,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -146,7 +146,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -216,7 +216,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -284,7 +284,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -352,7 +352,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -420,7 +420,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -490,7 +490,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -558,7 +558,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -626,7 +626,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
@@ -696,7 +696,7 @@
           "status": "analytical_control"
         },
         "python-cmd": {
-          "policy_id": "cmd644-printed-interval-v1",
+          "policy_id": "engineering-analytic-v1",
           "status": "diagnostic_only_not_native"
         }
       }
