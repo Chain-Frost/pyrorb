@@ -32,12 +32,12 @@ def _event(
     *,
     timestep_hours: float = 0.1,
     calculation_increments: int = 80,
-    losses: Losses = Losses(0.5, 0.2),
+    losses: Losses | None = None,
 ) -> ExplicitEvent:
     return ExplicitEvent(
         name,
         Storm(timestep_hours, calculation_increments, (40.0, 60.0), depths),
-        losses,
+        Losses(0.5, 0.2) if losses is None else losses,
     )
 
 

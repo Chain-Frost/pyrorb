@@ -215,9 +215,9 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
     return calculate_prepared_storm(prepare_catchment(catchment, kc=kc, m=m), storm, losses=losses)
 
 
-def calculate_prepared_storm(
+def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     prepared: PreparedCatchment, storm: Storm, *, losses: Losses
-) -> StormResult:  # noqa: C901 -- ordered source/control stack
+) -> StormResult:
     """Execute a supported event with immutable geometry and fresh local state.
 
     Q[0]=0, and rainfall-bin source enters at its end sample. No rainfall,
