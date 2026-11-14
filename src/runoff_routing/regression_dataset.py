@@ -12,6 +12,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import math
 import platform
 import re
 import sys
@@ -606,6 +607,59 @@ def _fresh_cmd_elapsed_problem(
     return None
 
 
+def _fresh_cmd_reporting_metrics(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
+    """Compare newly computed Q and clock to original native scalars, never the cached snapshot."""
+    binding: dict[str, Any] | None = case.get("scalar_binding")
+    if binding is None:
+        return {"classification": "incomplete", "reason": "Original native scalar binding is unavailable"}
+    if binding.get("policy_id") != POLICY:
+        return {"classification": "unsupported", "reason": "Unreviewed native scalar reporting policy"}
+    try:
+        actual_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
+        if actual_hours <= 0:
+            return {"classification": "invalid", "reason": "Nonpositive actual computed source timestep"}
+        stored_hours = float(actual_hours)
+        stored_seconds = float(actual_hours * Decimal(3600))
+        if not math.isfinite(stored_hours) or not math.isfinite(stored_seconds):
+            return {"classification": "invalid", "reason": "Nonfinite computed time representation"}
+        if (stored_hours.hex(), stored_seconds.hex()) != (binding["stored_h_hex"], binding["stored_dt_hex"]):
+            return {"classification": "incomplete", "reason": "Unqualified source-to-stored CMD time representation"}
+        original_site = _binding(case, root, root)
+        if original_site is None:
+            return {"classification": "incomplete", "reason": "Original native scalar report is not bound"}
+        actual = outcome.hydrographs[0].discharge_m3_s
+        generated = {
+            "q_hex": [value.hex() for value in actual],
+            "h_hex": stored_hours.hex(),
+            "dt_hex": stored_seconds.hex(),
+        }
+        fields = compare_scalars(generated, original_site)
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        return {"classification": "invalid", "reason": str(exc)}
+    verdicts = {field["verdict"] for field in fields.values()}
+    aggregate = "fail" if "fail" in verdicts else "incomplete" if "incomplete" in verdicts else "pass"
+    first = next(
+        (
+            {"field_path": f"fresh_reporting.{name}", "actual_exact": field["actual_exact"]}
+            for name, field in fields.items()
+            if field["verdict"] == "fail"
+        ),
+        None,
+    )
+    return {
+        "classification": aggregate,
+        "policy_id": POLICY,
+        "candidate_source": "actual_public_python_cmd_outcome_not_snapshot",
+        "stored_h_hex": stored_hours.hex(),
+        "stored_dt_hex": stored_seconds.hex(),
+        "original_native_physical_site_identity": case.get("observations", {}).get(
+            "physical_site_identity", "unverified"
+        ),
+        "metrics": fields,
+        "first_discrepancy": first,
+    }
+
+
 def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
     """Compare a freshly executed public CMD event with immutable printed evidence.
 
@@ -649,6 +703,7 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         for index, (row, value) in enumerate(zip(rows, printed.discharge_m3_s, strict=True))
     }
     result = _compare(case, columns, rows, supplied, "python-cmd")
+    result["fresh_reporting"] = _fresh_cmd_reporting_metrics(root, case, outcome)
     result["generated_time_axis"] = "verified_model_elapsed_i_times_original_timestep"
     result["native_physical_site_identity"] = case.get("observations", {}).get("physical_site_identity", "unverified")
     return result

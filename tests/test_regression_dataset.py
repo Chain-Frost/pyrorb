@@ -424,3 +424,46 @@ def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(tmp_path: Path,
     bad = replace(_synthetic_fresh_cmd_outcome(), **{field: value})
     comparison = rd.compare_fresh_cmd_case(tmp_path, case, bad)
     assert comparison["classification"] in {"invalid", "incomplete"}, (field, comparison)
+
+
+def test_fresh_cmd_reporting_uses_actual_Q_not_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Manufactured native summary fields exercise the existing frozen scalar comparator."""
+    from runoff_routing.regression_metrics import ScalarField, SiteMetrics
+
+    register, _ = dataset_fixture(tmp_path)
+    case = json.loads(register.read_bytes())["cases"][0]
+    case["observations"] = {"physical_site_identity": "unverified"}
+    case["scalar_binding"] = {
+        "policy_id": "cmd644-report-scalars-v1",
+        "stored_h_hex": float(0.5).hex(),
+        "stored_dt_hex": float(1800).hex(),
+    }
+    original = SiteMetrics(
+        "Hyd001",
+        "Synthetic outlet",
+        ScalarField("1.000", 1, 1, 1, "m3/s"),
+        ScalarField("0.50", 2, 1, 1, "h"),
+        ScalarField("1800.000", 3, 1, 1, "m3"),
+    )
+
+    def fake_binding(_item: dict[str, Any], _root: Path, _custody: Path | None) -> SiteMetrics:
+        return original
+
+    monkeypatch.setattr(rd, "_binding", fake_binding)
+    verified = rd.compare_fresh_cmd_case(tmp_path, case, _synthetic_fresh_cmd_outcome())
+    assert verified["classification"] == "pass"
+    reporting = verified["fresh_reporting"]
+    assert reporting["classification"] == "pass"
+    assert {name: value["verdict"] for name, value in reporting["metrics"].items()} == {
+        "peak_magnitude": "pass",
+        "peak_time": "pass",
+        "native_reported_volume": "pass",
+    }
+    assert reporting["candidate_source"] == "actual_public_python_cmd_outcome_not_snapshot"
+    assert reporting["original_native_physical_site_identity"] == "unverified"
+
+    case["scalar_binding"]["stored_dt_hex"] = float(1801).hex()
+    mismatched = rd.compare_fresh_cmd_case(tmp_path, case, _synthetic_fresh_cmd_outcome())
+    assert mismatched["classification"] == "pass"
+    assert mismatched["fresh_reporting"]["classification"] == "incomplete"
+    assert "time representation" in mismatched["fresh_reporting"]["reason"]

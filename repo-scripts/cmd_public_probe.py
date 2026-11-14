@@ -148,6 +148,7 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
         "mismatch_count": len(mismatches),
         "first_mismatch": mismatches[0] if mismatches else None,
         "reason": comparison.get("reason"),
+        "fresh_reporting": comparison.get("fresh_reporting"),
         # The matched Hyd001 column is registered source/control-derived;
         # there is no independently observed native physical-site label.
         "site_identity_evidence": case.get("observations", {}).get("physical_site_identity", "unverified"),
@@ -183,10 +184,18 @@ def main() -> int:
         if observed[case_id]["status"] != "printed_pass" or observed[case_id].get("rows") != length
     ]
     gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
+    scalar_statuses = dict(
+        sorted(
+            Counter(str(item.get("fresh_reporting", {}).get("classification", "not_run")) for item in outcomes).items()
+        )
+    )
     print(
         json.dumps(
             {
                 "format": "runoff-public-cmd-fresh-probe-v1",
+                "fresh_reporting_status_counts": scalar_statuses,
+                "fresh_reporting_full_population": "pass" if scalar_statuses == {"pass": 50} else "incomplete",
+                "fresh_reporting_acceptance": "unassessed_pending_independent_review",
                 "cases_checked": len(outcomes),
                 "status_counts": counts,
                 "retained_36_case_printed_baseline": "pass" if gate_ok else "fail",
