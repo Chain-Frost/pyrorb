@@ -128,7 +128,10 @@ def test_native_full_index_uses_checkout_stable_attributes(tmp_path: Path) -> No
     assert result["counts"] == {"verified": 50}
 
 
-@pytest.mark.parametrize(("group", "expected"), [("cmd-selected", 44), ("supplemental", 6), ("cmd-migrated-eight", 8)])
+@pytest.mark.parametrize(
+    ("group", "expected"),
+    [("cmd-selected", 44), ("supplemental", 6), ("cmd-migrated-eight", 8)],
+)
 def test_curated_named_preflight_subsets_are_complete(tmp_path: Path, group: str, expected: int) -> None:
     """Eligible source subgroups are self-contained without an external custody root."""
     output = tmp_path / f"{group}.json"

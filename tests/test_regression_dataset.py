@@ -413,6 +413,7 @@ def test_fresh_cmd_comparator_records_generated_axis_and_unverified_native_site(
         ("native_raw_increment_tokens", ("1", "2")),
         ("native_raw_time_tokens", ("0.50", "1.00")),
         ("effective_inputs", {"timestep_hours": "0.25", "calculation_increments": 1}),
+        ("effective_inputs", {}),
         ("effective_inputs", {"timestep_hours": "0.5", "calculation_increments": 2}),
     ],
 )

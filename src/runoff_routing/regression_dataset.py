@@ -594,8 +594,12 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
     step_hours = _scalar(case["clock"]["timestep_hours"])
     if step_hours <= 0:
         return {"classification": "invalid", "reason": "Invalid original timestep for generated clock"}
+    try:
+        generated_step_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
+    except RegressionError:
+        return {"classification": "invalid", "reason": "Malformed computed source timestep"}
     if (
-        _scalar(outcome.effective_inputs.get("timestep_hours")) != step_hours
+        generated_step_hours != step_hours
         or outcome.effective_inputs.get("calculation_increments") != len(rows) - 1
     ):
         return {"classification": "invalid", "reason": "Computed source timestep/horizon metadata differs"}
