@@ -69,3 +69,4 @@
 - [S6 R6/R7 Jordan/GSAM 12-hour boundary](work/2026-11-14-s6-r6-r7-default-boundary.md)
 
 Future repository-owned Markdown must be linked here. Policies describe required behaviour; the roadmap describes future implementation. No source document establishes that this package has passed a numerical acceptance gate.
+- [CMD #5 phase-A inventory/completion record](work/2026-11-15-cmd-phase-a-completion.md)
