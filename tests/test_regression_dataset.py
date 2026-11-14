@@ -233,7 +233,9 @@ def test_single_case_diagnosis_accepts_an_authenticated_full_population_csv(tmp_
 def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
     register, candidate = _fixture(tmp_path)
     lines = candidate.read_text(encoding="utf-8").splitlines()
-    lines[-1] = lines[-1].replace(",1.000", ",2.000")
+    cells = lines[-1].split(",")
+    cells[-1] = "2.000"
+    lines[-1] = ",".join(cells)
     candidate.write_text("\n".join(lines) + "\n", encoding="utf-8")
     report = tmp_path / "comparison-fail.json"
     assert (
