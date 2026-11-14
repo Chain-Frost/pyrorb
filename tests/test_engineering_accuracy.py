@@ -194,6 +194,7 @@ def test_event_must_cover_all_forcing_and_returns_full_requested_grid() -> None:
     assert result.source_hydrographs_m3_s[0][0] == 0.0
     assert result.source_hydrographs_m3_s[0][-1] == 0.0
 
+
 def test_trapezoidal_step_can_overshoot_endpoint_flow_and_still_conserve() -> None:
     inflow = (0.0, 1.0, 1.0)
     coefficient = 0.01
