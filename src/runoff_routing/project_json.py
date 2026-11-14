@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, cast
 
@@ -134,7 +134,7 @@ class Project:
     rainfall_profile: RainfallProfile
     model_source: EmbeddedRun | LegacyRunFiles
     assets: tuple[ExternalAsset, ...] = ()
-    engine: EngineSelection = EngineSelection()
+    engine: EngineSelection = field(default_factory=EngineSelection)
 
     def __post_init__(self) -> None:
         _identifier(self.identifier, "Project ID")

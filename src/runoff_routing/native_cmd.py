@@ -31,7 +31,9 @@ _HYDRO = re.compile(r"Hyd[0-9]+\Z")
 class NativeBoundaryError(ValueError):
     """Fail-closed native preflight or inspection with stable machine-readable status."""
 
-    def __init__(self, status: EngineStatus, code: str, message: str, manifest: Path | None = None) -> None:
+    def __init__(
+        self, message: str, *, status: EngineStatus, code: str, manifest: Path | None = None
+    ) -> None:
         super().__init__(message)
         self.status = status
         self.code = code
@@ -78,7 +80,7 @@ class NativeConfiguration:
         data: object = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             message = "Native configuration must be a JSON object"
-            raise ValueError(message)
+            raise TypeError(message)
         raw = cast("dict[str, object]", data)
         fields = {
             "schema_version", "executable", "executable_sha256", "observed_version", "observed_banner",
@@ -136,10 +138,10 @@ def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunF
     source = loaded.project.model_source
     if not isinstance(source, LegacyRunFiles) or loaded.project.rainfall_profile != "legacy-rorb":
         message = "Native CMD requires verified original .par/.catg/.stm file-backed legacy-rorb inputs"
-        raise NativeBoundaryError("unsupported_feature", "native_source_boundary", message)
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_source_boundary")
     if any(asset.role != "reference" for asset in loaded.project.assets):
         message = "Native adapter cannot silently prepare external rainfall/curve data"
-        raise NativeBoundaryError("unsupported_feature", "unprepared_rainfall", message)
+        raise NativeBoundaryError(message, status="unsupported_feature", code="unprepared_rainfall")
     params = model.parameters
     storm = model.storm
     if (
@@ -148,22 +150,22 @@ def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunF
         or storm.start_increment != 0
     ):
         message = "CMD adapter supports one ISA/burst/pluviograph, lumped kc, IL/CL and zero event start"
-        raise NativeBoundaryError("unsupported_feature", "native_model_boundary", message)
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_model_boundary")
     expected = {site.identifier for site in model.catchment.print_locations}
     supplied = {site for site, _ in config.print_columns}
     if expected != supplied or len(expected) != len(config.print_columns):
         message = "Native print mapping must cover every requested S1 site exactly once"
-        raise NativeBoundaryError("invalid_input", "print_site_mapping", message)
+        raise NativeBoundaryError(message, status="invalid_input", code="print_site_mapping")
     exe = config.executable
     if not exe.is_file() or exe.is_symlink():
         message = "Configured native executable is missing, a symlink or not a regular file"
-        raise NativeBoundaryError("unavailable_engine", "native_executable", message)
+        raise NativeBoundaryError(message, status="unavailable_engine", code="native_executable")
     if fingerprint(exe)["sha256"] != config.executable_sha256:
         message = "Native executable bytes do not match the reviewed profile fingerprint"
-        raise NativeBoundaryError("unavailable_engine", "native_fingerprint", message)
+        raise NativeBoundaryError(message, status="unavailable_engine", code="native_fingerprint")
     if config.output_root.is_symlink():
         message = "Native output parent must not be a symlink"
-        raise NativeBoundaryError("invalid_input", "native_output_parent", message)
+        raise NativeBoundaryError(message, status="invalid_input", code="native_output_parent")
     return source
 
 
@@ -217,7 +219,7 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
 ) -> NativeObservation:
     if verify_manifest(manifest_path):
         message = "S0 evidence inventory or staged input fingerprint failed verification"
-        raise NativeBoundaryError("incomplete_output", "native_manifest", message, manifest_path)
+        raise NativeBoundaryError(message, status="incomplete_output", code="native_manifest", manifest=manifest_path)
     manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
     outcome: object = manifest.get("outcome")
     if outcome not in ("success", "zero_runoff"):
@@ -236,23 +238,23 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
         }
     ):
         message = "S0 reported missing identity evidence or native diagnostic errors/warnings"
-        raise NativeBoundaryError("incomplete_output", "native_diagnostics", message, manifest_path)
+        raise NativeBoundaryError(message, status="incomplete_output", code="native_diagnostics", manifest=manifest_path)
     if manifest["engine"]["executable"]["sha256"] != config.executable_sha256:
         message = "Captured native executable fingerprint differs from configuration"
-        raise NativeBoundaryError("native_execution_failed", "native_executable_changed", message, manifest_path)
+        raise NativeBoundaryError(message, status="native_execution_failed", code="native_executable_changed", manifest=manifest_path)
+    source = loaded.project.model_source
+    if not isinstance(source, LegacyRunFiles):
+        message = "Native source identity is no longer file-backed"
+        raise TypeError(message)
     try:
-        source = loaded.project.model_source
-        if not isinstance(source, LegacyRunFiles):
-            message = "Native source identity is no longer file-backed"
-            raise ValueError(message)
         _check_capture_settings(manifest, source, loaded.run)
     except (ValueError, KeyError, TypeError) as exc:
-        raise NativeBoundaryError("incomplete_output", "effective_input_mismatch", str(exc), manifest_path) from exc
+        raise NativeBoundaryError(str(exc), status="incomplete_output", code="effective_input_mismatch", manifest=manifest_path) from exc
     outputs = manifest["outputs"]
     reports = [item for item in outputs if str(item["path"]).lower().endswith(".out")]
     if len(reports) != 1:
         message = "Native CMD must produce exactly one retained .out report"
-        raise NativeBoundaryError("incomplete_output", "native_report_count", message, manifest_path)
+        raise NativeBoundaryError(message, status="incomplete_output", code="native_report_count", manifest=manifest_path)
     target = manifest_path.absolute().parent / str(reports[0]["path"])
     source_report = RorbSource.read(target)
     inspected = inspect_output(source_report)
@@ -267,23 +269,23 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
         or set(report.columns) != required_columns
     ):
         message = "Native output timestep, duration, columns or complete horizon failed S1 inspection"
-        raise NativeBoundaryError("incomplete_output", "native_report_shape", message, manifest_path)
+        raise NativeBoundaryError(message, status="incomplete_output", code="native_report_shape", manifest=manifest_path)
     if source_report.sha256 != reports[0]["sha256"]:
         message = "Native output bytes changed since S0 inventory"
-        raise NativeBoundaryError("incomplete_output", "native_report_hash", message, manifest_path)
+        raise NativeBoundaryError(message, status="incomplete_output", code="native_report_hash", manifest=manifest_path)
     for index, row in enumerate(report.rows, start=1):
         if row.increment != index:
             message = "CMD 6.44 output must retain the observed 1-based increment convention"
-            raise NativeBoundaryError("incomplete_output", "native_clock_convention", message, manifest_path)
+            raise NativeBoundaryError(message, status="incomplete_output", code="native_clock_convention", manifest=manifest_path)
         if any(flow < 0 for flow in row.values):
             message = "Native printed discharge contains negative values"
-            raise NativeBoundaryError("incomplete_output", "native_negative_flow", message, manifest_path)
+            raise NativeBoundaryError(message, status="incomplete_output", code="native_negative_flow", manifest=manifest_path)
         # Allow only the printed clock resolution; preserve the unrounded raw token separately.
         target_hour = index * loaded.run.storm.timestep_hours
         resolution = Decimal(1).scaleb(row.time_hours.as_tuple().exponent)
         if abs(row.time_hours - target_hour) > resolution / 2:
             message = "Native raw time token does not match the declared CMD 6.44 clock convention"
-            raise NativeBoundaryError("incomplete_output", "native_clock_convention", message, manifest_path)
+            raise NativeBoundaryError(message, status="incomplete_output", code="native_clock_convention", manifest=manifest_path)
     raw = tuple(source_report.lines[row.line - 1].split() for row in report.rows)
     outputs_by_site: list[EngineHydrograph] = []
     for location in loaded.run.catchment.print_locations:
@@ -293,7 +295,7 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
         values = tuple(float(row.values[position]) for row in report.rows)
         if any(not math.isfinite(value) for value in values):
             message = "Native discharge overflows the common finite float boundary"
-            raise NativeBoundaryError("incomplete_output", "native_float_boundary", message, manifest_path)
+            raise NativeBoundaryError(message, status="incomplete_output", code="native_float_boundary", manifest=manifest_path)
         outputs_by_site.append(EngineHydrograph(location.identifier, location.label, values, column, tokens))
     return NativeObservation(
         tuple(outputs_by_site),
@@ -317,5 +319,5 @@ def run_native_cmd(loaded: LoadedProject, config: NativeConfiguration, project_p
         manifest = capture_cmd(spec, config.output_root, execute=True)
     if manifest is None:
         message = "Opt-in S0 capture unexpectedly returned without execution"
-        raise NativeBoundaryError("native_execution_failed", "native_not_executed", message)
+        raise NativeBoundaryError(message, status="native_execution_failed", code="native_not_executed")
     return _inspect(manifest, loaded, config)
