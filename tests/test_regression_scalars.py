@@ -13,8 +13,8 @@ from test_regression_dataset import dataset_fixture
 
 from runoff_routing import regression_dataset as rd
 from runoff_routing import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
-from runoff_routing.regression_scalar_adapter import stored_float
 from runoff_routing.regression_metrics import bind_report_metrics
+from runoff_routing.regression_scalar_adapter import stored_float
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
 
@@ -417,7 +417,7 @@ def test_modified_scalar_helper_changes_reported_provenance(
 
 @pytest.mark.parametrize("token", ["0x1.0p+9999999999", "not-a-hex-float"])
 def test_invalid_candidate_hex_converts_to_typed_invalid(tmp_path: Path, token: str) -> None:
-    with pytest.raises(ValueError, match="canonical float.hex"):
+    with pytest.raises(ValueError, match=r"canonical float\.hex"):
         stored_float(token)
     register, csv, series = _scalar_fixture(tmp_path)
     document = json.loads(series.read_text(encoding="utf-8"))
