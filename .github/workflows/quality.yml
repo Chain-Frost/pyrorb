@@ -65,14 +65,20 @@ jobs:
         run: |
           # A failing synthetic CMD probe cannot be hidden by the next successful command.
           $negativeControl = @'
-          python -c "import sys; print('Simulated CMD baseline failure', file=sys.stderr); sys.exit(37)"
+          # The child shell must exit immediately when the synthetic CMD probe fails.
+          python -c "import sys; sys.exit(37)"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -c "print('ERROR: later smoke masked the failing CMD baseline')"
           '@
-          & pwsh -NoProfile -NonInteractive -Command $negativeControl
-          if ($LASTEXITCODE -ne 37) {
-            throw "CMD failure gate failed to propagate the nonzero probe exit code"
+          $controlPath = Join-Path $env:RUNNER_TEMP 'cmd-fail-closed-control.ps1'
+          Set-Content -LiteralPath $controlPath -Value $negativeControl -Encoding utf8
+          # Inspect the deliberately failing subprocess's exit without causing
+          # the Actions parent PowerShell shell to terminate on a native error.
+          $child = Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile', '-NonInteractive', '-File', $controlPath) -NoNewWindow -Wait -PassThru
+          if ($child.ExitCode -ne 37) {
+            throw "CMD failure gate failed to propagate the nonzero probe exit code: $($child.ExitCode)"
           }
+          Write-Host 'CMD synthetic negative-control failure propagation passed'
       - name: Verify fresh installed-wheel CMD 36-case regression (fail-closed)
         shell: pwsh
         run: |
