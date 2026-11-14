@@ -148,3 +148,39 @@ about one tenth of the 100-event warm computation time. Allocation peak
 is Python `tracemalloc` memory, **not** total process RSS. This
 evidence supports bounded scaling of the tested synthetic case, not
 a production batch performance guarantee.
+
+## Owner stopping rule and measured 1,000-event gate (15 November 2026)
+
+Owner decision: **if 1,000 explicit-event simulations finish in under 10 s
+total on a representative model, no further performance optimisation is
+required for this development stage**. The elapsed measurement covers
+immutable model preparation, all event calculations, and JSON serialisation.
+It excludes event generation, Monte Carlo/frequency analysis, external
+application startup and native execution. A different/larger catchment or
+longer horizon needs its own representative acceptance before applying this
+rule generally.
+
+The bounded existing **two-subarea, three-natural-reach, one-print,
+120-increment, 0.1-h, `m=0.8`** synthetic workload passed at
+[`f351805e`](https://github.com/Chain-Frost/python-runoff-routing/commit/f351805edbfeb7cded94fe29793763f22246103a),
+Windows Server 2025 / Python 3.13.17 (AMD64),
+[quality run 43648286419](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43648286419).
+Three repetitions: direct prepare + compute + JSON **total median 1.584 s**,
+min 1.579 s and max 1.592 s, with **1,000/1,000 computed outcomes**.
+Separately, median warm calculation was 1.461 s, serialisation 0.140 s,
+and preparation 0.0125 ms; the measured `tracemalloc` Python allocation
+peak was 6,562,352 bytes (not process RSS). Exact environment/run hashes
+and the older 1/25/100 samples remain in
+[the performance receipt](work/2026-11-15-issue6-batch-performance.md).
+
+**Result:** the tested 1,000-event workload meets the 10-second stopping
+rule with substantial margin. No additional acceleration, compiled
+dependency or concurrency framework is warranted for this case.
+Do not imply this proves a 1,000-run bound for larger real catchments,
+new forcing modes, or RORBwin Monte Carlo. RORBwin's multi-minute
+runtime is a motivation, **not a directly comparable measurement**.
+
+The single temporary profiling step used to collect this receipt was
+removed from the approved quality workflow; the opt-in benchmark script
+remains for locally initiated representative checks. The gate is a
+performance decision, not a scientific/numerical acceptance claim.

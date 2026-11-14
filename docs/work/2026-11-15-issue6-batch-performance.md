@@ -63,3 +63,46 @@ accuracy certificate. No numerical fast path, extra dependency,
 concurrency framework, baseline update or native subprocess was
 introduced. The only performance optimisation at present is reuse of
 event-independent geometry/coefficients.
+
+## Owner's 10-second stopping rule — verified 1,000-event sample
+
+The user set a practical performance limit: if 1,000 simulations,
+**including model preparation, computation and reporting**, complete in
+less than 10 seconds on a representative workload, stop optimisation.
+A new direct end-to-end measure was added to the existing opt-in
+`repo-scripts/benchmark_engineering_batch.py`; it does not change
+the numerical method or enable background benchmarks.
+
+Exact source `f351805edbfeb7cded94fe29793763f22246103a`;
+[Windows quality run 43648286419](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43648286419);
+Windows Server 2025 AMD64, Python 3.13.17. Three repetitions
+(`python repo-scripts/benchmark_engineering_batch.py --events 1000
+--repetitions 3`), two sources, three natural reaches, one outlet,
+120 timesteps, `m=0.8`, `Δt=0.1 h`. Exactly 1,000 outcomes reported
+`computed_unvalidated` with no failed or omitted events.
+
+| 1,000-event metric | Result |
+| --- | ---: |
+| **End-to-end prepare + compute + JSON median** | **1.5843574 s** |
+| Direct total min–max | 1.5789743–1.5915099 s |
+| Warm batch numerical computation median | 1.4610127 s |
+| JSON report median | 0.1401813 s |
+| Geometry preparation median | 0.0000125 s |
+| Python `tracemalloc` allocation peak | 6,562,352 bytes |
+| Events accounted for | 1,000 / 1,000 |
+
+The workflow's pinned Ruff/format, strict Pyright and all **842 non-native,
+non-benchmark tests** passed, as did the isolated wheel checks; benchmark
+source wheel SHA-256
+`dcf37c53a5431bd77e8e46dc9ad721660266477f53acaccbbe1f29a583764ee5`.
+Preparation, warm compute and JSON metrics are separately timed samples;
+only the **direct total**, not their sum, is compared with the 10-second
+criterion. `tracemalloc` excludes process RSS.
+
+**Disposition:** performance is sufficient for this tested model and
+horizon; **stop further optimisation for this workload**. Larger models
+and actual MC event generation remain unqualified and outside this
+explicit-event performance receipt. RORBwin's multi-minute Monte Carlo
+run is not the same workload and is not used as a claimed speed ratio.
+The temporary extra profiling CI step has been removed; normal quality
+CI remains non-benchmark.
