@@ -429,10 +429,10 @@ def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_pat
     )
     storm = replace(
         original.storm,
-        timestep_hours=Decimal("10"),
+        timestep_hours=Decimal(10),
         calculation_increments=6,
-        percentages=(Decimal("100"),),
-        depths_mm=tuple(Decimal("20") for _ in original.storm.depths_mm),
+        percentages=(Decimal(100),),
+        depths_mm=tuple(Decimal(20) for _ in original.storm.depths_mm),
     )
     numerical_event = replace(original, parameters=parameters, storm=storm)
     source = tmp_path / "numerical-failure.json"
