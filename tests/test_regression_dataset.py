@@ -16,6 +16,7 @@ import pytest
 
 from runoff_routing import regression_dataset as rd
 from runoff_routing.engine_types import EngineHydrograph, EngineOutcome, EngineSelection
+from runoff_routing.regression_metrics import ScalarField, SiteMetrics
 
 REPO = Path(__file__).absolute().parents[1]
 
@@ -428,8 +429,6 @@ def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(tmp_path: Path,
 
 def test_fresh_cmd_reporting_uses_actual_Q_not_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Manufactured native summary fields exercise the existing frozen scalar comparator."""
-    from runoff_routing.regression_metrics import ScalarField, SiteMetrics
-
     register, _ = dataset_fixture(tmp_path)
     case = json.loads(register.read_bytes())["cases"][0]
     case["observations"] = {"physical_site_identity": "unverified"}
