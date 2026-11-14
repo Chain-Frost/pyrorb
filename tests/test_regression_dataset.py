@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import hashlib
 import json
 import math
@@ -84,6 +85,20 @@ def test_manufactured_source_preflight_and_cached_comparison(tmp_path: Path) -> 
     register, computed = dataset_fixture(tmp_path)
     assert rd.main(["preflight", str(register)]) == 0
     assert rd.main(["compare", str(register), "--csv", str(computed), "--implementation", "a" * 40]) == 0
+
+
+def test_truncated_gzip_candidate_reports_invalid_input(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Corrupt compressed evidence must not crash or be labelled an incomplete comparison."""
+    register, candidate = dataset_fixture(tmp_path)
+    truncated = tmp_path / "candidate.csv.gz"
+    truncated.write_bytes(gzip.compress(candidate.read_bytes(), mtime=0)[:-8])
+    assert (
+        rd.main(["compare", str(register), "--csv", str(truncated), "--implementation", "a" * 40])
+        == 2
+    )
+    assert "malformed compressed candidate CSV" in capsys.readouterr().err
 
 
 def test_missing_coverage_cannot_be_accepted(tmp_path: Path) -> None:

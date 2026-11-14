@@ -15,6 +15,7 @@ import json
 import platform
 import re
 import sys
+import zlib
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
@@ -435,18 +436,22 @@ def _cases(register: dict[str, Any], group: str, single: str | None) -> list[dic
 def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
     found: dict[tuple[str, str, int], dict[str, str]] = {}
     opener = gzip.open if path.suffix == ".gz" else Path.open
-    with opener(path, mode="rt", encoding="utf-8-sig", newline="") as file:
-        reader = csv.DictReader(file)
-        if reader.fieldnames is None or tuple(reader.fieldnames) != CSV_COLUMNS:
-            message = "candidate CSV has omitted, additional or reordered columns"
-            raise RegressionError(message)
-        for row in reader:
-            key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
-            if key in found:
-                message = f"duplicate ordinate in candidate CSV: {key}"
+    try:
+        with opener(path, mode="rt", encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file)
+            if reader.fieldnames is None or tuple(reader.fieldnames) != CSV_COLUMNS:
+                message = "candidate CSV has omitted, additional or reordered columns"
                 raise RegressionError(message)
-            _scalar(row["python_discharge_m3_s"])
-            found[key] = row
+            for row in reader:
+                key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
+                if key in found:
+                    message = f"duplicate ordinate in candidate CSV: {key}"
+                    raise RegressionError(message)
+                _scalar(row["python_discharge_m3_s"])
+                found[key] = row
+    except (EOFError, zlib.error) as exc:
+        message = f"malformed compressed candidate CSV: {path}"
+        raise RegressionError(message) from exc
     return found
 
 
