@@ -15,6 +15,12 @@ The published self-contained CMD native fixture index in tests/fixtures/regressi
 
 The old verification receipts remain accurate for their original published revisions; they must not be relabelled as receipts for this modified index. [Public PR #80](https://github.com/Chain-Frost/python-runoff-routing/pull/80) already merged the scalar-runner software; this correction is in the self-contained dataset introduced by PR #82, not another runner.
 
+## Cross-platform Git attribute check (Linux)
+
+A separate **Linux Git mechanics** reproduction was performed without downloading the whole repository: a temporary Git checkout containing the same root `-text` rule and the exact 23-byte nested `.gitattributes` payload preserved SHA-256 `d7c77edacaaf917faea1f44e0572516c55beb9e07be196a49f7b4d281c9c3fd3` under both `core.autocrlf=true` and `core.autocrlf=input`. `git check-attr text` confirmed that text conversion is disabled. No native RORB run or candidate execution occurred.
+
+**This does not establish a fresh Linux Python 3.14 full-repository replay.** That complete cross-platform checkout remains a separate follow-up; the exact-head Windows/Python 3.14 installed-wheel preflight already authenticates all 227 published index entries and 50 CMD cases. The change is strictly an index byte/checkout-control repair.
+
 ## Cross-platform cached verification
 
 Use Python 3.14 and an isolated interpreter with the public checkout or a separately installed runner wheel; no native executable and no external custody root are needed for the bundled CMD snapshot. On Linux:
