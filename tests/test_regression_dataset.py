@@ -23,7 +23,7 @@ def _stamp(path: Path, content: str) -> dict[str, str | int]:
     return {"path": path.name, "size_bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
 
 
-def _fixture(tmp_path: Path, *, missing: bool = False) -> tuple[Path, Path]:
+def dataset_fixture(tmp_path: Path, *, missing: bool = False) -> tuple[Path, Path]:
     reference = tmp_path / "original.json"
     stamp = _stamp(
         reference,
@@ -81,13 +81,13 @@ def _fixture(tmp_path: Path, *, missing: bool = False) -> tuple[Path, Path]:
 
 
 def test_manufactured_source_preflight_and_cached_comparison(tmp_path: Path) -> None:
-    register, computed = _fixture(tmp_path)
+    register, computed = dataset_fixture(tmp_path)
     assert rd.main(["preflight", str(register)]) == 0
     assert rd.main(["compare", str(register), "--csv", str(computed), "--implementation", "a" * 40]) == 0
 
 
 def test_missing_coverage_cannot_be_accepted(tmp_path: Path) -> None:
-    register, computed = _fixture(tmp_path, missing=True)
+    register, computed = dataset_fixture(tmp_path, missing=True)
     assert rd.main(["preflight", str(register), "--set", "all"]) == 1
     assert (
         rd.main(["compare", str(register), "--set", "all", "--csv", str(computed), "--implementation", "a" * 40]) == 1
@@ -95,7 +95,7 @@ def test_missing_coverage_cannot_be_accepted(tmp_path: Path) -> None:
 
 
 def test_original_source_hash_mismatch_is_invalid(tmp_path: Path) -> None:
-    register, _ = _fixture(tmp_path)
+    register, _ = dataset_fixture(tmp_path)
     (tmp_path / "original.json").write_text("changed", encoding="utf-8")
     report = tmp_path / "invalid-source.json"
     assert rd.main(["preflight", str(register), "--output", str(report)]) == 1
@@ -108,7 +108,7 @@ def test_original_source_hash_mismatch_is_invalid(tmp_path: Path) -> None:
     ["duplicate_case", "reorder", "truncate", "clock", "extra_column", "duplicate_site", "nonfinite"],
 )
 def test_reference_integrity_negative_controls(tmp_path: Path, mutation: str) -> None:
-    register, computed = _fixture(tmp_path)
+    register, computed = dataset_fixture(tmp_path)
     document = json.loads(register.read_text(encoding="utf-8"))
     case = document["cases"][0]
     source = tmp_path / "original.json"
@@ -138,7 +138,7 @@ def test_reference_integrity_negative_controls(tmp_path: Path, mutation: str) ->
 
 
 def test_unrecorded_ordinate_and_exclusive_output(tmp_path: Path) -> None:
-    register, computed = _fixture(tmp_path)
+    register, computed = dataset_fixture(tmp_path)
     with computed.open("a", encoding="utf-8") as stream:
         stream.write("SYN-001,computed/pass,print_2,Hyd002,0,1,0.50,0.000,0.000\n")
     assert rd.main(["compare", str(register), "--csv", str(computed), "--implementation", "a" * 40]) == 1
@@ -155,7 +155,7 @@ def test_public_authored_full_set_and_explicit_gaps() -> None:
 
 
 def test_missing_candidate_horizon_is_incomplete(tmp_path: Path) -> None:
-    register, candidate = _fixture(tmp_path)
+    register, candidate = dataset_fixture(tmp_path)
     lines = candidate.read_text(encoding="utf-8").splitlines()
     candidate.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
     report = tmp_path / "missing-horizon.json"
@@ -207,7 +207,7 @@ def test_authored_reference_tokens_follow_independent_equations() -> None:
 
 
 def test_single_case_diagnosis_accepts_an_authenticated_full_population_csv(tmp_path: Path) -> None:
-    register, candidate = _fixture(tmp_path)
+    register, candidate = dataset_fixture(tmp_path)
     document: dict[str, Any] = json.loads(register.read_text(encoding="utf-8"))
     second = json.loads(json.dumps(document["cases"][0]))
     second["case_id"] = "SYN-002"
@@ -227,7 +227,7 @@ def test_single_case_diagnosis_accepts_an_authenticated_full_population_csv(tmp_
 
 
 def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
-    register, candidate = _fixture(tmp_path)
+    register, candidate = dataset_fixture(tmp_path)
     lines = candidate.read_text(encoding="utf-8").splitlines()
     cells = lines[-1].split(",")
     cells[-1] = "2.000"
@@ -247,7 +247,7 @@ def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("token", ["NaN", "Infinity", "-Infinity", "not-a-number"])
 def test_candidate_invalid_numeric_tokens_fail_closed(tmp_path: Path, token: str) -> None:
-    register, candidate = _fixture(tmp_path)
+    register, candidate = dataset_fixture(tmp_path)
     with candidate.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.reader(stream))
     rows[-1][-1] = token
@@ -258,7 +258,7 @@ def test_candidate_invalid_numeric_tokens_fail_closed(tmp_path: Path, token: str
 
 @pytest.mark.parametrize("mutation", ["missing_column", "extra_column", "duplicate_ordinate", "clock", "site"])
 def test_candidate_column_and_identity_corruption_fails_closed(tmp_path: Path, mutation: str) -> None:
-    register, candidate = _fixture(tmp_path)
+    register, candidate = dataset_fixture(tmp_path)
     with candidate.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.reader(stream))
     expected = 2
@@ -282,6 +282,6 @@ def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.Monke
 
     monkeypatch.setattr(subprocess, "run", prohibited)
     monkeypatch.setattr(subprocess, "Popen", prohibited)
-    manifest, computed = _fixture(tmp_path)
+    manifest, computed = dataset_fixture(tmp_path)
     assert rd.main(["preflight", str(manifest)]) == 0
     assert rd.main(["compare", str(manifest), "--csv", str(computed), "--implementation", "a" * 40]) == 0

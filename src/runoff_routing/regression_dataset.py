@@ -19,6 +19,11 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
+from .regression_metrics import SiteMetrics
+from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_float
+from .rorb_documents import RorbSource
+from .rorb_out import inspect_output
+
 FORMAT = "runoff-regression-register"
 RESULT_FORMAT = "runoff-regression-results"
 VERSION = 1
@@ -38,6 +43,14 @@ CSV_COLUMNS = (
 
 class RegressionError(ValueError):
     """Malformed, unsafe or otherwise unusable regression evidence."""
+
+
+class IncompleteEvidenceError(RegressionError):
+    """Requested field or full horizon is genuinely unavailable."""
+
+
+class UnsupportedEvidenceError(RegressionError):
+    """Source profile lies outside this frozen comparison policy."""
 
 
 def _unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -93,7 +106,7 @@ def _path(root: Path, relative: object) -> Path:
     output = origin.joinpath(*value.parts)
     if not output.is_file():
         message = f"missing original source file: {relative}"
-        raise FileNotFoundError(message)
+        raise IncompleteEvidenceError(message)
     if output.is_symlink() or not output.resolve().is_relative_to(origin):
         message = f"unsafe original source file: {relative}"
         raise RegressionError(message)
@@ -171,6 +184,8 @@ def _checked_rows(raw_rows: object, column_count: int, expected_count: int) -> l
 
 
 def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[str]]]:
+    if case.get("reference_format") == "native_report":
+        return _native_reference(_verify(root, case["reference"]), case)
     document = _json(_verify(root, case["reference"]))
     raw_tables: object = document.get("tables")
     if not isinstance(raw_tables, list):
@@ -210,6 +225,35 @@ def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[s
     return columns, rows
 
 
+def _native_reference(path: Path, case: dict[str, Any]) -> tuple[list[str], list[list[str]]]:
+    source = RorbSource.read(path)
+    headers = [i for i, line in enumerate(source.lines) if re.fullmatch(r"\s*Inc\s+Time(?:\s+Hyd\d+)+\s*", line)]
+    if len(headers) != 1:
+        message = "Original native report requires one identifiable table"
+        raise RegressionError(message)
+    rows: list[list[str]] = []
+    for line in source.lines[headers[0] + 1 :]:
+        fields = line.split()
+        if fields and fields[0].isdigit():
+            rows.append(fields)
+        elif rows:
+            break
+    if len(rows) < case["clock"]["row_count"]:
+        message = "Original native report lacks the complete declared horizon"
+        raise IncompleteEvidenceError(message)
+    inspection = inspect_output(source)
+    if inspection.hydrographs is None:
+        message = "Original native report contains invalid hydrograph records"
+        raise RegressionError(message)
+    columns = ["Inc", "Time", *inspection.hydrographs.columns]
+    mapped = [site["native_column_id"] for site in case["sites"]]
+    if columns[2:] != mapped or len(mapped) != len(set(mapped)) or len(rows) != case["clock"]["row_count"]:
+        message = "Original native output sites/order or horizon differs from the register"
+        raise RegressionError(message)
+    _time_and_values(rows, case["clock"].get("timestep_hours"))
+    return columns, rows
+
+
 def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], str, str | None]:
     register = _json(path)
     if register.get("format") != FORMAT or register.get("schema_version") != VERSION:
@@ -239,7 +283,100 @@ def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], st
     index = _json(_verify(root, file_index)) if file_index is not None else {}
     policy_file = register.get("policy_file")
     policy_hash = _hash(_verify(path.parent, policy_file))[1] if policy_file is not None else None
+    for name in ("reporting_acceptance_file", "scalar_policy_file"):
+        if name in register:
+            _verify(path.parent, register[name])
+    if any("scalar_binding" in item for item in typed_cases) and "scalar_policy_file" not in register:
+        message = "Dataset scalar bindings require the authenticated frozen policy file"
+        raise RegressionError(message)
+    if (
+        "scalar_policy_file" in register
+        and register["scalar_policy_file"]["sha256"]
+        != "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50"
+    ):
+        message = "Scalar policy bytes differ from the frozen approved contract"
+        raise RegressionError(message)
     return register, root, index, _hash(path)[1], policy_hash
+
+
+def _series(path: Path | None, implementation: str | None, wheel: Path | None) -> tuple[dict[str, Any], dict[str, Any]]:
+    if path is None:
+        return {}, {}
+    document = _json(path)
+    if document.get("format") != "runoff-regression-candidate-series" or document.get("schema_version") != 1:
+        message = "Unrecognised candidate stored-series format"
+        raise RegressionError(message)
+    if document["implementation_revision"] != implementation:
+        message = "Stored-series implementation identity differs from requested revision"
+        raise RegressionError(message)
+    if document["mode"] == "source" and (wheel is not None or document.get("wheel_sha256") is not None):
+        message = "Source-mode stored series cannot attest a candidate wheel identity"
+        raise RegressionError(message)
+    if document["mode"] == "wheel" and (wheel is None or document["wheel_sha256"] != _hash(wheel)[1]):
+        message = "Stored-series wheel identity requires the matching --wheel artifact"
+        raise RegressionError(message)
+    cases = document["cases"]
+    records = {item["case_id"]: item for item in cases}
+    if len(records) != len(cases):
+        message = "Duplicate candidate stored-series case IDs"
+        raise RegressionError(message)
+    return document, records
+
+
+def _case_root(item: dict[str, Any], archive: Path, custody: Path | None) -> Path:
+    if item.get("data_scope", "archive") == "archive":
+        return archive
+    if item["data_scope"] != "custody":
+        message = "Unsupported case data scope"
+        raise RegressionError(message)
+    if custody is None:
+        message = "Supplemental references require --custody-root pointing to the authenticated external dataset"
+        raise FileNotFoundError(message)
+    return custody
+
+
+def _binding(item: dict[str, Any], root: Path, custody: Path | None) -> SiteMetrics | None:
+    binding = item.get("scalar_binding")
+    if binding is None:
+        return None
+    if any(item["reference"][key] != binding["report"][key] for key in ("path", "sha256", "size_bytes")):
+        message = "Ordinate and scalar comparisons must use the same original report path, SHA-256 and size"
+        raise RegressionError(message)
+    if binding["policy_id"] != POLICY:
+        message = "Unsupported scalar policy"
+        raise UnsupportedEvidenceError(message)
+    if custody is None:
+        message = "Typed inputs require --custody-root pointing to the authenticated external dataset"
+        raise IncompleteEvidenceError(message)
+    _verify(custody, binding["typed_input"])
+    _verify(custody, binding["source_binding"])
+    report = _verify(root, binding["report"])
+    return bind_scalars(RorbSource.read(report), binding)
+
+
+def _scalar_result(
+    item: dict[str, Any],
+    series: dict[str, Any],
+    supplied: dict[tuple[str, str, int], dict[str, str]],
+    site: SiteMetrics,
+) -> dict[str, Any]:
+    binding = item["scalar_binding"]
+    if series["event_input_sha256"] != binding["typed_input"]["sha256"]:
+        message = "Stored-series typed-input identity mismatch"
+        raise RegressionError(message)
+    if (series["h_hex"], series["dt_hex"]) != (binding["stored_h_hex"], binding["stored_dt_hex"]):
+        message = "Stored candidate clock differs from authenticated input preparation"
+        raise RegressionError(message)
+    flows = series["q_hex"]
+    if len(flows) != item["clock"]["row_count"]:
+        message = "Complete candidate scalar horizon is unavailable"
+        raise IncompleteEvidenceError(message)
+    for index, token in enumerate(flows):
+        actual = supplied[(item["case_id"], binding["native_column"], index)]
+        if float(actual["python_discharge_m3_s"]).hex() != stored_float(token).hex():
+            message = "Scalar and ordinate candidate representations differ"
+            raise RegressionError(message)
+    return compare_scalars(series, site)
 
 
 def _verify_index(root: Path, index: dict[str, Any]) -> int:
@@ -360,11 +497,18 @@ def _run(
     full_index: bool,
     implementation: str | None,
     wheel: Path | None,
+    custody: Path | None = None,
+    series_path: Path | None = None,
 ) -> tuple[dict[str, Any], bool]:
     register, root, index, register_sha, policy_sha = _load_register(path)
     selected = _cases(register, group, case_id)
     checked = _verify_index(root, index) if full_index else 0
     candidates = _predictions(csv_path) if csv_path is not None else {}
+    series_document, stored = _series(series_path, implementation, wheel)
+    _verify_series_profile(register, series_document)
+    if set(stored) - {c["case_id"] for c in selected}:
+        message = "Stored-series includes undeclared or unselected case IDs"
+        raise RegressionError(message)
     all_case_ids = {entry["case_id"] for entry in register["cases"]}
     if {key[0] for key in candidates} - all_case_ids:
         message = "candidate CSV includes undeclared case IDs"
@@ -379,12 +523,14 @@ def _run(
     for item in selected:
         case: dict[str, Any] = {"case_id": item["case_id"], "sets": item["sets"]}
         try:
+            case_root = _case_root(item, root, custody)
             for source in item["files"]:
-                _verify(root, source)
+                _verify(case_root, source)
             if item["coverage"] != "selected":
                 case.update(classification="incomplete", reason=item["reason"], mismatches=[])
             else:
-                columns, rows = _reference(root, item)
+                columns, rows = _reference(case_root, item)
+                site = _binding(item, case_root, custody)
                 if csv_path is not None:
                     case.update(_compare(item, columns, rows, candidates, engine))
                 else:
@@ -394,8 +540,11 @@ def _run(
                         mismatches=[],
                     )
                 case["reference_rows"], case["reference_sites"] = len(rows), len(columns) - 2
+                _attach_metrics(
+                    case, item, stored.get(item["case_id"]), candidates, site, engine, enabled=series_path is not None
+                )
         except (OSError, KeyError, IndexError, TypeError, ValueError) as exc:
-            status = "incomplete" if isinstance(exc, FileNotFoundError) else "invalid"
+            status = _evidence_status(exc)
             case.update(classification=status, reason=str(exc), mismatches=[])
         results.append(case)
     counts = Counter(case["classification"] for case in results)
@@ -417,6 +566,8 @@ def _run(
         "run_kind": "candidate_comparison" if csv_path is not None else "reference_preflight",
         "actual_package_import_origin": spec.origin if spec is not None else None,
         "candidate_csv_sha256": _hash(csv_path)[1] if csv_path is not None else None,
+        "candidate_series_sha256": _hash(series_path)[1] if series_path is not None else None,
+        "candidate_series_provenance": {k: v for k, v in series_document.items() if k != "cases"},
         "python": sys.version,
         "platform": platform.platform(),
         "case_count": len(selected),
@@ -426,6 +577,77 @@ def _run(
         "cases": results,
     }
     return outcome, complete
+
+
+def _evidence_status(error: Exception) -> str:
+    if isinstance(error, (FileNotFoundError, IncompleteEvidenceError)):
+        return "incomplete"
+    return "unsupported" if isinstance(error, UnsupportedEvidenceError) else "invalid"
+
+
+def _verify_series_profile(register: dict[str, Any], series: dict[str, Any]) -> None:
+    if not series:
+        return
+    profiles = register.get("qualified_candidates", {})
+    profile = profiles.get(series["implementation_revision"])
+    if profile is None:
+        message = "Candidate implementation has no authenticated dataset profile"
+        raise UnsupportedEvidenceError(message)
+    if series["mode"] not in {"source", "wheel"} or series["module_sha256"] != profile["module_sha256"]:
+        message = "Candidate module identities or mode differ from the authenticated profile"
+        raise RegressionError(message)
+    if series["mode"] == "wheel" and series["wheel_sha256"] != profile["wheel_sha256"]:
+        message = "Candidate wheel differs from the qualified profile"
+        raise RegressionError(message)
+
+
+def _attach_metrics(
+    result: dict[str, Any],
+    item: dict[str, Any],
+    series: dict[str, Any] | None,
+    supplied: dict[tuple[str, str, int], dict[str, str]],
+    site: SiteMetrics | None,
+    engine: str,
+    *,
+    enabled: bool,
+) -> None:
+    if not enabled:
+        return
+    if series is None or site is None:
+        result.update(classification="incomplete", reason="Original scalar binding or actual stored series unavailable")
+        return
+    if engine != "python-cmd":
+        result.update(classification="unsupported", reason="Native scalar policy is not an engineering-engine policy")
+        return
+    if series.get("status", "computed") != "computed":
+        status = series["status"]
+        if status not in {"unsupported", "incomplete", "invalid"}:
+            message = "Unsupported candidate status"
+            raise RegressionError(message)
+        result.update(classification=status, reason=series.get("reason"))
+        return
+    if result["classification"] not in {"pass", "fail"}:
+        return
+    fields = _scalar_result(item, series, supplied, site)
+    _record_metrics(result, fields)
+
+
+def _record_metrics(result: dict[str, Any], fields: dict[str, Any]) -> None:
+    result["metrics"] = fields
+    for name, field in fields.items():
+        if field["verdict"] == "fail":
+            result["mismatches"].append(
+                {
+                    "field_path": f"metrics.{name}",
+                    "actual_exact": field["actual_exact"],
+                    "original_reference": field["reference"],
+                }
+            )
+    verdicts = {field["verdict"] for field in fields.values()}
+    if "fail" in verdicts:
+        result.update(classification="fail", reason="Native scalar discrepancy")
+    elif "incomplete" in verdicts and result["classification"] == "pass":
+        result.update(classification="incomplete", reason="Some scalar metrics remain incomplete")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -440,6 +662,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--implementation")
     parser.add_argument("--wheel", type=Path)
     parser.add_argument("--full-index", action="store_true")
+    parser.add_argument("--custody-root", type=Path)
+    parser.add_argument("--series", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -458,6 +682,8 @@ def main(argv: list[str] | None = None) -> int:
             full_index=args.full_index,
             implementation=args.implementation,
             wheel=args.wheel,
+            custody=args.custody_root,
+            series_path=args.series,
         )
         text = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
         if args.output is not None:

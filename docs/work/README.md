@@ -1,5 +1,7 @@
 # Work register
 
+**New draft public regression work:** [CMD scalar-adapter software transfer](2026-11-15-cmd56-public-scalar-transfer.md) — stacks on public #78; exact-head quality and private dataset acceptance remain separate.
+
 ## Active next-action register (14 November 2026)
 
 This is the current action list; the linked records below are historical, revision-specific evidence, not independent declarations of today's merge or acceptance state. See the single [stage capability/acceptance matrix](../STATUS.md) and the unchanged [regression gates](../REGRESSION.md). Do not close issues based only on merged implementation or successful diagnostics.
