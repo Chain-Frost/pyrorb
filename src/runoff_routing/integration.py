@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from .parity_metrics import PrintedParity, assess_printed_parity
-from .reach_routing import RoutingDomainError
+from .reach_routing import RoutingDomainError, RoutingNumericalError
 from .rorb_codec import (
     FormatProblem,
     ParsedDocument,
@@ -245,7 +245,10 @@ def run_model(model: RunModel) -> RunResult:
     catchment, storm, losses, kc, m = _validated_solver_inputs(model)
     try:
         numerical = calculate_storm(catchment, storm, losses=losses, kc=kc, m=m)
-    except (RoutingDomainError, ArithmeticError, ValueError) as exc:
+    except (RoutingNumericalError, ArithmeticError) as exc:
+        error = RunInputError("unsupported", "solver_numerical", str(exc))
+        raise error from exc
+    except (RoutingDomainError, ValueError) as exc:
         error = RunInputError("unsupported", "solver_domain", str(exc))
         raise error from exc
     if any(
