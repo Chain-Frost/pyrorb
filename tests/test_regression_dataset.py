@@ -427,14 +427,14 @@ def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(tmp_path: Path,
     assert comparison["classification"] in {"invalid", "incomplete"}, (field, comparison)
 
 
-def test_fresh_cmd_reporting_uses_actual_Q_not_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fresh_cmd_reporting_uses_actual_q_not_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Manufactured native summary fields exercise the existing frozen scalar comparator."""
     register, _ = dataset_fixture(tmp_path)
     case = json.loads(register.read_bytes())["cases"][0]
     case["observations"] = {"physical_site_identity": "unverified"}
     case["scalar_binding"] = {
         "policy_id": "cmd644-report-scalars-v1",
-        "stored_h_hex": float(0.5).hex(),
+        "stored_h_hex": 0.5.hex(),
         "stored_dt_hex": float(1800).hex(),
     }
     original = SiteMetrics(
