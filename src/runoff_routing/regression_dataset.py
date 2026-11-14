@@ -19,6 +19,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
+from . import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
 from .regression_metrics import SiteMetrics
 from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_float
 from .rorb_documents import RorbSource
@@ -119,6 +120,26 @@ def _hash(path: Path) -> tuple[int, str]:
         for block in iter(lambda: file.read(1024 * 1024), b""):
             sha.update(block)
     return path.stat().st_size, sha.hexdigest()
+
+
+def _comparison_module_hashes(*, scalar_evaluation: bool) -> dict[str, str]:
+    """Fingerprint the imported comparison modules, including scalar helpers when used."""
+    fingerprints = {"regression_dataset.py": _hash(Path(__file__))[1]}
+    if not scalar_evaluation:
+        return fingerprints
+    modules = {
+        "regression_scalar_adapter.py": regression_scalar_adapter,
+        "regression_metrics.py": regression_metrics,
+        "rorb_documents.py": rorb_documents,
+        "rorb_out.py": rorb_out,
+    }
+    for filename, module in modules.items():
+        location = getattr(module, "__file__", None)
+        if not isinstance(location, str):
+            message = f"Cannot authenticate loaded comparator module: {filename}"
+            raise RegressionError(message)
+        fingerprints[filename] = _hash(Path(location))[1]
+    return fingerprints
 
 
 def _verify(root: Path, locator: dict[str, Any]) -> Path:
@@ -555,6 +576,7 @@ def _run(
     counts = Counter(case["classification"] for case in results)
     complete = all(case["classification"] == ("pass" if csv_path is not None else "verified") for case in results)
     spec = importlib.util.find_spec("runoff_routing")
+    comparator_hashes = _comparison_module_hashes(scalar_evaluation=series_path is not None)
     outcome = {
         "format": RESULT_FORMAT,
         "schema_version": VERSION,
@@ -567,7 +589,8 @@ def _run(
         "implementation_revision_verified": False,
         "wheel_sha256": _hash(wheel)[1] if wheel is not None else None,
         "wheel_import_match_verified": False,
-        "comparison_module_sha256": _hash(Path(__file__))[1],
+        "comparison_module_sha256": comparator_hashes["regression_dataset.py"],
+        "comparison_modules_sha256": comparator_hashes,
         "run_kind": "candidate_comparison" if csv_path is not None else "reference_preflight",
         "actual_package_import_origin": spec.origin if spec is not None else None,
         "candidate_csv_sha256": _hash(csv_path)[1] if csv_path is not None else None,

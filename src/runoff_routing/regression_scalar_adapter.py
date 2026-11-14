@@ -42,7 +42,11 @@ def stored_float(token: object) -> float:
     if not isinstance(token, str):
         message = "Candidate values must be canonical float.hex strings"
         raise TypeError(message)
-    value = float.fromhex(token)
+    try:
+        value = float.fromhex(token)
+    except (ValueError, OverflowError) as exc:
+        message = "Candidate values must be finite nonnegative canonical float.hex strings"
+        raise ValueError(message) from exc
     if not math.isfinite(value) or value < 0 or value.hex() != token:
         message = "Candidate values must be finite nonnegative canonical float.hex strings"
         raise ValueError(message)

@@ -12,6 +12,8 @@ import pytest
 from test_regression_dataset import dataset_fixture
 
 from runoff_routing import regression_dataset as rd
+from runoff_routing import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
+from runoff_routing.regression_scalar_adapter import stored_float
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
@@ -371,3 +373,59 @@ def test_matching_wheel_provenance_keeps_its_own_identity(tmp_path: Path) -> Non
     result = json.loads(output.read_text())
     assert result["wheel_sha256"] == digest
     assert result["candidate_series_provenance"]["mode"] == "wheel"
+
+def test_comparison_provenance_uses_loaded_scalar_module_bytes(tmp_path: Path) -> None:
+    register, csv, series = _scalar_fixture(tmp_path)
+    result = tmp_path / "provenance.json"
+    assert _run(register, csv, series, result) == 0
+    recorded = json.loads(result.read_text(encoding="utf-8"))
+    modules = {
+        "regression_dataset.py": rd,
+        "regression_scalar_adapter.py": regression_scalar_adapter,
+        "regression_metrics.py": regression_metrics,
+        "rorb_documents.py": rorb_documents,
+        "rorb_out.py": rorb_out,
+    }
+    digests = {
+        name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() for name, module in modules.items()
+    }
+    assert recorded["comparison_modules_sha256"] == digests
+    assert recorded["comparison_module_sha256"] == digests["regression_dataset.py"]
+
+
+@pytest.mark.parametrize("name", ["regression_scalar_adapter", "regression_metrics"])
+def test_modified_scalar_helper_changes_reported_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    register, csv, series = _scalar_fixture(tmp_path)
+    module = {"regression_scalar_adapter": regression_scalar_adapter, "regression_metrics": regression_metrics}[name]
+    copy = tmp_path / f"{name}.py"
+    copy.write_bytes(Path(module.__file__).read_bytes())
+    monkeypatch.setattr(module, "__file__", str(copy))
+    initial = tmp_path / "original-provenance.json"
+    changed = tmp_path / "changed-provenance.json"
+    assert _run(register, csv, series, initial) == 0
+    copy.write_bytes(copy.read_bytes() + b"\n# authored altered module bytes\n")
+    assert _run(register, csv, series, changed) == 0
+    before = json.loads(initial.read_text(encoding="utf-8"))
+    after = json.loads(changed.read_text(encoding="utf-8"))
+    key = f"{name}.py"
+    assert before["comparison_modules_sha256"][key] != after["comparison_modules_sha256"][key]
+    assert before["comparison_module_sha256"] == after["comparison_module_sha256"]
+    assert before["cases"] == after["cases"]
+
+
+@pytest.mark.parametrize("token", ["0x1.0p+9999999999", "not-a-hex-float"])
+def test_invalid_candidate_hex_converts_to_typed_invalid(tmp_path: Path, token: str) -> None:
+    with pytest.raises(ValueError, match="canonical float.hex"):
+        stored_float(token)
+    register, csv, series = _scalar_fixture(tmp_path)
+    document = json.loads(series.read_text(encoding="utf-8"))
+    document["cases"][0]["q_hex"][1] = token
+    _write(series, document)
+    result_path = tmp_path / "invalid-overflow.json"
+    assert _run(register, csv, series, result_path) == 1
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    assert result["cases"][0]["classification"] == "invalid"
+    assert "canonical float.hex" in result["cases"][0]["reason"]
+    assert result["counts"] == {"invalid": 1}
