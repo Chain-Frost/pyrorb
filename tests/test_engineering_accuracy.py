@@ -213,9 +213,7 @@ def test_terminal_confluence_overflow_fails_without_emitting_infinity() -> None:
         (Control(1, 1.0), Control(3), Control(1, 1.0), Control(4), Control(7)),
         (1.0, 1.0),
     )
-    finite = calculate_storm(
-        catchment, Storm(1.0, 2, (100.0,), (3.6, 3.6)), losses=Losses(0.0, 0.0), kc=0.0, m=1.0
-    )
+    finite = calculate_storm(catchment, Storm(1.0, 2, (100.0,), (3.6, 3.6)), losses=Losses(0.0, 0.0), kc=0.0, m=1.0)
     assert finite.outlets_m3_s == ((0.0, 2.0, 0.0),)
     # Both branches are finite individually; their sum, immediately before
     # print code 7, is not representable.
