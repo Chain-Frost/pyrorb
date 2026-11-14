@@ -16,9 +16,9 @@ Characterise historical GUI/CMD/file/solver behavior, including latent defects. 
 
 No executable/disassembly/native traces have been inspected or generated as part of this planning work. The existing source manual's historical licence, the conditional Australian statutory interoperability exception and this workpack's scope do not preapprove decompilation or copying proprietary implementation details.
 
-## Immediate next action
+## Historical proposed next action (superseded)
 
-Assign a local Windows agent with the installed RORBwin and RORB_CMD builds. Give it [the detailed handoff](2026-11-11-rorb-forensics-handoff.md) and [warning/compatibility policy](../BEHAVIOUR_AND_WARNINGS.md). Start by identifying actual hashes/builds, verifying isolated native output paths, and tracing two GUI save/reload input sequences. Use prior validated S0 capture machinery; do not create a second runner.
+At the 2026-11-11 snapshot, an agent using local native executables was proposed to assess GUI save/reload behavior, fingerprint builds and check isolated paths. This was **planning**, not an automatically assigned or executed activity. The original [historical handoff](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-11-rorb-forensics-handoff.md) remains in Git history; consult the [current public backlog](../BACKLOG.md) and [behavior audit #16](https://github.com/Chain-Frost/python-runoff-routing/issues/16) for any future explicitly selected work. Do not create another native runner.
 
 ## Acceptance criteria
 
