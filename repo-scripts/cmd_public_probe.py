@@ -148,6 +148,22 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
         "mismatch_count": len(mismatches),
         "first_mismatch": mismatches[0] if mismatches else None,
         "reason": comparison.get("reason"),
+        # The matched Hyd001 column is registered source/control-derived;
+        # there is no independently observed native physical-site label.
+        "site_identity_evidence": case.get("observations", {}).get("physical_site_identity", "unverified"),
+        "site_mapping_scope": "single_terminal_code7_source_derived_not_native_physical_label",
+        "model_print_id": outcome.hydrographs[0].print_id,
+        "original_native_column_id": case["sites"][0]["native_column_id"],
+        "computed_time_scope": "model_elapsed_zero_based_i_times_source_h_not_original_native_Inc_Time",
+        "computed_time_start_hours": outcome.physical_time_hours[0],
+        "computed_time_end_hours": outcome.physical_time_hours[-1],
+        "computed_time_rows": len(outcome.physical_time_hours),
+        "original_input_sha256": {
+            Path(source["path"]).suffix: source["sha256"] for source in case["inputs"]
+        },
+        "project_sha256": outcome.project_sha256,
+        "model_sha256": outcome.model_sha256,
+        "implementation_revision": outcome.implementation_revision,
     }
 
 

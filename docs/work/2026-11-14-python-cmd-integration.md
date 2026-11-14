@@ -95,3 +95,42 @@ CI's deliberate **synthetic CMD probe failure** exited 37 from a child PowerShel
 The installed-wheel source/printed-interval comparison verifies a **bounded public computation baseline**; it does not independently establish hidden native states, general numerical equivalence, exact tie/time selection, physical continuity or full CMD replacement. B must independently confirm original site/time/effective-input mappings, actual current source/wheel comparison and private model/physical gates. C's separately tracked source-admission work is [#93](https://github.com/Chain-Frost/python-runoff-routing/issues/93), [#94](https://github.com/Chain-Frost/python-runoff-routing/issues/94), [#95](https://github.com/Chain-Frost/python-runoff-routing/issues/95) and [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96); the revised CMD capability matrix is [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84). Neither C's deferred dialect qualification nor B's independent numerical gate is implicitly resolved by this software result.
 
 **Artifact reproducibility:** checkout the exact stated Git revision; install with the pinned dev policy; use the existing `repo-scripts/check_local.py` and `python -m build --wheel` followed by an out-of-tree wheel installation. Authenticate the single public 50-case register with `python -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index`; use the checked-out absolute `repo-scripts/cmd_public_probe.py` path while the working directory is outside the checkout and `PYTHONPATH` names only the freshly installed wheel directory. Its JSON output preserves all original IDs, counts, inputs, reasons and named printed comparisons. Independent B results must cite the exact source and freshly built wheel and must not substitute the legacy `--snapshot` data. No new native process is required.
+
+## 15 November 2026 — source-bound verification instrument and B's independent review
+
+The independent scope-B review on [public PR #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79#issuecomment-6884822411) identified a genuine **P1 verification limitation**, not a demonstrated numerical error: the common `compare_fresh_cmd_case` method authenticates original source/report bytes, print ID and complete Q row count, but builds its comparison rows' `raw_native_increment` and `raw_native_time` from the **original reference report**. It did not check the computed `EngineOutcome.physical_time_hours`, source project/event/ordered-control identity or physical print location independently. This method remains an **ordinary printed-Q comparator**, not a complete native site/time verifier; B owns changes to its generic contract.
+
+A's small, bounded **engine-specific** `cmd_public_probe.py` pre-comparison gate now fails closed if the actual public computed `EngineOutcome` differs from the freshly parsed original input's project/model SHA-256, project/event ID, explicit `python-cmd/cmd-6.44` selection, effective typed model parameters, ordered source/control codes, single registered terminal code-7 print, complete original `n+1` horizon, source/registered timestep, or **generated elapsed time** `0*h,...,n*h`. The input project is written as **canonical UTF-8 bytes**, preventing Windows CRLF text translation from changing its authenticated project fingerprint. Original native `Inc/Time` tokens are not substituted for `physical_time_hours`; the Python backend must not invent `native_raw_*_tokens`. These guards run **before** the unchanged shared CMD printed-token comparator, and new negative tests reject missing/shifted generated clocks, mismatched event/project/model hash, missing control/print IDs and altered registered clock/site. No CMD engine arithmetic or reference data changed.
+
+The exact source-head [Windows Python 3.13.17 quality run #43646434096](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43646434096) at `ed7105ee83429caf60c9f38da12dc68d57c0c426` **PASSED** 861 source tests, Ruff/format, strict Pyright, source-external wheel installation with seven maintained public native-fixture tests, full 50-case/227-file indexed preflight, deliberate PowerShell exit-37 nonmasking control, and fresh installed `python-cmd` event execution. All **36 admitted original printed passes/16,836 rows** remain green, **14 source-unsupported** remain explicit. Exact freshly built wheel SHA-256: `0e8a3b2016f38d2468a8d6f8107e2d044b876394ab6b6a89198176cd63701af9`. This is not the previously frozen public wheel or historical candidate.
+
+The [scope-B independent source review](https://github.com/Chain-Frost/python-runoff-routing/pull/79#issuecomment-6884910066) confirmed that these checks **address the generated-axis and source-order concern for this specific probe path**, conditional on clean CI and reproducible independent results. B also confirmed that published original observation records still mark the `Hyd001` **native physical site label as unverified**; a sole terminal code-7 plus one `Hyd001` original report column is a **source/control-derived conditional one-outlet site mapping**, not a separately observed physical geolocation/label or general multi-site proof. The freshly compared result now publishes this restriction in its **machine-readable per-case status** alongside the actual computed time range, input hashes, model/project digests, package-code identity and original native-column ID. This does not qualify original native `Inc/Time` or peak-time, volumes, hidden states or independent physical balance.
+
+B must independently replay and attest the **final exact public head and wheel**, imported code identity, 36 admission and original full-horizon Q comparisons, both source & installed-wheel modes, original immutable `.par/.catg/.stm/.out` SHA-256, source/code7-to-Hyd001 assumption, native 1-based clock convention vs elapsed zero-based computed model time and fail-closed negative controls. B must not author numerical kernel fixes. Shared comparator/schema improvements, private #56/#53 reference/model/physical acceptance and the full #5 replacement gate remain separate and open; neither a historical cached candidate snapshot nor new native execution is required for retained printed reference verification.
+
+### Exact reproducibility for the independent verifier
+
+Under the approved **Python 3.13 or 3.14** pure-Python development policy (Linux or Windows), in a clean checkout of the **specific final integration SHA**:
+
+```powershell
+python -m pip install -e ".[dev]"
+python repo-scripts/check_local.py
+python -m build --wheel
+$repo = (Get-Location).Path
+$wheel = (Get-ChildItem 'dist/*.whl' | Select-Object -First 1).FullName
+$target = Join-Path $env:TEMP 'cmd75-fresh-wheel'
+python -m pip install --no-deps --target $target $wheel
+$register = Join-Path $repo 'tests/fixtures/regression-v1/register.json'
+$env:PYTHONPATH = $target
+Push-Location $env:TEMP
+try {
+    python -m runoff_routing.regression_dataset preflight "$register" --set cmd-eligible --full-index
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    python (Join-Path $repo 'repo-scripts/cmd_public_probe.py')
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} finally {
+    Pop-Location
+}
+```
+
+The public installed-wheel probe reports all 50 case dispositions, fresh printed Q comparisons, separately source/control-derived site identities, produced zero-based elapsed horizons, input SHA and active package-code identity. It leaves original physical-site corroboration and broader numerical/physical gates with B. Do not attribute a wheel run to any newer source revision without actually rebuilding and checking that revision.
