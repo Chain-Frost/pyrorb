@@ -254,6 +254,23 @@ def _native_reference(path: Path, case: dict[str, Any]) -> tuple[list[str], list
     return columns, rows
 
 
+def _verify_scalar_policy(register: dict[str, Any], root: Path, cases: list[dict[str, Any]]) -> None:
+    """Authenticate the frozen reporting policy and source binding requirements."""
+    for name in ("reporting_acceptance_file", "scalar_policy_file"):
+        if name in register:
+            _verify(root, register[name])
+    if any("scalar_binding" in item for item in cases) and "scalar_policy_file" not in register:
+        message = "Dataset scalar bindings require the authenticated frozen policy file"
+        raise RegressionError(message)
+    if (
+        "scalar_policy_file" in register
+        and register["scalar_policy_file"]["sha256"]
+        != "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50"
+    ):
+        message = "Scalar policy bytes differ from the frozen approved contract"
+        raise RegressionError(message)
+
+
 def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], str, str | None]:
     register = _json(path)
     if register.get("format") != FORMAT or register.get("schema_version") != VERSION:
@@ -283,19 +300,7 @@ def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], st
     index = _json(_verify(root, file_index)) if file_index is not None else {}
     policy_file = register.get("policy_file")
     policy_hash = _hash(_verify(path.parent, policy_file))[1] if policy_file is not None else None
-    for name in ("reporting_acceptance_file", "scalar_policy_file"):
-        if name in register:
-            _verify(path.parent, register[name])
-    if any("scalar_binding" in item for item in typed_cases) and "scalar_policy_file" not in register:
-        message = "Dataset scalar bindings require the authenticated frozen policy file"
-        raise RegressionError(message)
-    if (
-        "scalar_policy_file" in register
-        and register["scalar_policy_file"]["sha256"]
-        != "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50"
-    ):
-        message = "Scalar policy bytes differ from the frozen approved contract"
-        raise RegressionError(message)
+    _verify_scalar_policy(register, path.parent, cases)
     return register, root, index, _hash(path)[1], policy_hash
 
 
