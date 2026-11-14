@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  windows-python-314:
+  windows-python-313:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.14'
+          python-version: '3.13'
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install development dependencies
@@ -39,7 +39,6 @@ jobs:
           $wheel = (Get-ChildItem 'dist/*.whl' | Select-Object -First 1).FullName
           $publicRegister = (Resolve-Path 'tests/fixtures/regression-v1/register.json').Path
           $publicNativeTests = (Resolve-Path 'tests/test_regression_public_native.py').Path
-          $publicCmdProbe = (Resolve-Path 'repo-scripts/cmd_public_probe.py').Path
           $env:RUNOFF_ENGINE_EXAMPLE = (Resolve-Path 'examples/synthetic-run.json').Path
           $env:RUNOFF_ENGINE_WHEEL = $wheel
           Write-Host ("Wheel SHA-256: " + (Get-FileHash $wheel -Algorithm SHA256).Hash.ToLowerInvariant())
@@ -56,8 +55,35 @@ jobs:
             python -m runoff_routing.regression_dataset preflight "$publicRegister" --set authored --engine python
             python -m runoff_routing.regression_dataset preflight "$publicRegister" --set cmd-eligible --full-index
             python -m pytest "$publicNativeTests" -q
-            python "$publicCmdProbe"
             python -c "from decimal import Decimal; from runoff_routing.rorbwin_losses import calculate_rorbwin_652_excess; r=calculate_rorbwin_652_excess((Decimal(10),), timestep_min=60, initial_loss_mm=Decimal(0), continuing_loss_mm_per_hour=Decimal(0)); assert r.excess_increments_mm == (Decimal(10),); print('S6 experimental installed-wheel smoke OK')"
+          } finally {
+            Pop-Location
+          }
+
+      - name: Prove PowerShell CMD baseline failures cannot be masked
+        shell: pwsh
+        run: |
+          # A failing synthetic CMD probe cannot be hidden by the next successful command.
+          $negativeControl = @'
+          python -c "import sys; print('Simulated CMD baseline failure', file=sys.stderr); sys.exit(37)"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "print('ERROR: later smoke masked the failing CMD baseline')"
+          '@
+          & pwsh -NoProfile -NonInteractive -Command $negativeControl
+          if ($LASTEXITCODE -ne 37) {
+            throw "CMD failure gate failed to propagate the nonzero probe exit code"
+          }
+      - name: Verify fresh installed-wheel CMD 36-case regression (fail-closed)
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'runoff-wheel-smoke'
+          $publicCmdProbe = (Resolve-Path 'repo-scripts/cmd_public_probe.py').Path
+          $env:PYTHONPATH = $target
+          Push-Location $env:RUNNER_TEMP
+          try {
+            # Independent step and immediate exit status check prevent masked failures.
+            python "$publicCmdProbe"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
           }

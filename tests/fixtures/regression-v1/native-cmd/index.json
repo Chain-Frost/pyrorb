@@ -3,8 +3,8 @@
   "algorithm": "SHA-256",
   "files": {
     ".gitattributes": {
-      "sha256": "b613efadf1c3e99164f2a056d629036edca471f0daa7014a6601cea18dfc959a",
-      "size_bytes": 24
+      "sha256": "d7c77edacaaf917faea1f44e0572516c55beb9e07be196a49f7b4d281c9c3fd3",
+      "size_bytes": 23
     },
     "native-cmd/candidate-snapshot-series.json": {
       "sha256": "c1acc3b48f78f9025edde72db4a0c5527929342cb91ceba0075270a311b19270",

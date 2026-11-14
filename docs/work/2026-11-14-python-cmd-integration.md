@@ -53,3 +53,33 @@ The 14 specific gaps are eight archive events with original temporal pattern per
 For durable continuous integration the probe now explicitly checks that all 36 already admitted `cmd-reviewed` or `timestep` cases retain their `printed_pass` status and full **16,836** retained rows. It returns non-success if any of those proven bounded observations regresses; unsupported new cases are still reported individually and do not become an implicit acceptance pass. This baseline is an *input/output printed-diagnostic software regression*, not a universal numerical acceptance policy.
 
 **Next tasks:** independent exact-head adapter review (including nonzero Decimal -> binary64 underflow), source+wheel requalification of public code versus the maintained private #56 candidate/internals where available, then targeted source-boundary qualification of the 14 absent cases before extending declared CMD input scope. The engineering and tie/time gates remain under private #53/#66 and public #5.
+
+## 15 November 2026 — fail-closed regression and admission handoff
+
+The earlier **36-case / 16,836-ordinate** source-and-wheel result applies to its specifically identified earlier Git revision. The quality workflow now executes the newly installed-wheel CMD regression probe in its own fail-closed step. An additional PowerShell negative control forces a synthetic probe to exit **37**, followed by a succeeding smoke command that would otherwise mask its failure, and verifies that the shell still reports 37. A new exact-head CI run is required before applying that prior computation result to the revised source.
+
+### Effective-event review: maintained bounded path
+
+- Public original `.par/.catg/.stm` bytes are hash-bound to the one register; `cmd_public_probe.py` invokes the maintained S1 `parse_cmd_par`, `parse_catg` and `parse_design_stm`. Typed `RunModel` carries source order, control stack, subareas, reaches and the sole terminal physical print identity; failed source admission never creates a computed success.
+- `cmd_engine.adapt_event` retains source `Decimal` lexemes, widened binary64 and stored binary32 operations. Nonzero decimal-to-binary64 underflow rejects with `unsupported_feature/cmd_input_representation`; true zero operands remain valid and typed m=0 stays excluded. Storm start is represented by leading zero bins; existing depths, raw positive weights, one pervious ISA/burst and IL/CL are not normalised, reordered or replaced.
+- Isolated `_cmd644.reporting.execute` calls the frozen `compute_geometry`, `prepare` and `route_network`. Source distances, rainfall/loss preparation, inflows, geometry/coefficient arithmetic, ordered controls 1/3/4/5 and final 7, stack membership, stored state, candidate convergence and distinct historic model-vs-observed-native target diagnostics remain inside this engine. No improved-engine rainfall, coefficient or routing result is borrowed.
+- Output conversion checks all reach populations and the **`n+1` complete outlet horizon**, maps to the original sole physical print ID and records elapsed model time separately from raw native CMD `Inc/Time` tokens. The unchanged comparator checks the original registered physical site, full printed horizon and frozen printed-interval policy; `candidate-snapshot.csv.gz` is never used as an engine output.
+- Three-engine dispatch remains `python` (improved default), `python-cmd/cmd-6.44` (explicit qualified-profile selection) and `rorb-cmd` (explicit optional native execution). Unsupported/unavailable cases return a typed failure and no hydrograph. No fallback, private runtime import, native launch or expected-output substitution.
+
+### Dispositions of all 50 authentic CMD cases (last fresh execution)
+
+| Status | Case IDs | Scope boundary / owner |
+| --- | --- | --- |
+| `printed_pass` — 36 cases and **16,836 rows** | Eleven `review-*`, twenty-two `timestep-*`, three `zero-loss-*` (full individual case IDs retained in the machine-readable receipt) | This installed-wheel printed-interval software regression must remain green; independent B review still required |
+| `source_unsupported` — 8 | `failure-baseline-after`, `failure-baseline-before`, `fig67-ilcl-confirmed`, `fig67-ilcl-low`, `fig67-ilcl-probe`, `fig67-zero`, `wheel-ilcl-confirmed`, `wheel-zero` | Original DESIGN weights total **102.10%**, exceeding the S1 typed 100%-total condition; C must qualify native positive-total source semantics without changing or normalising original weights |
+| `source_unsupported` — 3 | `H1-three-source-asymmetric`, `H2-four-source-nested-odd-rain`, `H3-single-source-equality-chain` | Original DESIGN source lacks expected literal temporal-pattern marker; C owns dialect characterisation in the maintained parser |
+| `source_unsupported` — 1 | `N4-six-source-serial-nested` | Original control stack would overwrite an unstored running hydrograph; requires separate state/control semantics qualification before admission |
+| `source_unsupported` — 2 | `pyromb-pr2-full`, `pyromb-novel-storm` | Existing graphical decoder recognises only one `RORB_GE 002` header; C owns qualification of the original header form(s) |
+
+The fourteen excluded cases retain **2,714 original printed rows** but are not counted as actual integrated numerical matches; historical cached 50/19,550 candidate results are separate older-source evidence. No originals, numerical tolerances, parser recognitions, source order or frozen CMD arithmetic were altered to make this integration pass.
+
+### Scope B exact-revision verification instrument
+
+Freeze the new CI Git head, freshly built wheel SHA-256, installed module/package-code identity, original register/index hashes, and the specific immutable source/reference inputs. With the same public checkout, run `python -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index`. From **outside the source checkout with only the installed wheel on PYTHONPATH**, run `python /absolute/checkout/repo-scripts/cmd_public_probe.py`. The resulting full 50-case JSON explicitly includes each `EngineOutcome` classification, checked rows and reason.
+
+B independently validates its existing comparator/instrument, source/effective input identity, source/control order, per-case original `model_print_id` vs native `Hyd001` site mapping, native raw `Inc/Time` tokens, physical zero-based `n+1` engine horizon and actual original printed intervals. B owns maintained generic runner/schema, internal model/native and physical metrics; this engine owner does not write B's numerical acceptance. No new native process is required to verify retained reference data. The public CMD replacement gate #5 and private #56/#53 remain open.
