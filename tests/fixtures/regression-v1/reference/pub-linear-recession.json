@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "1.00",
+          "6.065306597"
+        ],
+        [
+          "2",
+          "2.00",
+          "3.678794412"
+        ],
+        [
+          "3",
+          "3.00",
+          "2.231301601"
+        ],
+        [
+          "4",
+          "4.00",
+          "1.353352832"
+        ],
+        [
+          "5",
+          "5.00",
+          "0.820849986"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Exact continuous reservoir Q(t)=10exp(-t/2), K=2h, I=0"
+    }
+  ]
+}

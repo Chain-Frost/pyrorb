@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "1.00",
+          "0.000000000"
+        ],
+        [
+          "2",
+          "2.00",
+          "0.277777778"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "IL=10mm, CL=0, rainfall [5,6]mm; 1mm runoff in second 1h on 1km2, no routing"
+    }
+  ]
+}
