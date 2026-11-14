@@ -285,3 +285,61 @@ def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.Monke
     manifest, computed = _fixture(tmp_path)
     assert rd.main(["preflight", str(manifest)]) == 0
     assert rd.main(["compare", str(manifest), "--csv", str(computed), "--implementation", "a" * 40]) == 0
+
+
+@pytest.mark.parametrize(
+    ("state", "expected"),
+    [
+        ("invalid", "invalid"),
+        ("unsupported", "unsupported"),
+        ("incomplete", "incomplete"),
+        ("not_run", "incomplete"),
+        ("computed/fail", "fail"),
+        ("computed_unvalidated", "invalid"),
+    ],
+)
+def test_candidate_computation_status_cannot_be_promoted_to_pass(
+    tmp_path: Path, state: str, expected: str
+) -> None:
+    register, csv_path = dataset_fixture(tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream))
+    for row in rows[1:]:
+        row[1] = state
+    with csv_path.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    output = tmp_path / "candidate-status.json"
+    assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]) == 1
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["cases"][0]["classification"] == expected
+    assert result["complete"] is False
+
+
+def test_mixed_candidate_computation_states_are_invalid(tmp_path: Path) -> None:
+    register, csv_path = dataset_fixture(tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream))
+    rows[-1][1] = "unsupported"
+    with csv_path.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    output = tmp_path / "mixed-status.json"
+    assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40, "--output", str(output)]) == 1
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["cases"][0]["classification"] == "invalid"
+
+
+@pytest.mark.parametrize("mutation", ["extra", "extra_blank", "missing"])
+def test_candidate_row_width_must_match_header(tmp_path: Path, mutation: str) -> None:
+    register, csv_path = dataset_fixture(tmp_path)
+    with csv_path.open(encoding="utf-8", newline="") as stream:
+        rows = list(csv.reader(stream))
+    if mutation == "extra":
+        rows[-1].append("unrecorded")
+    elif mutation == "extra_blank":
+        rows[-1].append("")
+    else:
+        rows[-1].pop()
+    with csv_path.open("w", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40]) == 2
+

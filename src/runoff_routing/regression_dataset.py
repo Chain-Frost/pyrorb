@@ -275,6 +275,9 @@ def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
             message = "candidate CSV has omitted, additional or reordered columns"
             raise RegressionError(message)
         for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                message = "candidate CSV record has missing or unexpected fields"
+                raise RegressionError(message)
             key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
             if key in found:
                 message = f"duplicate ordinate in candidate CSV: {key}"
@@ -306,6 +309,19 @@ def _compare(
             "reason": f"{len(expected - observed)} expected ordinates unavailable",
             "mismatches": [],
         }
+    states = {supplied[key]["classification"] for key in expected}
+    if len(states) != 1:
+        return {"classification": "invalid", "reason": "inconsistent candidate computation states", "mismatches": []}
+    state = next(iter(states))
+    if state in {"invalid", "unsupported", "incomplete", "not_run"}:
+        reported = "incomplete" if state == "not_run" else state
+        return {
+            "classification": reported,
+            "reason": f"candidate computation declared {state}; no eligible numerical acceptance",
+            "mismatches": [],
+        }
+    if state not in {"computed/pass", "computed/fail"}:
+        return {"classification": "invalid", "reason": f"unrecognised candidate computation state: {state}", "mismatches": []}
     differences: list[dict[str, str | int]] = []
     for point in case["sites"]:
         column = point["native_column_id"]
@@ -342,9 +358,10 @@ def _compare(
                         "frozen_allowance": str(allowance),
                     }
                 )
+    declared_failure = state == "computed/fail"
     return {
-        "classification": "fail" if differences else "pass",
-        "reason": None,
+        "classification": "fail" if differences or declared_failure else "pass",
+        "reason": "candidate declared computed/fail" if declared_failure else None,
         "checked_ordinates": len(expected),
         "mismatches": differences,
     }
