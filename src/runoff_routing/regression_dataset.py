@@ -438,6 +438,9 @@ def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
             message = "candidate CSV has omitted, additional or reordered columns"
             raise RegressionError(message)
         for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                message = "candidate CSV record has missing or unexpected fields"
+                raise RegressionError(message)
             key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
             if key in found:
                 message = f"duplicate ordinate in candidate CSV: {key}"
@@ -445,6 +448,23 @@ def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
             _scalar(row["python_discharge_m3_s"])
             found[key] = row
     return found
+
+
+def _candidate_computation_state(
+    expected: set[tuple[str, str, int]],
+    supplied: dict[tuple[str, str, int], dict[str, str]],
+) -> tuple[str, str]:
+    """Retain candidate execution states independently of discharge comparisons."""
+    states = {supplied[key]["classification"] for key in expected}
+    if len(states) != 1:
+        return "invalid", "inconsistent candidate computation states"
+    state = next(iter(states))
+    if state in {"invalid", "unsupported", "incomplete", "not_run"}:
+        reported = "incomplete" if state == "not_run" else state
+        return reported, f"candidate computation declared {state}; no eligible numerical acceptance"
+    if state not in {"computed/pass", "computed/fail"}:
+        return "invalid", f"unrecognised candidate computation state: {state}"
+    return "computed", state
 
 
 def _compare(
@@ -469,6 +489,9 @@ def _compare(
             "reason": f"{len(expected - observed)} expected ordinates unavailable",
             "mismatches": [],
         }
+    disposition, state_reason = _candidate_computation_state(expected, supplied)
+    if disposition != "computed":
+        return {"classification": disposition, "reason": state_reason, "mismatches": []}
     differences: list[dict[str, str | int]] = []
     for point in case["sites"]:
         column = point["native_column_id"]
@@ -505,9 +528,10 @@ def _compare(
                         "frozen_allowance": str(allowance),
                     }
                 )
+    declared_failure = state_reason == "computed/fail"
     return {
-        "classification": "fail" if differences else "pass",
-        "reason": None,
+        "classification": "fail" if differences or declared_failure else "pass",
+        "reason": "candidate declared computed/fail" if declared_failure else None,
         "checked_ordinates": len(expected),
         "mismatches": differences,
     }
@@ -571,7 +595,10 @@ def _run(
                 )
         except (OSError, KeyError, IndexError, TypeError, ValueError) as exc:
             status = _evidence_status(exc)
-            case.update(classification=status, reason=str(exc), mismatches=[])
+            if case.get("classification") == "fail":
+                _record_scalar_unavailable(case, status, str(exc))
+            else:
+                case.update(classification=status, reason=str(exc), mismatches=[])
         results.append(case)
     counts = Counter(case["classification"] for case in results)
     complete = all(case["classification"] == ("pass" if csv_path is not None else "verified") for case in results)
@@ -639,25 +666,30 @@ def _attach_metrics(
     *,
     enabled: bool,
 ) -> None:
-    if not enabled:
+    if not enabled or result["classification"] not in {"pass", "fail"}:
         return
     if series is None or site is None:
-        result.update(classification="incomplete", reason="Original scalar binding or actual stored series unavailable")
+        _record_scalar_unavailable(result, "incomplete", "Original scalar binding or actual stored series unavailable")
         return
     if engine != "python-cmd":
-        result.update(classification="unsupported", reason="Native scalar policy is not an engineering-engine policy")
+        _record_scalar_unavailable(result, "unsupported", "Native scalar policy is not an engineering-engine policy")
         return
     if series.get("status", "computed") != "computed":
         status = series["status"]
         if status not in {"unsupported", "incomplete", "invalid"}:
-            message = "Unsupported candidate status"
-            raise RegressionError(message)
-        result.update(classification=status, reason=series.get("reason"))
-        return
-    if result["classification"] not in {"pass", "fail"}:
+            _record_scalar_unavailable(result, "invalid", "Unsupported candidate status")
+        else:
+            _record_scalar_unavailable(result, status, str(series.get("reason", status)))
         return
     fields = _scalar_result(item, series, supplied, site)
     _record_metrics(result, fields)
+
+
+def _record_scalar_unavailable(result: dict[str, Any], classification: str, reason: str) -> None:
+    """Retain any demonstrated ordinate failure when scalar evidence cannot be used."""
+    result["scalar_evidence"] = {"classification": classification, "reason": reason}
+    if result["classification"] == "pass":
+        result.update(classification=classification, reason=reason)
 
 
 def _record_metrics(result: dict[str, Any], fields: dict[str, Any]) -> None:

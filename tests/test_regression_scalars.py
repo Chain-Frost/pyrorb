@@ -434,3 +434,39 @@ def test_invalid_candidate_hex_converts_to_typed_invalid(tmp_path: Path, token: 
     assert result["cases"][0]["classification"] == "invalid"
     assert "canonical float.hex" in result["cases"][0]["reason"]
     assert result["counts"] == {"invalid": 1}
+
+
+@pytest.mark.parametrize(
+    ("scalar_state", "expected"),
+    [
+        ("missing", "incomplete"),
+        ("unsupported", "unsupported"),
+        ("malformed", "invalid"),
+    ],
+)
+def test_missing_or_invalid_scalar_evidence_cannot_mask_ordinate_failure(
+    tmp_path: Path, scalar_state: str, expected: str
+) -> None:
+    register, csv_path, series = _scalar_fixture(tmp_path)
+    lines = csv_path.read_text(encoding="utf-8").splitlines()
+    fields = lines[-1].split(",")
+    fields[-1] = "2.000"
+    lines[-1] = ",".join(fields)
+    csv_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    document = json.loads(series.read_text(encoding="utf-8"))
+    if scalar_state == "missing":
+        document["cases"].clear()
+    elif scalar_state == "unsupported":
+        document["cases"][0].update(status="unsupported", reason="authored unsupported scenario")
+    else:
+        document["cases"][0]["q_hex"][1] = "0x1.0p+9999999999"
+    _write(series, document)
+    output = tmp_path / "failed-ordinates.json"
+    assert _run(register, csv_path, series, output) == 1
+    result = json.loads(output.read_text(encoding="utf-8"))
+    case = result["cases"][0]
+    assert case["classification"] == "fail"
+    assert case["scalar_evidence"]["classification"] == expected
+    assert case["mismatches"][0]["site"] == "Hyd001"
+    assert result["counts"] == {"fail": 1}
+
