@@ -8,12 +8,14 @@ import hashlib
 import json
 import math
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from runoff_routing import regression_dataset as rd
+from runoff_routing.engine_types import EngineHydrograph, EngineOutcome, EngineSelection
 
 REPO = Path(__file__).absolute().parents[1]
 
@@ -360,3 +362,66 @@ def test_candidate_row_width_must_match_header(tmp_path: Path, mutation: str) ->
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         csv.writer(stream).writerows(rows)
     assert rd.main(["compare", str(register), "--csv", str(csv_path), "--implementation", "a" * 40]) == 2
+
+
+def _synthetic_fresh_cmd_outcome() -> EngineOutcome:
+    """A known two-row Q match, with separately generated zero-based model time."""
+    choice = EngineSelection.for_engine("python-cmd")
+    return EngineOutcome(
+        project_id="SYN-001",
+        project_sha256="synthetic-project",
+        model_sha256="synthetic-model",
+        source_file_hashes=(),
+        stored_selection=choice,
+        effective_selection=choice,
+        selection_source="project",
+        status="computed_unvalidated",
+        event_id="SYN-001",
+        rainfall_profile="legacy-rorb",
+        requested_print_ids=("print_1",),
+        control_order=(1, 7),
+        effective_inputs={"timestep_hours": "0.5", "calculation_increments": 1},
+        hydrographs=(EngineHydrograph("print_1", "Synthetic outlet", (0.0, 1.0)),),
+        physical_time_hours=("0.0", "0.5"),
+    )
+
+
+def test_fresh_cmd_comparator_records_generated_axis_and_unverified_native_site(tmp_path: Path) -> None:
+    register, _ = dataset_fixture(tmp_path)
+    case = json.loads(register.read_bytes())["cases"][0]
+    result = rd.compare_fresh_cmd_case(tmp_path, case, _synthetic_fresh_cmd_outcome())
+    assert result["classification"] == "pass"
+    assert result["checked_ordinates"] == 2
+    assert result["mismatches"] == []
+    assert result["generated_time_axis"] == "verified_model_elapsed_i_times_original_timestep"
+    assert result["native_physical_site_identity"] == "unverified"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("physical_time_hours", ()),
+        ("physical_time_hours", ("0.0",)),
+        ("physical_time_hours", ("0.0", "0.5", "1.0")),
+        ("physical_time_hours", ("0.5", "1.0")),
+        ("physical_time_hours", ("0.0", "1.0")),
+        ("physical_time_hours", ("0.0", "NaN")),
+        ("project_id", "wrong-project"),
+        ("event_id", "wrong-event"),
+        ("requested_print_ids", ()),
+        ("control_order", (7, 1)),
+        ("native_raw_increment_tokens", ("1", "2")),
+        ("native_raw_time_tokens", ("0.50", "1.00")),
+        ("effective_inputs", {"timestep_hours": "0.25", "calculation_increments": 1}),
+        ("effective_inputs", {"timestep_hours": "0.5", "calculation_increments": 2}),
+    ],
+)
+def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    """Retaining the matching Q series must not turn forged time/identity into a pass."""
+    register, _ = dataset_fixture(tmp_path)
+    case = json.loads(register.read_bytes())["cases"][0]
+    bad = replace(_synthetic_fresh_cmd_outcome(), **{field: value})
+    comparison = rd.compare_fresh_cmd_case(tmp_path, case, bad)
+    assert comparison["classification"] in {"invalid", "incomplete"}, (field, comparison)

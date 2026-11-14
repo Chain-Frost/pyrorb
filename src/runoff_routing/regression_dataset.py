@@ -576,6 +576,36 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         return {"classification": "invalid", "reason": "Source-to-native print-site mapping differs"}
     if len(rows) != len(printed.discharge_m3_s):
         return {"classification": "incomplete", "reason": "Full native horizon not computed"}
+    if outcome.project_id != case["case_id"] or outcome.event_id != case["case_id"]:
+        return {"classification": "invalid", "reason": "Computed project/event does not match original case"}
+    if outcome.effective_selection.numerical_profile != "cmd-6.44":
+        return {"classification": "invalid", "reason": "Unexpected CMD numerical profile"}
+    if outcome.requested_print_ids != (point["model_print_id"],):
+        return {"classification": "invalid", "reason": "Computed requested print ID differs from original case"}
+    if not outcome.control_order or outcome.control_order[-1] != 7 or outcome.control_order.count(7) != 1:
+        return {"classification": "invalid", "reason": "Computed outlet does not have one terminal code-7 print"}
+    if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
+        return {"classification": "invalid", "reason": "Python-generated time cannot claim observed native clock tokens"}
+    if len(outcome.physical_time_hours) != len(rows):
+        return {
+            "classification": "incomplete" if len(outcome.physical_time_hours) < len(rows) else "invalid",
+            "reason": "Generated elapsed-time horizon differs from original reference horizon",
+        }
+    step_hours = _scalar(case["clock"]["timestep_hours"])
+    if step_hours <= 0:
+        return {"classification": "invalid", "reason": "Invalid original timestep for generated clock"}
+    if (
+        _scalar(outcome.effective_inputs.get("timestep_hours")) != step_hours
+        or outcome.effective_inputs.get("calculation_increments") != len(rows) - 1
+    ):
+        return {"classification": "invalid", "reason": "Computed source timestep/horizon metadata differs"}
+    for index, value in enumerate(outcome.physical_time_hours):
+        try:
+            computed_time = _scalar(value)
+        except RegressionError:
+            return {"classification": "invalid", "reason": "Malformed generated elapsed-time value"}
+        if computed_time != index * step_hours:
+            return {"classification": "invalid", "reason": f"Generated elapsed time differs at sample {index}"}
     supplied = {
         (case["case_id"], native_column, index): {
             "case_id": case["case_id"],
@@ -590,7 +620,12 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         }
         for index, (row, value) in enumerate(zip(rows, printed.discharge_m3_s, strict=True))
     }
-    return _compare(case, columns, rows, supplied, "python-cmd")
+    result = _compare(case, columns, rows, supplied, "python-cmd")
+    result["generated_time_axis"] = "verified_model_elapsed_i_times_original_timestep"
+    result["native_physical_site_identity"] = case.get("observations", {}).get(
+        "physical_site_identity", "unverified"
+    )
+    return result
 
 
 def _run(

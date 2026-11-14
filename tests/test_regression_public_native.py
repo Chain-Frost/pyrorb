@@ -126,3 +126,58 @@ def test_native_full_index_uses_checkout_stable_attributes(tmp_path: Path) -> No
     result = json.loads(output.read_bytes())
     assert result["index_files_verified"] == len(index["files"])
     assert result["counts"] == {"verified": 50}
+
+
+@pytest.mark.parametrize(("group", "expected"), [("cmd-selected", 44), ("supplemental", 6), ("cmd-migrated-eight", 8)])
+def test_curated_named_preflight_subsets_are_complete(tmp_path: Path, group: str, expected: int) -> None:
+    """Eligible source subgroups are self-contained without an external custody root."""
+    output = tmp_path / f"{group}.json"
+    assert rd.main(["preflight", str(REGISTER), "--set", group, "--output", str(output)]) == 0
+    result = json.loads(output.read_bytes())
+    assert len(result["cases"]) == expected
+    assert result["counts"] == {"verified": expected}
+
+
+def test_curated_one_case_and_timestep_snapshot_diagnosis(tmp_path: Path) -> None:
+    """Use only the existing authenticated cached snapshot and original clocks."""
+    case_path = tmp_path / "one.json"
+    assert (
+        rd.main(
+            [
+                "diagnose",
+                str(REGISTER),
+                "--case",
+                "H1-three-source-asymmetric",
+                "--snapshot",
+                "--output",
+                str(case_path),
+            ]
+        )
+        == 0
+    )
+    one = json.loads(case_path.read_bytes())
+    assert [item["case_id"] for item in one["cases"]] == ["H1-three-source-asymmetric"]
+    assert one["cases"][0]["classification"] == "pass"
+    assert one["run_kind"] == "cached_candidate_snapshot"
+    assert one["candidate_execution"].startswith("not_run")
+
+    subset_path = tmp_path / "timestep.json"
+    assert (
+        rd.main(
+            [
+                "compare",
+                str(REGISTER),
+                "--set",
+                "timestep",
+                "--snapshot",
+                "--output",
+                str(subset_path),
+            ]
+        )
+        == 0
+    )
+    timestep = json.loads(subset_path.read_bytes())
+    assert timestep["counts"] == {"pass": 25}
+    assert len(timestep["cases"]) == 25
+    assert sum(item["reference_rows"] for item in timestep["cases"]) > 0
+    assert timestep["run_kind"] == "cached_candidate_snapshot"
