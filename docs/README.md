@@ -1,70 +1,28 @@
 # Documentation index
 
-## Introduction and policy
+## Start here
 
-- [Repository introduction](../README.md)
-- [Agent instructions](../AGENTS.md)
-- [Current S0–S8 implementation and acceptance status](STATUS.md)
-- [Development guide](DEVELOPMENT.md)
-- [Implementation plan](IMPLEMENTATION_PLAN.md)
-- [Compatibility contract](COMPATIBILITY.md)
-- [Regression contract](REGRESSION.md)
-- [Public source-pinned verification fixtures and cached comparator](REGRESSION_DATASET.md): draft PR #78; independent analytical controls, no native equivalence claim.
-- [Integrated recorded print review](RECORDED_PRINT_REVIEW.md)
-- [Source register](SOURCES.md)
-- [RORB worked-example inventory](RORB_MANUAL_EXAMPLES.md)
-- [S0 local reference capture](REFERENCE_CAPTURE.md)
-- [S1 CMD inspection](S1-INSPECTION.md)
-- [S1 bidirectional typed RORB model](RORB_BIDIRECTIONAL.md)
-- [S2 first-discrepancy / runoff-onset diagnostic](S2_ONSET_AUDIT.md): additive pure printed-budget classification; no native numerical acceptance.
-- [S2 native versus physical-volume reporting conventions](S2_REPORTING_CONVENTIONS.md): exact Decimal print-unit audit; not numerical parity.
-- [S2 reporting-convention work record](work/2026-11-11-s2-reporting-conventions.md)
-- [S1/S2 Python integration API and capability matrix](S1_S2_INTEGRATION.md)
-- [S5 JSON projects: import, compare and Python-reference run](PROJECT_JSON.md)
-- [S5 cached CMD reference diagnostics](S5_RECORDED_NATIVE_REVIEW.md)
-- [Optional PyROMB-based RORB_GE GIS authoring](RORB_GE_AUTHORING.md)
-- [RORB behavioral audit and warning policy](BEHAVIOUR_AND_WARNINGS.md)
-- [S6-P0 ARR2026v1 source capability matrix](ARR_S6_P0.md)
-- [S6-P0 legacy ARR2016 Data Hub TXT contract](ARR_LEGACY_TXT.md)
-- [S6-P1 BoM IFD and ARR temporal patterns — source-only gross rainfall](ARR_BOM_TP_GROSS.md)
-- [S6-P2 ARR2019 temporal-pattern bins and published ARF equations](ARR_S6_P2_SELECTION_ARF.md)
-- [S6-P3 legacy preburst and explicit IL/CL preparation](ARR_S6_P3_PREBURST_LOSSES.md)
-- [S6 reconciliation capability and acceptance matrix](ARR_S6_INTEGRATION.md)
-- [Opt-in experimental RORBwin 6.52 full-increment loss candidate](EXPERIMENTAL_RORBWIN_652_LOSSES.md)
-- [Pull-request template](../.github/pull_request_template.md)
+- [Project README](../README.md) — purpose, installation, three engine roles and acceptance limits.
+- [Quickstart](QUICKSTART.md) — install, engine selection, single event, batches, public regression and wheel.
+- [Current backlog and work owners](BACKLOG.md) — live PR/issue dispositions; [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) is the programme of record.
+- [Current capability status](STATUS.md) — status pointers only; **one** CMD feature matrix is owned by [draft PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) until merged.
+- [Engine contract](ENGINES.md), [JSON project format](PROJECT_JSON.md), [development and quality](DEVELOPMENT.md), [compatibility](COMPATIBILITY.md), [regression policy](REGRESSION.md) and [public regression dataset](REGRESSION_DATASET.md).
+- [Agent instructions](../AGENTS.md) and [current work/evidence receipts](work/README.md).
 
-## Work and handoff
+## Supported source, model and tool contracts
 
-- [Work register](work/README.md)
-- [Bootstrap record](work/2026-11-09-bootstrap.md)
-- [First implementation handoff](work/S0-S1-HANDOFF.md)
-- [GUI/CMD forensics local-agent handoff](work/2026-11-11-rorb-forensics-handoff.md)
-- [GUI/CMD forensics status record](work/2026-11-11-rorb-forensics.md)
-- [S0 native evidence record](work/2026-11-11-s0-native.md)
-- [Native reporting convention work record](work/2026-11-11-s2-reporting-conventions.md)
-- [Integrated native print review record](work/2026-11-12-integrated-print-review.md)
-- [S0 capture implementation record](work/2026-11-10-s0-capture.md)
-- [S1 CMD inspection record](work/2026-11-10-s1-inspection.md)
-- [S1 typed parser work record](work/2026-11-11-s1-bidirectional.md)
-- [Native code-7 serialization work record](work/2026-11-11-s1-code7-serialization.md)
-- [S1/S2 **historical** integration-readiness snapshot (superseded status)](work/2026-11-11-s1-s2-integration-readiness.md)
-- [S2 reach-kernel development record](work/2026-11-10-s2-reach-kernel.md)
-- [S2 offline development record](work/2026-11-11-s2-offline-development.md)
-- [S2 printed-ordinate audit record](work/2026-11-11-s2-parity-audit.md)
-- [S1/S2 integration implementation record](work/2026-11-11-s1-s2-integration.md)
-- [S1/S2 implementation merge and acceptance boundary](work/2026-11-12-s1-s2-implementation-merge.md)
-- [PR #29 bounded native/real-GIS acceptance](work/2026-11-11-pr29-native-acceptance.md)
-- [S6-P0 source-intake implementation record](work/2026-11-11-s6-p0-implementation.md)
-- [S6-P1 BoM/TP implementation record](work/2026-11-12-s6-bom-tp-gross.md)
-- [S6-P2 selection and ARF audit](work/2026-11-12-s6-p2-selection-arf.md)
-- [S6-P3 legacy preburst/loss implementation](work/2026-11-12-s6-p3-preburst-loss.md)
-- [S6 native RORBwin local handoff](work/2026-11-12-s6-rorbwin-local-validation-handoff.md)
-- [S6 reconciliation and remaining validation record](work/2026-11-14-s6-reconciliation.md)
-- [S6 R0 native zero-loss preflight](work/2026-11-13-s6-rorbwin-local-preflight.md)
-- [S6 R0/R1 native timing and ARF comparison](work/2026-11-14-s6-r0-timing-r1-arf.md)
-- [S6 R2–R4 preburst and loss observations](work/2026-11-14-s6-r2-r4-loss-preburst.md)
-- [S6 bounded IL/CL control cases](work/2026-11-14-s6-controlled-loss-kernel.md)
-- [S6 R5 GSAM/Inland default preburst](work/2026-11-14-s6-r5-default-preburst.md)
-- [S6 R6/R7 Jordan/GSAM 12-hour boundary](work/2026-11-14-s6-r6-r7-default-boundary.md)
+- [S1/S2 typed integration and bounded routing](S1_S2_INTEGRATION.md), [S1 inspection](S1-INSPECTION.md), [bidirectional RORB sources](RORB_BIDIRECTIONAL.md).
+- [S5 source-pinned recorded native review](S5_RECORDED_NATIVE_REVIEW.md), [integrated printed review](RECORDED_PRINT_REVIEW.md), [printed reporting conventions](S2_REPORTING_CONVENTIONS.md), [onset diagnostics](S2_ONSET_AUDIT.md).
+- [S0 reference capture](REFERENCE_CAPTURE.md), [original sources register](SOURCES.md), [worked-example inventory](RORB_MANUAL_EXAMPLES.md).
+- [Optional RORB_GE authoring](RORB_GE_AUTHORING.md), [behavior and warning contracts](BEHAVIOUR_AND_WARNINGS.md).
 
-Future repository-owned Markdown must be linked here. Policies describe required behaviour; the roadmap describes future implementation. No source document establishes that this package has passed a numerical acceptance gate.
+## Rainfall and source-preparation contracts
+
+- [S6 source vs native method status](ARR_S6_INTEGRATION.md), [ARR2026 source import](ARR_S6_P0.md), [legacy ARR TXT](ARR_LEGACY_TXT.md).
+- [BoM IFD and source pattern gross storms](ARR_BOM_TP_GROSS.md), [ARR2019 selection/ARF](ARR_S6_P2_SELECTION_ARF.md), [preburst and explicit losses](ARR_S6_P3_PREBURST_LOSSES.md).
+- [Optional experimental RORBwin loss profile](EXPERIMENTAL_RORBWIN_652_LOSSES.md) — not selected by default and not native-accepted.
+
+## Planning and historical evidence
+
+- [Implementation sequence](IMPLEMENTATION_PLAN.md), [work-record index](work/README.md), [reviewable PR template](../.github/pull_request_template.md).
+- Dated work records are **revision-specific history**, not current handoff instructions. Superseded handoffs and old status snapshots live in ordinary Git history instead of this navigation index. Original source hashes, clocks, accounting policies, analytical oracles and curated regression data are preserved separately from prose.

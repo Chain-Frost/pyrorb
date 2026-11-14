@@ -1,60 +1,47 @@
 # Python runoff routing
 
-Public, in-development Python implementation of selected RORB rainfall-runoff procedures. RORB_CMD and RORBwin are separately fingerprinted native reference engines; they are **not** interchangeable or required for normal Python execution.
+An **in-development**, standard-library-runtime Python package for selected RORB rainfall–runoff procedures. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
 
-## Current status (14 November 2026)
+## Install and execute a supplied storm
 
-The public `main` branch contains S0 reference-capture tools, restricted S1 typed RORB input/output readers, an integrated S2 Python-only single-storm routing implementation ([#23](https://github.com/Chain-Frost/python-runoff-routing/pull/23)), and S5 JSON project import, execution and read-only native diagnostics ([#47](https://github.com/Chain-Frost/python-runoff-routing/pull/47), [#52](https://github.com/Chain-Frost/python-runoff-routing/pull/52)). **Implementation and synthetic-test success do not establish native numerical equivalence.** The exact-wheel S5 CMD diagnostic verified its sources but **failed** frozen S2 printed parity: 11/201 ordinates within budget; first mismatch at index 11; maximum error 0.22707848694007993 m³/s.
+Python **3.13 or 3.14**, on **Linux or Windows**, is supported for pure-Python development. From a public checkout:
 
-S6 ARR Data Hub source intake [#38](https://github.com/Chain-Frost/python-runoff-routing/pull/38), BoM IFD/temporal patterns [#48](https://github.com/Chain-Frost/python-runoff-routing/pull/48), ARR2019 ARFs/selection [#49](https://github.com/Chain-Frost/python-runoff-routing/pull/49) and explicit preburst/loss preparation [#50](https://github.com/Chain-Frost/python-runoff-routing/pull/50) have **merged as bounded Python source/method slices**. The **explicitly selected, experimental** RORBwin 6.52 full-increment loss profile [#54](https://github.com/Chain-Frost/python-runoff-routing/pull/54) is also **merged as code**, without changing the default ARR loss method or solver. Evidence-only R0/R1 and N1–N4 investigations [#56](https://github.com/Chain-Frost/python-runoff-routing/pull/56), [#64](https://github.com/Chain-Frost/python-runoff-routing/pull/64) and [#68](https://github.com/Chain-Frost/python-runoff-routing/pull/68) have also merged. N4 confirms native coefficient sensitivity, but R1 and N4 strict excess comparisons and the seven R2–R7 precision residuals remain failed. Coastal and further S6 precision experimentation are deferred until the Python routing engine is working and numerically validated; all S6 native/routed acceptance gates remain open. S2 native routing parity is the current engineering priority. S2 and full S5/S6 native acceptance remain open, and no production-compatible solver, ensemble or Monte Carlo claim is made. See the [current S0–S8 capability/acceptance matrix](docs/STATUS.md), [active next actions](docs/work/README.md), [compatibility contract](docs/COMPATIBILITY.md) and [regression contract](docs/REGRESSION.md).
+```sh
+python -m pip install -e ".[dev]"
+python repo-scripts/check_local.py
+```
 
-## Supported entry points on main
+The first command installs the package and development tools; the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
 
-- The source-aware S1 model and restricted `.par` / `.catg` / DESIGN `.stm` subset are documented in [S1/S2 integration](docs/S1_S2_INTEGRATION.md). Unsupported or uncharacterised legacy features fail closed.
-- `runoff_routing.integration.read_run_json` and `run_model` calculate a supported, already-supplied storm in Python; calculated results are **unvalidated against native routing**.
-- `python -m runoff_routing.project_json` provides `validate`, `inspect`, `import-rorb`, `compare`, `export-run`, `run`, `compare-runs` and `review-native`. The last command reviews an existing SHA-pinned CMD capture; it does **not** launch RORB. See [JSON project usage](docs/PROJECT_JSON.md) and [native review limitations](docs/S5_RECORDED_NATIVE_REVIEW.md).
-- `repo-scripts/rorb_inspect.py` and `repo-scripts/rorb_reference.py` are developer scripts, not a general accepted native-compatible routing CLI. No `[project.scripts]` console entry point is configured.
-
-## Three selectable computation engines (issue #74)
-
-The versioned product selector is `python` (default, existing unvalidated
-engineering reference), `python-cmd` (explicitly unavailable until #75
-integrates the qualified compatible backend), and `rorb-cmd` (optional
-user-installed native RORB CMD 6.44 with a reviewed local executable hash).
-New JSON project schema 2 records the numerical engine/profile separately
-from rainfall preparation; engine-less schema-1 files migrate to `python`.
-The new `run_engine_project` API and `project_json run --engine ...`
-report stored/effective choices and never silently substitute a backend.
-See [engine contract, capability matrix and local CLI configuration](docs/ENGINES.md).
-Each selected-engine result records an exact installed-code SHA-256 identity,
-with optional byte-verified wheel SHA-256 when the artifact is supplied.
-
-## Development and smoke example
-
-Python 3.13 or 3.14 on Linux or Windows is sufficient for current pure-Python development checks; Windows remains required for RORB_CMD/RORBwin and OS-specific behaviour. The project does not require a virtual environment, although using one is supported. The Windows/Python 3.14 commands below are one valid example.
-
-~~~powershell
-py -3.14 -m pip install -e ".[dev]"
-py -3.14 repo-scripts/check_local.py
-~~~
-
-A source-controlled synthetic example can be calculated without starting RORB:
-
-~~~python
+```python
 from pathlib import Path
 from runoff_routing.integration import read_run_json, run_model
 
 model = read_run_json(Path("examples/synthetic-run.json").read_text(encoding="utf-8"))
 result = run_model(model)
 print(result.to_csv())
-~~~
+```
 
-Run the example from the checkout root after installing the package. This checks Python execution, **not** native parity. For package milestones, `py -3.14 -m build` builds a wheel; verify the installed import from outside the checkout. `check_local.cmd` is the Windows wrapper. The approved [Windows quality workflow](.github/workflows/quality.yml) performs non-native checks only.
+This executes the default Python calculation; it is a **software smoke example, not a native or engineering-accuracy acceptance test**. See the [quickstart](docs/QUICKSTART.md) for JSON projects, engine selection, local native execution, batches, installed wheels and reproducible offline regression.
 
-## Navigation and data controls
+## Three selectable product engines
 
-- [Documentation index](docs/README.md), [S6 detailed capability and native gates](docs/ARR_S6_INTEGRATION.md), [implementation roadmap](docs/IMPLEMENTATION_PLAN.md), [development guide](docs/DEVELOPMENT.md), [source register](docs/SOURCES.md).
-- Preserve original effective inputs, native clock labels, engine identities and frozen tolerances. Public code uses the strict mathematical reference backend. A separate **private, opt-in experimental CMD-compatible** mode is under investigation and is neither merged here nor numerically accepted.
-- The owner approved curated CMD input/result fixtures on 2026-11-15 (#81). Do not commit local paths, executables, manuals, unrelated research, client models or unapproved datasets. Keep unapproved local material in ignored `.local/`. TOML, publication and releases remain deferred and require separate owner decisions. This project is not endorsed by RORB's authors or custodians.
+| Engine ID | Role | Current `main` availability |
+| --- | --- | --- |
+| `python` | **Default** maintained improved engineering implementation | Bounded explicit DESIGN single-event execution; independent engineering acceptance remains open under [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) |
+| `python-cmd` | Explicit CMD 6.44 numerical-compatibility implementation | Not yet on `main`: public [draft PR #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) / [#75](https://github.com/Chain-Frost/python-runoff-routing/issues/75) is separately being validated; requesting it on `main` returns an unavailable status |
+| `rorb-cmd` | Explicit, optional user-installed native CMD adapter | Available with a verified local executable/config and supported original inputs; no fallback or bundled binary |
 
-Offline regression: start with [the maintained dataset guide](docs/REGRESSION_DATASET.md): all 50 CMD cases, ten independent analytical controls, explicit gaps and source/installed-wheel commands. No private checkout or RORB installation is needed.
+Project schema 2 records the engine/profile separately from rainfall source and method. Schema-1 projects without a selector migrate to `python`. Use the [engine contract](docs/ENGINES.md) for supported subsets, explicit failure/report semantics and source/wheel identity. Do not interpret successful dispatch, a native executable run or a cached snapshot as proof of full CMD equivalence.
+
+## Regression and outstanding acceptance
+
+The [self-contained public regression guide](docs/REGRESSION_DATASET.md) uses the **one maintained register and CLI** in `runoff_routing.regression_dataset`. Authenticated CMD originals, 50 cached case comparisons, ten independent mathematical controls and 21 individually recorded native gaps are available without the private workspace. The `--snapshot` mode compares historical **unvalidated candidate output**; it does **not** execute the currently installed engine. The two zero-flow peak times remain incomplete. Fresh engine computation and independent accuracy checks must be reported separately.
+
+The current [backlog and owners](docs/BACKLOG.md), [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and [capability status](docs/STATUS.md) distinguish completed source work from open numerical/full-feature gates. The single CMD feature inventory is being reviewed in [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84); it is not yet merged. CMD completion precedes expansion of RORBwin-specific features. Monte Carlo, release automation and publication remain deferred.
+
+## Documentation and source custody
+
+- [Quickstart and commands](docs/QUICKSTART.md) · [documentation index](docs/README.md) · [development guide](docs/DEVELOPMENT.md) · [source register](docs/SOURCES.md) · [regression policy](docs/REGRESSION.md).
+- Preserve authentic native inputs, original source identities/hashes, exact raw clocks, full horizons and frozen metrics. Approved, path-sanitised public data are versioned test evidence; original and transformed bytes are not interchangeable.
+- The private investigations repository is for agent research only. No executable, manual, restricted capture, client data or private installation path is distributed. The optional RORBwin loss profile is experimental and not the default method. This project is not endorsed by RORB's authors or custodians.

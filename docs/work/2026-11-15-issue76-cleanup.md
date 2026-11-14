@@ -1,0 +1,28 @@
+# 2026-11-15 — public cleanup #76
+
+**Base:** public `main` `c789c58fc7605c2341fef969ca426d30c3a477bf`, after merged #77/#78/#80/#82/#83/#85. The work is isolated on `chore/issue76-public-cleanup-20261115`. **Scope:** documentation, non-runtime handoff removals, a standalone script with only private-corpus prerequisites and tracked backlog dispositions. No engine arithmetic, regression policies, curated object/index bytes, tests, source parser API or hosted workflow changes.
+
+## Inventory and disposition
+
+| Path / class | Disposition | Concrete dependency / rationale |
+| --- | --- | --- |
+| `src/runoff_routing` engine, S1/S2, S5 and ARR modules | **KEEP** | `integration`, `engine_execution`, typed parsers/models, optional `native_cmd` and rainfall implementations all have current supported callers/tests. `python` remains default. No premature implementation retirement. |
+| `src/runoff_routing/regression_*`, fixtures under `tests/fixtures/regression-v1`, all test oracles | **KEEP** | B owns the single public comparator, immutable native objects/index and analytical controls. Original SHA/size/time/volume policy is unchanged. |
+| `repo-scripts/check_repository.py`, `check_local.py`, `rorb_reference.py`, `rorb_inspect.py` | **KEEP** | Current CI/developer tools and original-reference capture/inspection APIs. |
+| `repo-scripts/check_private_parser_corpus.py` | **REMOVE** | Optional old S1 replay assumes a sibling **private** repository, hard-coded private FILE_INDEX/catalogue names and three historical cases. Not referenced by the supported CLI/CI/test discovery; public S1 parser tests and authenticated public register now provide distributable boundaries. Reuse selected private evidence under F if materially unique; do not keep a private-repo prerequisite in the public scripts. |
+| `repo-scripts/s2_compare_corpus.py`, `offline_reference.py`, `tests/test_corpus_selection.py`, `tests/test_offline_reference.py` | **UPDATE LATER with B, not deleted** | An older optional corpus runner and its tests still import each other, so removal now would break test discovery. Migrate only unique selection/invalid-case protections into B's maintained CLI and tests first; no competing public campaign should be kept permanently. |
+| Public PR [#58](https://github.com/Chain-Frost/python-runoff-routing/pull/58) `project_regression` | **RECONCILE/RETIRE with B** | It has a real separate project-native runner and possible unique pre/post-original hash, mapping, failure-state and no-clobber checks. Confirm those in `regression_dataset` or deliberately port focused tests before closing unmerged. Its past 65-case source/wheel receipts are history, not a new product comparator. |
+| `docs/work` early bootstrap and first-agent handoffs, retired integration-readiness report, RORBwin local execution handoff, ten-PR old backlog table | **REMOVE** | Superseded navigation/instructions are replaced by `docs/BACKLOG.md`, `docs/QUICKSTART.md` and the concise current work index. Their previous commit history is sufficient; original RORB data and frozen source/metric evidence are *not* removed. |
+| `docs/STATUS.md`, `docs/work/README.md`, `docs/README.md`, `README.md` | **UPDATE** | Former pages mixed pre-merge source status, 65-case older campaigns, TODOs and duplicated matrices. Current pages clearly label main vs draft, maintain one feature matrix under C/#84 and one public runner. |
+| Remaining technical docs / evidence records / approved source hashes and primary citations | **KEEP/REVIEW** | Unique field-level S6/S2 observations and original reference anchors are not mass-deleted. F owns private historical indexing. No physical/native acceptance inferred from preserved records. |
+
+## PR and issue housekeeping
+
+- **Closed completed bounded slices:** public [#35](https://github.com/Chain-Frost/python-runoff-routing/issues/35) / [#44](https://github.com/Chain-Frost/python-runoff-routing/issues/44) via merged #47; [#51](https://github.com/Chain-Frost/python-runoff-routing/issues/51) via merged #52; [#33](https://github.com/Chain-Frost/python-runoff-routing/issues/33) via merged #38/#61. Every closure explains its bounded implementation and leaves #3/#4/#7/#8/full numerical gates open.
+- **Closed unmerged optional/historical drafts:** PR [#70](https://github.com/Chain-Frost/python-runoff-routing/pull/70) deferred ARR2019 events under #8; PR [#71](https://github.com/Chain-Frost/python-runoff-routing/pull/71) deferred optional PyTUFLOW under #63; PR [#72](https://github.com/Chain-Frost/python-runoff-routing/pull/72) completed historical arithmetic evidence with strict failures preserved.
+- **Active owned scopes:** #75 / PR #79 (A) compatible engine; #5 / PR #84 (C) single CMD feature matrix; #6 (D) default Python/batches; B owns maintained regression. PR #58 remains unmerged pending verified migration/closure.
+- **Open stage/future gates:** #3/#4/#5/#6/#7/#8, #9 Monte Carlo, #10 release, #63 optional source, #75 compatible integration and #76 cleanup. No new RORBwin campaign or hosted native task is authorised here.
+
+## Validation scope
+
+The owner accepts one complete pure-Python check under Python 3.13 or 3.14 on Linux or Windows. For this **non-numerical cleanup**, review imports and scripts, tree/wheel contents, executable examples and local Markdown links; let the existing CI run pinned Ruff, strict Pyright, synthetic tests and outside-checkout wheel import. Record actual CI run/head in the PR after it completes. An unrelated historical `--snapshot` pass is not a fresh numerical engine run. No private files/native executables were accessed; no reference bytes or frozen policies were changed.
