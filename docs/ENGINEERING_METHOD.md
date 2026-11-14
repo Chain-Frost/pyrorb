@@ -49,8 +49,9 @@ reference purposes; their printed-token intervals are not these criteria.
   The `m=1` step is solved directly. Nonlinear steps use monotone
   bracketing and Illinois false position (256-iteration ceiling); the
   storage-time residual bound is `1e-12 * target` in the equation's
-  units, **not** `1e-12 * max(1, target)`. Root output is bounded by
-  the endpoint inputs/previous outflow. This is a computational convergence
+  units, **not** `1e-12 * max(1, target)`. Bracketing starts at
+  the endpoint-flow scale and expands if required: trapezoidal discretisation
+  may overshoot the inflow endpoints. This is a computational convergence
   choice, not a native iteration/stopping claim. A nonrepresentable target,
   negative target, residual overflow or nonconvergence is a failure; no
   silent negative-flow clipping, artificial water or last-iterate success.

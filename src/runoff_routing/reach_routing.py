@@ -68,8 +68,8 @@ def _bracket_upper_bound(
     current_inflow: float,
 ) -> float:
     upper = max(previous_outflow, previous_inflow, current_inflow)
-    # Monotone storage and trapezoidal continuity bound the new outflow
-    # by the largest endpoint inflow/previous outflow; no arbitrary 1 m³/s floor.
+    # Start near the input scale, without a 1 m³/s floor. Trapezoidal
+    # discretisation can overshoot endpoint flow, so expand the upper bound.
     for _ in range(64):
         residual = _residual(
             upper, coefficient_k=coefficient_k, exponent_m=exponent_m, half_step=half_step, target=target

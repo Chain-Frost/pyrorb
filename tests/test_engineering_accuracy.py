@@ -193,3 +193,41 @@ def test_event_must_cover_all_forcing_and_returns_full_requested_grid() -> None:
     assert len(result.outlets_m3_s[0]) == 9
     assert result.source_hydrographs_m3_s[0][0] == 0.0
     assert result.source_hydrographs_m3_s[0][-1] == 0.0
+
+def test_trapezoidal_step_can_overshoot_endpoint_flow_and_still_conserve() -> None:
+    inflow = (0.0, 1.0, 1.0)
+    coefficient = 0.01
+    routed = route_reach(inflow, coefficient_k=coefficient, exponent_m=0.8, time_step_hours=1.0)
+    assert routed[-1] > 1.0
+    assert all(math.isfinite(flow) and flow >= 0.0 for flow in routed)
+    for step, (previous, current) in enumerate(pairwise(routed), start=1):
+        change = storage_volume(current, coefficient_k=coefficient, exponent_m=0.8) - storage_volume(
+            previous, coefficient_k=coefficient, exponent_m=0.8
+        )
+        flux = 1800.0 * (inflow[step - 1] + inflow[step] - previous - current)
+        assert change == pytest.approx(flux, rel=1e-9, abs=1e-9)
+
+
+def test_terminal_confluence_overflow_fails_without_emitting_infinity() -> None:
+    catchment = Catchment(
+        (Control(1, 1.0), Control(3), Control(1, 1.0), Control(4), Control(7)),
+        (1.0, 1.0),
+    )
+    finite = calculate_storm(
+        catchment, Storm(1.0, 2, (100.0,), (3.6, 3.6)), losses=Losses(0.0, 0.0), kc=0.0, m=1.0
+    )
+    assert finite.outlets_m3_s == ((0.0, 2.0, 0.0),)
+    # Both branches are finite individually; their sum, immediately before
+    # print code 7, is not representable.
+    timestep_hours = 2.8e-309
+    branch_peak = 1.0 / (3.6 * timestep_hours)
+    assert math.isfinite(branch_peak)
+    assert not math.isfinite(branch_peak + branch_peak)
+    with pytest.raises(RoutingDomainError, match="Confluence discharge overflowed"):
+        calculate_storm(
+            catchment,
+            Storm(timestep_hours, 2, (100.0,), (1.0, 1.0)),
+            losses=Losses(0.0, 0.0),
+            kc=0.0,
+            m=1.0,
+        )
