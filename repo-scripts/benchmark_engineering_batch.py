@@ -63,6 +63,11 @@ def _run_one(size: int, repetitions: int) -> dict[str, object]:
         message = "Benchmark computation was not complete; timings are not acceptable evidence."
         raise ValueError(message)
     reporting = _sample(lambda: json.dumps([asdict(entry) for entry in records], allow_nan=False), repetitions)
+    def end_to_end() -> str:
+        fresh = prepare_catchment(catchment, kc=0.4, m=0.8)
+        return json.dumps([asdict(entry) for entry in run_explicit_batch(fresh, events)], allow_nan=False)
+
+    complete_run = _sample(end_to_end, repetitions)
     return {
         "event_count": size,
         "source_count": len(catchment.areas_km2),
@@ -75,6 +80,7 @@ def _run_one(size: int, repetitions: int) -> dict[str, object]:
         "cold_single_event": cold,
         "warm_batch_compute": warm,
         "json_reporting": reporting,
+        "preparation_compute_json_total": complete_run,
         "warm_batch_peak_allocated_bytes": peak,
         "status_counts": {"computed_unvalidated": len(records)},
     }
