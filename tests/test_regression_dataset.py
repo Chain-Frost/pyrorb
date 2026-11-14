@@ -434,7 +434,7 @@ def test_fresh_cmd_reporting_uses_actual_q_not_snapshot(tmp_path: Path, monkeypa
     case["observations"] = {"physical_site_identity": "unverified"}
     case["scalar_binding"] = {
         "policy_id": "cmd644-report-scalars-v1",
-        "stored_h_hex": 0.5.hex(),
+        "stored_h_hex": (0.5).hex(),
         "stored_dt_hex": float(1800).hex(),
     }
     original = SiteMetrics(

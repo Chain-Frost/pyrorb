@@ -186,7 +186,9 @@ def main() -> int:
     gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
     scalar_statuses = dict(
         sorted(
-            Counter(str((item.get("fresh_reporting") or {}).get("classification", "not_run")) for item in outcomes).items()
+            Counter(
+                str((item.get("fresh_reporting") or {}).get("classification", "not_run")) for item in outcomes
+            ).items()
         )
     )
     print(
