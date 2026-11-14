@@ -567,7 +567,10 @@ def _fresh_cmd_identity_problem(
     if not outcome.control_order or outcome.control_order[-1] != 7 or outcome.control_order.count(7) != 1:
         return {"classification": "invalid", "reason": "Computed outlet does not have one terminal code-7 print"}
     if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
-        return {"classification": "invalid", "reason": "Python-generated time cannot claim observed native clock tokens"}
+        return {
+            "classification": "invalid",
+            "reason": "Python-generated time cannot claim observed native clock tokens",
+        }
     return None
 
 
@@ -647,9 +650,7 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
     }
     result = _compare(case, columns, rows, supplied, "python-cmd")
     result["generated_time_axis"] = "verified_model_elapsed_i_times_original_timestep"
-    result["native_physical_site_identity"] = case.get("observations", {}).get(
-        "physical_site_identity", "unverified"
-    )
+    result["native_physical_site_identity"] = case.get("observations", {}).get("physical_site_identity", "unverified")
     return result
 
 

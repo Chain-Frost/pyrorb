@@ -417,9 +417,7 @@ def test_fresh_cmd_comparator_records_generated_axis_and_unverified_native_site(
         ("effective_inputs", {"timestep_hours": "0.5", "calculation_increments": 2}),
     ],
 )
-def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(
-    tmp_path: Path, field: str, value: object
-) -> None:
+def test_fresh_cmd_comparator_cannot_borrow_native_clock_or_site(tmp_path: Path, field: str, value: object) -> None:
     """Retaining the matching Q series must not turn forged time/identity into a pass."""
     register, _ = dataset_fixture(tmp_path)
     case = json.loads(register.read_bytes())["cases"][0]
