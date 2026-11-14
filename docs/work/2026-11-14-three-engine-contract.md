@@ -34,3 +34,24 @@ owner (maintained case/result format), integrate #75 only after candidate
 qualification and validate #6 independently; execute an explicitly bounded
 real-Windows native one-case receipt with original executable hash and
 physical print mapping before native-adapter acceptance.
+
+## Software review correction (14 November 2026)
+
+Owner-approved transfer to PR #77: software commit
+`5f8e790e31bc7f8a91a2ad302239092d120e3ef7` rejects an existing result file or
+symlink before CLI dispatch, avoiding an unnecessary computation/native launch.
+Final result writing still uses exclusive creation. The focused regression checks
+that dispatch is never called and prior result bytes remain unchanged.
+
+Refreshed Windows/Python 3.14.6 local quality: **695 passed, 1 skipped**, Ruff
+lint/format passed, strict Pyright **0 errors / 0 warnings**. The existing skip
+is unavailable file-symlink creation. The software revision's wheel was built
+and exercised outside the checkout. Hosted checks must be attributed to the new
+remote head separately. Private native receipts and inputs are not transferred.
+
+Outstanding review finding: `implementation_revision` currently reports the
+package version `0.0.0.dev0`, not an exact source/build identity. Preserve external
+source/wheel attribution until a reviewed implementation-identity change lands.
+The initial native-acceptance status above describes the original implementation
+handoff; later local evidence is held privately and is not a general acceptance
+claim. PR #77 remains draft; numerical equivalence remains unaccepted.
