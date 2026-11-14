@@ -37,7 +37,8 @@ def test_independent_stepwise_storage_and_flux_balance(exponent: float) -> None:
         outlet_volume = 1800.0 * dt_hours * (previous + current)
         scale_m3 = max(abs(storage_change), source_volume, outlet_volume, 1e-12)
         assert abs(storage_change - (source_volume - outlet_volume)) <= 1e-9 * scale_m3
-        assert math.isfinite(current) and current >= 0.0
+        assert math.isfinite(current)
+        assert current >= 0.0
 
 
 def test_sub_unit_nonlinear_flow_uses_relative_storage_residual() -> None:
