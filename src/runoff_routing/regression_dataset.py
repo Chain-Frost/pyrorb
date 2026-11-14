@@ -671,7 +671,14 @@ def _attach_metrics(
     *,
     enabled: bool,
 ) -> None:
-    if not enabled or result["classification"] not in {"pass", "fail"}:
+    if not enabled:
+        return
+    if result["classification"] == "incomplete":
+        if series is not None and series.get("status") in {"invalid", "unsupported"}:
+            status = series["status"]
+            _record_scalar_unavailable(result, status, str(series.get("reason", status)))
+        return
+    if result["classification"] not in {"pass", "fail"}:
         return
     if series is None or site is None:
         _record_scalar_unavailable(result, "incomplete", "Original scalar binding or actual stored series unavailable")
@@ -693,7 +700,7 @@ def _attach_metrics(
 def _record_scalar_unavailable(result: dict[str, Any], classification: str, reason: str) -> None:
     """Retain any demonstrated ordinate failure when scalar evidence cannot be used."""
     result["scalar_evidence"] = {"classification": classification, "reason": reason}
-    if result["classification"] == "pass":
+    if result["classification"] in {"pass", "incomplete"}:
         result.update(classification=classification, reason=reason)
 
 
