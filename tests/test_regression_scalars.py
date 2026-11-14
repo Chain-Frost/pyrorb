@@ -374,6 +374,7 @@ def test_matching_wheel_provenance_keeps_its_own_identity(tmp_path: Path) -> Non
     assert result["wheel_sha256"] == digest
     assert result["candidate_series_provenance"]["mode"] == "wheel"
 
+
 def test_comparison_provenance_uses_loaded_scalar_module_bytes(tmp_path: Path) -> None:
     register, csv, series = _scalar_fixture(tmp_path)
     result = tmp_path / "provenance.json"
@@ -386,9 +387,7 @@ def test_comparison_provenance_uses_loaded_scalar_module_bytes(tmp_path: Path) -
         "rorb_documents.py": rorb_documents,
         "rorb_out.py": rorb_out,
     }
-    digests = {
-        name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() for name, module in modules.items()
-    }
+    digests = {name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() for name, module in modules.items()}
     assert recorded["comparison_modules_sha256"] == digests
     assert recorded["comparison_module_sha256"] == digests["regression_dataset.py"]
 
