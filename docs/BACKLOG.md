@@ -1,6 +1,6 @@
 # Public backlog and ownership — 15 November 2026
 
-This is the current **navigation and disposition record** for public [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and cleanup [#76](https://github.com/Chain-Frost/python-runoff-routing/issues/76), prepared from public `main` `c789c58fc7605c2341fef969ca426d30c3a477bf`. GitHub PR heads and implementation evidence can change; recheck the linked PRs before acting. A merged code slice does not satisfy its independently open numerical/release stage.
+This is the current **navigation and disposition record** for public [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and cleanup [#76](https://github.com/Chain-Frost/python-runoff-routing/issues/76), reconciled with public `main` `f3e8e8a12b96d9bcad4b07fe90b2d3f898395ee5` after merged CMD inventory #84. GitHub PR heads and implementation evidence can change; recheck the linked PRs before acting. A merged code slice does not satisfy its independently open numerical/release stage.
 
 ## Active work and gates
 
@@ -8,7 +8,7 @@ This is the current **navigation and disposition record** for public [roadmap #1
 | --- | --- |
 | **A — compatible CMD** [#75](https://github.com/Chain-Frost/python-runoff-routing/issues/75) / [PR #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) | Integrate, independently review and fresh-run the one bounded `python-cmd` backend. Keep its numerical source/wheel/native qualification separate from cached historical candidate replay. **Draft open; do not delete its modules or merge during cleanup.** |
 | **B — public regression** (coordinated via [#75](https://github.com/Chain-Frost/python-runoff-routing/issues/75)) | Own the **one** `regression_dataset` register/CLI, canonical source/metrics/horizon/negative controls, fresh source/wheel comparative interfaces and verified preflight. Public #78/#80/#82/#83 are merged. Do not duplicate runners or change immutable fixtures in cleanup. |
-| **C — CMD capability** [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) / [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) | Maintain the **only** CMD feature matrix; reconcile original CMD source population, parser/engine/output/qualification distinctions, 21 classified gaps and concrete child work. **PR remains draft** until independently approved and merged. |
+| **C — CMD capability** [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) / [merged PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) | The [one CMD matrix](CMD_FEATURE_MATRIX.md) is now merged; C retains the open feature-qualification gate and parser/source admissions #93–#96. Do not treat the completed inventory as accepted CMD replacement. |
 | **D — default/batches** [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) / [PR #97](https://github.com/Chain-Frost/python-runoff-routing/pull/97) | Validate the real default `python` engine by independent mathematics, conservation/refinement/stability and explicit-event state isolation; only then optimise in-memory batches. No CMD bit-for-bit requirement or unearned accuracy claim. |
 | **E — product cleanup** [#76](https://github.com/Chain-Frost/python-runoff-routing/issues/76) | Own current public navigation, safe obsolete handoff/script removal, bounded issue/PR dispositions and enduring AGENTS rules. Do not touch shared numerical/regression/capability source without an agreed migration. |
 | **F — private workspace** [private issue #57](https://github.com/Chain-Frost/runoff-routing-investigations/issues/57) | Index only genuinely unique historical findings in private investigations. That workspace remains **neither a product dependency nor a second public runner**. |
@@ -17,7 +17,7 @@ This is the current **navigation and disposition record** for public [roadmap #1
 
 ## Bounded CMD feature work under #5
 
-These are **real open child issues**, not a new capability matrix or a claim that all CMD behaviour is implemented. C/#84 remains the sole owner of the feature inventory, and B owns original reference/case binding.
+These are **real open child issues**, not a new capability matrix or a claim that all CMD behaviour is implemented. C/#5 owns the merged [single CMD feature inventory](CMD_FEATURE_MATRIX.md), and B owns original reference/case binding.
 
 | Issue | Accountable owner and prerequisite |
 | --- | --- |
@@ -34,8 +34,8 @@ These are **real open child issues**, not a new capability matrix or a claim tha
 | PR | Disposition | Next action / preservation |
 | --- | --- | --- |
 | [#79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) | **Keep active — A** | Exact integrated public source and installed-wheel computations, review and numerical gates; don't mislabel its open draft as merged. |
-| [#97](https://github.com/Chain-Frost/python-runoff-routing/pull/97) | **Keep active — D** | Phase-one independent default-engine method/accuracy controls; do not merge/rewrite as public cleanup. |
-| [#84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) | **Keep active — C** | Reconcile once as the sole CMD matrix; update status only after its actual merge. |
+| [#97](https://github.com/Chain-Frost/python-runoff-routing/pull/97) and [#99](https://github.com/Chain-Frost/python-runoff-routing/pull/99) | **Keep active — D** | Phase-one independent engineering method/accuracy controls, followed by phase-two prepared explicit-event batches; preserve their own stacked validation/review. |
+| [#84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) | **Merged — inventory completed** | [CMD_FEATURE_MATRIX.md](CMD_FEATURE_MATRIX.md) and [phase-A receipt](work/2026-11-15-cmd-phase-a-completion.md) now live on `main`; #5 and #90–#96 stay open for feature acceptance. |
 | [#58](https://github.com/Chain-Frost/python-runoff-routing/pull/58) | **Pending verified supersession — B/E** | Old S5 `project_regression` duplicates maintained public case enumeration/comparison. Verify whether its two-stage original-file hash audit, fail-closed missing/incomplete/unsupported statuses, raw-clock/print mappings and no-clobber protections have exact current equivalents. Port only unique supported checks/tests into the maintained `regression_dataset` path under B's ownership; then **close unmerged**. Do not merge a second runner for its history. |
 | [#70](https://github.com/Chain-Frost/python-runoff-routing/pull/70) | **Closed unmerged — deferred** | Ten ARR2019 source-order explicit storms are future #8 work after CMD-first. Original ID/precision/one-time ARF tests are reusable selectively; no accepted event method or engine claim. |
 | [#71](https://github.com/Chain-Frost/python-runoff-routing/pull/71) | **Closed unmerged — deferred** | Optional offline PyTUFLOW audit is #63's future work; real pinned installation and authentic ARR2026 comparison are outstanding. |

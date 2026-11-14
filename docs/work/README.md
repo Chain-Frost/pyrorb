@@ -8,6 +8,7 @@
 - [Public reference dataset transfer and limits](2026-11-15-public-cmd-data.md) — merged #78/#82, approved source objects, authenticated historical snapshot and full index.
 - [Cached-regression index portability](2026-11-15-cmd81-native-index-portability.md) — merged #83, Linux checkout byte-preservation.
 - [CMD scalar metric transfer](2026-11-15-cmd56-public-scalar-transfer.md) and [scalar adapter record](2026-11-15-cmd56-scalar-adapter.md) — merged #80, existing original two incomplete peak times.
+- [CMD phase-A inventory completion](2026-11-15-cmd-phase-a-completion.md) — merged #84 matrix; full CMD acceptance remains open.
 - [Issue #76 cleanup inventory and validation](2026-11-15-issue76-cleanup.md) — proposed public removal/migration, excludes numerical changes.
 
 ## Retained diagnostic/reference evidence

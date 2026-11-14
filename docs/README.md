@@ -5,7 +5,7 @@
 - [Project README](../README.md) — purpose, installation, three engine roles and acceptance limits.
 - [Quickstart](QUICKSTART.md) — install, engine selection, single event, batches, public regression and wheel.
 - [Current backlog and work owners](BACKLOG.md) — live PR/issue dispositions; [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) is the programme of record.
-- [Current capability status](STATUS.md) — status pointers only; **one** CMD feature matrix is owned by [draft PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) until merged.
+- [Current capability status](STATUS.md) — stage status pointers only; the [single merged CMD feature matrix](CMD_FEATURE_MATRIX.md) from [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) is authoritative for feature-level recognition, execution, outputs and qualification.
 - [Engine contract](ENGINES.md), [JSON project format](PROJECT_JSON.md), [development and quality](DEVELOPMENT.md), [compatibility](COMPATIBILITY.md), [regression policy](REGRESSION.md) and [public regression dataset](REGRESSION_DATASET.md).
 - [Agent instructions](../AGENTS.md) and [current work/evidence receipts](work/README.md).
 
