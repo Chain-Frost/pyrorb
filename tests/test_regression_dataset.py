@@ -218,13 +218,12 @@ def test_single_case_diagnosis_accepts_an_authenticated_full_population_csv(tmp_
         for line in lines[1:]:
             stream.write(line.replace("SYN-001,", "SYN-002,", 1))
     assert (
-        rd.main(
-            ["diagnose", str(register), "--case", "SYN-001",
-             "--csv", str(candidate), "--implementation", "a" * 40]
-        )
+        rd.main(["diagnose", str(register), "--case", "SYN-001", "--csv", str(candidate), "--implementation", "a" * 40])
         == 0
     )
-    assert rd.main(["compare", str(register), "--set", "all", "--csv", str(candidate), "--implementation", "a" * 40]) == 0
+    assert (
+        rd.main(["compare", str(register), "--set", "all", "--csv", str(candidate), "--implementation", "a" * 40]) == 0
+    )
 
 
 def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
@@ -236,8 +235,10 @@ def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
     candidate.write_text("\n".join(lines) + "\n", encoding="utf-8")
     report = tmp_path / "comparison-fail.json"
     assert (
-        rd.main(["compare", str(register), "--csv", str(candidate),
-                 "--implementation", "a" * 40, "--output", str(report)]) == 1
+        rd.main(
+            ["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40, "--output", str(report)]
+        )
+        == 1
     )
     evaluated = json.loads(report.read_text(encoding="utf-8"))
     assert evaluated["cases"][0]["classification"] == "fail"
