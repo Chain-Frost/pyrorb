@@ -43,7 +43,10 @@ def _example(tmp_path: Path) -> tuple[dict[str, Any], RunModel, EngineOutcome, s
     assert outcome.status == "computed_unvalidated"
     case: dict[str, Any] = {
         "case_id": "case_one",
-        "clock": {"row_count": model.storm.calculation_increments + 1, "timestep_hours": str(model.storm.timestep_hours)},
+        "clock": {
+            "row_count": model.storm.calculation_increments + 1,
+            "timestep_hours": str(model.storm.timestep_hours),
+        },
         "sites": [{"model_print_id": model.catchment.print_locations[0].identifier, "native_column_id": "Hyd001"}],
     }
     return case, model, outcome, text
@@ -69,9 +72,7 @@ def test_fresh_probe_accepts_matching_source_clock_and_single_terminal_site(tmp_
         ("native_raw_time_tokens", ("0.5",)),
     ],
 )
-def test_fresh_probe_rejects_attribution_or_generated_axis_changes(
-    tmp_path: Path, field: str, invalid: object
-) -> None:
+def test_fresh_probe_rejects_attribution_or_generated_axis_changes(tmp_path: Path, field: str, invalid: object) -> None:
     case, model, outcome, text = _example(tmp_path)
     modified = replace(outcome, **{field: invalid})
     assert _check()(case, model, modified, text) is not None
