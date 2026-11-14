@@ -190,7 +190,7 @@ def test_authored_reference_tokens_follow_independent_equations() -> None:
     """Reference values are analytic, not snapshots copied from a routing engine."""
     root = REPO / "tests" / "fixtures" / "regression-v1"
     register = json.loads((root / "register.json").read_text(encoding="utf-8"))
-    cases = [case for case in register["cases"] if case["coverage"] == "selected"]
+    cases = [case for case in register["cases"] if "authored" in case["sets"]]
     assert len(cases) == 10
     for case in cases:
         source = root / case["reference"]["path"]

@@ -1,0 +1,22 @@
+Independent CMD holdout H3-single-source-equality-chain
+C RORB_GE 002
+C #NODES
+C 0
+C #REACHES
+C 0
+C #STORAGES
+C 0
+C #INFLOW/OUTFLOW
+C 0
+C END RORB_GE
+1
+1, 0.65, -99, Reach 1
+5, 0.3, -99, Reach 2
+5, 1.2, -99, Reach 3
+7
+Holdout outlet
+0
+C Sub Area Data
+2.75, -99
+C Impervious Fraction Data
+0, -99

@@ -1,0 +1,246 @@
+ RORBWin Output File
+ *******************
+ 
+ Program version 6.44 (last updated 12th March 2019)
+ Copyright Monash University and Sinclair Knight Merz
+ 
+ Date run: 13 Nov 2026 22:31
+
+ Vector file       : catchment.catg                                                                                    
+ Storm file        : storm.stm                                                                                    
+ Output information: Flows & all input data
+
+
+ Data checks:
+ ************
+ Next data to be read & checked:
+
+ Catchment name & reach type flag
+ Control vector & storage data
+ Code no.  14     7.0 Location read as Holdout outlet              
+ Sub-area areas
+ Impervious flag
+ Initial storm data
+ Rainfall burst times
+ Pluviograph 1
+ Sub-area rainfalls
+
+ Data check completed
+
+
+
+ Data:
+ ****
+
+ Independent CMD holdout H2-four-source-nested-odd-rain              
+
+
+ Time data, in increments from initial time
+ Holdout H2-four-source-nested-odd-rain                              
+ Time increment (hours)=  0.30
+
+                   Start   Finish
+ Rainfall times:     0        5
+
+
+ End of hyeto/hydrographs:    5
+ Duration of calculations:   48
+
+
+
+ Pluviograph data (time in incs, rainfall in mm, in 
+                   increment following time shown)
+
+         1:Temporal weights            
+   Time     1
+     0     0.10
+     1     0.20
+     2     0.00
+     3     0.40
+     4     1.30
+
+   Total   2.0
+
+
+
+
+ DESIGN run control vector
+
+ Step  Code              Description
+   1    1     Add sub-area 'A' inflow & route thru normal storage    1
+   2    3     Store hydrograph from step    1; reset hydrograph to zero
+   3    1     Add sub-area 'B' inflow & route thru normal storage    2
+   4    3     Store hydrograph from step    3; reset hydrograph to zero
+   5    1     Add sub-area 'C' inflow & route thru normal storage    3
+   6    4     Add h-graph ex step    4 to h-graph ex step    5
+   7    5     Route hydrograph thru normal storage    4
+   8    4     Add h-graph ex step    2 to h-graph ex step    7
+   9    5     Route hydrograph thru normal storage    5
+  10    3     Store hydrograph from step    9; reset hydrograph to zero
+  11    1     Add sub-area 'D' inflow & route thru normal storage    6
+  12    4     Add h-graph ex step   10 to h-graph ex step   11
+  13    5     Route hydrograph thru normal storage    7
+  14    7.0   Print hydrograph, Holdout outlet              
+  15    0     **********End of control vector**********
+
+
+
+ Sub-area data
+
+ Sub-     Area     Dist.
+ area      km²      km*
+   A    1.12E+00  2.45E+00
+   B    2.30E+00  4.35E+00
+   C    9.00E-01  3.10E+00
+   D    4.75E+00  2.65E+00
+
+ Total 9.075E+00
+
+ For whole catchment     ; Av. Dist., km* =       3.10
+ For interstation area  1; Av. Dist., km* =       3.10; ISA Factor =   1.000
+
+ * or other function of reach properties related to travel time
+
+
+
+ Normal storage data
+
+ Storage   Length   Rel. delay      Type         Slope
+   no.       km*       time                     percent 
+   1         0.6       0.194       Natural 
+   2         1.7       0.548       Natural 
+   3         0.4       0.145       Natural 
+   4         0.8       0.258       Natural 
+   5         1.3       0.419       Natural 
+   6         2.1       0.677       Natural 
+   7         0.6       0.177       Natural 
+
+ * or other function of reach properties related to travel time
+
+
+ Input of parameters:
+ ********************
+
+ Independent CMD holdout H2-four-source-nested-odd-rain              
+ DESIGN Run
+ Holdout H2-four-source-nested-odd-rain                              
+ Time increment = 0.30 hours
+
+ Constant loss model selected
+
+
+
+ Rainfall, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D
+
+   0   0.7          0   1   0   1
+   1   1.4          1   1   0   2
+   2   0.0          0   0   0   0
+   3   2.8          1   2   1   4
+   4   9.1          5   7   2  12
+
+ Tot. 14.0          7  11   4  19
+ Pluvi. ref. no.    1   1   1   1
+
+
+
+
+ Rainfall-excess, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D
+
+   0   0.0          0   0   0   0
+   1   0.5          0   0   0   1
+   2   0.0          0   0   0   0
+   3   2.5          1   2   0   4
+   4   8.9          4   7   2  12
+
+ Tot. 11.8          5   9   2  17
+
+
+
+ Routing results:
+ ****************
+ Independent CMD holdout H2-four-source-nested-odd-rain              
+ Holdout H2-four-source-nested-odd-rain                              
+ DESIGN run no.  1
+
+
+ Parameters:  kc =     3.70    m = 0.80
+
+ Loss parameters     Initial loss (mm)   Cont. loss (mm/h)
+                            1.65              0.70
+
+
+
+ *** Calculated hydrograph,  Holdout outlet                      
+
+                           Hydrograph
+                          Calc.          
+ Peak discharge,m³/s     8.960
+ Time to peak,h           2.40
+ Volume,m³            1.06E+05
+ Time to centroid,h       4.22
+ Lag (c.m. to c.m.),h     2.98
+ Lag to peak,h            1.15
+
+
+ Hydrograph summary
+ ******************
+
+ Site  Description
+   01  Calculated hydrograph,  Holdout outlet
+
+ Inc    Time    Hyd001
+   1    0.30    0.0000 
+   2    0.60    0.0000 
+   3    0.90    0.0155 
+   4    1.20    0.0859 
+   5    1.50    0.3623 
+   6    1.80    2.1753 
+   7    2.10    6.1989 
+   8    2.40    8.8987 
+   9    2.70    8.9603 
+  10    3.00    8.2029 
+  11    3.30    7.2980 
+  12    3.60    6.4401 
+  13    3.90    5.6709 
+  14    4.20    4.9910 
+  15    4.50    4.3919 
+  16    4.80    3.8645 
+  17    5.10    3.4008 
+  18    5.40    2.9938 
+  19    5.70    2.6373 
+  20    6.00    2.3272 
+  21    6.30    2.0584 
+  22    6.60    1.8242 
+  23    6.90    1.6195 
+  24    7.20    1.4403 
+  25    7.50    1.2832 
+  26    7.80    1.1453 
+  27    8.10    1.0242 
+  28    8.40    0.9176 
+  29    8.70    0.8236 
+  30    9.00    0.7407 
+  31    9.30    0.6673 
+  32    9.60    0.6024 
+  33    9.90    0.5447 
+  34   10.20    0.4934 
+  35   10.50    0.4478 
+  36   10.80    0.4072 
+  37   11.10    0.3710 
+  38   11.40    0.3386 
+  39   11.70    0.3095 
+  40   12.00    0.2833 
+  41   12.30    0.2597 
+  42   12.60    0.2384 
+  43   12.90    0.2192 
+  44   13.20    0.2018 
+  45   13.50    0.1860 
+  46   13.80    0.1717 
+  47   14.10    0.1586 
+  48   14.40    0.1467 
+  49   14.70    0.1359 

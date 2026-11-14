@@ -1,0 +1,263 @@
+ RORBWin Output File
+ *******************
+ 
+ Program version 6.44 (last updated 12th March 2019)
+ Copyright Monash University and Sinclair Knight Merz
+ 
+ Date run: 14 Nov 2026 17:55
+
+ Vector file       : catchment.catg                                                                                                      
+ Storm file        : storm.stm                                                                                                      
+ Output information: Flows & all input data
+
+
+ Data checks:
+ ************
+ Next data to be read & checked:
+
+ Catchment name & reach type flag
+ Control vector & storage data
+ Code no.  12     7.0 Location read as                             
+ Sub-area areas
+ Impervious flag
+ Fractions impervious
+ Initial storm data
+ Rainfall burst times
+ Pluviograph 1
+ Sub-area rainfalls
+
+ Data check completed
+
+
+
+ Data:
+ ****
+
+ REACH                                                               
+
+
+ Time data, in increments from initial time
+ pyromb-novel-storm                                                  
+ Time increment (hours)=  0.20
+
+                   Start   Finish
+ Rainfall times:     0        6
+
+
+ End of hyeto/hydrographs:    6
+ Duration of calculations:   60
+
+
+
+ Pluviograph data (time in incs, rainfall in mm, in 
+                   increment following time shown)
+
+         1:Temporal weights            
+   Time     1
+     0     0.13
+     1     0.47
+     2     1.21
+     3     0.00
+     4     0.09
+     5     0.83
+
+   Total   2.7
+
+
+
+
+ DESIGN run control vector
+
+ Step  Code              Description
+   1    1     Add sub-area 'A' inflow & route thru normal storage    1
+   2    3     Store hydrograph from step    1; reset hydrograph to zero
+   3    1     Add sub-area 'B' inflow & route thru normal storage    2
+   4    4     Add h-graph ex step    2 to h-graph ex step    3
+   5    2     Add sub-area 'C' inflow & route thru normal storage    3
+   6    3     Store hydrograph from step    5; reset hydrograph to zero
+   7    1     Add sub-area 'D' inflow & route thru normal storage    4
+   8    2     Add sub-area 'E' inflow & route thru normal storage    5
+   9    4     Add h-graph ex step    6 to h-graph ex step    8
+  10    5     Route hydrograph thru normal storage    6
+  11    2     Add sub-area 'F' inflow & route thru normal storage    7
+  12    7.0   Print hydrograph,                             
+  13    0     **********End of control vector**********
+
+
+
+ Sub-area data
+
+ Sub-     Area     Dist.     Fraction
+ area      km²      km*     impervious
+
+   A    1.00E-02  2.83E-01     0.00
+   B    1.00E-02  2.83E-01     0.50
+   C    1.00E-02  1.71E-01     0.20
+   D    1.00E-02  2.83E-01     0.00
+   E    1.00E-02  1.71E-01     0.00
+   F    1.00E-02  5.00E-02     0.00
+
+ Total 6.000E-02
+
+ For whole catchment     ; Av. Dist., km* =       0.21
+ For interstation area  1; Av. Dist., km* =       0.21; ISA Factor =   1.000
+
+ * or other function of reach properties related to travel time
+
+
+
+ Normal storage data
+
+ Storage   Length   Rel. delay      Type         Slope
+   no.       km*       time                     percent 
+   1         0.1       0.541       Natural 
+   2         0.1       0.541       Natural 
+   3         0.1       0.343       Natural 
+   4         0.1       0.541       Natural 
+   5         0.1       0.343       Natural 
+   6         0.1       0.242       Natural 
+   7         0.1       0.242       Natural 
+
+ * or other function of reach properties related to travel time
+
+
+ Input of parameters:
+ ********************
+
+ REACH                                                               
+ DESIGN Run
+ pyromb-novel-storm                                                  
+ Time increment = 0.20 hours
+
+ Constant loss model selected
+
+
+
+ Rainfall, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D   E   F
+
+   0   1.2          1   1   1   1   1   2
+   1   4.4          3   4   5   3   5   6
+   2  11.3          8  11  14   7  12  17
+   3   0.0          0   0   0   0   0   0
+   4   0.8          1   1   1   1   1   1
+   5   7.8          6   8   9   5   8  11
+
+ Tot. 25.6         18  25  31  16  26  37
+ Pluvi. ref. no.    1   1   1   1   1   1
+
+
+
+
+ Rainfall-excess, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D   E   F
+
+   0   0.0          0   0   0   0   0   0
+   1   1.7          0   3   3   0   1   3
+   2  10.9          7  11  14   6  11  16
+   3   0.0          0   0   0   0   0   0
+   4   0.7          0   1   1   0   1   1
+   5   7.6          5   7   9   5   8  11
+
+ Tot. 20.9         13  22  27  11  21  32
+
+
+
+ Routing results:
+ ****************
+ REACH                                                               
+ pyromb-novel-storm                                                  
+ DESIGN run no.  1
+
+
+ Parameters:  kc =     0.65    m = 0.80
+
+ Loss parameters     Initial loss (mm)   Cont. loss (mm/h)
+                            4.75              0.85
+
+
+
+ *** Calculated hydrograph,                                      
+
+                           Hydrograph
+                          Calc.          
+ Peak discharge,m³/s    0.2173
+ Time to peak,h           1.40
+ Volume,m³            1.25E+03
+ Time to centroid,h       1.89
+ Lag (c.m. to c.m.),h     1.17
+ Lag to peak,h           0.683
+
+
+ Hydrograph summary
+ ******************
+
+ Site  Description
+   01  Calculated hydrograph,
+
+ Inc    Time    Hyd001
+   1    0.20    0.0000 
+   2    0.40    0.0000 
+   3    0.60    0.0093 
+   4    0.80    0.0929 
+   5    1.00    0.1469 
+   6    1.20    0.1251 
+   7    1.40    0.1903 
+   8    1.60    0.2173 
+   9    1.80    0.1753 
+  10    2.00    0.1518 
+  11    2.20    0.1236 
+  12    2.40    0.0975 
+  13    2.60    0.0762 
+  14    2.80    0.0596 
+  15    3.00    0.0470 
+  16    3.20    0.0374 
+  17    3.40    0.0300 
+  18    3.60    0.0243 
+  19    3.80    0.0199 
+  20    4.00    0.0164 
+  21    4.20    0.0136 
+  22    4.40    0.0114 
+  23    4.60    0.0096 
+  24    4.80    0.0081 
+  25    5.00    0.0069 
+  26    5.20    0.0059 
+  27    5.40    0.0051 
+  28    5.60    0.0044 
+  29    5.80    0.0038 
+  30    6.00    0.0033 
+  31    6.20    0.0029 
+  32    6.40    0.0026 
+  33    6.60    0.0023 
+  34    6.80    0.0020 
+  35    7.00    0.0018 
+  36    7.20    0.0016 
+  37    7.40    0.0014 
+  38    7.60    0.0013 
+  39    7.80    0.0011 
+  40    8.00    0.0010 
+  41    8.20    0.0009 
+  42    8.40    0.0008 
+  43    8.60    0.0007 
+  44    8.80    0.0007 
+  45    9.00    0.0006 
+  46    9.20    0.0006 
+  47    9.40    0.0005 
+  48    9.60    0.0005 
+  49    9.80    0.0004 
+  50   10.00    0.0004 
+  51   10.20    0.0004 
+  52   10.40    0.0003 
+  53   10.60    0.0003 
+  54   10.80    0.0003 
+  55   11.00    0.0003 
+  56   11.20    0.0002 
+  57   11.40    0.0002 
+  58   11.60    0.0002 
+  59   11.80    0.0002 
+  60   12.00    0.0002 
+  61   12.20    0.0002 

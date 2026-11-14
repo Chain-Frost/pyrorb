@@ -7,3 +7,6 @@
 *.cmd text eol=crlf
 # Preserve exact original bytes for approved legacy regression fixtures.
 /tests/fixtures/rorb/** -text
+
+# Curated native derivatives and retained candidate snapshots use authenticated bytes.
+/tests/fixtures/regression-v1/native-cmd/** -text

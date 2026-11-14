@@ -1,0 +1,462 @@
+ RORBWin Output File
+ *******************
+ 
+ Program version 6.44 (last updated 12th March 2019)
+ Copyright Monash University and Sinclair Knight Merz
+ 
+ Date run: 11 Nov 2026 19:22
+
+ Vector file       : catchment.catg                                                                                                                     
+ Storm file        : storm.stm                                                                                                                     
+ Output information: Flows & all input data
+
+
+ Data checks:
+ ************
+ Next data to be read & checked:
+
+ Catchment name & reach type flag
+ Control vector & storage data
+ Code no.  18     7.0 Location read as                             
+ Sub-area areas
+ Impervious flag
+ Initial storm data
+ Rainfall burst times
+ Pluviograph 1
+ Sub-area rainfalls
+
+ Data check completed
+
+
+
+ Data:
+ ****
+
+ fIGURE 6.7                                                          
+
+
+ Time data, in increments from initial time
+ fIGURE 6.7: 24 hour 5% Design Storm No.4 Temporal Pattern           
+ Time increment (hours)=  1.00
+
+                   Start   Finish
+ Rainfall times:     0       24
+
+
+ End of hyeto/hydrographs:   24
+ Duration of calculations:  200
+
+
+
+ Pluviograph data (time in incs, rainfall in mm, in 
+                   increment following time shown)
+
+         1:Temporal pattern (% of depth
+   Time     1
+     0     1.98
+     1     2.66
+     2     3.14
+     3     3.77
+     4     3.37
+     5     1.93
+     6     3.16
+     7     5.85
+     8     4.92
+     9     6.76
+    10     5.38
+    11     4.06
+    12     1.89
+    13     1.31
+    14     0.19
+    15     2.12
+    16     1.29
+    17     4.97
+    18     4.72
+    19    13.32
+    20    15.84
+    21     2.67
+    22     3.02
+    23     1.68
+
+   Total 100.0
+
+
+
+
+ DESIGN run control vector
+
+ Step  Code              Description
+   1    1     Add sub-area 'A' inflow & route thru normal storage    1
+   2    3     Store hydrograph from step    1; reset hydrograph to zero
+   3    1     Add sub-area 'B' inflow & route thru normal storage    2
+   4    4     Add h-graph ex step    2 to h-graph ex step    3
+   5    5     Route hydrograph thru normal storage    3
+   6    3     Store hydrograph from step    5; reset hydrograph to zero
+   7    1     Add sub-area 'C' inflow & route thru normal storage    4
+   8    4     Add h-graph ex step    6 to h-graph ex step    7
+   9    5     Route hydrograph thru normal storage    5
+  10    3     Store hydrograph from step    9; reset hydrograph to zero
+  11    1     Add sub-area 'D' inflow & route thru normal storage    6
+  12    4     Add h-graph ex step   10 to h-graph ex step   11
+  13    5     Route hydrograph thru normal storage    7
+  14    3     Store hydrograph from step   13; reset hydrograph to zero
+  15    1     Add sub-area 'E' inflow & route thru normal storage    8
+  16    4     Add h-graph ex step   14 to h-graph ex step   15
+  17    5     Route hydrograph thru normal storage    9
+  18    7.0   Print hydrograph,                             
+  19    0     **********End of control vector**********
+
+
+
+ Sub-area data
+
+ Sub-     Area     Dist.
+ area      km²      km*
+   A    3.00E+01  1.25E+01
+   B    2.80E+01  1.15E+01
+   C    2.50E+01  9.50E+00
+   D    3.50E+01  7.00E+00
+   E    4.00E+01  6.00E+00
+
+ Total 1.580E+02
+
+ For whole catchment     ; Av. Dist., km* =       8.98
+ For interstation area  1; Av. Dist., km* =       8.98; ISA Factor =   1.000
+
+ * or other function of reach properties related to travel time
+
+
+
+ Normal storage data
+
+ Storage   Length   Rel. delay      Type         Slope
+   no.       km*       time                     percent 
+   1         5.0       0.557       Natural 
+   2         4.0       0.445       Natural 
+   3         2.5       0.278       Natural 
+   4         4.5       0.501       Natural 
+   5         2.5       0.278       Natural 
+   6         4.5       0.501       Natural 
+   7         1.0       0.111       Natural 
+   8         4.5       0.501       Natural 
+   9         1.5       0.167       Natural 
+
+ * or other function of reach properties related to travel time
+
+
+ Input of parameters:
+ ********************
+
+ fIGURE 6.7                                                          
+ DESIGN Run
+ fIGURE 6.7: 24 hour 5% Design Storm No.4 Temporal Pattern           
+ Time increment = 1.00 hours
+
+ Constant loss model selected
+
+
+
+ Rainfall, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D   E
+
+   0   1.9          2   2   2   2   2
+   1   2.5          2   2   2   2   2
+   2   2.9          3   3   3   3   3
+   3   3.5          4   4   4   4   4
+   4   3.2          3   3   3   3   3
+   5   1.8          2   2   2   2   2
+   6   3.0          3   3   3   3   3
+   7   5.5          5   5   5   5   5
+   8   4.6          5   5   5   5   5
+   9   6.3          6   6   6   6   6
+  10   5.0          5   5   5   5   5
+  11   3.8          4   4   4   4   4
+  12   1.8          2   2   2   2   2
+  13   1.2          1   1   1   1   1
+  14   0.2          0   0   0   0   0
+  15   2.0          2   2   2   2   2
+  16   1.2          1   1   1   1   1
+  17   4.7          5   5   5   5   5
+  18   4.4          4   4   4   4   4
+  19  12.5         12  12  12  12  12
+  20  14.9         15  15  15  15  15
+  21   2.5          3   3   3   3   3
+  22   2.8          3   3   3   3   3
+  23   1.6          2   2   2   2   2
+
+ Tot. 93.8         94  94  94  94  94
+ Pluvi. ref. no.    1   1   1   1   1
+
+
+
+
+ Rainfall-excess, mm, in time inc. following time shown
+ Time               Sub-
+      Catch         Area
+ Incs ment          A   B   C   D   E
+
+   0   0.0          0   0   0   0   0
+   1   0.0          0   0   0   0   0
+   2   0.0          0   0   0   0   0
+   3   0.0          0   0   0   0   0
+   4   0.0          0   0   0   0   0
+   5   0.0          0   0   0   0   0
+   6   0.0          0   0   0   0   0
+   7   0.0          0   0   0   0   0
+   8   0.0          0   0   0   0   0
+   9   1.3          1   1   1   1   1
+  10   0.0          0   0   0   0   0
+  11   0.0          0   0   0   0   0
+  12   0.0          0   0   0   0   0
+  13   0.0          0   0   0   0   0
+  14   0.0          0   0   0   0   0
+  15   0.0          0   0   0   0   0
+  16   0.0          0   0   0   0   0
+  17   0.0          0   0   0   0   0
+  18   0.0          0   0   0   0   0
+  19   7.5          7   7   7   7   7
+  20   9.9         10  10  10  10  10
+  21   0.0          0   0   0   0   0
+  22   0.0          0   0   0   0   0
+  23   0.0          0   0   0   0   0
+
+ Tot. 18.8         19  19  19  19  19
+
+
+
+ Routing results:
+ ****************
+ fIGURE 6.7                                                          
+ fIGURE 6.7: 24 hour 5% Design Storm No.4 Temporal Pattern           
+ DESIGN run no.  1
+
+
+ Parameters:  kc =    12.00    m = 0.80
+
+ Loss parameters     Initial loss (mm)   Cont. loss (mm/h)
+                           24.00              5.00
+
+
+
+ *** Calculated hydrograph,                                      
+
+                           Hydrograph
+                          Calc.          
+ Peak discharge,m³/s     98.48
+ Time to peak,h           23.0
+ Volume,m³            2.98E+06
+ Time to centroid,h       26.9
+ Lag (c.m. to c.m.),h     7.56
+ Lag to peak,h            3.71
+
+
+ Hydrograph summary
+ ******************
+
+ Site  Description
+   01  Calculated hydrograph,
+
+ Inc    Time    Hyd001
+   1    1.00    0.0000 
+   2    2.00    0.0000 
+   3    3.00    0.0000 
+   4    4.00    0.0000 
+   5    5.00    0.0000 
+   6    6.00    0.0000 
+   7    7.00    0.0000 
+   8    8.00    0.0000 
+   9    9.00    0.0000 
+  10   10.00    0.0000 
+  11   11.00    0.2227 
+  12   12.00    1.2844 
+  13   13.00    2.7306 
+  14   14.00    3.6364 
+  15   15.00    4.0645 
+  16   16.00    4.2086 
+  17   17.00    4.1787 
+  18   18.00    4.0289 
+  19   19.00    3.7959 
+  20   20.00    3.5122 
+  21   21.00    7.4548 
+  22   22.00   31.2706 
+  23   23.00   73.7226 
+  24   24.00   98.4830 
+  25   25.00   97.8369 
+  26   26.00   87.7450 
+  27   27.00   74.3624 
+  28   28.00   60.5841 
+  29   29.00   48.3860 
+  30   30.00   38.3770 
+  31   31.00   30.4508 
+  32   32.00   24.2771 
+  33   33.00   19.4932 
+  34   34.00   15.7714 
+  35   35.00   12.8586 
+  36   36.00   10.5639 
+  37   37.00    8.7427 
+  38   38.00    7.2863 
+  39   39.00    6.1127 
+  40   40.00    5.1600 
+  41   41.00    4.3809 
+  42   42.00    3.7397 
+  43   43.00    3.2085 
+  44   44.00    2.7658 
+  45   45.00    2.3947 
+  46   46.00    2.0822 
+  47   47.00    1.8176 
+  48   48.00    1.5925 
+  49   49.00    1.4001 
+  50   50.00    1.2351 
+  51   51.00    1.0930 
+  52   52.00    0.9702 
+  53   53.00    0.8636 
+  54   54.00    0.7707 
+  55   55.00    0.6897 
+  56   56.00    0.6187 
+  57   57.00    0.5563 
+  58   58.00    0.5013 
+  59   59.00    0.4528 
+  60   60.00    0.4098 
+  61   61.00    0.3716 
+  62   62.00    0.3376 
+  63   63.00    0.3073 
+  64   64.00    0.2802 
+  65   65.00    0.2559 
+  66   66.00    0.2341 
+  67   67.00    0.2145 
+  68   68.00    0.1969 
+  69   69.00    0.1810 
+  70   70.00    0.1665 
+  71   71.00    0.1535 
+  72   72.00    0.1417 
+  73   73.00    0.1309 
+  74   74.00    0.1211 
+  75   75.00    0.1122 
+  76   76.00    0.1040 
+  77   77.00    0.0966 
+  78   78.00    0.0898 
+  79   79.00    0.0835 
+  80   80.00    0.0778 
+  81   81.00    0.0725 
+  82   82.00    0.0677 
+  83   83.00    0.0632 
+  84   84.00    0.0591 
+  85   85.00    0.0553 
+  86   86.00    0.0518 
+  87   87.00    0.0486 
+  88   88.00    0.0456 
+  89   89.00    0.0428 
+  90   90.00    0.0402 
+  91   91.00    0.0378 
+  92   92.00    0.0356 
+  93   93.00    0.0335 
+  94   94.00    0.0316 
+  95   95.00    0.0298 
+  96   96.00    0.0281 
+  97   97.00    0.0266 
+  98   98.00    0.0251 
+  99   99.00    0.0238 
+ 100  100.00    0.0225 
+ 101  101.00    0.0213 
+ 102  102.00    0.0202 
+ 103  103.00    0.0191 
+ 104  104.00    0.0181 
+ 105  105.00    0.0172 
+ 106  106.00    0.0163 
+ 107  107.00    0.0155 
+ 108  108.00    0.0148 
+ 109  109.00    0.0140 
+ 110  110.00    0.0134 
+ 111  111.00    0.0127 
+ 112  112.00    0.0121 
+ 113  113.00    0.0115 
+ 114  114.00    0.0110 
+ 115  115.00    0.0105 
+ 116  116.00    0.0100 
+ 117  117.00    0.0096 
+ 118  118.00    0.0091 
+ 119  119.00    0.0087 
+ 120  120.00    0.0083 
+ 121  121.00    0.0080 
+ 122  122.00    0.0076 
+ 123  123.00    0.0073 
+ 124  124.00    0.0070 
+ 125  125.00    0.0067 
+ 126  126.00    0.0064 
+ 127  127.00    0.0061 
+ 128  128.00    0.0059 
+ 129  129.00    0.0056 
+ 130  130.00    0.0054 
+ 131  131.00    0.0052 
+ 132  132.00    0.0050 
+ 133  133.00    0.0048 
+ 134  134.00    0.0046 
+ 135  135.00    0.0044 
+ 136  136.00    0.0043 
+ 137  137.00    0.0041 
+ 138  138.00    0.0039 
+ 139  139.00    0.0038 
+ 140  140.00    0.0036 
+ 141  141.00    0.0035 
+ 142  142.00    0.0034 
+ 143  143.00    0.0033 
+ 144  144.00    0.0031 
+ 145  145.00    0.0030 
+ 146  146.00    0.0029 
+ 147  147.00    0.0028 
+ 148  148.00    0.0027 
+ 149  149.00    0.0026 
+ 150  150.00    0.0025 
+ 151  151.00    0.0024 
+ 152  152.00    0.0024 
+ 153  153.00    0.0023 
+ 154  154.00    0.0022 
+ 155  155.00    0.0021 
+ 156  156.00    0.0021 
+ 157  157.00    0.0020 
+ 158  158.00    0.0019 
+ 159  159.00    0.0019 
+ 160  160.00    0.0018 
+ 161  161.00    0.0017 
+ 162  162.00    0.0017 
+ 163  163.00    0.0016 
+ 164  164.00    0.0016 
+ 165  165.00    0.0015 
+ 166  166.00    0.0015 
+ 167  167.00    0.0014 
+ 168  168.00    0.0014 
+ 169  169.00    0.0013 
+ 170  170.00    0.0013 
+ 171  171.00    0.0013 
+ 172  172.00    0.0012 
+ 173  173.00    0.0012 
+ 174  174.00    0.0012 
+ 175  175.00    0.0011 
+ 176  176.00    0.0011 
+ 177  177.00    0.0011 
+ 178  178.00    0.0010 
+ 179  179.00    0.0010 
+ 180  180.00    0.0010 
+ 181  181.00    0.0009 
+ 182  182.00    0.0009 
+ 183  183.00    0.0009 
+ 184  184.00    0.0009 
+ 185  185.00    0.0008 
+ 186  186.00    0.0008 
+ 187  187.00    0.0008 
+ 188  188.00    0.0008 
+ 189  189.00    0.0007 
+ 190  190.00    0.0007 
+ 191  191.00    0.0007 
+ 192  192.00    0.0007 
+ 193  193.00    0.0007 
+ 194  194.00    0.0007 
+ 195  195.00    0.0006 
+ 196  196.00    0.0006 
+ 197  197.00    0.0006 
+ 198  198.00    0.0006 
+ 199  199.00    0.0006 
+ 200  200.00    0.0006 
+ 201  201.00    0.0005 

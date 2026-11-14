@@ -7,7 +7,7 @@ Read [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [docs/work/README.md](docs/work
 - Work on one selected stage/slice. Preserve unrelated changes and concurrent work. Use a topic branch or isolated worktree.
 - Commit and push a coherent locally checked batch; with GitHub APIs use one tree/commit and one branch update, not a commit per file.
 - Re-read remote heads before publishing. Do not force-push, merge, release, publish, change visibility or enable hosted automation without explicit owner approval.
-- The repository is public: keep private evidence, manuals and unreviewed RORB inputs/executables out of Git. Implement RORB procedures in Python, using existing RORB executables as the computational source of truth. Verify effective inputs and retain separate CMD and RORBwin profiles/results when they differ. Do not decompile or modify the supplied executables.
+- The owner authorised curated original RORB CMD inputs and standard-run results for public regression on 2026-11-15 (#81). Retain authenticated source identities and documented path-sanitisation derivatives. This excludes executables, manuals, OS traces, unrelated research and unreviewed data. Keep CMD and RORBwin separate; do not decompile or modify executables.
 - Update the selected work record and issue with exact revision, scope, evidence, limitations and next action. Do not close a numerical stage merely because code was merged.
 
 ## Implementation
