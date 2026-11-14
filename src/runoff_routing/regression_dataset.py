@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
 import importlib.util
 import json
 import platform
 import re
 import sys
+import zlib
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
@@ -371,6 +373,7 @@ def _binding(item: dict[str, Any], root: Path, custody: Path | None) -> SiteMetr
     if binding["policy_id"] != POLICY:
         message = "Unsupported scalar policy"
         raise UnsupportedEvidenceError(message)
+    custody = root if binding.get("data_scope") == "archive" else custody
     if custody is None:
         message = "Typed inputs require --custody-root pointing to the authenticated external dataset"
         raise IncompleteEvidenceError(message)
@@ -432,27 +435,34 @@ def _cases(register: dict[str, Any], group: str, single: str | None) -> list[dic
 
 def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
     found: dict[tuple[str, str, int], dict[str, str]] = {}
-    with path.open(encoding="utf-8-sig", newline="") as file:
-        reader = csv.DictReader(file)
-        if reader.fieldnames is None or tuple(reader.fieldnames) != CSV_COLUMNS:
-            message = "candidate CSV has omitted, additional or reordered columns"
-            raise RegressionError(message)
-        for row in reader:
-            if None in row or any(value is None for value in row.values()):
-                message = "candidate CSV record has missing or unexpected fields"
+    opener = gzip.open if path.suffix == ".gz" else Path.open
+    try:
+        with opener(path, mode="rt", encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file)
+            if reader.fieldnames is None or tuple(reader.fieldnames) != CSV_COLUMNS:
+                message = "candidate CSV has omitted, additional or reordered columns"
                 raise RegressionError(message)
-            key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
-            if key in found:
-                message = f"duplicate ordinate in candidate CSV: {key}"
-                raise RegressionError(message)
-            _scalar(row["python_discharge_m3_s"])
-            found[key] = row
+            for row in reader:
+                if None in row or any(value is None for value in row.values()):
+                    message = "candidate CSV record has missing or unexpected fields"
+                    raise RegressionError(message)
+                key = (row["case_id"], row["native_column_id"], int(row["sample_index"]))
+                if key in found:
+                    message = f"duplicate ordinate in candidate CSV: {key}"
+                    raise RegressionError(message)
+                _scalar(row["python_discharge_m3_s"])
+                found[key] = row
+    except (EOFError, zlib.error) as exc:
+        message = f"malformed compressed candidate CSV: {path}"
+        raise RegressionError(message) from exc
     return found
 
 
 def _candidate_computation_state(
     expected: set[tuple[str, str, int]],
     supplied: dict[tuple[str, str, int], dict[str, str]],
+    *,
+    authenticated_snapshot: bool = False,
 ) -> tuple[str, str]:
     """Retain candidate execution states independently of discharge comparisons."""
     states = {supplied[key]["classification"] for key in expected}
@@ -462,6 +472,8 @@ def _candidate_computation_state(
     if state in {"invalid", "unsupported", "incomplete", "not_run"}:
         reported = "incomplete" if state == "not_run" else state
         return reported, f"candidate computation declared {state}; no eligible numerical acceptance"
+    if state == "computed_unvalidated" and authenticated_snapshot:
+        return "computed", "authenticated cached candidate snapshot"
     if state not in {"computed/pass", "computed/fail"}:
         return "invalid", f"unrecognised candidate computation state: {state}"
     return "computed", state
@@ -473,6 +485,8 @@ def _compare(
     rows: list[list[str]],
     supplied: dict[tuple[str, str, int], dict[str, str]],
     engine: str,
+    *,
+    authenticated_snapshot: bool = False,
 ) -> dict[str, Any]:
     expected = {(case["case_id"], point["native_column_id"], i) for point in case["sites"] for i in range(len(rows))}
     observed = {key for key in supplied if key[0] == case["case_id"]}
@@ -489,7 +503,9 @@ def _compare(
             "reason": f"{len(expected - observed)} expected ordinates unavailable",
             "mismatches": [],
         }
-    disposition, state_reason = _candidate_computation_state(expected, supplied)
+    disposition, state_reason = _candidate_computation_state(
+        expected, supplied, authenticated_snapshot=authenticated_snapshot
+    )
     if disposition != "computed":
         return {"classification": disposition, "reason": state_reason, "mismatches": []}
     differences: list[dict[str, str | int]] = []
@@ -549,20 +565,19 @@ def _run(
     wheel: Path | None,
     custody: Path | None = None,
     series_path: Path | None = None,
+    snapshot: bool = False,
 ) -> tuple[dict[str, Any], bool]:
     register, root, index, register_sha, policy_sha = _load_register(path)
+    if snapshot:
+        csv_path, series_path, implementation = _snapshot(
+            register, root, (csv_path, series_path, implementation, wheel)
+        )
     selected = _cases(register, group, case_id)
     checked = _verify_index(root, index) if full_index else 0
     candidates = _predictions(csv_path) if csv_path is not None else {}
     series_document, stored = _series(series_path, implementation, wheel)
     _verify_series_profile(register, series_document)
-    all_case_ids = {entry["case_id"] for entry in register["cases"]}
-    if set(stored) - all_case_ids:
-        message = "Stored-series includes undeclared case IDs"
-        raise RegressionError(message)
-    if {key[0] for key in candidates} - all_case_ids:
-        message = "candidate CSV includes undeclared case IDs"
-        raise RegressionError(message)
+    _declared_candidates(register, stored, candidates)
     if csv_path is not None and not implementation:
         message = "candidate comparison requires exact --implementation revision"
         raise RegressionError(message)
@@ -571,7 +586,12 @@ def _run(
         raise RegressionError(message)
     results: list[dict[str, Any]] = []
     for item in selected:
-        case: dict[str, Any] = {"case_id": item["case_id"], "sets": item["sets"]}
+        case: dict[str, Any] = {
+            "case_id": item["case_id"],
+            "sets": item["sets"],
+            "policy_id": item.get("expectations", {}).get(engine, {}).get("policy_id", register["policies"][engine]),
+            "reference_kind": item.get("reference_kind"),
+        }
         try:
             case_root = _case_root(item, root, custody)
             for source in item["files"]:
@@ -582,7 +602,7 @@ def _run(
                 columns, rows = _reference(case_root, item)
                 site = _binding(item, case_root, custody)
                 if csv_path is not None:
-                    case.update(_compare(item, columns, rows, candidates, engine))
+                    case.update(_compare(item, columns, rows, candidates, engine, authenticated_snapshot=snapshot))
                 else:
                     case.update(
                         classification="verified",
@@ -594,7 +614,11 @@ def _run(
                     case, item, stored.get(item["case_id"]), candidates, site, engine, enabled=series_path is not None
                 )
         except (OSError, KeyError, IndexError, TypeError, ValueError) as exc:
-            _record_case_exception(case, exc)
+            status = _evidence_status(exc)
+            if case.get("classification") == "fail":
+                _record_scalar_unavailable(case, status, str(exc))
+            else:
+                case.update(classification=status, reason=str(exc), mismatches=[])
         results.append(case)
     counts = Counter(case["classification"] for case in results)
     complete = all(case["classification"] == ("pass" if csv_path is not None else "verified") for case in results)
@@ -606,6 +630,7 @@ def _run(
         "dataset_id": register["dataset_id"],
         "register_sha256": register_sha,
         "policy_sha256": policy_sha,
+        "scalar_policy_sha256": register.get("scalar_policy_file", {}).get("sha256"),
         "policy_id": register["policies"][engine],
         "engine_id": engine,
         "implementation_revision": implementation,
@@ -614,7 +639,10 @@ def _run(
         "wheel_import_match_verified": False,
         "comparison_module_sha256": comparator_hashes["regression_dataset.py"],
         "comparison_modules_sha256": comparator_hashes,
-        "run_kind": "candidate_comparison" if csv_path is not None else "reference_preflight",
+        "run_kind": "cached_candidate_snapshot"
+        if snapshot
+        else ("candidate_comparison" if csv_path is not None else "reference_preflight"),
+        "candidate_execution": "not_run; retained version-pinned snapshot" if snapshot else "external_or_not_run",
         "actual_package_import_origin": spec.origin if spec is not None else None,
         "candidate_csv_sha256": _hash(csv_path)[1] if csv_path is not None else None,
         "candidate_series_sha256": _hash(series_path)[1] if series_path is not None else None,
@@ -630,13 +658,26 @@ def _run(
     return outcome, complete
 
 
-def _record_case_exception(case: dict[str, Any], error: Exception) -> None:
-    """Protect an already demonstrated ordinate failure when scalar comparison raises."""
-    status = _evidence_status(error)
-    if case.get("classification") == "fail":
-        _record_scalar_unavailable(case, status, str(error))
-    else:
-        case.update(classification=status, reason=str(error), mismatches=[])
+def _declared_candidates(
+    register: dict[str, Any], stored: dict[str, Any], candidates: dict[tuple[str, str, int], dict[str, str]]
+) -> None:
+    """Reject candidate identities outside the declared population."""
+    all_case_ids = {entry["case_id"] for entry in register["cases"]}
+    if set(stored) - all_case_ids:
+        message = "Stored-series includes undeclared case IDs"
+        raise RegressionError(message)
+    if {key[0] for key in candidates} - all_case_ids:
+        message = "candidate CSV includes undeclared case IDs"
+        raise RegressionError(message)
+
+
+def _snapshot(register: dict[str, Any], root: Path, supplied: tuple[object, ...]) -> tuple[Path, Path, str]:
+    """Authenticate a retained candidate without claiming a fresh solver execution."""
+    if any(value is not None for value in supplied):
+        message = "--snapshot cannot mix external CSV, series, implementation or candidate wheel identities"
+        raise RegressionError(message)
+    snapshot = register["candidate_snapshot"]
+    return _verify(root, snapshot["csv"]), _verify(root, snapshot["series"]), snapshot["implementation_revision"]
 
 
 def _evidence_status(error: Exception) -> str:
@@ -736,10 +777,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--full-index", action="store_true")
     parser.add_argument("--custody-root", type=Path)
     parser.add_argument("--series", type=Path)
+    parser.add_argument("--snapshot", action="store_true", help="Compare the authenticated retained candidate snapshot")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     try:
-        if args.command != "preflight" and args.csv is None:
+        if args.command != "preflight" and args.csv is None and not args.snapshot:
             message = "compare/diagnose requires --csv with independently computed candidate ordinates"
             raise RegressionError(message)
         if args.command == "diagnose" and args.case is None:
@@ -756,6 +798,7 @@ def main(argv: list[str] | None = None) -> int:
             wheel=args.wheel,
             custody=args.custody_root,
             series_path=args.series,
+            snapshot=args.snapshot,
         )
         text = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
         if args.output is not None:

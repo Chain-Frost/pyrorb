@@ -1,0 +1,212 @@
+{
+  "cases": [
+    {
+      "case": {
+        "id": "pyromb-pr2-full",
+        "controls": [
+          [
+            1,
+            0.112
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            1,
+            0.112
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            2,
+            0.071
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            1,
+            0.112
+          ],
+          [
+            2,
+            0.071
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            5,
+            0.05
+          ],
+          [
+            2,
+            0.05
+          ],
+          [
+            7,
+            0
+          ]
+        ],
+        "areas": [
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.01
+        ],
+        "depths": [
+          40,
+          40,
+          40,
+          40,
+          40,
+          40
+        ],
+        "weights": [
+          5,
+          10,
+          25,
+          35,
+          15,
+          10
+        ],
+        "impervious": [
+          0,
+          0.5,
+          0.2,
+          0,
+          0,
+          0
+        ],
+        "h": 0.25,
+        "kc": 0.5,
+        "m": 0.8,
+        "il": 10.0,
+        "cl": 2.0,
+        "n": 48
+      },
+      "hashes": {
+        "catchment.catg": "2ad4663ddeaacdfd4bba4b199a29d3eed7bcb6d9f096ff62f6d9d107330bd247",
+        "prediction.json": "3f9cc02fcf394876262e04119f6fa638bb9bb7dc6a4d3230f648db3100e40bd5",
+        "reference.par": "033c47e94a4ba79d725d0be08164e62928de5da57aace27922fde08951e0e814",
+        "storm.stm": "7eca0837070e534b9947e0b4ca832763959ec8d973b7b1a18b24fa361f42dda3"
+      }
+    },
+    {
+      "case": {
+        "id": "pyromb-novel-storm",
+        "controls": [
+          [
+            1,
+            0.112
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            1,
+            0.112
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            2,
+            0.071
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            1,
+            0.112
+          ],
+          [
+            2,
+            0.071
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            5,
+            0.05
+          ],
+          [
+            2,
+            0.05
+          ],
+          [
+            7,
+            0
+          ]
+        ],
+        "areas": [
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.01,
+          0.01
+        ],
+        "depths": [
+          18.3,
+          24.7,
+          31.1,
+          15.9,
+          26.2,
+          37.4
+        ],
+        "weights": [
+          0.13,
+          0.47,
+          1.21,
+          0.0,
+          0.09,
+          0.83
+        ],
+        "impervious": [
+          0,
+          0.5,
+          0.2,
+          0,
+          0,
+          0
+        ],
+        "h": 0.2,
+        "kc": 0.65,
+        "m": 0.8,
+        "il": 4.75,
+        "cl": 0.85,
+        "n": 60
+      },
+      "hashes": {
+        "catchment.catg": "2ad4663ddeaacdfd4bba4b199a29d3eed7bcb6d9f096ff62f6d9d107330bd247",
+        "prediction.json": "61594aee7f6732d56cc186f1f0d01ffcaac192c0f287e8a68b22856a89294fee",
+        "reference.par": "ebe20a120b1ea461a4647ebd4750f94f3789ca580a101549dcc8274acfda92ab",
+        "storm.stm": "72da8c88a16eb03d342be8c680327c20a93a1ac5557256e0e4205afac912b6a1"
+      }
+    }
+  ],
+  "engine": "10999ca29f9516c6a7abd26df37cafd433a1cd4ae70d7ac61aa7213845c5ab6f",
+  "observer": "e7660666d6dbe4f66a04b0dfdd3736be463efcf8c41acdce21eb639014777742",
+  "qualification": "448a1aeb7c9435ac1c152f0cfed4b3629b912a18695d6b15defe6fbbd5311996",
+  "source": {
+    "src\\pyromb_cmd_event\\event.py": "97af34a9b912a863044583e198ec8fddf4c91eef68466b4ca7bd1484b12846ae",
+    "src\\pyromb_cmd_event\\geometry.py": "1a9447ed35b9f6caa3060d1b7ebda7b4d39ac8300b19057e1a8f691dcb319a88",
+    "src\\pyromb_cmd_event\\preparation.py": "aa272731ba1421e1333c5df74629f60141854cfd96e31b79fe19353d8e7ab497",
+    "src\\pyromb_cmd_event\\__init__.py": "b2478071ae1415b58f10d28a26e37f586f46302a827688bfbe591e2478a58734"
+  },
+  "policy": "Six authorized CMD processes: control/source/state for each of two cases, same active path. Original event is retrospective; novel forcing prediction is prospective. Original CATG byte-identical. Qualified mode4 source and mode1 state observer, unchanged binary, 30s job/40s wrapper and existing record/byte caps. No retries; stop on failure. Freeze complete sources, geometry, reach entries and states; retain all failures. No production acceptance or transfer."
+}

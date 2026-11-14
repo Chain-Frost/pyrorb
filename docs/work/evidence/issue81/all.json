@@ -1,0 +1,1432 @@
+{
+  "actual_package_import_origin": "$Verify\\checkout\\src\\runoff_routing\\__init__.py",
+  "candidate_csv_sha256": null,
+  "candidate_execution": "external_or_not_run",
+  "candidate_series_provenance": {},
+  "candidate_series_sha256": null,
+  "case_count": 85,
+  "cases": [
+    {
+      "case_id": "pub-zero-runoff",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 4,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "zero",
+        "smoke"
+      ]
+    },
+    {
+      "case_id": "pub-equilibrium",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 4,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "equilibrium",
+        "smoke"
+      ]
+    },
+    {
+      "case_id": "pub-linear-recession",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 5,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "smoke",
+        "recession"
+      ]
+    },
+    {
+      "case_id": "pub-linear-pulse",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 5,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "prescribed-input"
+      ]
+    },
+    {
+      "case_id": "pub-junction",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 4,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "junction",
+        "conservation"
+      ]
+    },
+    {
+      "case_id": "pub-loss-equality",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 2,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "loss",
+        "equality"
+      ]
+    },
+    {
+      "case_id": "pub-loss-crossing",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 2,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "loss",
+        "crossing",
+        "conservation"
+      ]
+    },
+    {
+      "case_id": "pub-initial-state",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 4,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "initial-state",
+        "linear"
+      ]
+    },
+    {
+      "case_id": "pub-branch-order",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 3,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "junction",
+        "ordering"
+      ]
+    },
+    {
+      "case_id": "pub-full-recession",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "engineering-analytic-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "independent_analytic",
+      "reference_rows": 10,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "recession",
+        "full-horizon"
+      ]
+    },
+    {
+      "case_id": "pub-invalid-negative-k",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "No tested engine adapter/result status contract yet",
+      "reference_kind": "unavailable",
+      "sets": [
+        "all",
+        "coverage-gap",
+        "negative",
+        "invalid"
+      ]
+    },
+    {
+      "case_id": "pub-unsupported-code",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "No tested engine adapter/result status contract yet",
+      "reference_kind": "unavailable",
+      "sets": [
+        "all",
+        "coverage-gap",
+        "negative",
+        "unsupported"
+      ]
+    },
+    {
+      "case_id": "pub-nonlinear-refinement",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "No tested engine adapter/result status contract yet",
+      "reference_kind": "unavailable",
+      "sets": [
+        "all",
+        "coverage-gap",
+        "nonlinear",
+        "refinement",
+        "conservation"
+      ]
+    },
+    {
+      "case_id": "pub-event-isolation",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "No tested engine adapter/result status contract yet",
+      "reference_kind": "unavailable",
+      "sets": [
+        "all",
+        "coverage-gap",
+        "event-isolation",
+        "batch"
+      ]
+    },
+    {
+      "case_id": "review-design-baseline",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp10",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp1",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp3",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp5",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp6",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp7",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp8",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "review-ensemble-tp9",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "cmd-reviewed",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-design-baseline-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-design-baseline-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp1-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp1-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp10-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp10-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp2-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp2-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp3-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp3-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp4-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp4-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp5-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp5-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp6-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp6-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp7-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp7-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp8-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp8-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp9-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "timestep-ensemble-tp9-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f1",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 201,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f2",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 401,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "zero-loss-ensemble-tp9-f4",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 801,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-selected",
+        "timestep",
+        "cmd-reporting-evidence",
+        "cmd-eligible",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "failure-baseline-after",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "failure-baseline-before",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "fig67-ilcl-confirmed",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "fig67-ilcl-low",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "fig67-ilcl-probe",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "fig67-zero",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "wheel-ilcl-confirmed",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "repeat-control",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "wheel-zero",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 301,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-gap",
+        "repeat-control",
+        "cmd-reporting-evidence",
+        "cmd-selected",
+        "cmd-eligible",
+        "cmd-migrated-eight",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "H1-three-source-asymmetric",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 33,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "H2-four-source-nested-odd-rain",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 49,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "H3-single-source-equality-chain",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 41,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "N4-six-source-serial-nested",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 73,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "pyromb-pr2-full",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 49,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "pyromb-novel-storm",
+      "classification": "verified",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "original evidence only; candidate not executed",
+      "reference_kind": "native_printed_interval",
+      "reference_rows": 61,
+      "reference_sites": 1,
+      "sets": [
+        "all",
+        "cmd-eligible",
+        "supplemental",
+        "cmd-reporting-evidence",
+        "native-all"
+      ]
+    },
+    {
+      "case_id": "failure-invalid-code",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Expected native failure; negative control, not successful computation",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-m-above-one",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-m-below-one",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-negative-reach-repeat",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-negative-reach",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-truncated-storm",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Expected native failure; negative control, not successful computation",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "failure-zero-reach",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "fig67-code11",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Incomplete raw native output",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "fig67-ilroc",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "fig67-kc5-m1",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "gui652-ilcl-baseline",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "gui652-werribee-fit-kc018-m1",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "invalid-catchment",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "Expected native failure; negative control, not successful computation",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "mr-design-areal-reopened",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "mr-ensemble-24h-5pct",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "mr-ensemble-three-durations-two-aeps",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "policy-after-cancel",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "policy-constant",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "policy-fresh-constant",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "policy-vary-first",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    },
+    {
+      "case_id": "policy-vary-reload",
+      "classification": "incomplete",
+      "mismatches": [],
+      "policy_id": "cmd644-printed-interval-v1",
+      "reason": "RORBwin 6.52 GUI reference; CMD-first deferred",
+      "reference_kind": null,
+      "sets": [
+        "all",
+        "native-all",
+        "native-gaps"
+      ]
+    }
+  ],
+  "comparison_module_sha256": "04b32a1415669b22be10be311ea4dd772529823e4fc1eaa7cc70898b91eb0750",
+  "comparison_modules_sha256": {
+    "regression_dataset.py": "04b32a1415669b22be10be311ea4dd772529823e4fc1eaa7cc70898b91eb0750"
+  },
+  "complete": false,
+  "counts": {
+    "incomplete": 25,
+    "verified": 60
+  },
+  "dataset_id": "public-regression-v1",
+  "engine_id": "python-cmd",
+  "format": "runoff-regression-results",
+  "implementation_revision": null,
+  "implementation_revision_verified": false,
+  "index_files_verified": 0,
+  "platform": "Windows-10-10.0.19045-SP0",
+  "policy_id": "cmd644-printed-interval-v1",
+  "policy_sha256": null,
+  "python": "3.14.6 (tags/v3.14.6:c63aec6, Jun 10 2026, 10:26:10) [MSC v.1944 64 bit (AMD64)]",
+  "register_sha256": "59b478181671cb19ff5d2e1df9ed5edf6bddeb3065556a536cf9f2bd5c806b1c",
+  "run_kind": "reference_preflight",
+  "scalar_policy_sha256": "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50",
+  "schema_version": 1,
+  "wheel_import_match_verified": false,
+  "wheel_sha256": null
+}

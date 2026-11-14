@@ -15,3 +15,5 @@ Reviewed for planning on 2026-11-09. Source-derived statements are reference spe
 | T1 | Chain-Frost/ryan-tools AGENTS.md, docs/DEVELOPMENT_GUIDE.md and docs/WORK_TRACKING.md, inspected 2026-11-09 | Inspiration for local validation, Windows acceptance, path safety, batch pushes and handoffs; not wholesale adoption of that repository's architecture. |
 
 Do not commit third-party binaries/manuals or assume sample redistribution rights. Keep bibliography/provenance and independently authored implementation separate. Review applicable permissions before copying source assets or publishing. This register is not legal advice or an assertion of endorsement.
+
+Owner approval on 2026-11-15 (#81) permits the curated original CMD input and standard-run result subset under `tests/fixtures/regression-v1/native-cmd/`. It excludes executables, manuals, OS traces and unrelated research. Historical authorisation is unchanged. Published derivatives identify original and sanitised hashes separately; Python outputs are candidate snapshots, never native observations. See [REGRESSION_DATASET.md](REGRESSION_DATASET.md).

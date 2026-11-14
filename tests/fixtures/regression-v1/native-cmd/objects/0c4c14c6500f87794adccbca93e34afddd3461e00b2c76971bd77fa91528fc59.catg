@@ -1,0 +1,32 @@
+Independent CMD holdout H2-four-source-nested-odd-rain
+C RORB_GE 002
+C #NODES
+C 0
+C #REACHES
+C 0
+C #STORAGES
+C 0
+C #INFLOW/OUTFLOW
+C 0
+C END RORB_GE
+1
+1, 0.6, -99, Reach 1
+3
+1, 1.7, -99, Reach 2
+3
+1, 0.45, -99, Reach 3
+4
+5, 0.8, -99, Reach 4
+4
+5, 1.3, -99, Reach 5
+3
+1, 2.1, -99, Reach 6
+4
+5, 0.55, -99, Reach 7
+7
+Holdout outlet
+0
+C Sub Area Data
+1.125, 2.3, 0.9, 4.75, -99
+C Impervious Fraction Data
+0, -99

@@ -1,0 +1,22 @@
+fIGURE 6.7: 24 hour 5% Design Storm No.* Temporal Pattern
+DESIGN
+C  
+C  Date run           : 11 Nov 2026 19:17
+C  Catchment file     : catchment.catg                                                                    
+C  Storm area (km²)   :     158.00
+C  Storm ARI (yr)     : 5%
+C  Storm duration     : 24 hour
+C  Temporal pattern   : ARR2016 pattern 10 (areal temporal patterns, standard area = 200 km²)
+C  Spatial pattern    : Uniform
+C  Burst depth (mm)   :    99.40
+C  Areal Red. Fact.   :     0.94 (ARR2016 approach)
+C  ARF*BurDepth(mm)   :    93.83
+C  
+C  
+   1.00000,200, 1,  1, 1, -99
+ 0,  24
+Temporal pattern (% of depth)
+  1.71,  1.52,  3.37,  2.25,  0.71,  0.53,  2.09,  4.15,  4.28,  2.83,  2.95,  1.92,  2.19,
+  6.35,  8.71, 10.86,  8.23,  7.47,  7.44,  4.63,  3.99,  5.22,  3.76,  2.84,-99.00
+C  Sub-area rainfall depths (areally weighted average depth =      93.83 mm)
+  93.83,  93.83,  93.83,  93.83,  93.83, -99.00
