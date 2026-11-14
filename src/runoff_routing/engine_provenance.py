@@ -72,6 +72,9 @@ def identify_implementation() -> ImplementationIdentity:
 
 def _compare_wheel_sources(wheel_bytes: bytes, sources: dict[str, bytes]) -> None:
     with ZipFile(BytesIO(wheel_bytes)) as archive:
+        if any(item.flag_bits & 1 for item in archive.infolist()):
+            message = "Encrypted wheel entries are not supported for exact build verification"
+            raise ValueError(message)
         entries = tuple(
             item for item in archive.infolist() if item.filename.startswith("runoff_routing/") and not item.is_dir()
         )
@@ -109,7 +112,7 @@ def verify_installed_wheel(wheel_path: Path) -> str:
     sources = _installed_sources()
     try:
         _compare_wheel_sources(wheel_bytes, sources)
-    except BadZipFile as exc:
-        message = "Wheel evidence is not a valid ZIP archive"
+    except (BadZipFile, RuntimeError, NotImplementedError) as exc:
+        message = f"Wheel source entries could not be inspected safely: {exc}"
         raise ValueError(message) from exc
     return hashlib.sha256(wheel_bytes).hexdigest()
