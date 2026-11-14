@@ -461,6 +461,8 @@ def _predictions(path: Path) -> dict[tuple[str, str, int], dict[str, str]]:
 def _candidate_computation_state(
     expected: set[tuple[str, str, int]],
     supplied: dict[tuple[str, str, int], dict[str, str]],
+    *,
+    authenticated_snapshot: bool = False,
 ) -> tuple[str, str]:
     """Retain candidate execution states independently of discharge comparisons."""
     states = {supplied[key]["classification"] for key in expected}
@@ -470,6 +472,8 @@ def _candidate_computation_state(
     if state in {"invalid", "unsupported", "incomplete", "not_run"}:
         reported = "incomplete" if state == "not_run" else state
         return reported, f"candidate computation declared {state}; no eligible numerical acceptance"
+    if state == "computed_unvalidated" and authenticated_snapshot:
+        return "computed", "authenticated cached candidate snapshot"
     if state not in {"computed/pass", "computed/fail"}:
         return "invalid", f"unrecognised candidate computation state: {state}"
     return "computed", state
@@ -481,6 +485,8 @@ def _compare(
     rows: list[list[str]],
     supplied: dict[tuple[str, str, int], dict[str, str]],
     engine: str,
+    *,
+    authenticated_snapshot: bool = False,
 ) -> dict[str, Any]:
     expected = {(case["case_id"], point["native_column_id"], i) for point in case["sites"] for i in range(len(rows))}
     observed = {key for key in supplied if key[0] == case["case_id"]}
@@ -497,7 +503,9 @@ def _compare(
             "reason": f"{len(expected - observed)} expected ordinates unavailable",
             "mismatches": [],
         }
-    disposition, state_reason = _candidate_computation_state(expected, supplied)
+    disposition, state_reason = _candidate_computation_state(
+        expected, supplied, authenticated_snapshot=authenticated_snapshot
+    )
     if disposition != "computed":
         return {"classification": disposition, "reason": state_reason, "mismatches": []}
     differences: list[dict[str, str | int]] = []
@@ -594,7 +602,7 @@ def _run(
                 columns, rows = _reference(case_root, item)
                 site = _binding(item, case_root, custody)
                 if csv_path is not None:
-                    case.update(_compare(item, columns, rows, candidates, engine))
+                    case.update(_compare(item, columns, rows, candidates, engine, authenticated_snapshot=snapshot))
                 else:
                     case.update(
                         classification="verified",

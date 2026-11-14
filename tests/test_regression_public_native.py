@@ -48,6 +48,33 @@ def test_curated_population_and_full_snapshot(tmp_path: Path) -> None:
     assert _run(tmp_path, group="authored")["counts"] == {"verified": 10}
 
 
+def test_unvalidated_candidate_status_requires_authenticated_snapshot(tmp_path: Path) -> None:
+    """Legacy computed_unvalidated outputs cannot pass as arbitrary external candidates."""
+    register = json.loads(REGISTER.read_bytes())
+    snapshot = DATA / register["candidate_snapshot"]["csv"]["path"]
+    out = tmp_path / "untrusted-legacy-candidate.json"
+    assert (
+        rd.main(
+            [
+                "diagnose",
+                str(REGISTER),
+                "--case",
+                "H1-three-source-asymmetric",
+                "--csv",
+                str(snapshot),
+                "--implementation",
+                register["candidate_snapshot"]["implementation_revision"],
+                "--output",
+                str(out),
+            ]
+        )
+        == 1
+    )
+    result = json.loads(out.read_bytes())
+    assert result["cases"][0]["classification"] == "invalid"
+    assert "computed_unvalidated" in result["cases"][0]["reason"]
+
+
 def test_public_payload_inventory_and_lossless_candidate() -> None:
     provenance = json.loads((DATA / "native-cmd" / "provenance.json").read_bytes())
     assert provenance["authentication_before"] == provenance["authentication_after"]
