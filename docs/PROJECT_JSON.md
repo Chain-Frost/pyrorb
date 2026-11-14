@@ -4,6 +4,13 @@
 
 **Owner decision (11 November 2026): Ignore every TOML requirement for now.** TOML parsing, output, migrations and JSON/TOML equivalence are explicitly deferred until the rest of the project is working.
 
+> **Schema migration (14 November 2026):** The original schema 1 described
+> below remains readable. New writes use schema 2 with a required
+> `"engine": {"id": "python", "numerical_profile": "engineering-v1"}`
+> field. Schema-1 engine-less projects load as `python` without changing
+> source content. The `rainfall_profile` is independent of the numerical
+> engine. See [the three-engine execution contract](ENGINES.md).
+
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
