@@ -158,9 +158,7 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
         "computed_time_start_hours": outcome.physical_time_hours[0],
         "computed_time_end_hours": outcome.physical_time_hours[-1],
         "computed_time_rows": len(outcome.physical_time_hours),
-        "original_input_sha256": {
-            Path(source["path"]).suffix: source["sha256"] for source in case["inputs"]
-        },
+        "original_input_sha256": {Path(source["path"]).suffix: source["sha256"] for source in case["inputs"]},
         "project_sha256": outcome.project_sha256,
         "model_sha256": outcome.model_sha256,
         "implementation_revision": outcome.implementation_revision,
