@@ -7,7 +7,7 @@ name = "python-runoff-routing"
 version = "0.0.0.dev0"
 description = "Public in-development Python rainfall-runoff routing implementation"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = []
 
 [project.optional-dependencies]
@@ -22,7 +22,7 @@ runoff_routing = ["py.typed"]
 [tool.pyright]
 include = ["src", "repo-scripts", "tests"]
 exclude = [".local", "tests/fixtures", "build", "dist"]
-pythonVersion = "3.14"
+pythonVersion = "3.13"
 pythonPlatform = "Windows"
 typeCheckingMode = "strict"
 
