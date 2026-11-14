@@ -9,6 +9,7 @@
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Compatibility contract](COMPATIBILITY.md)
 - [Regression contract](REGRESSION.md)
+- [Public source-pinned verification fixtures and cached comparator](REGRESSION_DATASET.md): draft PR #78; independent analytical controls, no native equivalence claim.
 - [Integrated recorded print review](RECORDED_PRINT_REVIEW.md)
 - [Source register](SOURCES.md)
 - [RORB worked-example inventory](RORB_MANUAL_EXAMPLES.md)
