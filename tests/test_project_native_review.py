@@ -459,6 +459,56 @@ def test_offline_suite_preserves_verified_native_reported_volume_without_gate_in
     )
 
 
+@pytest.mark.parametrize("token", ["NaN", "-1", "Infinity", "not-a-number"])
+def test_offline_suite_preserves_invalid_native_volume_status(tmp_path: Path, token: str) -> None:
+    root = tmp_path / "case"
+    root.mkdir()
+    project, manifest, _ = _synthetic_case(root)
+    _restamp_native(manifest, reported_volume=token)
+    result = run_suite(_suite_file(tmp_path, [_suite_case(project, manifest)]))
+    assert len(result.cases) == 1
+    assert result.cases[0].classification == "invalid"
+    assert result.cases[0].source_verification == "failed"
+    assert result.cases[0].execution_status == "not_computed"
+
+
+def test_offline_suite_marks_missing_original_report_incomplete(tmp_path: Path) -> None:
+    root = tmp_path / "case"
+    root.mkdir()
+    project, manifest, _ = _synthetic_case(root)
+    (manifest.parent / "historic.out").unlink()
+    result = run_suite(_suite_file(tmp_path, [_suite_case(project, manifest)]))
+    assert result.cases[0].classification == "incomplete"
+
+
+def test_offline_suite_marks_original_truncated_horizon_incomplete(tmp_path: Path) -> None:
+    root = tmp_path / "case"
+    root.mkdir()
+    project, manifest, _ = _synthetic_case(root)
+    raw = manifest.parent / "historic.out"
+    raw.write_text(
+        "".join(line for line in raw.read_text(encoding="utf-8").splitlines(keepends=True) if not line.startswith("6 3.00 ")),
+        encoding="utf-8",
+    )
+    record: dict[str, Any] = json.loads(manifest.read_text(encoding="utf-8"))
+    record["outputs"][0]["size_bytes"] = len(raw.read_bytes())
+    record["outputs"][0]["sha256"] = hashlib.sha256(raw.read_bytes()).hexdigest()
+    manifest.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
+    result = run_suite(_suite_file(tmp_path, [_suite_case(project, manifest)]))
+    assert result.cases[0].classification == "incomplete"
+
+
+def test_offline_suite_rejects_unsafe_original_report_path(tmp_path: Path) -> None:
+    root = tmp_path / "case"
+    root.mkdir()
+    project, manifest, _ = _synthetic_case(root)
+    record: dict[str, Any] = json.loads(manifest.read_text(encoding="utf-8"))
+    record["outputs"][0]["path"] = "../external.out"
+    manifest.write_text(json.dumps(record, indent=2, sort_keys=True), encoding="utf-8")
+    result = run_suite(_suite_file(tmp_path, [_suite_case(project, manifest)]))
+    assert result.cases[0].classification == "invalid"
+
+
 def test_offline_suite_handles_incomplete_capture_and_unavailable_file(tmp_path: Path) -> None:
     root = tmp_path / "case"
     root.mkdir()

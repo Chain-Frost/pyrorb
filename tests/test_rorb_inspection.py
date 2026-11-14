@@ -201,6 +201,7 @@ def test_cmd_one_based_report_rejects_truncated_end(tmp_path: Path) -> None:
     doc = inspect_file(_write(tmp_path, text, "truncated-cmd.out"))
     assert doc.status == "invalid"
     assert doc.hydrographs is None
+    assert doc.diagnostics[0].code == "incomplete_horizon"
 
 
 @pytest.mark.parametrize("value", ["NaN", "-1", "not-a-number", "Infinity"])

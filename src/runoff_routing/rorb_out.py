@@ -15,6 +15,10 @@ VOLUME = re.compile(r"\s*Volume\s*,\s*m(?:³|3)\s+(\S+)\s*", re.IGNORECASE)
 NUMERIC_START = re.compile(r"^[+-]?(?:\d|\.\d|\*|nan|inf)", re.IGNORECASE)
 
 
+class IncompleteHydrographError(ValueError):
+    """Report rows end before the original native calculation horizon."""
+
+
 def _extract_metadata(source: RorbSource) -> tuple[Decimal | None, int | None]:
     timestep: Decimal | None = None
     duration: int | None = None
@@ -88,6 +92,9 @@ def _validate_duration(rows: tuple[HydrographRow, ...], duration: int | None) ->
     # 1..N+1 (their first raw time is h); other characterised reports use
     # 0..N. Never shift the source increments or time tokens to reconcile.
     first_last = (rows[0].increment, rows[-1].increment)
+    if len(rows) < duration + 1:
+        message = "Report hydrograph rows do not cover the full calculation duration"
+        raise IncompleteHydrographError(message)
     if len(rows) != duration + 1 or first_last not in ((0, duration), (1, duration + 1)):
         message = "Report hydrograph rows do not cover the full calculation duration"
         raise ValueError(message)
@@ -137,6 +144,10 @@ def inspect_output(source: RorbSource) -> Inspection:
         _validate_time(rows, timestep)
         _validate_duration(rows, duration)
         volume = _reported_single_column_volume(source, index, tuple(fields[2:]))
+    except IncompleteHydrographError as exc:
+        return Inspection(
+            "output_report", "invalid", source, (Diagnostic("incomplete_horizon", str(exc), "error", index + 1),)
+        )
     except ValueError as exc:
         return Inspection(
             "output_report", "invalid", source, (Diagnostic("output_record", str(exc), "error", index + 1),)

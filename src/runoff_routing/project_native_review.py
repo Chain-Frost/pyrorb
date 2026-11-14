@@ -27,6 +27,14 @@ _HASH = re.compile(r"[a-f0-9]{64}\Z")
 _MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 
 
+class NativeReviewStatusError(ProjectError):
+    """Typed distinction between incomplete reference, unsupported source and invalid evidence."""
+
+    def __init__(self, classification: Literal["invalid", "incomplete", "unsupported"], message: str) -> None:
+        super().__init__(message)
+        self.classification = classification
+
+
 @dataclass(frozen=True, slots=True)
 class NativeProjectReview:
     """A verified reference diagnostic, not evidence of accepted numerical parity."""
@@ -185,29 +193,42 @@ def _checked_report(
     relative = Path(name)
     if relative.is_absolute() or ".." in relative.parts or relative.name != name:
         message = "Native report path must be a direct contained evidence file"
-        raise ProjectError(message)
+        raise NativeReviewStatusError("invalid", message)
     path = manifest_path.absolute().parent / relative
+    if not path.is_file():
+        message = "Native report source file is missing"
+        raise NativeReviewStatusError("incomplete", message)
+    if path.is_symlink() or not path.resolve().is_relative_to(manifest_path.absolute().parent.resolve()):
+        message = "Native report source file is an unsafe link"
+        raise NativeReviewStatusError("invalid", message)
     if path.stat().st_size > 64 * 1024 * 1024:
         message = "Native report exceeds the bounded 64 MiB offline review limit"
-        raise ProjectError(message)
+        raise NativeReviewStatusError("invalid", message)
     source = RorbSource.read(path)
     if source.sha256 != selected.get("sha256"):
         message = "Native output changed after manifest verification"
         raise ProjectError(message)
     inspection = inspect_output(source)
     if inspection.hydrographs is None:
-        message = "S1 could not validate a complete native hydrograph table"
-        raise ProjectError(message)
+        if inspection.status == "unsupported":
+            classification: Literal["invalid", "incomplete", "unsupported"] = "unsupported"
+        elif any(problem.code == "incomplete_horizon" for problem in inspection.diagnostics):
+            classification = "incomplete"
+        else:
+            classification = "invalid"
+        message = f"S1 native output inspection {inspection.status}: {inspection.diagnostics}"
+        raise NativeReviewStatusError(classification, message)
     report = inspection.hydrographs
     if native_column_id not in report.columns:
         message = f"Native printed column {native_column_id!r} is absent"
-        raise ProjectError(message)
+        raise NativeReviewStatusError("invalid", message)
     if report.time_increment_hours is None or report.reported_duration_increments is None:
         message = "Native output lacks an independently reported timestep or duration"
-        raise ProjectError(message)
+        raise NativeReviewStatusError("incomplete", message)
     if len(report.rows) != expected_rows:
         message = "Native and S1 calculation horizons do not match"
-        raise ProjectError(message)
+        classification = "incomplete" if len(report.rows) < expected_rows else "invalid"
+        raise NativeReviewStatusError(classification, message)
     # This initial CMD profile is characterised by raw Inc labels 1..N.
     if any(row.increment != i for i, row in enumerate(report.rows, start=1)):
         message = "Native CMD raw increment labels are not the characterised 1-based sequence"

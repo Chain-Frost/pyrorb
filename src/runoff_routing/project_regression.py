@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Literal, cast
 
 from .project_json import LegacyRunFiles, LoadedProject, ProjectError, SourceFile, load_project
-from .project_native_review import NativeProjectReview, review_project_native_captures
+from .project_native_review import NativeProjectReview, NativeReviewStatusError, review_project_native_captures
 from .rorb_codec import FormatProblem
 
 FORMAT = "python-runoff-routing-offline-regression"
@@ -422,6 +422,21 @@ def _preflight_native(loaded: LoadedProject, manifest_path: Path, native_spec: N
         message = "Ambiguous or incomplete print-location mapping coverage"
         raise _CaseError.invalid(message)
     _validate_native_column_coverage(native, actual_columns)
+    outputs = native.get("outputs")
+    if isinstance(outputs, list):
+        for entry in cast("list[object]", outputs):
+            if not isinstance(entry, dict):
+                message = "Malformed retained native output entry"
+                raise _CaseError.invalid(message)
+            name = cast("dict[str, object]", entry).get("path")
+            if isinstance(name, str) and name.lower().endswith(".out"):
+                relative = Path(name)
+                if relative.is_absolute() or relative.name != name or ".." in relative.parts:
+                    message = "Unsafe retained native output path"
+                    raise _CaseError.invalid(message)
+                if not (manifest_path.absolute().parent / relative).is_file():
+                    message = "Declared native output report is missing"
+                    raise _CaseError.incomplete(message)
 
 
 def _run_case(spec: CaseSpec, root: Path) -> CaseOutcome:
@@ -450,13 +465,10 @@ def _run_case(spec: CaseSpec, root: Path) -> CaseOutcome:
             engine_executable_sha256=spec.native.engine_executable_sha256,
             print_mappings=tuple((m.model_print_id, m.native_column_id) for m in spec.native.print_mapping),
         )
+    except NativeReviewStatusError as exc:
+        raise _CaseError(exc.classification, str(exc)) from exc
     except ProjectError as exc:
-        reason = str(exc)
-        if "Unsupported" in reason or "only supports" in reason or "not supported" in reason:
-            raise _CaseError.unsupported(reason) from exc
-        if "hydrograph" in reason.lower() or "horizon" in reason.lower() or "report" in reason.lower():
-            raise _CaseError.incomplete(reason) from exc
-        raise _CaseError.invalid(reason) from exc
+        raise _CaseError.invalid(str(exc)) from exc
     if not reviews:
         message = "Native comparison returned no print locations"
         raise _CaseError.invalid(message)
