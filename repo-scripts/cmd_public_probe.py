@@ -127,7 +127,8 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
     with TemporaryDirectory(prefix="cmd-public-probe-") as directory:
         path = Path(directory) / "source.json"
         project_text = project_to_json(project)
-        path.write_text(project_text, encoding="utf-8")
+        # Stable LF source bytes on Windows/Linux; fingerprint the exact written project.
+        path.write_bytes(project_text.encode("utf-8"))
         outcome = run_engine_project(path)
     if outcome.status != "computed_unvalidated":
         return {
