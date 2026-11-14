@@ -71,13 +71,13 @@ Source: private PR #65 at `78d257745e94cdca74d1fdcdc8a615d472a8bf9c`; original r
 Owner approval on 2026-11-15 is prospective. Historical AUTHORIZATION.json and private originals remain unchanged. Approval excludes unrelated research, executables, manuals and OS traces. No native run, merge, release, new hosted automation or numerical-stage closure is part of this transfer.
 
 
-### Linux / Python 3.14 cached CMD verification
+### Linux / Python 3.13 cached CMD verification (3.14 also supported)
 
-The native cached regression is **cross-platform** and needs no RORB executable or private custody directory. From a clean Linux checkout with the public package installed in a Python 3.14 environment:
+The native cached regression is **cross-platform** and needs no RORB executable or private custody directory. Under the current development policy, a successful Linux/Python 3.13 or 3.14 pure-Python run is equivalent to Windows for this cached suite; do not require an additional Windows run. This does not certify a fresh numerical engine or native RORB execution. From a clean Linux checkout with the public package installed in a Python 3.13 environment (or substitute Python 3.14):
 
 ~~~sh
-python3.14 -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index --output /tmp/cmd-preflight.json
-python3.14 -m runoff_routing.regression_dataset compare tests/fixtures/regression-v1/register.json --set cmd-eligible --snapshot --output /tmp/cmd-snapshot.json
+python3.13 -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index --output /tmp/cmd-preflight.json
+python3.13 -m runoff_routing.regression_dataset compare tests/fixtures/regression-v1/register.json --set cmd-eligible --snapshot --output /tmp/cmd-snapshot.json
 ~~~
 
 Use fresh output names. The snapshot is a retained historical candidate run, not newly computed hydrology. Full-index preflight should pass 50 cases and verify **227** published native files. The cached scalar comparison intentionally exits **1** (48 case passes plus two incomplete zero-flow peak times), while preserving original 19,550 ordinate matches, 50 peak magnitudes and 50 reported inclusive volumes. An unrelated nonzero exit is not acceptable. See [cross-platform index correction](work/2026-11-15-cmd81-native-index-portability.md).

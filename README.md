@@ -31,7 +31,7 @@ with optional byte-verified wheel SHA-256 when the artifact is supplied.
 
 ## Development and smoke example
 
-Windows / CPython 3.14 is the acceptance environment. The project does not require a virtual environment, although using one is supported.
+Python 3.13 or 3.14 on Linux or Windows is sufficient for current pure-Python development checks; Windows remains required for RORB_CMD/RORBwin and OS-specific behaviour. The project does not require a virtual environment, although using one is supported. The Windows/Python 3.14 commands below are one valid example.
 
 ~~~powershell
 py -3.14 -m pip install -e ".[dev]"
