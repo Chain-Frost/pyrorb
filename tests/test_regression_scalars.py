@@ -469,4 +469,3 @@ def test_missing_or_invalid_scalar_evidence_cannot_mask_ordinate_failure(
     assert case["scalar_evidence"]["classification"] == expected
     assert case["mismatches"][0]["site"] == "Hyd001"
     assert result["counts"] == {"fail": 1}
-
