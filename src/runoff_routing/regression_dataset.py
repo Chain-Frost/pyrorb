@@ -17,7 +17,7 @@ import sys
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, cast
 
 FORMAT = "runoff-regression-register"
 RESULT_FORMAT = "runoff-regression-results"
@@ -63,7 +63,7 @@ def _json(path: Path) -> dict[str, Any]:
     if not isinstance(item, dict):
         message = f"expected a JSON object: {path}"
         raise RegressionError(message)
-    return item
+    return cast("dict[str, Any]", item)
 
 
 def _scalar(token: object) -> Decimal:
@@ -150,21 +150,48 @@ def _time_and_values(rows: list[list[str]], step: str | None) -> None:
 
 def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[str]]]:
     document = _json(_verify(root, case["reference"]))
-    tables = document.get("tables")
-    if not isinstance(tables, list) or len(tables) != 1:
+    raw_tables: object = document.get("tables")
+    if not isinstance(raw_tables, list) or len(raw_tables) != 1:
         message = "reference lacks exactly one complete identifiable table"
         raise RegressionError(message)
-    table = tables[0]
-    columns, rows = table["columns"], table["rows"]
-    if not isinstance(columns, list) or columns[:2] != ["Inc", "Time"] or len(set(columns)) != len(columns):
+    raw_table = cast("list[object]", raw_tables)[0]
+    if not isinstance(raw_table, dict):
+        message = "reference table is not an object"
+        raise RegressionError(message)
+    table = cast("dict[str, object]", raw_table)
+    raw_columns, raw_rows = table.get("columns"), table.get("rows")
+    if not isinstance(raw_columns, list):
+        message = "missing or invalid output column list"
+        raise RegressionError(message)
+    column_objects = cast("list[object]", raw_columns)
+    if (
+        len(column_objects) < 3
+        or column_objects[:2] != ["Inc", "Time"]
+        or not all(isinstance(column, str) for column in column_objects)
+    ):
         message = "missing, duplicate or reordered output columns"
         raise RegressionError(message)
-    if not isinstance(rows, list) or len(rows) != case["clock"]["row_count"]:
+    columns = cast("list[str]", column_objects)
+    if len(set(columns)) != len(columns):
+        message = "duplicate output columns"
+        raise RegressionError(message)
+    if not isinstance(raw_rows, list):
+        message = "invalid original reference rows"
+        raise RegressionError(message)
+    row_objects = cast("list[object]", raw_rows)
+    if len(row_objects) != case["clock"]["row_count"]:
         message = "truncated or reordered original reference horizon"
         raise RegressionError(message)
-    if any(not isinstance(row, list) or len(row) != len(columns) for row in rows):
-        message = "ragged original native report"
-        raise RegressionError(message)
+    rows: list[list[str]] = []
+    for raw_row in row_objects:
+        if not isinstance(raw_row, list):
+            message = "ragged original native report"
+            raise RegressionError(message)
+        cells = cast("list[object]", raw_row)
+        if len(cells) != len(columns) or not all(isinstance(value, str) for value in cells):
+            message = "ragged or non-token native report"
+            raise RegressionError(message)
+        rows.append(cast("list[str]", cells))
     mapped = [site["native_column_id"] for site in case["sites"]]
     if len(mapped) != len(set(mapped)) or set(mapped) != set(columns[2:]):
         message = "physical print site map is duplicate or does not exhaust actual output columns"
@@ -178,14 +205,25 @@ def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], st
     if register.get("format") != FORMAT or register.get("schema_version") != VERSION:
         message = "unrecognised regression register format or version"
         raise RegressionError(message)
-    cases = register.get("cases")
-    if not isinstance(cases, list) or not cases:
+    raw_cases: object = register.get("cases")
+    if not isinstance(raw_cases, list) or not raw_cases:
         message = "empty regression case population"
         raise RegressionError(message)
-    identifiers = [c["case_id"] for c in cases]
+    cases: list[dict[str, Any]] = []
+    for raw_case in cast("list[object]", raw_cases):
+        if not isinstance(raw_case, dict):
+            message = "regression case must be an object"
+            raise RegressionError(message)
+        entry = cast("dict[str, Any]", raw_case)
+        if not isinstance(entry.get("case_id"), str) or not isinstance(entry.get("sets"), list):
+            message = "regression case requires string case_id and named sets"
+            raise RegressionError(message)
+        cases.append(entry)
+    identifiers = [entry["case_id"] for entry in cases]
     if len(identifiers) != len(set(identifiers)):
         message = "duplicate case IDs"
         raise RegressionError(message)
+    register["cases"] = cases
     root = (path.parent / register["data_root"]).resolve(strict=True)
     file_index = register.get("file_index")
     index = _json(_verify(root, file_index)) if file_index is not None else {}
@@ -195,13 +233,18 @@ def _load_register(path: Path) -> tuple[dict[str, Any], Path, dict[str, Any], st
 
 
 def _verify_index(root: Path, index: dict[str, Any]) -> int:
-    listed = index.get("files", {})
-    if not isinstance(listed, dict):
+    raw_listed: object = index.get("files", {})
+    if not isinstance(raw_listed, dict):
         message = "corrupt original native FILE_INDEX"
         raise RegressionError(message)
-    for name, fingerprint in listed.items():
+    entries = cast("dict[object, object]", raw_listed)
+    for name, raw_fingerprint in entries.items():
+        if not isinstance(name, str) or not isinstance(raw_fingerprint, dict):
+            message = "invalid file index entry"
+            raise RegressionError(message)
+        fingerprint = cast("dict[str, Any]", raw_fingerprint)
         _verify(root, {"path": name, **fingerprint})
-    return len(listed)
+    return len(entries)
 
 
 def _cases(register: dict[str, Any], group: str, single: str | None) -> list[dict[str, Any]]:
@@ -312,8 +355,9 @@ def _run(
     selected = _cases(register, group, case_id)
     checked = _verify_index(root, index) if full_index else 0
     candidates = _predictions(csv_path) if csv_path is not None else {}
-    if {key[0] for key in candidates} - {c["case_id"] for c in selected}:
-        message = "candidate CSV includes undeclared or unselected case IDs"
+    all_case_ids = {entry["case_id"] for entry in register["cases"]}
+    if {key[0] for key in candidates} - all_case_ids:
+        message = "candidate CSV includes undeclared case IDs"
         raise RegressionError(message)
     if csv_path is not None and not implementation:
         message = "candidate comparison requires exact --implementation revision"
@@ -356,7 +400,11 @@ def _run(
         "policy_id": register["policies"][engine],
         "engine_id": engine,
         "implementation_revision": implementation,
+        "implementation_revision_verified": False,
         "wheel_sha256": _hash(wheel)[1] if wheel is not None else None,
+        "wheel_import_match_verified": False,
+        "comparison_module_sha256": _hash(Path(__file__))[1],
+        "run_kind": "candidate_comparison" if csv_path is not None else "reference_preflight",
         "actual_package_import_origin": spec.origin if spec is not None else None,
         "candidate_csv_sha256": _hash(csv_path)[1] if csv_path is not None else None,
         "python": sys.version,
