@@ -48,9 +48,7 @@ class BatchEventOutcome:
     numerical_profile: Literal["engineering-v1"] = "engineering-v1"
 
 
-def iter_explicit_events(
-    prepared: PreparedCatchment, events: Iterable[ExplicitEvent]
-) -> Iterator[BatchEventOutcome]:
+def iter_explicit_events(prepared: PreparedCatchment, events: Iterable[ExplicitEvent]) -> Iterator[BatchEventOutcome]:
     """Stream one independent outcome per event in supplied order.
 
     A duplicate ID produces an explicit invalid-input record, never a silent
@@ -76,9 +74,7 @@ def iter_explicit_events(
             yield BatchEventOutcome(identifier, "computed_unvalidated", result)
 
 
-def run_explicit_batch(
-    prepared: PreparedCatchment, events: Iterable[ExplicitEvent]
-) -> tuple[BatchEventOutcome, ...]:
+def run_explicit_batch(prepared: PreparedCatchment, events: Iterable[ExplicitEvent]) -> tuple[BatchEventOutcome, ...]:
     """Materialise ordered results when the caller wishes to retain all events.
 
     For larger event populations, consume iter_explicit_events incrementally
