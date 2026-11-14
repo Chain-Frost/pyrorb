@@ -14,7 +14,7 @@ from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, cast
 
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineOutcome, EngineSelection
@@ -166,6 +166,15 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _fresh_reporting_classification(item: dict[str, Any]) -> str:
+    """Do not convert missing/invalid scalar result metadata into a passing status."""
+    raw: object = item.get("fresh_reporting")
+    if not isinstance(raw, dict):
+        return "not_run"
+    classification: object = cast("dict[str, object]", raw).get("classification")
+    return classification if isinstance(classification, str) else "not_run"
+
+
 def main() -> int:
     """Return success for a complete diagnostic inventory, not a numerical pass claim."""
     register = json.loads(REGISTER.read_text(encoding="utf-8"))
@@ -184,13 +193,7 @@ def main() -> int:
         if observed[case_id]["status"] != "printed_pass" or observed[case_id].get("rows") != length
     ]
     gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
-    scalar_statuses = dict(
-        sorted(
-            Counter(
-                str((item.get("fresh_reporting") or {}).get("classification", "not_run")) for item in outcomes
-            ).items()
-        )
-    )
+    scalar_statuses = dict(sorted(Counter(_fresh_reporting_classification(item) for item in outcomes).items()))
     print(
         json.dumps(
             {
