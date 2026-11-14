@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from io import BytesIO
 from functools import cache
 from importlib.metadata import PackageNotFoundError, version
+from io import BytesIO
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 

@@ -67,6 +67,22 @@ def _failure(
     )
 
 
+def _with_implementation_identity(base: EngineOutcome, wheel_artifact: Path | None) -> EngineOutcome:
+    """Bind exact package bytes and, when supplied, a source-matched wheel before dispatch."""
+    try:
+        identity = identify_implementation()
+    except (OSError, ValueError) as exc:
+        return _failure(base, "invalid_input", "implementation_identity", str(exc))
+    attributed = replace(base, implementation_revision=identity.revision, package_version=identity.package_version)
+    if wheel_artifact is None:
+        return attributed
+    try:
+        wheel_hash = verify_installed_wheel(wheel_artifact)
+    except (OSError, ValueError) as exc:
+        return _failure(attributed, "invalid_input", "wheel_identity", str(exc))
+    return replace(attributed, verified_wheel_sha256=wheel_hash)
+
+
 def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     if loaded.project.rainfall_profile == "arr-2026v1":
         return _failure(
@@ -125,18 +141,9 @@ def run_engine_project(
     loaded = load_project(project_path)
     effective = loaded.project.engine if selection is None else selection
     provenance: SelectionSource = "project" if selection is None else selection_source
-    base = _base(loaded, effective, provenance)
-    try:
-        identity = identify_implementation()
-    except (OSError, ValueError) as exc:
-        return _failure(base, "invalid_input", "implementation_identity", str(exc))
-    base = replace(base, implementation_revision=identity.revision, package_version=identity.package_version)
-    if wheel_artifact is not None:
-        try:
-            wheel_hash = verify_installed_wheel(wheel_artifact)
-        except (OSError, ValueError) as exc:
-            return _failure(base, "invalid_input", "wheel_identity", str(exc))
-        base = replace(base, verified_wheel_sha256=wheel_hash)
+    base = _with_implementation_identity(_base(loaded, effective, provenance), wheel_artifact)
+    if base.diagnostics:
+        return base
     if effective.engine == "python":
         if native_config is not None:
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
