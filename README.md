@@ -18,8 +18,8 @@ S6 ARR Data Hub source intake [#38](https://github.com/Chain-Frost/python-runoff
 ## Three selectable computation engines (issue #74)
 
 The versioned product selector is `python` (default, existing unvalidated
-engineering reference), `python-cmd` (explicitly unavailable until #75
-integrates the qualified compatible backend), and `rorb-cmd` (optional
+engineering reference), `python-cmd` (bounded CMD 6.44 event backend,
+public source/wheel native acceptance outstanding), and `rorb-cmd` (optional
 user-installed native RORB CMD 6.44 with a reviewed local executable hash).
 New JSON project schema 2 records the numerical engine/profile separately
 from rainfall preparation; engine-less schema-1 files migrate to `python`.
@@ -54,5 +54,5 @@ Run the example from the checkout root after installing the package. This checks
 ## Navigation and data controls
 
 - [Documentation index](docs/README.md), [S6 detailed capability and native gates](docs/ARR_S6_INTEGRATION.md), [implementation roadmap](docs/IMPLEMENTATION_PLAN.md), [development guide](docs/DEVELOPMENT.md), [source register](docs/SOURCES.md).
-- Preserve original effective inputs, native clock labels, engine identities and frozen tolerances. Public code uses the strict mathematical reference backend. A separate **private, opt-in experimental CMD-compatible** mode is under investigation and is neither merged here nor numerically accepted.
+- Preserve original effective inputs, native clock labels, engine identities and frozen tolerances. Public code uses the strict mathematical reference backend. A bounded `python-cmd` event implementation is proposed in a draft integration PR, not yet merged or accepted through public source/wheel native replay.
 - Do not commit private raw captures, local paths, native executables, manuals, client models or unapproved input datasets. Keep unapproved local material in ignored `.local/`. TOML, publication and releases remain deferred and require separate owner decisions. This project is not endorsed by RORB's authors or custodians.

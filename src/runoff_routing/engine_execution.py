@@ -14,6 +14,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
+from .cmd_engine import CMD_PROFILE, CmdBoundaryError, run_cmd_model
 from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
@@ -149,11 +150,21 @@ def run_engine_project(
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
         return _python(loaded, base)
     if effective.engine == "python-cmd":
-        return _failure(
+        if native_config is not None:
+            return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
+        if effective.numerical_profile != CMD_PROFILE:
+            return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
+        try:
+            computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
+        except CmdBoundaryError as exc:
+            return _failure(base, exc.status, exc.code, str(exc))
+        return replace(
             base,
-            "unavailable_engine",
-            "python_cmd_pending",
-            "python-cmd is not integrated: issue #75 must supply the qualified CMD event backend",
+            status="computed_unvalidated",
+            hydrographs=computed.hydrographs,
+            physical_time_hours=computed.physical_time_hours,
+            internal_quantities="python_available",
+            python_diagnostics=computed.diagnostics,
         )
     if native_config is None:
         return _failure(

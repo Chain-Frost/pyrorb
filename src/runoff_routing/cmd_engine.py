@@ -1,0 +1,216 @@
+"""Typed S1 RunModel -> bounded CMD 6.44 whole-event computation.
+
+This adapter does not reinterpret legacy files, import research data or reuse
+the improved Python engine's rainfall, coefficient or routing calculations.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import math
+from dataclasses import asdict, dataclass
+from decimal import Decimal
+
+from ._cmd644.models import Control, Event, NumberInput
+from ._cmd644.native_diagnostics import DIAGNOSTIC_PROFILE, TargetOperands, target_diagnostic
+from ._cmd644.precision import UnsupportedNumericPath, store
+from ._cmd644.reporting import CONTRACT_ID, execute
+from .engine_types import EngineHydrograph, EngineStatus
+from .project_json import LoadedProject
+from .rorb_model import to_json
+
+CMD_PROFILE = "cmd-6.44"
+CANDIDATE_SOURCE = "fea9c80c521127325b779ea0ea87ddf77795b290"
+
+
+class CmdBoundaryError(ValueError):
+    """A typed rejection before calculation or failure in bounded arithmetic."""
+
+    def __init__(self, status: EngineStatus, code: str, description: str) -> None:
+        super().__init__(description)
+        self.status = status
+        self.code = code
+
+
+@dataclass(frozen=True, slots=True)
+class CmdComputed:
+    """Common result shape without claiming completed native equivalence."""
+
+    hydrographs: tuple[EngineHydrograph, ...]
+    physical_time_hours: tuple[str, ...]
+    diagnostics: dict[str, object]
+
+
+def _unsupported(code: str, description: str) -> None:
+    raise CmdBoundaryError("unsupported_feature", code, description)
+
+
+def _number(value: Decimal) -> NumberInput:
+    """Use public typed decimal representation and candidate f64->stored-f32 rule."""
+
+    lexeme = str(value)
+    try:
+        widened = float(lexeme)
+    except (OverflowError, ValueError) as exc:
+        raise CmdBoundaryError("invalid_input", "cmd_decimal_input", f"Cannot convert {lexeme!r}") from exc
+    if not math.isfinite(widened):
+        raise CmdBoundaryError("invalid_input", "cmd_nonfinite_input", "Nonfinite binary64 CMD operand")
+    try:
+        stored = store(widened)
+    except UnsupportedNumericPath as exc:
+        raise CmdBoundaryError("unsupported_feature", "cmd_input_representation", str(exc)) from exc
+    return NumberInput(lexeme, widened, stored)
+
+
+def _check_scope(loaded: LoadedProject) -> None:
+    """Reject every input dimension not present in the qualified event path."""
+
+    run = loaded.run
+    parameters = run.parameters
+    storm = run.storm
+    catchment = run.catchment
+    if loaded.project.rainfall_profile not in ("explicit", "legacy-rorb"):
+        _unsupported("cmd_rainfall_profile", "CMD requires a supplied explicit DESIGN storm")
+    if any(asset.role != "reference" for asset in loaded.project.assets):
+        _unsupported("cmd_external_assets", "External storm and rainfall assets are not yet converted to CMD events")
+    if (
+        parameters.num_isa != 1
+        or parameters.num_bursts != 1
+        or not parameters.lumped_kc
+        or parameters.loss_model != 1
+        or len(parameters.routing) != 1
+        or len(parameters.losses) != 1
+    ):
+        _unsupported("cmd_parameters", "Only lumped kc, one ISA/burst and pervious IL/CL are characterised")
+    if (storm.pluviograph_count, storm.isa_count, storm.burst_count) != (1, 1, 1):
+        _unsupported("cmd_storm", "Only one DESIGN pluviograph, ISA and burst is characterised")
+    if catchment.storages:
+        _unsupported("cmd_storages", "Special storages are not characterised")
+    if len(catchment.print_locations) != 1 or sum(step.code == 7 for step in catchment.controls) != 1:
+        _unsupported("cmd_print_sites", "Only a single final physical print location is characterised")
+    if catchment.controls[-1].code != 7 or any(step.code not in (1, 3, 4, 5, 7) for step in catchment.controls):
+        _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
+    if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
+        _unsupported("cmd_horizon", "Event calculation horizon does not include all rainfall bins")
+
+
+def adapt_event(loaded: LoadedProject) -> Event:
+    """Convert the existing public typed model once; never parse a second grammar."""
+
+    _check_scope(loaded)
+    run = loaded.run
+    control_values: list[Control] = []
+    reach_index = 0
+    for step in run.catchment.controls:
+        if step.code in (1, 5):
+            length = run.catchment.reaches[reach_index].length_km
+            reach_index += 1
+        else:
+            length = Decimal(0)
+        control_values.append(Control(step.code, _number(length)))
+    if reach_index != len(run.catchment.reaches):
+        raise CmdBoundaryError("invalid_input", "cmd_reach_order", "Reach/control count differs")
+    pattern = (Decimal(0),) * run.storm.start_increment + run.storm.percentages
+    weights = tuple(_number(value) for value in pattern)
+    if not any(weight.stored > 0 for weight in weights):
+        _unsupported("cmd_zero_pattern", "All rainfall pattern weights vanished after CMD storage")
+    parameters = run.parameters
+    original_model_json = to_json(run)
+    return Event(
+        loaded.project.identifier,
+        hashlib.sha256(original_model_json.encode("utf-8")).hexdigest(),
+        original_model_json,
+        tuple(control_values),
+        tuple(_number(item.area_km2) for item in run.catchment.subareas),
+        tuple(_number(value) for value in run.storm.depths_mm),
+        tuple(_number(Decimal(0)) for _ in run.catchment.subareas),
+        weights,
+        _number(run.storm.timestep_hours),
+        _number(parameters.routing[0].kc),
+        _number(parameters.routing[0].m),
+        _number(parameters.losses[0].initial_loss_mm),
+        _number(parameters.losses[0].continuing),
+        run.storm.calculation_increments,
+    )
+
+
+def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdComputed:
+    """Calculate rainfall/losses, geometry and every reach with frozen CMD rules."""
+
+    event = adapt_event(loaded)
+    try:
+        result = execute(event, implementation_revision)
+    except UnsupportedNumericPath as exc:
+        raise CmdBoundaryError("numerical_error", "cmd_arithmetic", str(exc)) from exc
+    if len(result.network.outlet) != event.n + 1:
+        raise CmdBoundaryError("incomplete_output", "cmd_horizon", "CMD backend returned a truncated horizon")
+    if len(result.network.reaches) != event.reach_count:
+        raise CmdBoundaryError("incomplete_output", "cmd_reach_count", "CMD backend omitted a physical reach")
+    print_location = loaded.run.catchment.print_locations[0]
+    reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
+    per_reach: list[dict[str, object]] = []
+    for reach, reach_id in zip(result.network.reaches, reach_ids, strict=True):
+        target_views = [
+            asdict(
+                target_diagnostic(
+                    TargetOperands(
+                        step.index,
+                        reach.exponent,
+                        step.previous_q,
+                        step.previous_s,
+                        step.previous_i,
+                        step.current_i,
+                        reach.duration_seconds,
+                        step.target,
+                    )
+                )
+            )
+            for step in reach.steps
+        ]
+        per_reach.append(
+            {
+                "reach_id": reach_id,
+                "source_membership_one_based": reach.membership,
+                "coefficient_hours_stored": reach.coefficient,
+                "coefficient_seconds_stored": reach.coefficient_seconds,
+                "inflows_m3_s_stored": reach.incoming,
+                "Q_m3_s_stored": reach.q,
+                "S_m3_stored": reach.s,
+                "historical_model_targets_and_separate_native_views": target_views,
+                "iteration_counts": tuple(len(step.candidates) for step in reach.steps),
+                "linear_routing": reach.is_linear,
+            }
+        )
+    source_ids = tuple(item.identifier for item in loaded.run.catchment.subareas)
+    crossings = tuple(
+        {
+            "source_id": crossing.source_id,
+            "bin_one_based": crossing.bin_one_based,
+            "signed_remaining_exact": str(crossing.signed_remaining),
+            "equality_bins_before_crossing": crossing.equality_bins_before_crossing,
+        }
+        for crossing in result.preparation.crossings
+    )
+    diagnostics: dict[str, object] = {
+        "cmd_profile": CMD_PROFILE,
+        "candidate_contract": CONTRACT_ID,
+        "candidate_source": CANDIDATE_SOURCE,
+        "native_target_diagnostic_profile": DIAGNOSTIC_PROFILE,
+        "native_parity": "not_assessed_for_this_public_source_or_wheel",
+        "model_input_sha256": event.input_sha256,
+        "ordered_source_ids": source_ids,
+        "ordered_reach_ids": reach_ids,
+        "source_rainfall_mm_stored": result.preparation.rain,
+        "source_rainfall_excess_mm_stored": result.preparation.excess,
+        "source_inflow_m3_s_stored": result.preparation.hydrographs,
+        "source_loss_crossings": crossings,
+        "source_distances_km_stored": result.geometry.distances,
+        "mean_distance_km_stored": result.geometry.mean_distance,
+        "reaches": per_reach,
+        "native_reporting_and_physical_conservation": "not_assessed_for_this_public_source_or_wheel",
+    }
+    return CmdComputed(
+        (EngineHydrograph(print_location.identifier, print_location.label, result.network.outlet),),
+        tuple(str(index * loaded.run.storm.timestep_hours) for index in range(event.n + 1)),
+        diagnostics,
+    )

@@ -1,0 +1,190 @@
+"""Public CMD adapter and pure numerical controls; never launch RORB or load private fixtures."""
+
+from __future__ import annotations
+
+import json
+import math
+from dataclasses import replace
+from decimal import Decimal
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from runoff_routing._cmd644.geometry import ReachGeometry
+from runoff_routing._cmd644.power import bounded_power
+from runoff_routing._cmd644.precision import direct_binary32, internal_store, store
+from runoff_routing._cmd644.routing import route_reach
+from runoff_routing.cmd_engine import CMD_PROFILE, CmdBoundaryError, adapt_event
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
+from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
+from runoff_routing.rorb_model import ControlStep, PrintLocation, RunModel, from_json
+
+EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
+
+
+def _model() -> RunModel:
+    value = from_json(EXAMPLE.read_text(encoding="utf-8"))
+    assert isinstance(value, RunModel)
+    return value
+
+
+def _project(directory: Path, model: RunModel, *, cmd_stored: bool = False) -> Path:
+    project = directory / "event.json"
+    chosen = EngineSelection.for_engine("python-cmd") if cmd_stored else EngineSelection()
+    write_project(project, Project("cmd_example", "explicit", EmbeddedRun(model), engine=chosen))
+    return project
+
+
+def test_single_source_typed_event_preserves_decimal_and_order(tmp_path: Path) -> None:
+    project = _project(tmp_path, _model())
+    event = adapt_event(load_project(project))
+    assert event.event_id == "cmd_example"
+    assert event.h.lexeme == "0.5"
+    assert event.depths[0].lexeme == "20.0"
+    assert tuple(item.code for item in event.controls) == (1, 7)
+    assert len(event.weights) == 2 and event.weights[0].stored == 60.0
+    assert event.n == 5
+    assert event.impervious[0].stored == 0.0
+
+
+def test_public_cmd_runs_full_horizon_without_native_or_fallback(tmp_path: Path) -> None:
+    source = _project(tmp_path, _model(), cmd_stored=True)
+    cmd = run_engine_project(source)
+    default = run_engine_project(source, selection=EngineSelection())
+    assert cmd.status == default.status == "computed_unvalidated"
+    assert cmd.effective_selection.engine == "python-cmd"
+    assert default.effective_selection.engine == "python"
+    assert cmd.stored_selection.engine == "python-cmd"
+    assert cmd.native_parity_status == "not_assessed"
+    assert cmd.native_executable_sha256 is None
+    assert len(cmd.hydrographs) == len(default.hydrographs) == 1
+    assert len(cmd.hydrographs[0].discharge_m3_s) == 6
+    assert cmd.physical_time_hours == ("0.0", "0.5", "1.0", "1.5", "2.0", "2.5")
+    assert cmd.hydrographs[0].print_id == "print_1"
+    assert cmd.python_diagnostics is not None
+    assert cmd.python_diagnostics["cmd_profile"] == CMD_PROFILE
+    assert cmd.python_diagnostics["native_parity"] == "not_assessed_for_this_public_source_or_wheel"
+    assert math.isclose(cmd.hydrographs[0].discharge_m3_s[1], 4.0555556, abs_tol=0.001)
+
+
+def test_repeated_runs_are_isolated_and_source_changes_output(tmp_path: Path) -> None:
+    root = tmp_path / "a"
+    root.mkdir()
+    source = _project(root, _model())
+    choice = EngineSelection.for_engine("python-cmd")
+    first = run_engine_project(source, selection=choice)
+    second = run_engine_project(source, selection=choice)
+    assert first.hydrographs == second.hydrographs
+    model = _model()
+    storm = replace(model.storm, depths_mm=(Decimal("30.0"),))
+    root2 = tmp_path / "b"
+    root2.mkdir()
+    other = _project(root2, replace(model, storm=storm))
+    altered = run_engine_project(other, selection=choice)
+    assert altered.status == "computed_unvalidated"
+    assert altered.hydrographs != first.hydrographs
+
+
+def test_future_profile_never_falls_back(tmp_path: Path) -> None:
+    source = _project(tmp_path, _model())
+    outcome = run_engine_project(source, selection=EngineSelection.for_engine("python-cmd", "cmd-6.45"))
+    assert outcome.status == "unavailable_engine"
+    assert outcome.diagnostics[0].code == "cmd_profile"
+    assert outcome.hydrographs == ()
+
+
+def test_nonlumped_profile_rejected_before_output(tmp_path: Path) -> None:
+    model = _model()
+    changed = replace(model, parameters=replace(model.parameters, lumped_kc=False))
+    project = _project(tmp_path, changed)
+    result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert result.status == "unsupported_feature"
+    assert result.diagnostics[0].code == "cmd_parameters"
+    assert not result.hydrographs
+
+
+def test_multisite_prints_explicitly_unsupported(tmp_path: Path) -> None:
+    model = _model()
+    catchment = model.catchment
+    controls = (
+        catchment.controls[0],
+        ControlStep(7, print_id="internal", label="Interior"),
+        catchment.controls[1],
+    )
+    extended = replace(
+        catchment,
+        controls=controls,
+        print_locations=(PrintLocation("internal"), *catchment.print_locations),
+    )
+    project = _project(tmp_path, replace(model, catchment=extended))
+    result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert result.status == "unsupported_feature"
+    assert result.diagnostics[0].code == "cmd_print_sites"
+
+
+def test_delayed_rainfall_preserves_full_horizon(tmp_path: Path) -> None:
+    model = _model()
+    storm = replace(model.storm, start_increment=2)
+    project = _project(tmp_path, replace(model, storm=storm))
+    event = adapt_event(load_project(project))
+    assert tuple(value.stored for value in event.weights[:2]) == (0.0, 0.0)
+    result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert result.status == "computed_unvalidated"
+    assert len(result.hydrographs[0].discharge_m3_s) == 6
+    assert result.hydrographs[0].discharge_m3_s[:3] == (0.0, 0.0, 0.0)
+
+
+def test_stored_binary32_core_separates_linear_and_nonlinear() -> None:
+    geometry = ReachGeometry(1, 1.0, 1.0, 1.0, 3600.0)
+    linear = route_reach((0.0, 1.0, 0.0, 0.0), geometry, 900, (1,), exponent=1.0, hours=0.25)
+    assert linear.is_linear and not linear.steps
+    assert linear.q[1] == store(0.25 / 2.25)
+    nonlinear = route_reach((0.0, 1.0, 0.0), geometry, 900, (1,), exponent=store(0.8), hours=0.25)
+    assert not nonlinear.is_linear and nonlinear.steps
+    assert nonlinear.q[0] == 0
+
+
+@pytest.mark.parametrize(("numerator", "expected"), [(1, 0), (3, 2), (5, 2)])
+def test_exact_subnormal_rounding(numerator: int, expected: int) -> None:
+    assert direct_binary32(Fraction(numerator, 2**150)) == Fraction(expected, 2**149)
+
+
+@pytest.mark.parametrize("exponent", range(1, 8))
+def test_integer_power_stores_at_each_step(exponent: int) -> None:
+    base = store(1.2345)
+    actual = base
+    for _ in range(1, exponent):
+        actual = internal_store(actual * base)
+    assert bounded_power(base, float(exponent)) == actual
+
+
+def test_no_reference_fallback_or_output_substitution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    project = _project(tmp_path, _model())
+    import runoff_routing.cmd_engine as target
+
+    def interrupt(*_args: object, **_kwargs: object) -> None:
+        raise CmdBoundaryError("numerical_error", "forced_computation_failure", "Forced fresh calculation failure")
+
+    monkeypatch.setattr(target, "execute", interrupt)
+    outcome = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert outcome.status == "numerical_error"
+    assert outcome.diagnostics[0].code == "forced_computation_failure"
+    assert outcome.hydrographs == ()
+
+
+def test_result_json_has_actual_source_identity_and_diagnostics(tmp_path: Path) -> None:
+    project = _project(tmp_path, _model())
+    outcome = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    data = json.loads(outcome.to_json())
+    assert data["model_sha256"] == data["python_diagnostics"]["model_input_sha256"]
+    assert data["effective_selection"]["numerical_profile"] == "cmd-6.44"
+    assert len(data["python_diagnostics"]["reaches"][0]["Q_m3_s_stored"]) == 6
+    assert data["native_raw_time_tokens"] == []
+
+
+def test_public_typed_domain_rejects_zero_exponent() -> None:
+    model = _model()
+    with pytest.raises(ValueError, match="m must be"):
+        replace(model.parameters.routing[0], m=Decimal(0))

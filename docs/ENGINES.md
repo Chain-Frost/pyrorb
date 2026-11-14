@@ -7,7 +7,7 @@ or launched for normal Python use, inspection, installation or CI.
 | Engine | Selection | Availability / numerical qualification | Supported inputs | Outputs |
 | --- | --- | --- | --- | --- |
 | `python` | Default; `engineering-v1` | Working S1/S2 single-event Python calculations; scientifically unaccepted pending #6 | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
-| `python-cmd` | Explicit; `cmd-6.44` | **Unavailable** pending independently qualified #75 event backend | Future public CMD-compatible adapter; no compatibility arithmetic is shared from `python` | Structured `unavailable_engine` now; no fabricated values |
+| `python-cmd` | Explicit; `cmd-6.44` | Bounded integrated candidate; **public source/wheel native acceptance outstanding** | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
 
 ## JSON schema and selection
@@ -44,7 +44,7 @@ other = run_engine_project(
     project_path,
     selection=EngineSelection.for_engine("python-cmd", "cmd-6.44"),
 )
-assert other.status == "unavailable_engine"  # until issue #75 lands
+assert other.status == "computed_unvalidated"  # computation only; public native parity unassessed
 print(result.to_json(), [item.engine for item in CAPABILITIES])
 ```
 
@@ -59,7 +59,7 @@ py -3.14 -m runoff_routing.project_json run --help
 
 Specifying `--engine` overrides the project choice; `--numerical-profile`
 requires `--engine` and neither can quietly change the other. Missing native
-config and missing CMD Python backend produce explicit failure reports, not
+config or unsupported CMD profiles/features produce explicit failures, not
 Python fallback. Exit code is 0 for a completed (still **unvalidated**)
 calculation, 2 for a reported failure or invalid usage/input. Reports use
 exclusive-create file writing and never overwrite an earlier run.
@@ -163,12 +163,23 @@ The common outcome statuses are `computed_unvalidated`,
 produces substitute hydrographs. An isolated native capture manifest is
 retained on failure when S0 has already created one.
 
+CMD Python computation is a separately isolated complete event path within its
+bounded typed-input domain: binary32/53 arithmetic, loss/source conversion,
+ordered geometry and coefficient arithmetic, routing and distinct m=0
+model/native target diagnostic views. The public typed model currently rejects
+m=0, so the private dry-step qualification is not an accessible public feature.
+Other unsupported cases reject without implicit fallback. The Python CMD
+model-elapsed hour axis does **not** fabricate original one-based native time or
+print tokens. Candidate states are computed Python values, not independently
+observed native states. Exact ties/sub-print times and network conservation
+are not accepted by this integration.
+
 Contract/source tests use manufactured process stubs; ordinary tests, wheel
 checks, and hosted Windows CI **do not launch RORB**. An installed-wheel,
 real-Windows CMD 6.44 acceptance run remains a separate opt-in local gate.
 A real CMD success does not imply Python equivalence or prove print-site mapping.
 
-**Coordination:** #75 owns the complete CMD-compatible Python event backend;
+**Coordination:** #75 owns CMD source/wheel native replay and bounded event extensions;
 #6 owns engineering method/accuracy and batch optimisation; the offline
 regression owner owns case schema, native reference choices and comparison
 policies. Engine code does not redefine these policies or regenerate baselines.
