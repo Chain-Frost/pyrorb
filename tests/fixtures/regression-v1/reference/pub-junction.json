@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "1.00",
+          "1.000000000"
+        ],
+        [
+          "2",
+          "2.00",
+          "3.000000000"
+        ],
+        [
+          "3",
+          "3.00",
+          "3.000000000"
+        ],
+        [
+          "4",
+          "4.00",
+          "0.000000000"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Analytic no-storage junction A=[1,2,0,0] + B=[0,1,3,0]"
+    }
+  ]
+}

@@ -1,0 +1,863 @@
+{
+  "format": "runoff-regression-register",
+  "schema_version": 1,
+  "dataset_id": "authored-public-controls-v1",
+  "role": "Independent public analytical evidence and coverage gaps; no private dependency",
+  "policies": {
+    "python": "engineering-analytic-v1",
+    "python-cmd": "engineering-analytic-v1"
+  },
+  "data_root": ".",
+  "set_meanings": {
+    "authored": "Ten independent analytic calculation/control cases",
+    "smoke": "Three quick analytic controls; never a full verification suite",
+    "all": "All 14 declared public controls and gaps; gaps fail rather than vanish",
+    "coverage-gap": "Four invalid/unsupported/refinement/isolation cases still awaiting typed execution"
+  },
+  "cases": [
+    {
+      "case_id": "pub-zero-runoff",
+      "description": "Dry input/excess produces identically zero discharge",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "zero",
+        "smoke"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "zero",
+        "smoke"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-zero-runoff.json",
+          "size_bytes": 592,
+          "sha256": "b2c6fe2fe33fbafce364fec4fde7c9865f5a417c3af467dd93efd335e1e4bbdf"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-zero-runoff.json",
+        "size_bytes": 592,
+        "sha256": "b2c6fe2fe33fbafce364fec4fde7c9865f5a417c3af467dd93efd335e1e4bbdf"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 4,
+        "timestep_hours": "0.5",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Dry input/excess produces identically zero discharge",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-equilibrium",
+      "description": "Exact continuous linear-reservoir equilibrium: K=2h, S0=36000m3, I=5m3/s",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "equilibrium",
+        "smoke"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "equilibrium",
+        "smoke"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-equilibrium.json",
+          "size_bytes": 612,
+          "sha256": "4a86f518e5cf3f6bc25248d0a888f507426df3b63fdcb073cd1b196793fc4578"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-equilibrium.json",
+        "size_bytes": 612,
+        "sha256": "4a86f518e5cf3f6bc25248d0a888f507426df3b63fdcb073cd1b196793fc4578"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 4,
+        "timestep_hours": "0.5",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Exact continuous linear-reservoir equilibrium: K=2h, S0=36000m3, I=5m3/s",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-linear-recession",
+      "description": "Exact continuous reservoir Q(t)=10exp(-t/2), K=2h, I=0",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "linear",
+        "smoke",
+        "recession"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "smoke",
+        "recession"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-linear-recession.json",
+          "size_bytes": 672,
+          "sha256": "9f97f238783b6e1271974baf68fef8762dd572b5a7a24792e01695662b834d0c"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-linear-recession.json",
+        "size_bytes": 672,
+        "sha256": "9f97f238783b6e1271974baf68fef8762dd572b5a7a24792e01695662b834d0c"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 5,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Exact continuous reservoir Q(t)=10exp(-t/2), K=2h, I=0",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-linear-pulse",
+      "description": "Exact rectangular inflow 4m3/s for t=0..1h, K=2h, S0=0",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "linear",
+        "prescribed-input"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "prescribed-input"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-linear-pulse.json",
+          "size_bytes": 672,
+          "sha256": "26f54d2c0a793a95f75f92309e180ec5644da05cd20ccff1a9a277c708840247"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-linear-pulse.json",
+        "size_bytes": 672,
+        "sha256": "26f54d2c0a793a95f75f92309e180ec5644da05cd20ccff1a9a277c708840247"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 5,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Exact rectangular inflow 4m3/s for t=0..1h, K=2h, S0=0",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-junction",
+      "description": "Analytic no-storage junction A=[1,2,0,0] + B=[0,1,3,0]",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "junction",
+        "conservation"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "junction",
+        "conservation"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-junction.json",
+          "size_bytes": 594,
+          "sha256": "39b09dbf60f82e0b078ad22a4561be03e7a7a82d063700231084ceb4a513d39f"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-junction.json",
+        "size_bytes": 594,
+        "sha256": "39b09dbf60f82e0b078ad22a4561be03e7a7a82d063700231084ceb4a513d39f"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 4,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Analytic no-storage junction A=[1,2,0,0] + B=[0,1,3,0]",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-loss-equality",
+      "description": "IL=10mm, CL=0, rainfall 5+5mm exactly exhausts IL",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "loss",
+        "equality"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "loss",
+        "equality"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-loss-equality.json",
+          "size_bytes": 433,
+          "sha256": "7323dc4131e72236833fced4fe898ee305e8360a51ea2260372689fc26fc38db"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-loss-equality.json",
+        "size_bytes": 433,
+        "sha256": "7323dc4131e72236833fced4fe898ee305e8360a51ea2260372689fc26fc38db"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 2,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "IL=10mm, CL=0, rainfall 5+5mm exactly exhausts IL",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-loss-crossing",
+      "description": "IL=10mm, CL=0, rainfall [5,6]mm; 1mm runoff in second 1h on 1km2, no routing",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "loss",
+        "crossing",
+        "conservation"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "loss",
+        "crossing",
+        "conservation"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-loss-crossing.json",
+          "size_bytes": 460,
+          "sha256": "04f13fba8706d4c01de80b043d0a29c5f359c24a8219f6c67ca71585af620e50"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-loss-crossing.json",
+        "size_bytes": 460,
+        "sha256": "04f13fba8706d4c01de80b043d0a29c5f359c24a8219f6c67ca71585af620e50"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 2,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "IL=10mm, CL=0, rainfall [5,6]mm; 1mm runoff in second 1h on 1km2, no routing",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-initial-state",
+      "description": "Exact continuous reservoir K=1h, initial Q0=2m3/s, I=0",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "initial-state",
+        "linear"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "initial-state",
+        "linear"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-initial-state.json",
+          "size_bytes": 594,
+          "sha256": "4d45ec1de3bd372a769b1951100788ddb7db7409081460290f375d6f10752302"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-initial-state.json",
+        "size_bytes": 594,
+        "sha256": "4d45ec1de3bd372a769b1951100788ddb7db7409081460290f375d6f10752302"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 4,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Exact continuous reservoir K=1h, initial Q0=2m3/s, I=0",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-branch-order",
+      "description": "No-storage confluence with reordered branches [0,3,0]+[0,1,1]",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "junction",
+        "ordering"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "junction",
+        "ordering"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-branch-order.json",
+          "size_bytes": 523,
+          "sha256": "bd28f5533fa306b0a2b935f165fa161b6bb556c2b7441029ec8a9e0b8d52355d"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-branch-order.json",
+        "size_bytes": 523,
+        "sha256": "bd28f5533fa306b0a2b935f165fa161b6bb556c2b7441029ec8a9e0b8d52355d"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 3,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "No-storage confluence with reordered branches [0,3,0]+[0,1,1]",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-full-recession",
+      "description": "Ten-step full recession exact solution K=2h, initial Q=3m3/s; not a truncated peak-only result",
+      "coverage": "selected",
+      "reason": "Independent authored analytical reference",
+      "source_kind": "permission-cleared-independent-analytic",
+      "redistribution": "original authored fixture; public",
+      "tags": [
+        "linear",
+        "recession",
+        "full-horizon"
+      ],
+      "sets": [
+        "all",
+        "authored",
+        "linear",
+        "recession",
+        "full-horizon"
+      ],
+      "files": [
+        {
+          "path": "reference/pub-full-recession.json",
+          "size_bytes": 1104,
+          "sha256": "d807a8e22871bd993a26b77615593b0600e8ac02892ae6a03aace179cd24083d"
+        }
+      ],
+      "reference": {
+        "path": "reference/pub-full-recession.json",
+        "size_bytes": 1104,
+        "sha256": "d807a8e22871bd993a26b77615593b0600e8ac02892ae6a03aace179cd24083d"
+      },
+      "reference_kind": "independent_analytic",
+      "clock": {
+        "row_count": 10,
+        "timestep_hours": "1",
+        "raw_convention": "analytic elapsed time after increment; not a RORB native printed clock"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "analytic_outlet",
+          "mapping_evidence": "authored_explicit"
+        }
+      ],
+      "observations": {
+        "reference_field": "analytically_derived",
+        "native_state": "unavailable",
+        "native_printed": "not_claimed"
+      },
+      "effective_inputs": {
+        "derivation": "Ten-step full recession exact solution K=2h, initial Q=3m3/s; not a truncated peak-only result",
+        "units": {
+          "time": "h",
+          "discharge": "m3/s"
+        },
+        "timing": "end of step",
+        "initial_state": "see derivation"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "analytical_control"
+        },
+        "python-cmd": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "diagnostic_only_not_native"
+        }
+      }
+    },
+    {
+      "case_id": "pub-invalid-negative-k",
+      "description": "Expected typed invalid-input rejection for K=-1h; not a computed pass",
+      "coverage": "gap",
+      "reason": "No tested engine adapter/result status contract yet",
+      "source_kind": "authored-specification",
+      "redistribution": "public",
+      "tags": [
+        "negative",
+        "invalid"
+      ],
+      "sets": [
+        "all",
+        "coverage-gap",
+        "negative",
+        "invalid"
+      ],
+      "files": [],
+      "reference": null,
+      "reference_kind": "unavailable",
+      "clock": {
+        "row_count": null,
+        "timestep_hours": null
+      },
+      "sites": [],
+      "observations": {
+        "reference_field": "unavailable"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "not_evaluated"
+        },
+        "python-cmd": {
+          "policy_id": "cmd644-printed-interval-v1",
+          "status": "not_evaluated"
+        }
+      }
+    },
+    {
+      "case_id": "pub-unsupported-code",
+      "description": "Expected typed unsupported-feature rejection for an unimplemented control code; not computed pass",
+      "coverage": "gap",
+      "reason": "No tested engine adapter/result status contract yet",
+      "source_kind": "authored-specification",
+      "redistribution": "public",
+      "tags": [
+        "negative",
+        "unsupported"
+      ],
+      "sets": [
+        "all",
+        "coverage-gap",
+        "negative",
+        "unsupported"
+      ],
+      "files": [],
+      "reference": null,
+      "reference_kind": "unavailable",
+      "clock": {
+        "row_count": null,
+        "timestep_hours": null
+      },
+      "sites": [],
+      "observations": {
+        "reference_field": "unavailable"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "not_evaluated"
+        },
+        "python-cmd": {
+          "policy_id": "cmd644-printed-interval-v1",
+          "status": "not_evaluated"
+        }
+      }
+    },
+    {
+      "case_id": "pub-nonlinear-refinement",
+      "description": "Nonlinear refinement must prove convergence, conservation and full recession using independent budgets",
+      "coverage": "gap",
+      "reason": "No tested engine adapter/result status contract yet",
+      "source_kind": "authored-specification",
+      "redistribution": "public",
+      "tags": [
+        "nonlinear",
+        "refinement",
+        "conservation"
+      ],
+      "sets": [
+        "all",
+        "coverage-gap",
+        "nonlinear",
+        "refinement",
+        "conservation"
+      ],
+      "files": [],
+      "reference": null,
+      "reference_kind": "unavailable",
+      "clock": {
+        "row_count": null,
+        "timestep_hours": null
+      },
+      "sites": [],
+      "observations": {
+        "reference_field": "unavailable"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "not_evaluated"
+        },
+        "python-cmd": {
+          "policy_id": "cmd644-printed-interval-v1",
+          "status": "not_evaluated"
+        }
+      }
+    },
+    {
+      "case_id": "pub-event-isolation",
+      "description": "Repeat two events A,B,A and prove first and last A identical without hidden state carryover",
+      "coverage": "gap",
+      "reason": "No tested engine adapter/result status contract yet",
+      "source_kind": "authored-specification",
+      "redistribution": "public",
+      "tags": [
+        "event-isolation",
+        "batch"
+      ],
+      "sets": [
+        "all",
+        "coverage-gap",
+        "event-isolation",
+        "batch"
+      ],
+      "files": [],
+      "reference": null,
+      "reference_kind": "unavailable",
+      "clock": {
+        "row_count": null,
+        "timestep_hours": null
+      },
+      "sites": [],
+      "observations": {
+        "reference_field": "unavailable"
+      },
+      "expectations": {
+        "python": {
+          "policy_id": "engineering-analytic-v1",
+          "status": "not_evaluated"
+        },
+        "python-cmd": {
+          "policy_id": "cmd644-printed-interval-v1",
+          "status": "not_evaluated"
+        }
+      }
+    }
+  ]
+}

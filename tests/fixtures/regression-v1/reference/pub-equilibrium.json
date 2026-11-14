@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "tables": [
+    {
+      "columns": [
+        "Inc",
+        "Time",
+        "Hyd001"
+      ],
+      "rows": [
+        [
+          "1",
+          "0.50",
+          "5.000000000"
+        ],
+        [
+          "2",
+          "1.00",
+          "5.000000000"
+        ],
+        [
+          "3",
+          "1.50",
+          "5.000000000"
+        ],
+        [
+          "4",
+          "2.00",
+          "5.000000000"
+        ]
+      ],
+      "reference_kind": "independent_analytic",
+      "derivation": "Exact continuous linear-reservoir equilibrium: K=2h, S0=36000m3, I=5m3/s"
+    }
+  ]
+}
