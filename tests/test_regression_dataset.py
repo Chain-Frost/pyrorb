@@ -87,9 +87,7 @@ def test_manufactured_source_preflight_and_cached_comparison(tmp_path: Path) -> 
     assert rd.main(["compare", str(register), "--csv", str(computed), "--implementation", "a" * 40]) == 0
 
 
-def test_truncated_gzip_candidate_reports_invalid_input(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_truncated_gzip_candidate_reports_invalid_input(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Corrupt compressed evidence must not crash or be labelled an incomplete comparison."""
     register, candidate = dataset_fixture(tmp_path)
     truncated = tmp_path / "candidate.csv.gz"
