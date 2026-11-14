@@ -192,6 +192,9 @@ def run_cli(argv: list[str]) -> int:
     if options.engine is None and options.numerical_profile is not None:
         print("--numerical-profile requires an explicit --engine (or edit the project)", file=sys.stderr)
         return 2
+    if options.result.exists() or options.result.is_symlink():
+        print(f"Result already exists: {options.result}", file=sys.stderr)
+        return 2
     try:
         chosen = (
             EngineSelection.for_engine(options.engine, options.numerical_profile)

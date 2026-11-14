@@ -123,6 +123,19 @@ def test_native_without_explicit_config_is_unavailable_and_does_not_fallback(tmp
     assert result.diagnostics[0].code == "native_config_required"
 
 
+def test_cli_existing_result_rejects_before_native_execution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    result = tmp_path / "result.json"
+    result.write_bytes(b"preserve prior evidence")
+
+    def unexpected_execution(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("An existing result must reject before computation or native execution")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_engine_project", unexpected_execution)
+    assert main(["run", str(source), str(result)]) == 2
+    assert result.read_bytes() == b"preserve prior evidence"
+
+
 def test_capability_matrix_has_exact_three_stable_engines() -> None:
     assert tuple(item.engine for item in CAPABILITIES) == ("python", "python-cmd", "rorb-cmd")
     assert all(item.numerical_acceptance == "unassessed" for item in CAPABILITIES)
