@@ -106,9 +106,7 @@ def test_scalar_failure_forces_nonzero_even_when_every_retained_q_passes(
             "case_id": case["case_id"],
             "status": "printed_pass",
             "rows": case["clock"]["row_count"],
-            "fresh_reporting": {
-                "classification": "fail" if case["case_id"] == "review-design-baseline" else "pass"
-            },
+            "fresh_reporting": {"classification": "fail" if case["case_id"] == "review-design-baseline" else "pass"},
         }
 
     monkeypatch.setitem(main.__globals__, "_one", fake_one)

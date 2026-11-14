@@ -175,9 +175,7 @@ def _fresh_reporting_classification(item: dict[str, Any]) -> str:
     return classification if isinstance(classification, str) else "not_run"
 
 
-def _retained_scalar_failures(
-    expected: dict[str, int], observed: dict[str, dict[str, Any]]
-) -> list[str]:
+def _retained_scalar_failures(expected: dict[str, int], observed: dict[str, dict[str, Any]]) -> list[str]:
     """A matching Q must not conceal missing or failing retained scalar results."""
     return [case_id for case_id in expected if _fresh_reporting_classification(observed[case_id]) != "pass"]
 
@@ -206,7 +204,9 @@ def main() -> int:
     full_scalar_status = (
         "fail"
         if scalar_statuses.get("fail", 0) or scalar_statuses.get("invalid", 0)
-        else "pass" if scalar_statuses == {"pass": 50} else "incomplete"
+        else "pass"
+        if scalar_statuses == {"pass": 50}
+        else "incomplete"
     )
     print(
         json.dumps(
