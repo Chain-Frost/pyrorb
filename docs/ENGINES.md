@@ -48,6 +48,37 @@ assert other.status == "computed_unvalidated"  # computation only; public native
 print(result.to_json(), [item.engine for item in CAPABILITIES])
 ```
 
+## Reproducible command-line project example
+
+From the public checkout, create a complete schema-2 project using the existing
+S1 input model and the safe, exclusive-create project writer:
+
+```powershell
+py -3.14 examples/create_cmd_project.py
+py -3.14 -m runoff_routing.project_json run cmd-example-project.json cmd-example-result.json
+```
+
+The generated project explicitly stores `python-cmd/cmd-6.44`. Both the selected
+model and printed output site are visible in its JSON. Running the CLI a second
+time with the same destination fails without modifying the existing result.
+For a comparison, run with an **explicit** `--engine python` override into
+a different new output file, or with `--engine rorb-cmd --native-config ...`
+for an independently verified local native executable and original file-backed
+model. These commands do not claim native equivalence.
+
+```python
+from pathlib import Path
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
+
+project = Path("cmd-example-project.json")
+cmd = run_engine_project(project)
+assert cmd.effective_selection == EngineSelection.for_engine("python-cmd")
+assert cmd.status == "computed_unvalidated"
+assert cmd.native_parity_status == "not_assessed"
+assert len(cmd.hydrographs[0].discharge_m3_s) == 6
+```
+
 ## CLI
 
 ```powershell

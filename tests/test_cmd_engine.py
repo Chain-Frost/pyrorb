@@ -19,7 +19,15 @@ from runoff_routing.cmd_engine import CMD_PROFILE, CmdBoundaryError, adapt_event
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection, EngineStatus
 from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
-from runoff_routing.rorb_model import ControlStep, PrintLocation, RunModel, from_json
+from runoff_routing.rorb_model import (
+    CatchmentModel,
+    ControlStep,
+    PrintLocation,
+    Reach,
+    RunModel,
+    SubArea,
+    from_json,
+)
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
 
@@ -191,3 +199,53 @@ def test_public_typed_domain_rejects_zero_exponent() -> None:
     model = _model()
     with pytest.raises(ValueError, match="m must be"):
         replace(model.parameters.routing[0], m=Decimal(0))
+
+
+def test_two_source_branches_preserve_original_order_and_complete_outlet(tmp_path: Path) -> None:
+    """A save/restore confluence must consume every source and reach exactly once."""
+
+    model = _model()
+    catchment = CatchmentModel(
+        "Two source synthetic",
+        (SubArea("first", Decimal("1")), SubArea("second", Decimal("2"))),
+        (
+            Reach("first_reach", Decimal("1")),
+            Reach("second_reach", Decimal("1.5")),
+            Reach("outlet_reach", Decimal("0.5")),
+        ),
+        (
+            ControlStep(1, subarea_id="first", reach_id="first_reach"),
+            ControlStep(3),
+            ControlStep(1, subarea_id="second", reach_id="second_reach"),
+            ControlStep(4),
+            ControlStep(5, reach_id="outlet_reach"),
+            ControlStep(7, print_id="joined"),
+        ),
+        (PrintLocation("joined", "Both sources"),),
+    )
+    storm = replace(
+        model.storm,
+        subarea_ids=("first", "second"),
+        depths_mm=(Decimal("20.0"), Decimal("30.0")),
+    )
+    source = _project(tmp_path, replace(model, catchment=catchment, storm=storm))
+    event = adapt_event(load_project(source))
+    assert tuple(step.code for step in event.controls) == (1, 3, 1, 4, 5, 7)
+    assert tuple(item.lexeme for item in event.depths) == ("20.0", "30.0")
+    outcome = run_engine_project(source, selection=EngineSelection.for_engine("python-cmd"))
+    assert outcome.status == "computed_unvalidated"
+    assert len(outcome.hydrographs) == 1
+    assert outcome.hydrographs[0].print_id == "joined"
+    assert len(outcome.hydrographs[0].discharge_m3_s) == 6
+    assert outcome.python_diagnostics is not None
+    assert outcome.python_diagnostics["ordered_source_ids"] == ("first", "second")
+    assert outcome.python_diagnostics["ordered_reach_ids"] == (
+        "first_reach",
+        "second_reach",
+        "outlet_reach",
+    )
+    reaches = outcome.python_diagnostics["reaches"]
+    assert isinstance(reaches, list)
+    assert len(reaches) == 3
+    membership = reaches[-1]["source_membership_one_based"]
+    assert set(membership) == {1, 2}
