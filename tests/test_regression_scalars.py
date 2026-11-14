@@ -387,7 +387,11 @@ def test_comparison_provenance_uses_loaded_scalar_module_bytes(tmp_path: Path) -
         "rorb_documents.py": rorb_documents,
         "rorb_out.py": rorb_out,
     }
-    digests = {name: hashlib.sha256(Path(module.__file__).read_bytes()).hexdigest() for name, module in modules.items()}
+    digests: dict[str, str] = {}
+    for name, module in modules.items():
+        location = module.__file__
+        assert location is not None
+        digests[name] = hashlib.sha256(Path(location).read_bytes()).hexdigest()
     assert recorded["comparison_modules_sha256"] == digests
     assert recorded["comparison_module_sha256"] == digests["regression_dataset.py"]
 
@@ -399,7 +403,9 @@ def test_modified_scalar_helper_changes_reported_provenance(
     register, csv, series = _scalar_fixture(tmp_path)
     module = {"regression_scalar_adapter": regression_scalar_adapter, "regression_metrics": regression_metrics}[name]
     copy = tmp_path / f"{name}.py"
-    copy.write_bytes(Path(module.__file__).read_bytes())
+    location = module.__file__
+    assert location is not None
+    copy.write_bytes(Path(location).read_bytes())
     monkeypatch.setattr(module, "__file__", str(copy))
     initial = tmp_path / "original-provenance.json"
     changed = tmp_path / "changed-provenance.json"
