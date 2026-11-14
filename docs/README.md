@@ -9,7 +9,8 @@
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Compatibility contract](COMPATIBILITY.md)
 - [Regression contract](REGRESSION.md)
-- [Public source-pinned verification fixtures and cached comparator](REGRESSION_DATASET.md): draft PR #78; independent analytical controls, no native equivalence claim.
+- [Curated public CMD verification fixtures and cached comparator](REGRESSION_DATASET.md): 50 authenticated native CMD cases, ten independent analytic controls and explicit gaps; not fresh production-engine acceptance.
+- [CMD 6.44 feature and acceptance matrix — phase A](CMD_FEATURE_MATRIX.md): evidence-bound per-engine scope, 21 native gaps and independent physical/peak-time acceptance gates.
 - [Integrated recorded print review](RECORDED_PRINT_REVIEW.md)
 - [Source register](SOURCES.md)
 - [RORB worked-example inventory](RORB_MANUAL_EXAMPLES.md)
