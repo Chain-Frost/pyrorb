@@ -421,6 +421,7 @@ def test_relative_native_executable_is_absolute_in_staged_spec(tmp_path: Path, m
     manifest = json.loads(Path(result.capture_manifest_path).read_text(encoding="utf-8"))
     assert manifest["engine"]["executable"]["sha256"] == config.executable_sha256
 
+
 def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_path: Path) -> None:
     original = _model()
     parameters = replace(
