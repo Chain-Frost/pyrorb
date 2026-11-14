@@ -201,7 +201,8 @@ def test_cmd_rejects_decimal_underflow_without_emulating_zero_exponent(tmp_path:
     """A positive Decimal that binary64 loses cannot silently select the m=0 branch."""
     model = _model()
     value = Decimal(magnitude)
-    assert value > 0 and float(value) == 0
+    assert value > 0
+    assert float(value) == 0
     routing = replace(model.parameters.routing[0], m=value)
     parameters = replace(model.parameters, routing=(routing,))
     altered = replace(model, parameters=parameters)
