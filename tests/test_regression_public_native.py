@@ -109,3 +109,26 @@ def test_snapshot_changed_bytes_are_rejected(tmp_path: Path, key: str) -> None:
 
 def test_snapshot_cannot_mix_identities() -> None:
     assert rd.main(["compare", str(REGISTER), "--snapshot", "--implementation", "a" * 40]) == 2
+
+
+def test_native_full_index_uses_checkout_stable_attributes(tmp_path: Path) -> None:
+    """Original native file-index checks must pass after Linux or Windows checkout."""
+    attributes = DATA / ".gitattributes"
+    index = json.loads((DATA / "native-cmd" / "index.json").read_bytes())
+    fingerprint = index["files"][".gitattributes"]
+    original = attributes.read_bytes()
+    assert original == b"scalar-policy.md -text\n"
+    assert fingerprint["size_bytes"] == len(original)
+    assert fingerprint["sha256"] == hashlib.sha256(original).hexdigest()
+
+    output = tmp_path / "verified-native-index.json"
+    assert (
+        rd.main(
+            ["preflight", str(REGISTER), "--set", "cmd-eligible", "--full-index", "--output", str(output)]
+        )
+        == 0
+    )
+    result = json.loads(output.read_bytes())
+    assert result["index_files_verified"] == len(index["files"])
+    assert result["counts"] == {"verified": 50}
+
