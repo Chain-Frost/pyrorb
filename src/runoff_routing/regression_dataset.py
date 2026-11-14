@@ -554,6 +554,55 @@ def _compare(
     }
 
 
+def _fresh_cmd_identity_problem(
+    case: dict[str, Any], outcome: EngineOutcome, point: dict[str, Any]
+) -> dict[str, str] | None:
+    """Check output selection independently before assigning original clock or Q labels."""
+    if outcome.project_id != case["case_id"] or outcome.event_id != case["case_id"]:
+        return {"classification": "invalid", "reason": "Computed project/event does not match original case"}
+    if outcome.effective_selection.numerical_profile != "cmd-6.44":
+        return {"classification": "invalid", "reason": "Unexpected CMD numerical profile"}
+    if outcome.requested_print_ids != (point["model_print_id"],):
+        return {"classification": "invalid", "reason": "Computed requested print ID differs from original case"}
+    if not outcome.control_order or outcome.control_order[-1] != 7 or outcome.control_order.count(7) != 1:
+        return {"classification": "invalid", "reason": "Computed outlet does not have one terminal code-7 print"}
+    if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
+        return {"classification": "invalid", "reason": "Python-generated time cannot claim observed native clock tokens"}
+    return None
+
+
+def _fresh_cmd_elapsed_problem(
+    case: dict[str, Any], outcome: EngineOutcome, original_rows: int
+) -> dict[str, str] | None:
+    """Verify computed elapsed i*h, never substituting original one-based Inc/Time."""
+    actual_rows = len(outcome.physical_time_hours)
+    if actual_rows != original_rows:
+        return {
+            "classification": "incomplete" if actual_rows < original_rows else "invalid",
+            "reason": "Generated elapsed-time horizon differs from original reference horizon",
+        }
+    step_hours = _scalar(case["clock"]["timestep_hours"])
+    if step_hours <= 0:
+        return {"classification": "invalid", "reason": "Invalid original timestep for generated clock"}
+    try:
+        generated_step_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
+    except RegressionError:
+        return {"classification": "invalid", "reason": "Malformed computed source timestep"}
+    if (
+        generated_step_hours != step_hours
+        or outcome.effective_inputs.get("calculation_increments") != original_rows - 1
+    ):
+        return {"classification": "invalid", "reason": "Computed source timestep/horizon metadata differs"}
+    for index, value in enumerate(outcome.physical_time_hours):
+        try:
+            computed_time = _scalar(value)
+        except RegressionError:
+            return {"classification": "invalid", "reason": "Malformed generated elapsed-time value"}
+        if computed_time != index * step_hours:
+            return {"classification": "invalid", "reason": f"Generated elapsed time differs at sample {index}"}
+    return None
+
+
 def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
     """Compare a freshly executed public CMD event with immutable printed evidence.
 
@@ -576,40 +625,12 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         return {"classification": "invalid", "reason": "Source-to-native print-site mapping differs"}
     if len(rows) != len(printed.discharge_m3_s):
         return {"classification": "incomplete", "reason": "Full native horizon not computed"}
-    if outcome.project_id != case["case_id"] or outcome.event_id != case["case_id"]:
-        return {"classification": "invalid", "reason": "Computed project/event does not match original case"}
-    if outcome.effective_selection.numerical_profile != "cmd-6.44":
-        return {"classification": "invalid", "reason": "Unexpected CMD numerical profile"}
-    if outcome.requested_print_ids != (point["model_print_id"],):
-        return {"classification": "invalid", "reason": "Computed requested print ID differs from original case"}
-    if not outcome.control_order or outcome.control_order[-1] != 7 or outcome.control_order.count(7) != 1:
-        return {"classification": "invalid", "reason": "Computed outlet does not have one terminal code-7 print"}
-    if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
-        return {"classification": "invalid", "reason": "Python-generated time cannot claim observed native clock tokens"}
-    if len(outcome.physical_time_hours) != len(rows):
-        return {
-            "classification": "incomplete" if len(outcome.physical_time_hours) < len(rows) else "invalid",
-            "reason": "Generated elapsed-time horizon differs from original reference horizon",
-        }
-    step_hours = _scalar(case["clock"]["timestep_hours"])
-    if step_hours <= 0:
-        return {"classification": "invalid", "reason": "Invalid original timestep for generated clock"}
-    try:
-        generated_step_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
-    except RegressionError:
-        return {"classification": "invalid", "reason": "Malformed computed source timestep"}
-    if (
-        generated_step_hours != step_hours
-        or outcome.effective_inputs.get("calculation_increments") != len(rows) - 1
-    ):
-        return {"classification": "invalid", "reason": "Computed source timestep/horizon metadata differs"}
-    for index, value in enumerate(outcome.physical_time_hours):
-        try:
-            computed_time = _scalar(value)
-        except RegressionError:
-            return {"classification": "invalid", "reason": "Malformed generated elapsed-time value"}
-        if computed_time != index * step_hours:
-            return {"classification": "invalid", "reason": f"Generated elapsed time differs at sample {index}"}
+    identity_problem = _fresh_cmd_identity_problem(case, outcome, point)
+    if identity_problem is not None:
+        return identity_problem
+    elapsed_problem = _fresh_cmd_elapsed_problem(case, outcome, len(rows))
+    if elapsed_problem is not None:
+        return elapsed_problem
     supplied = {
         (case["case_id"], native_column, index): {
             "case_id": case["case_id"],
