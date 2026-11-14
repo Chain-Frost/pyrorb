@@ -92,10 +92,7 @@ def test_truncated_gzip_candidate_reports_invalid_input(tmp_path: Path, capsys: 
     register, candidate = dataset_fixture(tmp_path)
     truncated = tmp_path / "candidate.csv.gz"
     truncated.write_bytes(gzip.compress(candidate.read_bytes(), mtime=0)[:-8])
-    assert (
-        rd.main(["compare", str(register), "--csv", str(truncated), "--implementation", "a" * 40])
-        == 2
-    )
+    assert rd.main(["compare", str(register), "--csv", str(truncated), "--implementation", "a" * 40]) == 2
     assert "malformed compressed candidate CSV" in capsys.readouterr().err
 
 
