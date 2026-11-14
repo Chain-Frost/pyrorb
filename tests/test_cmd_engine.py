@@ -210,7 +210,7 @@ def test_two_source_branches_preserve_original_order_and_complete_outlet(tmp_pat
         "Two source synthetic",
         (SubArea("first", Decimal(1)), SubArea("second", Decimal(2))),
         (
-            Reach("first_reach", Decimal("1")),
+            Reach("first_reach", Decimal(1)),
             Reach("second_reach", Decimal("1.5")),
             Reach("outlet_reach", Decimal("0.5")),
         ),
