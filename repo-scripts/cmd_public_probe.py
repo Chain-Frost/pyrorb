@@ -8,6 +8,7 @@ classes are NOT scientific acceptance or proof of full CMD support.
 from __future__ import annotations
 
 import hashlib
+from decimal import Decimal
 import json
 import sys
 from collections import Counter
@@ -16,11 +17,11 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from runoff_routing.engine_execution import run_engine_project
-from runoff_routing.engine_types import EngineSelection
+from runoff_routing.engine_types import EngineOutcome, EngineSelection
 from runoff_routing.project_json import EmbeddedRun, Project, project_to_json
 from runoff_routing.regression_dataset import compare_fresh_cmd_case
 from runoff_routing.rorb_codec import RorbFormatError, parse_catg, parse_cmd_par, parse_design_stm
-from runoff_routing.rorb_model import RunModel
+from runoff_routing.rorb_model import RunModel, to_json
 
 ROOT = Path(__file__).absolute().parents[1] / "tests" / "fixtures" / "regression-v1"
 REGISTER = ROOT / "register.json"
@@ -51,6 +52,65 @@ def _typed_model(case: dict[str, Any]) -> RunModel:
     return RunModel(parameters, catchment, storm)
 
 
+def _binding_error(case: dict[str, Any], model: RunModel, outcome: EngineOutcome, project_text: str) -> str | None:
+    """Independently bind actual engine identity and elapsed time to the typed source.
+
+    This validates the *produced* axis, never borrowing original native Inc/Time
+    tokens. The registered native Hyd001 physical mapping still needs B's review.
+    """
+    case_id = str(case["case_id"])
+    if (
+        outcome.status != "computed_unvalidated"
+        or outcome.project_id != case_id
+        or outcome.event_id != case_id
+        or outcome.stored_selection != EngineSelection.for_engine("python-cmd")
+        or outcome.effective_selection != EngineSelection.for_engine("python-cmd")
+    ):
+        return "Fresh CMD computation or project/event/engine identity differs"
+    if outcome.project_sha256 != hashlib.sha256(project_text.encode("utf-8")).hexdigest():
+        return "Original typed project identity differs"
+    if outcome.model_sha256 != hashlib.sha256(to_json(model).encode("utf-8")).hexdigest():
+        return "Original typed source/model identity differs"
+    if not outcome.implementation_revision or not outcome.implementation_revision.startswith(
+        "package-code-v1-sha256:"
+    ):
+        return "Actual installed CMD package-code revision is unavailable"
+    controls = tuple(step.code for step in model.catchment.controls)
+    prints = tuple(site.identifier for site in model.catchment.print_locations)
+    if outcome.control_order != controls or outcome.requested_print_ids != prints:
+        return "Actual ordered source/control or requested print identity differs"
+    if len(case["sites"]) != 1 or len(prints) != 1 or not model.catchment.controls:
+        return "Expected a single original physical print site"
+    terminal = model.catchment.controls[-1]
+    if terminal.code != 7 or terminal.print_id != prints[0] or case["sites"][0]["model_print_id"] != prints[0]:
+        return "Terminal code-7 original source/print binding differs"
+    if len(outcome.hydrographs) != 1 or outcome.hydrographs[0].print_id != prints[0]:
+        return "Produced hydrograph is not the source's sole terminal print"
+    full_samples = model.storm.calculation_increments + 1
+    if (
+        len(outcome.hydrographs[0].discharge_m3_s) != full_samples
+        or case["clock"]["row_count"] != full_samples
+        or Decimal(case["clock"]["timestep_hours"]) != model.storm.timestep_hours
+    ):
+        return "Source or native registered full horizon/timestep differs"
+    if outcome.effective_inputs != {
+        "timestep_hours": str(model.storm.timestep_hours),
+        "calculation_increments": model.storm.calculation_increments,
+        "loss_model": model.parameters.loss_model,
+        "num_isa": model.parameters.num_isa,
+        "num_bursts": model.parameters.num_bursts,
+    }:
+        return "Effective CMD source/parameter metadata differs"
+    expected_elapsed = tuple(
+        str(index * model.storm.timestep_hours) for index in range(full_samples)
+    )
+    if outcome.physical_time_hours != expected_elapsed:
+        return "Produced physical elapsed time axis differs from source timestep and full horizon"
+    if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
+        return "Python CMD must not invent observed native raw clock tokens"
+    return None
+
+
 def _one(case: dict[str, Any]) -> dict[str, Any]:
     """A full fresh S1->public-CMD project execution, with explicit unsupported states."""
     case_id = str(case["case_id"])
@@ -61,7 +121,8 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
     project = Project(case_id, "legacy-rorb", EmbeddedRun(model), engine=EngineSelection.for_engine("python-cmd"))
     with TemporaryDirectory(prefix="cmd-public-probe-") as directory:
         path = Path(directory) / "source.json"
-        path.write_text(project_to_json(project), encoding="utf-8")
+        project_text = project_to_json(project)
+        path.write_text(project_text, encoding="utf-8")
         outcome = run_engine_project(path)
     if outcome.status != "computed_unvalidated":
         return {
@@ -69,11 +130,9 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
             "status": outcome.status,
             "reason": outcome.diagnostics[0].message if outcome.diagnostics else "Typed calculation unavailable",
         }
-    if len(outcome.hydrographs) != 1:
-        return {"case_id": case_id, "status": "incomplete_output", "reason": "Unexpected print population"}
-    hydrograph = outcome.hydrographs[0]
-    if hydrograph.print_id != case["sites"][0]["model_print_id"]:
-        return {"case_id": case_id, "status": "unverified_print_mapping", "reason": "Print IDs differ"}
+    binding_failure = _binding_error(case, model, outcome, project_text)
+    if binding_failure is not None:
+        return {"case_id": case_id, "status": "unverified_attribution", "reason": binding_failure}
     comparison = compare_fresh_cmd_case(ROOT, case, outcome)
     mismatches = comparison.get("mismatches", [])
     return {
