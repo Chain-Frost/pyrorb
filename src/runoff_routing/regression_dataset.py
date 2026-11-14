@@ -148,6 +148,28 @@ def _time_and_values(rows: list[list[str]], step: str | None) -> None:
             _scalar(token)
 
 
+def _checked_rows(raw_rows: object, column_count: int, expected_count: int) -> list[list[str]]:
+    """Retain the original tokens while rejecting missing, extra or malformed ordinates."""
+    if not isinstance(raw_rows, list):
+        message = "invalid original reference rows"
+        raise RegressionError(message)
+    row_objects = cast("list[object]", raw_rows)
+    if len(row_objects) != expected_count:
+        message = "truncated or reordered original reference horizon"
+        raise RegressionError(message)
+    rows: list[list[str]] = []
+    for raw_row in row_objects:
+        if not isinstance(raw_row, list):
+            message = "ragged original native report"
+            raise RegressionError(message)
+        cells = cast("list[object]", raw_row)
+        if len(cells) != column_count or not all(isinstance(value, str) for value in cells):
+            message = "ragged or non-token native report"
+            raise RegressionError(message)
+        rows.append(cast("list[str]", cells))
+    return rows
+
+
 def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[str]]]:
     document = _json(_verify(root, case["reference"]))
     raw_tables: object = document.get("tables")
@@ -175,23 +197,7 @@ def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[s
     if len(set(columns)) != len(columns):
         message = "duplicate output columns"
         raise RegressionError(message)
-    if not isinstance(raw_rows, list):
-        message = "invalid original reference rows"
-        raise RegressionError(message)
-    row_objects = cast("list[object]", raw_rows)
-    if len(row_objects) != case["clock"]["row_count"]:
-        message = "truncated or reordered original reference horizon"
-        raise RegressionError(message)
-    rows: list[list[str]] = []
-    for raw_row in row_objects:
-        if not isinstance(raw_row, list):
-            message = "ragged original native report"
-            raise RegressionError(message)
-        cells = cast("list[object]", raw_row)
-        if len(cells) != len(columns) or not all(isinstance(value, str) for value in cells):
-            message = "ragged or non-token native report"
-            raise RegressionError(message)
-        rows.append(cast("list[str]", cells))
+    rows = _checked_rows(raw_rows, len(columns), case["clock"]["row_count"])
     mapped = [site["native_column_id"] for site in case["sites"]]
     if len(mapped) != len(set(mapped)) or set(mapped) != set(columns[2:]):
         message = "physical print site map is duplicate or does not exhaust actual output columns"
