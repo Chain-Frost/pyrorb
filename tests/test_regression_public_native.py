@@ -122,13 +122,7 @@ def test_native_full_index_uses_checkout_stable_attributes(tmp_path: Path) -> No
     assert fingerprint["sha256"] == hashlib.sha256(original).hexdigest()
 
     output = tmp_path / "verified-native-index.json"
-    assert (
-        rd.main(
-            ["preflight", str(REGISTER), "--set", "cmd-eligible", "--full-index", "--output", str(output)]
-        )
-        == 0
-    )
+    assert rd.main(["preflight", str(REGISTER), "--set", "cmd-eligible", "--full-index", "--output", str(output)]) == 0
     result = json.loads(output.read_bytes())
     assert result["index_files_verified"] == len(index["files"])
     assert result["counts"] == {"verified": 50}
-
