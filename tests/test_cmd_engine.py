@@ -8,6 +8,7 @@ from dataclasses import replace
 from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -207,7 +208,7 @@ def test_two_source_branches_preserve_original_order_and_complete_outlet(tmp_pat
     model = _model()
     catchment = CatchmentModel(
         "Two source synthetic",
-        (SubArea("first", Decimal("1")), SubArea("second", Decimal("2"))),
+        (SubArea("first", Decimal(1)), SubArea("second", Decimal(2))),
         (
             Reach("first_reach", Decimal("1")),
             Reach("second_reach", Decimal("1.5")),
@@ -244,8 +245,7 @@ def test_two_source_branches_preserve_original_order_and_complete_outlet(tmp_pat
         "second_reach",
         "outlet_reach",
     )
-    reaches = outcome.python_diagnostics["reaches"]
-    assert isinstance(reaches, list)
+    reaches = cast("list[dict[str, object]]", outcome.python_diagnostics["reaches"])
     assert len(reaches) == 3
-    membership = reaches[-1]["source_membership_one_based"]
-    assert set(membership) == {1, 2}
+    members = cast("tuple[int, ...]", reaches[-1]["source_membership_one_based"])
+    assert set(members) == {1, 2}

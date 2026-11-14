@@ -18,7 +18,7 @@ def main() -> None:
     model = from_json(source.read_text(encoding="utf-8"))
     if not isinstance(model, RunModel):
         message = "The example must contain a complete S1 RunModel"
-        raise ValueError(message)
+        raise TypeError(message)
     write_project(
         Path("cmd-example-project.json"),
         Project("cmd_example", "explicit", EmbeddedRun(model), engine=EngineSelection.for_engine("python-cmd")),
