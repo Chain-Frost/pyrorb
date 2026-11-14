@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -166,6 +167,82 @@ def test_missing_candidate_horizon_is_incomplete(tmp_path: Path) -> None:
     )
     outcome = json.loads(report.read_text(encoding="utf-8"))
     assert outcome["cases"][0]["classification"] == "incomplete"
+
+
+def test_authored_reference_tokens_follow_independent_equations() -> None:
+    """Reference values are analytic, not snapshots copied from a routing engine."""
+    root = REPO / "tests" / "fixtures" / "regression-v1"
+    register = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    cases = [case for case in register["cases"] if case["coverage"] == "selected"]
+    assert len(cases) == 10
+    for case in cases:
+        source = root / case["reference"]["path"]
+        raw = source.read_bytes()
+        assert len(raw) == case["reference"]["size_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == case["reference"]["sha256"]
+        rows = json.loads(raw)["tables"][0]["rows"]
+        assert len(rows) == case["clock"]["row_count"]
+        for index, time_token, token in rows:
+            time = float(time_token)
+            position = int(index)
+            match case["case_id"]:
+                case "pub-zero-runoff" | "pub-loss-equality":
+                    expected = 0.0
+                case "pub-equilibrium":
+                    expected = 5.0
+                case "pub-linear-recession":
+                    expected = 10.0 * math.exp(-time / 2)
+                case "pub-linear-pulse":
+                    expected = 4.0 * (1.0 - math.exp(-0.5)) * math.exp(-(time - 1.0) / 2)
+                case "pub-junction":
+                    expected = (1.0, 3.0, 3.0, 0.0)[position - 1]
+                case "pub-loss-crossing":
+                    expected = 1000.0 / 3600.0 if position == 2 else 0.0
+                case "pub-initial-state":
+                    expected = 2.0 * math.exp(-time)
+                case "pub-branch-order":
+                    expected = (0.0, 4.0, 1.0)[position - 1]
+                case "pub-full-recession":
+                    expected = 3.0 * math.exp(-time / 2)
+                case _:
+                    pytest.fail(f"Unknown independent verification case: {case['case_id']}")
+            assert abs(float(token) - expected) <= 0.000000001, (case["case_id"], position)
+
+
+def test_single_case_diagnosis_accepts_an_authenticated_full_population_csv(tmp_path: Path) -> None:
+    register, candidate = _fixture(tmp_path)
+    document: dict[str, Any] = json.loads(register.read_text(encoding="utf-8"))
+    second = json.loads(json.dumps(document["cases"][0]))
+    second["case_id"] = "SYN-002"
+    document["cases"].append(second)
+    register.write_text(json.dumps(document), encoding="utf-8")
+    lines = candidate.read_text(encoding="utf-8").splitlines(keepends=True)
+    with candidate.open("a", encoding="utf-8") as stream:
+        for line in lines[1:]:
+            stream.write(line.replace("SYN-001,", "SYN-002,", 1))
+    assert (
+        rd.main(
+            ["diagnose", str(register), "--case", "SYN-001",
+             "--csv", str(candidate), "--implementation", "a" * 40]
+        )
+        == 0
+    )
+    assert rd.main(["compare", str(register), "--set", "all", "--csv", str(candidate), "--implementation", "a" * 40]) == 0
+
+
+def test_a_real_numeric_mismatch_is_a_failed_comparison(tmp_path: Path) -> None:
+    register, candidate = _fixture(tmp_path)
+    lines = candidate.read_text(encoding="utf-8").splitlines()
+    lines[-1] = lines[-1].replace(",1.000", ",2.000")
+    candidate.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    report = tmp_path / "comparison-fail.json"
+    assert (
+        rd.main(["compare", str(register), "--csv", str(candidate),
+                 "--implementation", "a" * 40, "--output", str(report)]) == 1
+    )
+    evaluated = json.loads(report.read_text(encoding="utf-8"))
+    assert evaluated["cases"][0]["classification"] == "fail"
+    assert evaluated["cases"][0]["mismatches"][0]["site"] == "Hyd001"
 
 
 def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
