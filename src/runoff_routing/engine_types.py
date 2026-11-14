@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import asdict, dataclass
-from typing import Literal, cast
+from typing import Literal
 
 EngineId = Literal["python", "python-cmd", "rorb-cmd"]
 EngineStatus = Literal[
@@ -54,7 +54,7 @@ class EngineSelection:
         if engine not in _DEFAULT_PROFILES:
             message = f"Unknown computation engine: {engine}"
             raise ValueError(message)
-        selected = cast("EngineId", engine)
+        selected = engine
         return cls(selected, numerical_profile if numerical_profile is not None else _DEFAULT_PROFILES[selected])
 
 

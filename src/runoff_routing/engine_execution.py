@@ -188,7 +188,7 @@ def run_cli(argv: list[str]) -> int:
     try:
         options = parser.parse_args(argv)
     except SystemExit as exc:
-        return int(exc.code)
+        return exc.code if isinstance(exc.code, int) else 2
     if options.engine is None and options.numerical_profile is not None:
         print("--numerical-profile requires an explicit --engine (or edit the project)", file=sys.stderr)
         return 2

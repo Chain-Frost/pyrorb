@@ -296,7 +296,7 @@ def project_from_json(text: str) -> Project:
         message = "Unsupported JSON project format or version"
         raise ProjectError(message)
     fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
-    data = _object(raw, fields if version == 1 else fields | {"engine"}, "project")
+    data = _object(header, fields if version == 1 else fields | {"engine"}, "project")
     if version == 1:
         engine = EngineSelection()
     else:

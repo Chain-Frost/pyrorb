@@ -18,7 +18,7 @@ from typing import Any, cast
 
 from .engine_types import EngineHydrograph, EngineStatus
 from .project_json import LegacyRunFiles, LoadedProject
-from .project_native_review import _check_capture_settings
+from .project_native_review import _check_capture_settings  # pyright: ignore[reportPrivateUsage] -- reuse S5 evidence contract
 from .reference import capture_cmd, fingerprint, verify_manifest
 from .rorb_documents import RorbSource
 from .rorb_out import inspect_output
@@ -33,7 +33,7 @@ class NativeBoundaryError(ValueError):
 
     def __init__(self, message: str, *, status: EngineStatus, code: str, manifest: Path | None = None) -> None:
         super().__init__(message)
-        self.status = status
+        self.status: EngineStatus = status
         self.code = code
         self.manifest = manifest
 
@@ -106,13 +106,15 @@ class NativeConfiguration:
             message = "Native configuration has missing or invalid string fields"
             raise ValueError(message)
         mapping = raw["print_columns"]
-        if not isinstance(mapping, dict) or any(
-            not isinstance(k, str) or not isinstance(v, str) for k, v in mapping.items()
-        ):
+        if not isinstance(mapping, dict):
+            message = "Native print_columns must be a JSON object"
+            raise TypeError(message)
+        print_map = cast("dict[object, object]", mapping)
+        if any(not isinstance(k, str) or not isinstance(v, str) for k, v in print_map.items()):
             message = "Native print_columns must be a string-to-string mapping"
             raise ValueError(message)
         timeout = raw["timeout_seconds"]
-        if type(timeout) not in (int, float):
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
             message = "Native timeout_seconds must be a number"
             raise ValueError(message)
         base = path.absolute().parent
@@ -253,7 +255,7 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
             else "native_execution_failed"
         )
         message = f"S0 native capture did not validate: {outcome}; see retained manifest diagnostics"
-        raise NativeBoundaryError(status, "native_capture_outcome", message, manifest_path)
+        raise NativeBoundaryError(message, status=status, code="native_capture_outcome", manifest=manifest_path)
     if (
         manifest.get("provenance_gaps")
         or manifest.get("diagnostics") != {"errors": [], "warnings": []}
@@ -322,7 +324,7 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
             )
         # Allow only the printed clock resolution; preserve the unrounded raw token separately.
         target_hour = index * loaded.run.storm.timestep_hours
-        resolution = Decimal(1).scaleb(row.time_hours.as_tuple().exponent)
+        resolution = Decimal(1).scaleb(int(row.time_hours.as_tuple().exponent))
         if abs(row.time_hours - target_hour) > resolution / 2:
             message = "Native raw time token does not match the declared CMD 6.44 clock convention"
             raise NativeBoundaryError(
