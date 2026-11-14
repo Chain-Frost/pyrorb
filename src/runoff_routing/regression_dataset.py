@@ -24,8 +24,15 @@ RESULT_FORMAT = "runoff-regression-results"
 VERSION = 1
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 CSV_COLUMNS = (
-    "case_id", "classification", "model_print_id", "native_column_id", "sample_index",
-    "raw_native_increment", "raw_native_time", "native_discharge_token", "python_discharge_m3_s",
+    "case_id",
+    "classification",
+    "model_print_id",
+    "native_column_id",
+    "sample_index",
+    "raw_native_increment",
+    "raw_native_time",
+    "native_discharge_token",
+    "python_discharge_m3_s",
 )
 
 
@@ -199,8 +206,7 @@ def _verify_index(root: Path, index: dict[str, Any]) -> int:
 
 def _cases(register: dict[str, Any], group: str, single: str | None) -> list[dict[str, Any]]:
     matches = [
-        entry for entry in register["cases"]
-        if (entry["case_id"] == single if single else group in entry["sets"])
+        entry for entry in register["cases"] if (entry["case_id"] == single if single else group in entry["sets"])
     ]
     if not matches:
         message = f"no registered case(s) for {single or group}"
@@ -236,9 +242,17 @@ def _compare(
     observed = {key for key in supplied if key[0] == case["case_id"]}
     additional = sorted(observed - expected)
     if additional:
-        return {"classification": "invalid", "reason": f"unmapped extra candidate output: {additional[:3]}", "mismatches": []}
+        return {
+            "classification": "invalid",
+            "reason": f"unmapped extra candidate output: {additional[:3]}",
+            "mismatches": [],
+        }
     if expected - observed:
-        return {"classification": "incomplete", "reason": f"{len(expected - observed)} expected ordinates unavailable", "mismatches": []}
+        return {
+            "classification": "incomplete",
+            "reason": f"{len(expected - observed)} expected ordinates unavailable",
+            "mismatches": [],
+        }
     differences: list[dict[str, str | int]] = []
     for point in case["sites"]:
         column = point["native_column_id"]
@@ -248,28 +262,51 @@ def _compare(
             tokens = (row[0], row[1], row[position])
             retained = (actual["raw_native_increment"], actual["raw_native_time"], actual["native_discharge_token"])
             if retained != tokens or actual["model_print_id"] != point["model_print_id"]:
-                return {"classification": "invalid", "reason": f"original clock/value/site identity changed: {column}[{i}]", "mismatches": []}
+                return {
+                    "classification": "invalid",
+                    "reason": f"original clock/value/site identity changed: {column}[{i}]",
+                    "mismatches": [],
+                }
             target, prediction = _scalar(row[position]), _scalar(actual["python_discharge_m3_s"])
             if case["reference_kind"] == "independent_analytic":
                 allowance = Decimal("0.000001") + abs(target) * Decimal("0.000001")
             elif engine == "python-cmd":
                 allowance = Decimal(1).scaleb(int(target.as_tuple().exponent)) / 2
             else:
-                return {"classification": "incomplete", "reason": "independent engineering accuracy and balance budget unavailable for this native reference", "mismatches": []}
+                return {
+                    "classification": "incomplete",
+                    "reason": "independent engineering accuracy and balance budget unavailable for this native reference",
+                    "mismatches": [],
+                }
             if abs(prediction - target) > allowance:
-                differences.append({
-                    "site": column, "index": i, "expected_token": row[position],
-                    "observed": str(prediction), "signed_error": str(prediction - target),
-                    "frozen_allowance": str(allowance),
-                })
-    return {"classification": "fail" if differences else "pass", "reason": None,
-            "checked_ordinates": len(expected), "mismatches": differences}
+                differences.append(
+                    {
+                        "site": column,
+                        "index": i,
+                        "expected_token": row[position],
+                        "observed": str(prediction),
+                        "signed_error": str(prediction - target),
+                        "frozen_allowance": str(allowance),
+                    }
+                )
+    return {
+        "classification": "fail" if differences else "pass",
+        "reason": None,
+        "checked_ordinates": len(expected),
+        "mismatches": differences,
+    }
 
 
 def _run(
-    path: Path, *,
-    group: str, case_id: str | None, csv_path: Path | None,
-    engine: str, full_index: bool, implementation: str | None, wheel: Path | None,
+    path: Path,
+    *,
+    group: str,
+    case_id: str | None,
+    csv_path: Path | None,
+    engine: str,
+    full_index: bool,
+    implementation: str | None,
+    wheel: Path | None,
 ) -> tuple[dict[str, Any], bool]:
     register, root, index, register_sha, policy_sha = _load_register(path)
     selected = _cases(register, group, case_id)
@@ -297,7 +334,11 @@ def _run(
                 if csv_path is not None:
                     case.update(_compare(item, columns, rows, candidates, engine))
                 else:
-                    case.update(classification="verified", reason="original evidence only; candidate not executed", mismatches=[])
+                    case.update(
+                        classification="verified",
+                        reason="original evidence only; candidate not executed",
+                        mismatches=[],
+                    )
                 case["reference_rows"], case["reference_sites"] = len(rows), len(columns) - 2
         except (OSError, KeyError, IndexError, TypeError, ValueError) as exc:
             status = "incomplete" if isinstance(exc, FileNotFoundError) else "invalid"
@@ -307,15 +348,24 @@ def _run(
     complete = all(case["classification"] == ("pass" if csv_path is not None else "verified") for case in results)
     spec = importlib.util.find_spec("runoff_routing")
     outcome = {
-        "format": RESULT_FORMAT, "schema_version": VERSION, "dataset_id": register["dataset_id"],
-        "register_sha256": register_sha, "policy_sha256": policy_sha,
-        "policy_id": register["policies"][engine], "engine_id": engine,
+        "format": RESULT_FORMAT,
+        "schema_version": VERSION,
+        "dataset_id": register["dataset_id"],
+        "register_sha256": register_sha,
+        "policy_sha256": policy_sha,
+        "policy_id": register["policies"][engine],
+        "engine_id": engine,
         "implementation_revision": implementation,
         "wheel_sha256": _hash(wheel)[1] if wheel is not None else None,
         "actual_package_import_origin": spec.origin if spec is not None else None,
         "candidate_csv_sha256": _hash(csv_path)[1] if csv_path is not None else None,
-        "python": sys.version, "platform": platform.platform(), "case_count": len(selected),
-        "index_files_verified": checked, "counts": dict(counts), "complete": complete, "cases": results,
+        "python": sys.version,
+        "platform": platform.platform(),
+        "case_count": len(selected),
+        "index_files_verified": checked,
+        "counts": dict(counts),
+        "complete": complete,
+        "cases": results,
     }
     return outcome, complete
 
@@ -342,15 +392,27 @@ def main(argv: list[str] | None = None) -> int:
             message = "diagnose requires one --case"
             raise RegressionError(message)
         result, complete = _run(
-            args.register, group=args.set, case_id=args.case, csv_path=args.csv,
-            engine=args.engine, full_index=args.full_index,
-            implementation=args.implementation, wheel=args.wheel,
+            args.register,
+            group=args.set,
+            case_id=args.case,
+            csv_path=args.csv,
+            engine=args.engine,
+            full_index=args.full_index,
+            implementation=args.implementation,
+            wheel=args.wheel,
         )
         text = json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
         if args.output is not None:
             with args.output.open("x", encoding="utf-8", newline="\n") as file:
                 file.write(text)
-        print(json.dumps({name: result[name] for name in ("dataset_id", "case_count", "counts", "index_files_verified", "complete")}))
+        print(
+            json.dumps(
+                {
+                    name: result[name]
+                    for name in ("dataset_id", "case_count", "counts", "index_files_verified", "complete")
+                }
+            )
+        )
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"regression error: {exc}", file=sys.stderr)
         return 2

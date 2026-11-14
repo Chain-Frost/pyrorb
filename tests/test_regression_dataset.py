@@ -88,7 +88,9 @@ def test_manufactured_source_preflight_and_cached_comparison(tmp_path: Path) -> 
 def test_missing_coverage_cannot_be_accepted(tmp_path: Path) -> None:
     register, computed = _fixture(tmp_path, missing=True)
     assert rd.main(["preflight", str(register), "--set", "all"]) == 1
-    assert rd.main(["compare", str(register), "--set", "all", "--csv", str(computed), "--implementation", "a" * 40]) == 1
+    assert (
+        rd.main(["compare", str(register), "--set", "all", "--csv", str(computed), "--implementation", "a" * 40]) == 1
+    )
 
 
 def test_original_source_hash_mismatch_is_invalid(tmp_path: Path) -> None:
@@ -156,9 +158,12 @@ def test_missing_candidate_horizon_is_incomplete(tmp_path: Path) -> None:
     lines = candidate.read_text(encoding="utf-8").splitlines()
     candidate.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
     report = tmp_path / "missing-horizon.json"
-    assert rd.main(
-        ["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40, "--output", str(report)]
-    ) == 1
+    assert (
+        rd.main(
+            ["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40, "--output", str(report)]
+        )
+        == 1
+    )
     outcome = json.loads(report.read_text(encoding="utf-8"))
     assert outcome["cases"][0]["classification"] == "incomplete"
 
