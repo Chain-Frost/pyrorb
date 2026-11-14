@@ -1,0 +1,643 @@
+{
+  "date_local": "2026-11-15",
+  "timezone": "Australia/Perth",
+  "verified_source_revision": "dd4aade8367eae8369b6fba4295bfbfec55354ea",
+  "base80": "e3a4e5239287195208390ba48e85aa9d8997ae82",
+  "python": "3.14.6 (tags/v3.14.6:c63aec6, Jun 10 2026, 10:26:10) [MSC v.1944 64 bit (AMD64)]",
+  "runner_wheel_sha256": "cc16ccf4fb90cf18942070891a1c3ea7caf9a946b0968f4378e2f0454955e090",
+  "source_zip_installed_package_members_byte_identical": 40,
+  "commands": [
+    {
+      "name": "clone",
+      "command": [
+        "git",
+        "clone",
+        "--quiet",
+        "--no-hardlinks",
+        "--branch",
+        "feat/issue81-curated-cmd",
+        "$AuthoringCheckout",
+        "$Verify\\checkout"
+      ],
+      "cwd": "$Verify",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "public-origin",
+      "command": [
+        "git",
+        "remote",
+        "set-url",
+        "origin",
+        "https://github.com/Chain-Frost/python-runoff-routing.git"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "source-quality",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "repo-scripts/check_local.py"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "build",
+        "--wheel",
+        "--outdir",
+        "$Verify\\dist"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "venv",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "venv",
+        "$Verify\\env"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "install",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-m",
+        "pip",
+        "install",
+        "$Verify\\dist\\python_runoff_routing-0.0.0.dev0-py3-none-any.whl",
+        "pytest"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "import",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-c",
+        "import runoff_routing; print(runoff_routing.__file__); assert 'site-packages' in runoff_routing.__file__"
+      ],
+      "cwd": "$Verify",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-full-tests",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "pytest",
+        "-m",
+        "not native and not benchmark",
+        "--junitxml",
+        "$Verify\\results\\wheel-tests.xml"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "source-preflight",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--full-index",
+        "--output",
+        "$Verify\\results\\source-preflight.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "source-one",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "diagnose",
+        "tests/fixtures/regression-v1/register.json",
+        "--case",
+        "H1-three-source-asymmetric",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\source-one.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "source-timestep",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "timestep",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\source-timestep.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "source-full-scalars",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\source-full-scalars.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 1
+    },
+    {
+      "name": "source-full-ordinates",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--csv",
+        "tests/fixtures/regression-v1/native-cmd/candidate-snapshot.csv.gz",
+        "--implementation",
+        "fea9c80c521127325b779ea0ea87ddf77795b290",
+        "--output",
+        "$Verify\\results\\source-full-ordinates.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "source-native-all",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "native-all",
+        "--output",
+        "$Verify\\results\\source-native-all.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 1
+    },
+    {
+      "name": "source-all",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "all",
+        "--output",
+        "$Verify\\results\\source-all.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 1
+    },
+    {
+      "name": "source-authored",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "authored",
+        "--engine",
+        "python",
+        "--output",
+        "$Verify\\results\\source-authored.json"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 0
+    },
+    {
+      "name": "source-tampered-snapshot",
+      "command": [
+        "C:\\Program Files\\Python314\\python.exe",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "$Verify\\source-negative\\register.json",
+        "--set",
+        "cmd-eligible",
+        "--snapshot"
+      ],
+      "cwd": "$Verify\\checkout",
+      "source": true,
+      "exit": 2
+    },
+    {
+      "name": "wheel-preflight",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--full-index",
+        "--output",
+        "$Verify\\results\\wheel-preflight.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-one",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "diagnose",
+        "tests/fixtures/regression-v1/register.json",
+        "--case",
+        "H1-three-source-asymmetric",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\wheel-one.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-timestep",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "timestep",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\wheel-timestep.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-full-scalars",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\wheel-full-scalars.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 1
+    },
+    {
+      "name": "wheel-full-ordinates",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--csv",
+        "tests/fixtures/regression-v1/native-cmd/candidate-snapshot.csv.gz",
+        "--implementation",
+        "fea9c80c521127325b779ea0ea87ddf77795b290",
+        "--output",
+        "$Verify\\results\\wheel-full-ordinates.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-native-all",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "native-all",
+        "--output",
+        "$Verify\\results\\wheel-native-all.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 1
+    },
+    {
+      "name": "wheel-all",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "all",
+        "--output",
+        "$Verify\\results\\wheel-all.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 1
+    },
+    {
+      "name": "wheel-authored",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "authored",
+        "--engine",
+        "python",
+        "--output",
+        "$Verify\\results\\wheel-authored.json"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 0
+    },
+    {
+      "name": "wheel-tampered-snapshot",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "$Verify\\wheel-negative\\register.json",
+        "--set",
+        "cmd-eligible",
+        "--snapshot"
+      ],
+      "cwd": "$Verify\\wheel-checkout",
+      "source": false,
+      "exit": 2
+    }
+  ],
+  "public_remote_commands": [
+    {
+      "name": "remote-preflight",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "preflight",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--full-index",
+        "--output",
+        "$Verify\\results\\remote-preflight.json"
+      ],
+      "cwd": "$Verify\\public-remote-clone",
+      "exit": 0
+    },
+    {
+      "name": "remote-scalars",
+      "command": [
+        "$Verify\\env\\Scripts\\python.exe",
+        "-I",
+        "-m",
+        "runoff_routing.regression_dataset",
+        "compare",
+        "tests/fixtures/regression-v1/register.json",
+        "--set",
+        "cmd-eligible",
+        "--snapshot",
+        "--output",
+        "$Verify\\results\\remote-scalars.json"
+      ],
+      "cwd": "$Verify\\public-remote-clone",
+      "exit": 1
+    }
+  ],
+  "path_normalisation": "Personal verification paths replaced with $Verify; authoring public worktree with $AuthoringCheckout. Original command/output hashes attest retained local originals; published result derivatives have separate hashes. No numerical fields changed.",
+  "source_tests": {
+    "passed": 780,
+    "skipped": 1
+  },
+  "installed_wheel_tests": {
+    "passed": 780,
+    "skipped": 1
+  },
+  "skip": "test_project_json.py::test_symlink_escape_rejected: filesystem file-symlink capability unavailable",
+  "ruff": "0.16.6 lint/format pass",
+  "strict_pyright": "0 errors / 0 warnings",
+  "hygiene": "pass",
+  "cases": {
+    "preflight": {
+      "case_count": 50,
+      "counts": {
+        "verified": 50
+      },
+      "index_files_verified": 227,
+      "source_original_result_sha256": "c8535753ebc900ec37e7ae03354fe6c32d3b7eeb0e0e58056bcfaba2a05f28af",
+      "wheel_original_result_sha256": "43f512bc112de19971cfe0c5f4e6ccc9df052c9269040de07ebc95beb3a426b3"
+    },
+    "one": {
+      "case_count": 1,
+      "counts": {
+        "pass": 1
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "08898f67ae54d32b80d8c9a77421065779d5404fd59257d7d3c556c7252af755",
+      "wheel_original_result_sha256": "2cb5585e6f3f3383e222757b22d6a3bf232fd5010c41d37de9d4350ae7f77800"
+    },
+    "timestep": {
+      "case_count": 25,
+      "counts": {
+        "pass": 25
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "12587c8438fbe3936acd76efed05ac244ca4583e83fc63a3f9f6d60f7474cfc3",
+      "wheel_original_result_sha256": "be951cfa50472d02847e0cfb195ac13a7656a3e49a97f2b2945421aece2104c5"
+    },
+    "full-scalars": {
+      "case_count": 50,
+      "counts": {
+        "incomplete": 2,
+        "pass": 48
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "b90858c7cc2cf7edb2c7af93869c87489d5c6128026fb67fba22d4bf0d22fab5",
+      "wheel_original_result_sha256": "25b91959247d60f5ee1a4dc5d28586ff52f588a30272c39a5db44415fb28bb4d",
+      "published_result": {
+        "path": "full-scalars.json",
+        "sha256": "eac7e4635fa65ea23ab2a5544ec2874fe4b4238f151755db6f4d92417354d518",
+        "size_bytes": 87445
+      }
+    },
+    "full-ordinates": {
+      "case_count": 50,
+      "counts": {
+        "pass": 50
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "25fda769731ebca86c6cc04d7bea4982badbdca9a67744ec06d327a36439d6b3",
+      "wheel_original_result_sha256": "c35b55f158dfc7f8cb9c08096c3286a346008b957aeda15c75a572146032c201",
+      "published_result": {
+        "path": "full-ordinates.json",
+        "sha256": "d83b50947af1b0bdaec5052f82c982804c118c4e05cee5e0418635be819e82a0",
+        "size_bytes": 25855
+      }
+    },
+    "native-all": {
+      "case_count": 71,
+      "counts": {
+        "incomplete": 21,
+        "verified": 50
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "6d346044043fcbc33129d88015553d1e41a18096d9344f3c1f992ee96c2ec9c1",
+      "wheel_original_result_sha256": "a7a6804c03a4c3daefb3cc7e1342bb30a1573b74ce2604da1276aa15c4122340"
+    },
+    "all": {
+      "case_count": 85,
+      "counts": {
+        "incomplete": 25,
+        "verified": 60
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "4222e74dbc22afa8cf33113f5900d8c3582ff35de122fcd9dfe82bcab0adbd43",
+      "wheel_original_result_sha256": "90c81a1628bdb7827ce8d5433ca2bdbdf93af1c6ab58696c000090de262ea56d",
+      "published_result": {
+        "path": "all.json",
+        "sha256": "0ca188f4f90dfae5d1cf05a4b0d07166223c057a7ff348f8d6bd963821a45087",
+        "size_bytes": 39801
+      }
+    },
+    "authored": {
+      "case_count": 10,
+      "counts": {
+        "verified": 10
+      },
+      "index_files_verified": 0,
+      "source_original_result_sha256": "10561af24f8e35691abaff6ef2bd72d161b03f96c74bcee33341a55732f2e4f9",
+      "wheel_original_result_sha256": "187408238d634823178e2acfde8ee5be1c8378fdc537e7b182352cc87a0db63a"
+    }
+  },
+  "source_wheel_case_parity": true,
+  "public_remote_case_parity": true,
+  "original_reference_comparison": {
+    "cases": 50,
+    "rows": 19550,
+    "exact_original_reference_tokens": true,
+    "exact_sites_clocks_settings": true,
+    "exact_scalar_bindings": true
+  },
+  "metric_counts": {
+    "peak_magnitude": {
+      "pass": 50,
+      "fail": 0,
+      "incomplete": 0
+    },
+    "peak_time": {
+      "pass": 48,
+      "fail": 0,
+      "incomplete": 2
+    },
+    "native_reported_volume": {
+      "pass": 50,
+      "fail": 0,
+      "incomplete": 0
+    }
+  },
+  "payload": {
+    "original_identities": 245,
+    "unique_files": 214,
+    "unique_bytes": 2379558,
+    "path_derivatives": 134,
+    "identity_payloads": 110,
+    "lossless_gzip": 1
+  },
+  "hashes": {
+    "tests/fixtures/regression-v1/register.json": "59b478181671cb19ff5d2e1df9ed5edf6bddeb3065556a536cf9f2bd5c806b1c",
+    "tests/fixtures/regression-v1/scalar-policy.md": "a0be5aa27e61813b120a30aaa8527961365c88af81ea77e881585bf68703bd50",
+    "tests/fixtures/regression-v1/native-cmd/index.json": "2d7285feb413dea281dbe886042d399ce7ae869d626133de4424557cf5be0c17",
+    "tests/fixtures/regression-v1/native-cmd/provenance.json": "77b4273dd1fb5bdd7c85022bc96dbdd881c09976630d69caa16db6bba61bf059",
+    "tests/fixtures/regression-v1/native-cmd/candidate-snapshot.csv.gz": "34e94ad7a0614cf023c9b77e62e45af077963fb7f805b5bb270f568be5c31c6f",
+    "tests/fixtures/regression-v1/native-cmd/candidate-snapshot-series.json": "c1acc3b48f78f9025edde72db4a0c5527929342cb91ceba0075270a311b19270"
+  },
+  "original_archive_after_final_replay": {
+    "files": 1026,
+    "index_sha256": "492dd5d160d14fc354d1ac9b7b316f5857bb8ff316f4d56ad3727c645f23265d",
+    "all_hashes_and_sizes_match": true
+  },
+  "authored_case_records_unchanged": 14,
+  "original_analytic_reference_bytes_unchanged": true
+}
