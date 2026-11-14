@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -93,12 +94,10 @@ def test_missing_coverage_cannot_be_accepted(tmp_path: Path) -> None:
 def test_original_source_hash_mismatch_is_invalid(tmp_path: Path) -> None:
     register, _ = _fixture(tmp_path)
     (tmp_path / "original.json").write_text("changed", encoding="utf-8")
-    result, complete = rd._run(
-        register, group="cmd-selected", case_id=None, csv_path=None,
-        engine="python-cmd", full_index=False, implementation=None, wheel=None,
-    )
-    assert not complete
-    assert result["cases"][0]["classification"] == "invalid"
+    report = tmp_path / "invalid-source.json"
+    assert rd.main(["preflight", str(register), "--output", str(report)]) == 1
+    outcome = json.loads(report.read_text(encoding="utf-8"))
+    assert outcome["cases"][0]["classification"] == "invalid"
 
 
 @pytest.mark.parametrize(
@@ -156,17 +155,15 @@ def test_missing_candidate_horizon_is_incomplete(tmp_path: Path) -> None:
     register, candidate = _fixture(tmp_path)
     lines = candidate.read_text(encoding="utf-8").splitlines()
     candidate.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
-    result, complete = rd._run(
-        register, group="cmd-selected", case_id=None, csv_path=candidate,
-        engine="python-cmd", full_index=False, implementation="a" * 40, wheel=None,
-    )
-    assert not complete
-    assert result["cases"][0]["classification"] == "incomplete"
+    report = tmp_path / "missing-horizon.json"
+    assert rd.main(
+        ["compare", str(register), "--csv", str(candidate), "--implementation", "a" * 40, "--output", str(report)]
+    ) == 1
+    outcome = json.loads(report.read_text(encoding="utf-8"))
+    assert outcome["cases"][0]["classification"] == "incomplete"
 
 
 def test_native_process_never_launches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    import subprocess
-
     def prohibited(*_args: object, **_kwargs: object) -> None:
         pytest.fail("cached comparison unexpectedly launched a native executable")
 

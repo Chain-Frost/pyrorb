@@ -275,7 +275,7 @@ def _run(
     selected = _cases(register, group, case_id)
     checked = _verify_index(root, index) if full_index else 0
     candidates = _predictions(csv_path) if csv_path is not None else {}
-    if set(key[0] for key in candidates) - {c["case_id"] for c in selected}:
+    if {key[0] for key in candidates} - {c["case_id"] for c in selected}:
         message = "candidate CSV includes undeclared or unselected case IDs"
         raise RegressionError(message)
     if csv_path is not None and not implementation:
@@ -351,10 +351,10 @@ def main(argv: list[str] | None = None) -> int:
             with args.output.open("x", encoding="utf-8", newline="\n") as file:
                 file.write(text)
         print(json.dumps({name: result[name] for name in ("dataset_id", "case_count", "counts", "index_files_verified", "complete")}))
-        return 0 if complete else 1
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"regression error: {exc}", file=sys.stderr)
         return 2
+    return 0 if complete else 1
 
 
 if __name__ == "__main__":
