@@ -33,7 +33,7 @@ class CmdBoundaryError(ValueError):
 
     def __init__(self, status: EngineStatus, code: str, description: str) -> None:
         super().__init__(description)
-        self.status = status
+        self.status: EngineStatus = status
         self.code = code
 
 
