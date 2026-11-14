@@ -60,6 +60,10 @@ def _number(value: Decimal) -> NumberInput:
         raise CmdBoundaryError(_INVALID_INPUT, "cmd_decimal_input", f"Cannot convert {lexeme!r}") from exc
     if not math.isfinite(widened):
         raise CmdBoundaryError(_INVALID_INPUT, "cmd_nonfinite_input", "Nonfinite binary64 CMD operand")
+    if value != 0 and widened == 0:
+        raise CmdBoundaryError(
+            _UNSUPPORTED_FEATURE, "cmd_input_representation", "Nonzero CMD decimal operand underflows binary64"
+        )
     try:
         stored = store(widened)
     except UnsupportedNumericPath as exc:

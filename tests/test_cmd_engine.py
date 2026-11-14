@@ -196,6 +196,29 @@ def test_result_json_has_actual_source_identity_and_diagnostics(tmp_path: Path) 
     assert data["native_raw_time_tokens"] == []
 
 
+@pytest.mark.parametrize("magnitude", ["1e-400", "1e-330", "1e-325"])
+def test_cmd_rejects_decimal_underflow_without_emulating_zero_exponent(tmp_path: Path, magnitude: str) -> None:
+    """A positive Decimal that binary64 loses cannot silently select the m=0 branch."""
+    model = _model()
+    value = Decimal(magnitude)
+    assert value > 0 and float(value) == 0
+    altered = replace(model, parameters=replace(model.parameters, routing=(replace(model.parameters.routing[0], m=value),)))
+    project = _project(tmp_path, altered, cmd_stored=True)
+    outcome = run_engine_project(project)
+    assert outcome.status == "unsupported_feature"
+    assert outcome.hydrographs == ()
+    assert len(outcome.diagnostics) == 1
+    assert outcome.diagnostics[0].code == "cmd_input_representation"
+    assert "underflows binary64" in outcome.diagnostics[0].message
+
+
+def test_cmd_preserves_exact_zero_operand_boundary(tmp_path: Path) -> None:
+    """An actual zero is valid and must not be mistaken for underflow."""
+    event = adapt_event(load_project(_project(tmp_path, _model())))
+    assert event.impervious[0].lexeme == "0"
+    assert event.impervious[0].stored == 0.0
+
+
 def test_public_typed_domain_rejects_zero_exponent() -> None:
     model = _model()
     with pytest.raises(ValueError, match="m must be"):
