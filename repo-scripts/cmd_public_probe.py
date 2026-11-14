@@ -32,7 +32,7 @@ def _original_source(case: dict[str, Any], suffix: str) -> bytes:
         message = f"{case['case_id']}: expected one {suffix} input"
         raise ValueError(message)
     locator = matching[0]
-    path = regression._verify(ROOT, locator)
+    path = regression._verify(ROOT, locator)  # noqa: SLF001 -- exact maintained fixture SHA/locator validation
     raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != locator["sha256"]:
         message = f"{case['case_id']}: changed source bytes"
@@ -50,7 +50,7 @@ def _typed_model(case: dict[str, Any]) -> RunModel:
 
 def _compare_case(case: dict[str, Any], discharge: tuple[float, ...]) -> dict[str, Any]:
     """Use the existing frozen native printed-token comparator, not a new tolerance."""
-    columns, rows = regression._reference(ROOT, case)
+    columns, rows = regression._reference(ROOT, case)  # noqa: SLF001 -- reuse frozen native table/clock validation
     sites = case["sites"]
     if len(sites) != 1 or len(columns) != 3 or len(rows) != len(discharge):
         return {"status": "incomplete_output", "reason": "Original printed site/complete horizon differs"}
@@ -72,7 +72,7 @@ def _compare_case(case: dict[str, Any], discharge: tuple[float, ...]) -> dict[st
         }
         for index, (row, flow) in enumerate(zip(rows, discharge, strict=True))
     }
-    result = regression._compare(case, columns, rows, candidate, "python-cmd")
+    result = regression._compare(case, columns, rows, candidate, "python-cmd")  # noqa: SLF001 -- one frozen comparator
     mismatches = result.get("mismatches", [])
     return {
         "status": f"printed_{result['classification']}",
