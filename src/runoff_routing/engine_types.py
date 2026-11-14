@@ -149,9 +149,12 @@ class EngineOutcome:
 
     def to_json(self) -> str:
         """Full result with original native clock tokens and explicit nulls for missing internals."""
-        return json.dumps(
-            {**asdict(self), "calculation_status": self.calculation_status},
-            indent=2,
-            sort_keys=True,
-            allow_nan=False,
-        ) + "\n"
+        return (
+            json.dumps(
+                {**asdict(self), "calculation_status": self.calculation_status},
+                indent=2,
+                sort_keys=True,
+                allow_nan=False,
+            )
+            + "\n"
+        )

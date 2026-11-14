@@ -69,20 +69,26 @@ def _failure(
 def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     if loaded.project.rainfall_profile == "arr-2026v1":
         return _failure(
-            base, "unsupported_feature", "rainfall_profile",
+            base,
+            "unsupported_feature",
+            "rainfall_profile",
             "ARR rainfall must be prepared by an independently validated S6 event adapter",
         )
     if any(asset.role != "reference" for asset in loaded.project.assets):
         return _failure(
-            base, "unsupported_feature", "unprepared_rainfall",
+            base,
+            "unsupported_feature",
+            "unprepared_rainfall",
             "External rainfall, temporal pattern and curve assets are unprocessed",
         )
     try:
         result = run_model(loaded.run)
     except RunInputError as exc:
         state: EngineStatus = (
-            "invalid_input" if exc.status == "invalid"
-            else "numerical_error" if exc.code == "nonfinite_result"
+            "invalid_input"
+            if exc.status == "invalid"
+            else "numerical_error"
+            if exc.code == "nonfinite_result"
             else "unsupported_feature"
         )
         return _failure(base, state, exc.code, str(exc))
@@ -92,7 +98,9 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     return replace(
         base,
         status="computed_unvalidated",
-        hydrographs=tuple(EngineHydrograph(point.print_id, point.label, point.discharge_m3_s) for point in result.prints),
+        hydrographs=tuple(
+            EngineHydrograph(point.print_id, point.label, point.discharge_m3_s) for point in result.prints
+        ),
         physical_time_hours=tuple(str(index * loaded.run.storm.timestep_hours) for index in range(horizon)),
         internal_quantities="python_available",
         python_diagnostics=asdict(result.numerical),
@@ -122,17 +130,23 @@ def run_engine_project(
         return _python(loaded, base)
     if effective.engine == "python-cmd":
         return _failure(
-            base, "unavailable_engine", "python_cmd_pending",
+            base,
+            "unavailable_engine",
+            "python_cmd_pending",
             "python-cmd is not integrated: issue #75 must supply the qualified CMD event backend",
         )
     if native_config is None:
         return _failure(
-            base, "unavailable_engine", "native_config_required",
+            base,
+            "unavailable_engine",
+            "native_config_required",
             "rorb-cmd requires explicit local --native-config with executable SHA-256 and HydNNN mapping",
         )
     if native_config.numerical_profile != effective.numerical_profile:
         return _failure(
-            base, "unavailable_engine", "native_profile_mismatch",
+            base,
+            "unavailable_engine",
+            "native_profile_mismatch",
             "Selected numerical profile does not match the reviewed executable configuration",
         )
     try:
@@ -181,12 +195,15 @@ def run_cli(argv: list[str]) -> int:
     try:
         chosen = (
             EngineSelection.for_engine(options.engine, options.numerical_profile)
-            if options.engine is not None else None
+            if options.engine is not None
+            else None
         )
         config = NativeConfiguration.from_file(options.native_config) if options.native_config is not None else None
         outcome = run_engine_project(
-            options.project, selection=chosen,
-            selection_source="cli_override", native_config=config,
+            options.project,
+            selection=chosen,
+            selection_source="cli_override",
+            native_config=config,
         )
         write_engine_result(options.result, outcome)
     except (OSError, ValueError) as exc:

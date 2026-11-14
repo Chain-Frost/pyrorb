@@ -38,7 +38,9 @@ def _model() -> RunModel:
 
 def _project(root: Path, engine: EngineSelection | None = None) -> Path:
     path = root / "project.json"
-    write_project(path, Project("synthetic_event", "explicit", EmbeddedRun(_model()), engine=engine or EngineSelection()))
+    write_project(
+        path, Project("synthetic_event", "explicit", EmbeddedRun(_model()), engine=engine or EngineSelection())
+    )
     return path
 
 
@@ -136,7 +138,9 @@ def test_engine_schema_rejects_unknown_engine_and_numerical_profile() -> None:
         project_from_json(json.dumps(data))
 
 
-def test_cli_records_stored_and_effective_engine_and_failure(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_records_stored_and_effective_engine_and_failure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     source = _project(tmp_path, EngineSelection.for_engine("python-cmd"))
     failure = tmp_path / "unavailable.json"
     assert main(["run", str(source), str(failure)]) == 2
@@ -161,17 +165,22 @@ def test_cli_records_stored_and_effective_engine_and_failure(tmp_path: Path, cap
 def test_native_config_file_round_trip_and_wrong_fingerprint_preflight(tmp_path: Path) -> None:
     config = _native_config(tmp_path)
     settings = tmp_path / "local-native.json"
-    settings.write_text(json.dumps({
-        "schema_version": 1,
-        "executable": config.executable.name,
-        "executable_sha256": config.executable_sha256,
-        "observed_version": config.observed_version,
-        "observed_banner": config.observed_banner,
-        "numerical_profile": config.numerical_profile,
-        "output_root": "captures",
-        "print_columns": {"print_1": "Hyd001"},
-        "timeout_seconds": 5,
-    }), encoding="utf-8")
+    settings.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "executable": config.executable.name,
+                "executable_sha256": config.executable_sha256,
+                "observed_version": config.observed_version,
+                "observed_banner": config.observed_banner,
+                "numerical_profile": config.numerical_profile,
+                "output_root": "captures",
+                "print_columns": {"print_1": "Hyd001"},
+                "timeout_seconds": 5,
+            }
+        ),
+        encoding="utf-8",
+    )
     assert NativeConfiguration.from_file(settings) == config
     source = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
     config.executable.write_bytes(b"tampered executable")
