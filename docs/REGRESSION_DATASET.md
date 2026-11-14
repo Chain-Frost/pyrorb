@@ -47,7 +47,7 @@ $Wheel = (Get-ChildItem "$Verify/dist/*.whl").FullName
 & $Python -m pip install $Wheel pytest
 Get-FileHash $Wheel -Algorithm SHA256
 New-Item -ItemType Directory "$Verify/checkout" | Out-Null
-foreach ($Name in @('tests','examples','repo-scripts','src','pyproject.toml','ruff.toml')) {
+foreach ($Name in @('tests','examples','repo-scripts','src','.github','pyproject.toml','ruff.toml')) {
     Copy-Item -LiteralPath (Join-Path $Checkout $Name) -Destination "$Verify/checkout" -Recurse
 }
 Push-Location "$Verify/checkout"
