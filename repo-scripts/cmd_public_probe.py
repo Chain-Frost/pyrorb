@@ -95,12 +95,25 @@ def main() -> int:
         return 2
     outcomes = [_one(case) for case in cases]
     counts = dict(sorted(Counter(str(item["status"]) for item in outcomes).items()))
+    retained = [case for case in cases if "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]]
+    expected = {case["case_id"]: case["clock"]["row_count"] for case in retained}
+    observed = {item["case_id"]: item for item in outcomes}
+    failures = [
+        case_id
+        for case_id, length in expected.items()
+        if observed[case_id]["status"] != "printed_pass" or observed[case_id].get("rows") != length
+    ]
+    gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
     print(
         json.dumps(
             {
                 "format": "runoff-public-cmd-fresh-probe-v1",
                 "cases_checked": len(outcomes),
                 "status_counts": counts,
+                "retained_36_case_printed_baseline": "pass" if gate_ok else "fail",
+                "retained_baseline_case_count": len(expected),
+                "retained_baseline_expected_rows": sum(expected.values()),
+                "retained_baseline_failures": failures,
                 "numerical_acceptance": "unassessed",
                 "reference_source": "public original CMD 6.44 printed data",
                 "calculation_source": "actual installed public python-cmd backend",
@@ -111,7 +124,7 @@ def main() -> int:
             allow_nan=False,
         )
     )
-    return 0
+    return 0 if gate_ok else 1
 
 
 if __name__ == "__main__":
