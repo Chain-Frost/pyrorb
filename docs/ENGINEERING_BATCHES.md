@@ -120,3 +120,31 @@ fast-math or compiled-acceleration claim. The source/`calculate_storm`
 path remains the reference for subsequent optimisation under the separately
 frozen engineering criteria. Public CMD cached replay, fresh engine
 computation and engineering acceptance must remain distinct.
+
+## Bounded measured sample (2026-11-15)
+
+The opt-in script was executed once on the existing Windows Python quality
+runner at commit `3db16e673be0c14c4b524cf7c2d88ef9fe133dbb`, workflow
+run `43647326912`. This temporary profiling CI step was **removed after
+measurement**, leaving the existing quality workflow unchanged except for the
+non-native installed-wheel batch smoke. Python 3.13.17/AMD64,
+Windows Server 2025; two timing repetitions, a two-subarea/three-reach
+nonlinear `m=0.8` case, `Δt=0.1 h`, 120 increments, one print site;
+all event statuses `computed_unvalidated`:
+
+| Event count | Preparation median | Warm compute median | JSON report median | Python allocation peak |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.0196 ms | 1.808 ms | 0.206 ms | 13,840 B |
+| 25 | 0.0135 ms | 44.617 ms | 4.120 ms | 174,456 B |
+| 100 | 0.0140 ms | 179.740 ms | 17.878 ms | 669,848 B |
+
+The 100-event cold single-event median was **1.808 ms per event**.
+The prepared batch's approximate 1.797 ms/event does **not** establish
+a meaningful speedup (only two repetitions, host scheduling variance,
+small geometry). Compute dominates; preparation costs about 0.014 ms
+per model here, so an acceleration complexity increase is not supported
+by this evidence. Reporting is separately measured and accounts for
+about one tenth of the 100-event warm computation time. Allocation peak
+is Python `tracemalloc` memory, **not** total process RSS. This
+evidence supports bounded scaling of the tested synthetic case, not
+a production batch performance guarantee.

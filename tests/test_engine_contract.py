@@ -6,6 +6,7 @@ import hashlib
 import json
 import subprocess
 from dataclasses import replace
+from decimal import Decimal
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -28,7 +29,7 @@ from runoff_routing.project_json import (
     project_to_json,
     write_project,
 )
-from runoff_routing.rorb_model import RunModel, from_json
+from runoff_routing.rorb_model import RoutingValue, RunModel, from_json
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
 
@@ -418,3 +419,26 @@ def test_relative_native_executable_is_absolute_in_staged_spec(tmp_path: Path, m
     assert result.capture_manifest_path is not None
     manifest = json.loads(Path(result.capture_manifest_path).read_text(encoding="utf-8"))
     assert manifest["engine"]["executable"]["sha256"] == config.executable_sha256
+
+
+def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_path: Path) -> None:
+    original = _model()
+    parameters = replace(
+        original.parameters,
+        routing=(RoutingValue(1, Decimal("0.1"), Decimal("1.0")),),
+    )
+    storm = replace(
+        original.storm,
+        timestep_hours=Decimal("10"),
+        calculation_increments=6,
+        percentages=(Decimal("100"),),
+        depths_mm=tuple(Decimal("20") for _ in original.storm.depths_mm),
+    )
+    numerical_event = replace(original, parameters=parameters, storm=storm)
+    source = tmp_path / "numerical-failure.json"
+    write_project(source, Project("numerical_failure", "explicit", EmbeddedRun(numerical_event)))
+    result = run_engine_project(source)
+    assert result.status == "numerical_error"
+    assert result.hydrographs == ()
+    assert result.diagnostics[0].code == "solver_numerical"
+    assert "timestep" in result.diagnostics[0].message

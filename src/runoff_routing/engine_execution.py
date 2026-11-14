@@ -105,7 +105,7 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
             "invalid_input"
             if exc.status == "invalid"
             else "numerical_error"
-            if exc.code == "nonfinite_result"
+            if exc.code in ("nonfinite_result", "solver_numerical")
             else "unsupported_feature"
         )
         return _failure(base, state, exc.code, str(exc))

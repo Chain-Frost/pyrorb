@@ -29,8 +29,6 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Strict local quality checks (no native engines)
         run: python repo-scripts/check_local.py
-      - name: Issue 6 one-time opt-in profiling (remove after receipt)
-        run: python repo-scripts/benchmark_engineering_batch.py --events 1 25 100 --repetitions 2
       - name: Build wheel
         run: python -m build --wheel
       - name: Verify installed wheel outside checkout
