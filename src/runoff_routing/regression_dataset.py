@@ -173,10 +173,14 @@ def _checked_rows(raw_rows: object, column_count: int, expected_count: int) -> l
 def _reference(root: Path, case: dict[str, Any]) -> tuple[list[str], list[list[str]]]:
     document = _json(_verify(root, case["reference"]))
     raw_tables: object = document.get("tables")
-    if not isinstance(raw_tables, list) or len(raw_tables) != 1:
+    if not isinstance(raw_tables, list):
         message = "reference lacks exactly one complete identifiable table"
         raise RegressionError(message)
-    raw_table = cast("list[object]", raw_tables)[0]
+    table_objects = cast("list[object]", raw_tables)
+    if len(table_objects) != 1:
+        message = "reference lacks exactly one complete identifiable table"
+        raise RegressionError(message)
+    raw_table = table_objects[0]
     if not isinstance(raw_table, dict):
         message = "reference table is not an object"
         raise RegressionError(message)
