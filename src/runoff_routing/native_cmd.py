@@ -18,7 +18,9 @@ from typing import Any, cast
 
 from .engine_types import EngineHydrograph, EngineStatus
 from .project_json import LegacyRunFiles, LoadedProject
-from .project_native_review import _check_capture_settings  # pyright: ignore[reportPrivateUsage] -- reuse S5 evidence contract
+from .project_native_review import (
+    _check_capture_settings,  # pyright: ignore[reportPrivateUsage] -- reuse S5 evidence contract
+)
 from .reference import capture_cmd, fingerprint, verify_manifest
 from .rorb_documents import RorbSource
 from .rorb_out import inspect_output
@@ -116,7 +118,7 @@ class NativeConfiguration:
         timeout = raw["timeout_seconds"]
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
             message = "Native timeout_seconds must be a number"
-            raise ValueError(message)
+            raise TypeError(message)
         base = path.absolute().parent
 
         def local_path(name: str) -> Path:
