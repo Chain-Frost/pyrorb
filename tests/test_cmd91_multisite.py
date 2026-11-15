@@ -12,6 +12,8 @@ from typing import cast
 
 import pytest
 
+from runoff_routing._cmd644.models import Event
+from runoff_routing._cmd644.reporting import CandidateResult, execute as execute_unmodified
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_json import EmbeddedRun, Project, write_project
@@ -132,3 +134,42 @@ def test_unproven_code_eleven_is_explicitly_rejected_not_inferred_from_code_seve
             catchment,
             controls=(*catchment.controls[:-1], ControlStep(11), catchment.controls[-1]),  # type: ignore[arg-type]
         )
+
+@pytest.mark.parametrize(
+    ("damage", "reason"),
+    [
+        ("missing", "cmd_print_sites"),
+        ("truncated", "cmd_print_sites"),
+        ("wrong_final", "cmd_final_print"),
+    ],
+)
+def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str, reason: str
+) -> None:
+    """Reject damaged backend output before mapping any physical print identity."""
+    path = _project(tmp_path, _multiple_prints())
+
+    def damaged_execute(event: Event, revision: str) -> CandidateResult:
+        actual = execute_unmodified(event, revision)
+        recorded = actual.network.prints
+        if damage == "missing":
+            changed = recorded[:-1]
+        elif damage == "truncated":
+            changed = (replace(recorded[0], q=recorded[0].q[:-1]), *recorded[1:])
+        else:
+            final = recorded[-1]
+            changed = (
+                *recorded[:-1],
+                replace(final, q=(*final.q[:-1], final.q[-1] + 1.0)),
+            )
+        return replace(actual, network=replace(actual.network, prints=changed))
+
+    monkeypatch.setattr("runoff_routing.cmd_engine.execute", damaged_execute)
+    outcome = run_engine_project(path, selection=EngineSelection.for_engine("python-cmd"))
+
+    assert outcome.status == "incomplete_output"
+    assert outcome.diagnostics[0].code == reason
+    assert outcome.requested_print_ids == ("interior", "print_1")
+    assert outcome.hydrographs == ()
+    assert outcome.physical_time_hours == ()
+
