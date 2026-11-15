@@ -119,8 +119,8 @@ def test_independent_exact_exceedance_and_probability_bounds(case_id: str) -> No
 def test_plan_extension_uses_new_weights_for_old_sample_ids() -> None:
     api = _frequency()
     extension = _controls()["plan_extension"]
-    old_case = {"strata": extension["original_strata"], "unmodelled_tails": {}}
-    new_case = {"strata": extension["extended_strata"], "unmodelled_tails": {}}
+    old_case: dict[str, Any] = {"strata": extension["original_strata"], "unmodelled_tails": {}}
+    new_case: dict[str, Any] = {"strata": extension["extended_strata"], "unmodelled_tails": {}}
     old_population, old_records = _population(api, old_case, plan=extension["original_revision"])
     new_population, new_records = _population(api, new_case, plan=extension["extended_revision"])
     assert {r.sample_id for r in old_records} <= {r.sample_id for r in new_records}
