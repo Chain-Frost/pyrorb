@@ -34,15 +34,67 @@ The last command exclusively creates selected-event.json, selected-event.csv
 and selected-event.txt, retaining the full ordinary hydrograph, time and
 project/engine provenance.
 
+## Staged B → E → C text-file workflow
+
+Once the separate #146 sampler and #147 results module are installed from
+the **reviewed staging package** (they are not bundled in this isolated E
+PR), the same CLI exposes the complete sequence without copying either
+implementation:
+
+```sh
+python -m runoff_routing.monte_carlo_execution plan mc-spec.json study
+python -m runoff_routing.monte_carlo_execution prepare project.json study.plan.json study.samples.jsonl effective.jsonl --ifd bom-source.csv --patterns source-increments.csv --arf-region "South-West Western Australia" --dry-tail-min 120
+python -m runoff_routing.monte_carlo_execution validate effective.jsonl
+python -m runoff_routing.monte_carlo_execution run project.json effective.jsonl ledger.jsonl --engine python-cmd
+python -m runoff_routing.monte_carlo_execution frequency project.json effective.jsonl ledger.jsonl study-frequency --aep 0.01 --aep 0.02
+python -m runoff_routing.monte_carlo_execution replay project.json effective.jsonl ledger.jsonl "mc:..." selected
+```
+
+`plan` delegates directly to B's **one** sample-plan schema and immutable
+JSON/JSONL writer; `prepare` reads B's *persisted, validated* samples with
+no RNG, uses B's already z-interpolated gross rainfall depth and the
+published once-only ARR ARF, and checks source IDs/order and original BoM
+IFD/TP hashes. Source files must lie within the output request's directory
+so the effective manifest can pin safe relative paths. The first
+integrated subset admits original BoM **depth in mm** (not inferred
+EY/ARI/intensity conversion), fixed original kc/m/continuing losses,
+a pervious one-ISA model and **zero preburst**. Other explicitly
+profiled transformations require separate reviewed inputs; no
+unapproved source extrapolation or independent loss draw is supplied.
+
+The effective header includes the *full* original per-stratum planned
+allocation, including count-zero strata, source-plan revision and the
+separately named rare/frequent unmodelled masses. Positive-weight
+failures are retained. A count-zero stratum contributes unresolved mass,
+not a fictitious zero hydrograph.
+
+`frequency` passes **verified** per-event physical peaks and explicit
+planned weights to the single C/#147 estimator. It writes a streaming
+CSV of the **actual attained weighted peak groups** plus compact
+JSON/text per-site/duration coverage and requested fraction-AEP quantiles.
+It does not implement quantiles itself. **Missing positive weights and
+unmodelled probability tails cannot become a complete flood-frequency
+curve.** Non-complete results return exit code 2 while retaining
+diagnostic output. The complete C method and independent F review
+remain separately owned.
+
+CLI plan/prepare/frequency end-to-end acceptance against the **actual
+#146/#147 modules** is pending integration of those independent
+PRs into staging #151. This E-only PR can validate the bounded
+adapter and synthetic explicit-event routing but cannot claim a
+production B→E→C source/wheel receipt before those dependencies are
+present.
+
 ## Streaming effective event request (not B's plan)
 
-One newline-terminated JSON header record contains:
+One newline-terminated JSON header record (schema v2) contains:
 
 - format = python-runoff-routing-mc-effective-events; schema_version = 1
 - plan_sha256: original immutable #146 plan content hash
 - policy_id: selected versioned statistical/materialisation policy
 - source_files: original input paths relative to this request and exact SHA-256
-- populations: each scenario_id, duration_min, modelled_mass decimal string
+- populations: each scenario_id, duration_min, modelled_mass and explicitly split rare/frequent missing-tail mass
+- strata: every planned scenario/duration/stratum, original probability mass and allocation count (including zero)
 - event_count: exact total expected source records
 
 #146's currently generated sample IDs contain colons, whereas the existing

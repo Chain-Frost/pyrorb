@@ -20,14 +20,26 @@
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
 
+## Planning receipts
+
+- [Monte Carlo #9 decomposition and statistical research plan](2026-11-15-issue9-scoping.md) — #145–#150 and the initial method note; no MC code, simulation results or native qualification claimed.
+
+- [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.
+
+- [#148 independent-seed simulation-budget convergence research](2026-11-15-issue148-convergence.md) — exact synthetic controls, negative and positive 100-seed confirmation, and separately pending real-catchment qualification.
+
 ## Retained diagnostic/reference evidence
 
+- [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
 - [S2 reporting-convention audit](2026-11-11-s2-reporting-conventions.md), [integrated print review](2026-11-12-integrated-print-review.md) and [nonlinear onset audit](2026-11-12-s2-onset-audit.md) — do not infer a numerical routing fix.
 - [S6 reconciliation](2026-11-14-s6-reconciliation.md), [RORBwin N4 completion review](2026-11-14-s6-n4-completion-review.md), [N4 native result](2026-11-14-s6-n4-native-result.md) and [controlled loss experiment](2026-11-14-s6-controlled-loss-kernel.md) — preserve failed and incomplete native precision/physical claims. CMD-first rules defer new RORBwin campaigns.
 - [Source-level primary decision record](2026-11-11-computational-reference-guidance.md) and [historical parser/source verification](2026-11-11-s1-code7-serialization.md).
 
 Other retained dated records describe the exact historical source, experiment and constraints they were written for. They **do not** reopen obsolete PRs, replace the single CMD feature matrix or require the private workspace for product use. Unneeded first-agent handoffs, obsolete status snapshots and the former ten-PR backlog matrix were removed from the active tree and remain in ordinary Git history.
+
+- [Monte Carlo weighted peak-frequency result layer](2026-11-15-mc-weighted-frequency.md) — #147 staged statistical software and independent control handoff; not native flood-AEP acceptance.

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
+import tracemalloc
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
@@ -246,16 +248,13 @@ def test_truncated_checkpoint_rejected_and_unfinished_not_complete(tmp_path: Pat
         execute_mc_request(project, request, ledger, resume=True)
 
 
-
 def test_ledger_numerical_corruption_fails_hash_chain_and_external_receipt(tmp_path: Path) -> None:
     project, request, events = _input(tmp_path)
     ledger = tmp_path / "tamper.jsonl"
     receipt = execute_mc_request(project, request, ledger)
     assert receipt.complete
     assert receipt.ledger_sha256 == hashlib.sha256(ledger.read_bytes()).hexdigest()
-    assert summarise_ledger(
-        ledger, request, _rows(ledger)[0], expected_ledger_sha256=receipt.ledger_sha256
-    ).complete
+    assert summarise_ledger(ledger, request, _rows(ledger)[0], expected_ledger_sha256=receipt.ledger_sha256).complete
 
     rows = _rows(ledger)
     sites = cast("list[dict[str, object]]", rows[1]["sites"])
@@ -307,7 +306,9 @@ def test_zero_rainfall_is_valid_zero_peak_not_missing(tmp_path: Path) -> None:
     header = MCRequestHeader(
         plan_sha256=hashlib.sha256(b"zero").hexdigest(),
         policy_id="authored_control_v1",
-        source_files=(SourceFile("patterns.csv", hashlib.sha256((tmp_path / "patterns.csv").read_bytes()).hexdigest()),),
+        source_files=(
+            SourceFile("patterns.csv", hashlib.sha256((tmp_path / "patterns.csv").read_bytes()).hexdigest()),
+        ),
         populations=(MCPopulation("base", 60, Decimal(1)),),
         event_count=1,
     )
@@ -331,3 +332,25 @@ def test_engine_selection_and_simple_cli(tmp_path: Path) -> None:
     assert main(["run", str(project), str(request), str(ledger)]) == 2
     assert main(["run", str(project), str(request), str(ledger), "--resume"]) == 0
     assert main(["replay", str(project), str(request), str(ledger), "sample-1", str(tmp_path / "cli-replay")]) == 0
+
+def test_bounded_64_event_streaming_memory_receipt(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    project, request, _events = _input(tmp_path, count=64)
+    ledger = tmp_path / "bounded-ledger.jsonl"
+    tracemalloc.start()
+    started = time.perf_counter()
+    try:
+        outcome = execute_mc_request(project, request, ledger)
+        elapsed = time.perf_counter() - started
+        _current, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    with capsys.disabled():
+        print(
+            f"MC149 bounded 64-event receipt: elapsed_s={elapsed:.6f}, "
+            f"python_traced_peak_bytes={peak}, ledger_bytes={ledger.stat().st_size}",
+            flush=True,
+        )
+    assert outcome.complete
+    assert len(_rows(ledger)) == 65
+    assert peak < 64 * 1024 * 1024
+    assert ledger.stat().st_size < 512 * 1024

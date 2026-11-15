@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import cast
 
 from .engine_provenance import identify_implementation, verify_installed_wheel
+from .monte_carlo_bridge import create_saved_sample_plan, prepare_saved_sample_plan
 from .engine_types import EngineOutcome, EngineSelection
 from .monte_carlo_effective import (
     MAX_LINE_BYTES,
@@ -163,9 +164,11 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
     status = result.status
     diagnostics = [{"code": item.code, "message": item.message} for item in result.diagnostics]
     if status == _STATUS_OK:
-        if not result.requested_print_ids or len(result.hydrographs) != len(result.requested_print_ids) or {
-            item.print_id for item in result.hydrographs
-        } != set(result.requested_print_ids):
+        if (
+            not result.requested_print_ids
+            or len(result.hydrographs) != len(result.requested_print_ids)
+            or {item.print_id for item in result.hydrographs} != set(result.requested_print_ids)
+        ):
             status = "incomplete_output"
             diagnostics.append({"code": "mc_missing_site", "message": "Missing or duplicate requested output site"})
         for graph in result.hydrographs:
@@ -217,7 +220,6 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
         "requested_print_ids": list(result.requested_print_ids),
         "sites": sites,
     }
-
 
 
 def _seal_record(record: dict[str, object], previous: str) -> dict[str, object]:
@@ -366,7 +368,11 @@ def summarise_ledger(
         ):
             zeros += 1
     return MCRunSummary(
-        int(cast("int", expected["expected_event_count"])), completed, dict(sorted(counts.items())), zeros, ledger_digest
+        int(cast("int", expected["expected_event_count"])),
+        completed,
+        dict(sorted(counts.items())),
+        zeros,
+        ledger_digest,
     )
 
 
@@ -424,6 +430,32 @@ def execute_mc_request(
     return summarise_ledger(ledger_path, request_path, header)
 
 
+def iter_verified_mc_results(
+    project_path: Path,
+    request_path: Path,
+    ledger_path: Path,
+    *,
+    selection: EngineSelection | None = None,
+    wheel_artifact: Path | None = None,
+) -> Iterator[dict[str, object]]:
+    """Yield hash-checked results, including incomplete positive-weight events."""
+    _, request_sha = validate_effective_request(request_path)
+    loaded = load_project(project_path)
+    _project_subset(loaded)
+    selected = loaded.project.engine if selection is None else selection
+    header = _header(
+        loaded, request_sha, selection=selected, wheel_artifact=wheel_artifact, request_path=request_path
+    )
+    _existing_prefix(ledger_path, header, request_path)
+    before = sha256_file(ledger_path)
+    rows = _read_ledger(ledger_path)
+    next(rows)
+    yield from rows
+    if sha256_file(ledger_path) != before:
+        message = "MC ledger changed during verified frequency processing"
+        raise MCRunError(message)
+
+
 def replay_mc_event(
     project_path: Path,
     request_path: Path,
@@ -473,6 +505,19 @@ def main(argv: list[str] | None = None) -> int:
     """Explicit-event MC CLI: validate, stream, resume, inspect and deterministic replay."""
     parser = argparse.ArgumentParser(prog="python -m runoff_routing.monte_carlo_execution")
     commands = parser.add_subparsers(dest="command", required=True)
+    create = commands.add_parser("plan", help="create B's immutable sample plan from a JSON spec")
+    create.add_argument("spec", type=Path)
+    create.add_argument("output_prefix", type=Path)
+    prepare = commands.add_parser("prepare", help="materialise stored #146 draws into ready #119 events")
+    prepare.add_argument("project", type=Path)
+    prepare.add_argument("plan", type=Path)
+    prepare.add_argument("samples", type=Path)
+    prepare.add_argument("request", type=Path)
+    prepare.add_argument("--ifd", type=Path, required=True)
+    prepare.add_argument("--patterns", type=Path, required=True)
+    prepare.add_argument("--arf-region", required=True)
+    prepare.add_argument("--dry-tail-min", type=int, default=0)
+    prepare.add_argument("--loss-source", type=Path)
     validate = commands.add_parser("validate", help="verify all effective events and original source hashes")
     validate.add_argument("request", type=Path)
     run = commands.add_parser("run", help="run or resume an exact effective request")
@@ -486,12 +531,18 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("ledger", type=Path)
     replay.add_argument("sample_id")
     replay.add_argument("output_prefix", type=Path)
+    frequency = commands.add_parser("frequency", help="delegate exact weighted curves to #147")
+    frequency.add_argument("project", type=Path)
+    frequency.add_argument("request", type=Path)
+    frequency.add_argument("ledger", type=Path)
+    frequency.add_argument("output_prefix", type=Path)
+    frequency.add_argument("--aep", type=float, required=True, action="append")
     inspect = commands.add_parser("inspect", help="report checkpoint completeness without a frequency estimate")
     inspect.add_argument("project", type=Path)
     inspect.add_argument("request", type=Path)
     inspect.add_argument("ledger", type=Path)
     inspect.add_argument("--expected-ledger-sha256", help="independently stored ledger file SHA-256")
-    for sub in (run, replay, inspect):
+    for sub in (run, replay, inspect, frequency):
         sub.add_argument("--engine", choices=("python", "python-cmd", "rorb-cmd"))
         sub.add_argument("--numerical-profile")
         sub.add_argument("--wheel-artifact", type=Path)
@@ -500,6 +551,24 @@ def main(argv: list[str] | None = None) -> int:
     except SystemExit as exc:
         return exc.code if isinstance(exc.code, int) else 2
     try:
+        if args.command == "plan":
+            paths = create_saved_sample_plan(args.spec, args.output_prefix)
+            print(f"Created immutable B sample-plan files: {paths[0]}, {paths[1]}")
+            return 0
+        if args.command == "prepare":
+            header = prepare_saved_sample_plan(
+                args.project,
+                args.plan,
+                args.samples,
+                args.request,
+                ifd_path=args.ifd,
+                patterns_path=args.patterns,
+                arf_region=args.arf_region,
+                dry_tail_min=args.dry_tail_min,
+                loss_source_path=args.loss_source,
+            )
+            print(f"Prepared {header.event_count} exact B samples without new randomness: {args.request}")
+            return 0
         if args.command == "validate":
             header, digest = validate_effective_request(args.request)
             print(f"Valid effective request: {header.event_count} samples; SHA-256 {digest}")
@@ -519,6 +588,20 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(report.to_text(), end="")
             return 0 if report.complete else 2
+        if args.command == "frequency":
+            from .monte_carlo_frequency_bridge import write_mc_frequency
+
+            result = write_mc_frequency(
+                args.project,
+                args.request,
+                args.ledger,
+                args.output_prefix,
+                target_aeps=tuple(args.aep),
+                selection=selected,
+                wheel_artifact=args.wheel_artifact,
+            )
+            print(f"Weighted frequency: {result.scopes} physical populations; complete={result.point_results_complete}")
+            return 0 if result.point_results_complete else 2
         if args.command == "replay":
             report = replay_mc_event(
                 args.project,

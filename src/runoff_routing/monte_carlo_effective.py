@@ -142,19 +142,88 @@ class MCPopulation:
     scenario_id: str
     duration_min: int
     modelled_mass: Decimal
+    rare_unmodelled_mass: Decimal | None = None
+    frequent_unmodelled_mass: Decimal | None = None
 
     def __post_init__(self) -> None:
         _name(self.scenario_id, "scenario_id")
         _int(self.duration_min, "duration_min", max_value=10080)
         if not self.modelled_mass.is_finite() or not 0 < self.modelled_mass <= 1:
             _fail("modelled_mass must be in (0, 1]; unmodelled tails are never normalised away")
+        if (self.rare_unmodelled_mass is None) != (self.frequent_unmodelled_mass is None):
+            _fail("Rare and frequent unmodelled mass must be supplied together")
+        if self.rare_unmodelled_mass is not None and self.frequent_unmodelled_mass is not None:
+            if (
+                not self.rare_unmodelled_mass.is_finite()
+                or not self.frequent_unmodelled_mass.is_finite()
+                or self.rare_unmodelled_mass < 0
+                or self.frequent_unmodelled_mass < 0
+                or self.modelled_mass + self.rare_unmodelled_mass + self.frequent_unmodelled_mass != 1
+            ):
+                _fail("Modelled plus rare/frequent unmodelled probability mass must equal one")
 
     def to_dict(self) -> dict[str, object]:
         return {
             "scenario_id": self.scenario_id,
             "duration_min": self.duration_min,
             "modelled_mass": str(self.modelled_mass),
+            "rare_unmodelled_mass": (
+                str(self.rare_unmodelled_mass) if self.rare_unmodelled_mass is not None else None
+            ),
+            "frequent_unmodelled_mass": (
+                str(self.frequent_unmodelled_mass) if self.frequent_unmodelled_mass is not None else None
+            ),
         }
+
+
+@dataclass(frozen=True, slots=True)
+class MCAllocation:
+    """Full original #146 stratum mass, including explicitly zero sample allocations."""
+
+    scenario_id: str
+    duration_min: int
+    stratum_id: str
+    probability_mass: Decimal
+    planned_samples: int
+
+    def __post_init__(self) -> None:
+        _name(self.scenario_id, "stratum scenario")
+        _int(self.duration_min, "stratum duration", max_value=10080)
+        _name(self.stratum_id, "stratum ID")
+        if not self.probability_mass.is_finite() or not 0 < self.probability_mass <= 1:
+            _fail("Stratum mass must be finite and positive")
+        if type(self.planned_samples) is not int or not 0 <= self.planned_samples <= MAX_EVENTS:
+            _fail("Planned samples must be a nonnegative bounded integer")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "scenario_id": self.scenario_id,
+            "duration_min": self.duration_min,
+            "stratum_id": self.stratum_id,
+            "probability_mass": str(self.probability_mass),
+            "planned_samples": self.planned_samples,
+        }
+
+
+def _check_header_allocations(
+    populations: tuple[MCPopulation, ...], allocations: tuple[MCAllocation, ...], event_count: int
+) -> None:
+    keys = {(a.scenario_id, a.duration_min, a.stratum_id) for a in allocations}
+    if len(keys) != len(allocations):
+        _fail("Duplicate original MC stratum allocation")
+    if sum(a.planned_samples for a in allocations) != event_count:
+        _fail("Full MC allocation count differs from declared event population")
+    for pop in populations:
+        total = sum(
+            (
+                a.probability_mass
+                for a in allocations
+                if (a.scenario_id, a.duration_min) == (pop.scenario_id, pop.duration_min)
+            ),
+            Decimal(0),
+        )
+        if total != pop.modelled_mass:
+            _fail("Full MC stratum masses differ from modelled population mass")
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +235,7 @@ class MCRequestHeader:
     source_files: tuple[SourceFile, ...]
     populations: tuple[MCPopulation, ...]
     event_count: int
+    strata: tuple[MCAllocation, ...] = ()
 
     def __post_init__(self) -> None:
         _sha(self.plan_sha256, "plan_sha256")
@@ -176,6 +246,8 @@ class MCRequestHeader:
         keys = tuple((item.scenario_id, item.duration_min) for item in self.populations)
         if len(set(keys)) != len(keys):
             _fail("Duplicate MC populations")
+        if self.strata:
+            _check_header_allocations(self.populations, self.strata, self.event_count)
         paths = tuple(item.path for item in self.source_files)
         if len(set(paths)) != len(paths):
             _fail("Duplicate source-file paths")
@@ -189,6 +261,7 @@ class MCRequestHeader:
             "source_files": [{"path": item.path, "sha256": item.sha256} for item in self.source_files],
             "populations": [item.to_dict() for item in self.populations],
             "event_count": self.event_count,
+            "strata": [item.to_dict() for item in self.strata],
         }
 
 
@@ -346,12 +419,50 @@ class EffectiveMCEvent:
         return hashlib.sha256(encode_jsonl_line(self.to_dict())).hexdigest()
 
 
+def _optional_population_mass(raw: object, key: str) -> Decimal | None:
+    record = cast("dict[str, object]", raw)
+    value = record.get(key)
+    return None if value is None else _decimal(value, key)
+
+
+def _read_allocation(raw: object) -> MCAllocation:
+    data = _obj(
+        raw, {"scenario_id", "duration_min", "stratum_id", "probability_mass", "planned_samples"},
+        "original stratum allocation",
+    )
+    count = data["planned_samples"]
+    if type(count) is not int or not 0 <= count <= MAX_EVENTS:
+        _fail("Invalid declared original stratum sample allocation")
+    return MCAllocation(
+        scenario_id=_name(data["scenario_id"], "stratum scenario"),
+        duration_min=_int(data["duration_min"], "stratum duration", max_value=10080),
+        stratum_id=_name(data["stratum_id"], "stratum ID"),
+        probability_mass=_decimal(data["probability_mass"], "stratum mass", positive=True),
+        planned_samples=cast("int", count),
+    )
+
+
+def _read_population(raw: object) -> MCPopulation:
+    values = _obj(
+        raw,
+        {"scenario_id", "duration_min", "modelled_mass", "rare_unmodelled_mass", "frequent_unmodelled_mass"},
+        "population",
+    )
+    return MCPopulation(
+        scenario_id=_name(values["scenario_id"], "scenario"),
+        duration_min=_int(values["duration_min"], "duration", max_value=10080),
+        modelled_mass=_decimal(values["modelled_mass"], "modelled mass", positive=True),
+        rare_unmodelled_mass=_optional_population_mass(values, "rare_unmodelled_mass"),
+        frequent_unmodelled_mass=_optional_population_mass(values, "frequent_unmodelled_mass"),
+    )
+
+
 def read_header(path: Path) -> MCRequestHeader:
     with path.open("rb") as stream:
         raw = stream.readline(MAX_LINE_BYTES + 1)
     data = _obj(
         parse_jsonl_line(raw),
-        {"format", "schema_version", "plan_sha256", "policy_id", "source_files", "populations", "event_count"},
+        {"format", "schema_version", "plan_sha256", "policy_id", "source_files", "populations", "event_count", "strata"},
         "MC header",
     )
     if (
@@ -360,39 +471,27 @@ def read_header(path: Path) -> MCRequestHeader:
         or data["schema_version"] != EFFECTIVE_VERSION
     ):
         _fail("Unknown MC effective-event schema/format")
-    raw_sources = data["source_files"]
-    raw_populations = data["populations"]
-    if not isinstance(raw_sources, list) or not isinstance(raw_populations, list):
-        _fail("MC header source_files and populations must be arrays")
-    source_items = cast("list[object]", raw_sources)
-    population_items = cast("list[object]", raw_populations)
+    sources_raw = data["source_files"]
+    populations_raw = data["populations"]
+    strata_raw = data["strata"]
+    if not isinstance(sources_raw, list) or not isinstance(populations_raw, list) or not isinstance(strata_raw, list):
+        _fail("MC header sources, populations and strata must be arrays")
     sources = tuple(
         SourceFile(
             cast("str", _obj(item, {"path", "sha256"}, "source file")["path"]),
             _sha(_obj(item, {"path", "sha256"}, "source file")["sha256"], "source sha256"),
         )
-        for item in source_items
+        for item in cast("list[object]", sources_raw)
     )
-    populations = tuple(
-        MCPopulation(
-            _name(
-                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"
-            ),
-            _int(
-                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["duration_min"], "duration"
-            ),
-            _decimal(
-                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["modelled_mass"], "mass"
-            ),
-        )
-        for item in population_items
-    )
+    populations = tuple(_read_population(item) for item in cast("list[object]", populations_raw))
+    allocations = tuple(_read_allocation(item) for item in cast("list[object]", strata_raw))
     return MCRequestHeader(
         plan_sha256=_sha(data["plan_sha256"], "plan hash"),
         policy_id=_name(data["policy_id"], "policy_id"),
         source_files=sources,
         populations=populations,
         event_count=_int(data["event_count"], "event count"),
+        strata=allocations,
     )
 
 
@@ -485,6 +584,33 @@ def _validate_effective_policy(header: MCRequestHeader, record: EffectiveMCEvent
         _fail("Experimental preburst clamp requires a different explicit statistical policy ID")
 
 
+def _check_record_allocations(
+    header: MCRequestHeader,
+    actual: dict[tuple[str, int, str], tuple[Decimal, int, int]],
+    target: dict[tuple[str, int], Decimal],
+) -> None:
+    if header.strata:
+        declared = {(a.scenario_id, a.duration_min, a.stratum_id): a for a in header.strata}
+        if set(actual) - set(declared):
+            _fail("Effective event refers to a stratum absent from the original sample plan")
+        for key, allocation in declared.items():
+            mass, size, seen_count = actual.get(key, (allocation.probability_mass, allocation.planned_samples, 0))
+            if (mass, size, seen_count) != (
+                allocation.probability_mass,
+                allocation.planned_samples,
+                allocation.planned_samples,
+            ):
+                _fail("Original planned stratum is missing, reweighted or incompletely materialised")
+    else:
+        sums: dict[tuple[str, int], Decimal] = defaultdict(Decimal)
+        for (scenario, duration, _), (mass, size, seen_count) in actual.items():
+            if size != seen_count:
+                _fail("Missing or excessive event members for a declared stratum")
+            sums[(scenario, duration)] += mass
+        if sums != target:
+            _fail("A scenario/duration population omits probability strata or exceeds declared modelled mass")
+
+
 def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     """Validate full population mass/counts and source hashes without loading routed Q."""
     header = read_header(path)
@@ -509,13 +635,7 @@ def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
         strata[key] = (mass, size, actual + 1)
     if count != header.event_count:
         _fail("Effective event count differs from the immutable request header")
-    sums: dict[tuple[str, int], Decimal] = defaultdict(Decimal)
-    for (scenario, duration, _), (mass, size, actual) in strata.items():
-        if size != actual:
-            _fail("Missing or excessive event members for a declared stratum")
-        sums[(scenario, duration)] += mass
-    if sums != target:
-        _fail("A scenario/duration population omits probability strata or exceeds declared modelled mass")
+    _check_record_allocations(header, strata, target)
     return header, sha256_file(path)
 
 
