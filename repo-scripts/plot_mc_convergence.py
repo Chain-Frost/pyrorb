@@ -16,6 +16,11 @@ WIDTH, HEIGHT = 760, 470
 LEFT, RIGHT, TOP, BOTTOM = 105, 38, 65, 75
 
 
+def _svg_child(parent: ET.Element, tag: str, **attributes: str) -> ET.Element:
+    """Create SVG children using an explicit ElementTree attribute mapping."""
+    return ET.SubElement(parent, tag, attributes)
+
+
 def _svg_plot(
     title: str,
     ylabel: str,
@@ -29,15 +34,17 @@ def _svg_plot(
         raise ValueError(message)
     svg = ET.Element(
         "svg",
-        xmlns="http://www.w3.org/2000/svg",
-        width=str(WIDTH),
-        height=str(HEIGHT),
-        viewBox=f"0 0 {WIDTH} {HEIGHT}",
-        role="img",
-        **{"aria-label": title},
+        {
+            "xmlns": "http://www.w3.org/2000/svg",
+            "width": str(WIDTH),
+            "height": str(HEIGHT),
+            "viewBox": f"0 0 {WIDTH} {HEIGHT}",
+            "role": "img",
+            "aria-label": title,
+        },
     )
-    ET.SubElement(svg, "title").text = title
-    ET.SubElement(svg, "rect", x="0", y="0", width=str(WIDTH), height=str(HEIGHT), fill="white")
+    _svg_child(svg, "title").text = title
+    _svg_child(svg, "rect", x="0", y="0", width=str(WIDTH), height=str(HEIGHT), fill="white")
     plot_width, plot_height = WIDTH - LEFT - RIGHT, HEIGHT - TOP - BOTTOM
 
     def xy(x: float, y: float) -> tuple[float, float]:
@@ -47,7 +54,7 @@ def _svg_plot(
 
     for tick in (0, ymax / 4, ymax / 2, 3 * ymax / 4, ymax):
         y = xy(250, tick)[1]
-        ET.SubElement(
+        _svg_child(
             svg,
             "line",
             x1=str(LEFT),
@@ -57,18 +64,18 @@ def _svg_plot(
             stroke="#dddddd",
             **{"stroke-width": "1"},
         )
-        ET.SubElement(
+        _svg_child(
             svg, "text", x=str(LEFT - 12), y=f"{y + 5:.2f}", **{"text-anchor": "end", "font-size": "13"}
         ).text = f"{tick:.3f}"
     for tick in (250, 500, 1000, 2500, 5000, 10000):
         x, _ = xy(tick, 0)
-        ET.SubElement(svg, "line", x1=f"{x:.2f}", y1=str(TOP), x2=f"{x:.2f}", y2=str(HEIGHT - BOTTOM), stroke="#eeeeee")
-        ET.SubElement(
+        _svg_child(svg, "line", x1=f"{x:.2f}", y1=str(TOP), x2=f"{x:.2f}", y2=str(HEIGHT - BOTTOM), stroke="#eeeeee")
+        _svg_child(
             svg, "text", x=f"{x:.2f}", y=str(HEIGHT - BOTTOM + 25), **{"text-anchor": "middle", "font-size": "12"}
         ).text = f"{tick:,}"
     if reference_y is not None:
         y = xy(250, reference_y)[1]
-        ET.SubElement(
+        _svg_child(
             svg,
             "line",
             x1=str(LEFT),
@@ -80,7 +87,7 @@ def _svg_plot(
         )
     for index, (label, color, points) in enumerate(curves):
         ordered = sorted(points)
-        ET.SubElement(
+        _svg_child(
             svg,
             "polyline",
             points=" ".join(f"{xy(x, y)[0]:.1f},{xy(x, y)[1]:.1f}" for x, y in ordered),
@@ -90,15 +97,15 @@ def _svg_plot(
         )
         for x, y in ordered:
             xx, yy = xy(x, y)
-            ET.SubElement(svg, "circle", cx=f"{xx:.2f}", cy=f"{yy:.2f}", r="4", fill=color)
+            _svg_child(svg, "circle", cx=f"{xx:.2f}", cy=f"{yy:.2f}", r="4", fill=color)
         lx = LEFT + index * 200
-        ET.SubElement(svg, "line", x1=str(lx), y1="43", x2=str(lx + 23), y2="43", stroke=color, **{"stroke-width": "3"})
-        ET.SubElement(svg, "text", x=str(lx + 28), y="48", **{"font-size": "13"}).text = label
-    ET.SubElement(svg, "text", x=str(WIDTH / 2), y="25", **{"text-anchor": "middle", "font-size": "18"}).text = title
-    ET.SubElement(
+        _svg_child(svg, "line", x1=str(lx), y1="43", x2=str(lx + 23), y2="43", stroke=color, **{"stroke-width": "3"})
+        _svg_child(svg, "text", x=str(lx + 28), y="48", **{"font-size": "13"}).text = label
+    _svg_child(svg, "text", x=str(WIDTH / 2), y="25", **{"text-anchor": "middle", "font-size": "18"}).text = title
+    _svg_child(
         svg, "text", x=str(WIDTH / 2), y=str(HEIGHT - 13), **{"text-anchor": "middle", "font-size": "14"}
     ).text = "Event evaluations per duration / independent run (log scale)"
-    ET.SubElement(
+    _svg_child(
         svg,
         "text",
         x="23",
