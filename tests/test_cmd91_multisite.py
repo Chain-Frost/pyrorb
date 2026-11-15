@@ -185,6 +185,7 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
     assert outcome.hydrographs == ()
     assert outcome.physical_time_hours == ()
 
+
 def _native_two_prints() -> RunModel:
     """Canonical IDs make this authored multi-site model round-trip via RORB_GE 002."""
     model = _model()
@@ -273,8 +274,14 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
     assert tuple(h.native_column_id for h in result.hydrographs) == ("Hyd001", "Hyd002")
     assert result.hydrographs[0].discharge_m3_s == (0, 1, 2, 3, 4, 5)
     assert result.hydrographs[1].discharge_m3_s == (0, 2, 4, 6, 8, 10)
-    assert result.hydrographs[1].native_discharge_tokens == ("0.0000", "2.0000", "4.0000", "6.0000", "8.0000", "10.0000")
+    assert result.hydrographs[1].native_discharge_tokens == (
+        "0.0000",
+        "2.0000",
+        "4.0000",
+        "6.0000",
+        "8.0000",
+        "10.0000",
+    )
     assert result.native_raw_increment_tokens == ("1", "2", "3", "4", "5", "6")
     assert result.native_raw_time_tokens == ("0.50", "1.00", "1.50", "2.00", "2.50", "3.00")
     assert result.physical_time_hours == result.native_raw_time_tokens
-
