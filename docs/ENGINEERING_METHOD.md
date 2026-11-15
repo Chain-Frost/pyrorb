@@ -59,31 +59,44 @@ reference purposes; their printed-token intervals are not these criteria.
   pointwise; a non-finite sum fails. `S(Q)` is applied **per reach**, not
   to the combined catchment outlet as a substitute for internal storages.
 
-## Default engineering loss policy
+## Default engineering loss policy — RORB CMD reference
 
-Under the declared **uniform rainfall intensity within each bin**, initial
-loss `IL` is consumed first and carried across bins, including dry intervals.
-If rainfall depth `p` first exhausts remaining `r` initial loss *inside*
-a bin, continuing loss `CL` begins only for its remaining fraction:
+**Owner acceptance direction (15 November 2026): RORB CMD is the primary
+numerical reference for the improved default Python engine.** Match the
+original CMD computation as closely as defensible, without requiring
+bit-exact Python floating-point evaluation. Analytic, manufactured and
+conservation controls remain guards against implementation mistakes and
+evidence for any *specific demonstrated* CMD defect; they do not replace
+CMD as the selected overall accuracy reference.
+
+The initial engineering-v1 candidate treated the IL-crossing bin as
+constant-intensity rainfall, charging continuing loss (CL) for only the
+fraction of the bin following initial-loss (IL) exhaustion. The original
+CMD 6.44 loss preparation instead charges the **complete** CL allowance
+once a bin's rainfall strictly exceeds remaining IL. This is a defensible
+discrete-bin model convention; no verified CMD defect justified a departure.
+The default now adopts the CMD convention:
 
 ```text
-consumed_IL = min(r, p)
-remaining_rain = p - consumed_IL
-remaining_bin_fraction = remaining_rain / p   (when remaining_rain > 0)
-excess = max(0, remaining_rain - CL * Δt * remaining_bin_fraction)
+consumed_IL = min(remaining_IL, rainfall_bin_depth)
+remaining_IL -= consumed_IL
+after_IL = rainfall_bin_depth - consumed_IL
+excess = max(0, after_IL - CL * Δt)  if after_IL > 0
+excess = 0                              otherwise
 ```
 
-At exact equality `p=r`, continuing loss has no time to act within that
-bin; it applies during subsequent wet bins. With `IL=0`, `CL` operates
-through the entire wet bin. Unused continuing loss is not carried across
-dry intervals. Every input and computed excess must be finite/nonnegative.
+At exact equality `rainfall=remaining_IL`, the crossing bin has no
+runoff; CL starts during the next *wet* bin. IL carries across dry bins;
+unused CL does not. With `IL=0`, CL applies for the entire wet bin.
+For `10 mm` rain, `IL=5 mm`, `CL=2 mm/h` and `Δt=1 h`, both
+CMD-style and the revised default yield **3 mm excess** (the former
+fractional-bin method gave 4 mm).
 
-This fraction-of-bin rule is **intentional** and differs from a full-bin
-continuing loss at the IL-crossing increment. For example, one 10 mm,
-one-hour bin with `IL=5 mm` and `CL=2 mm/h` gives **4 mm** under
-this method versus **3 mm** under full-bin CL. This is a mathematical
-constant-intensity assumption, **not** a claim of native bug or CMD parity.
-A different within-bin rainfall profile would require a different method.
+Within the declared one-pattern supported domain, near-100% temporal
+weights are normalised by their actual sum before calculating rainfall,
+like CMD. Inputs further than 0.01 percentage point from 100% remain
+outside the current typed default boundary; this change does not
+implicitly add the separately tracked 102.10%-weight CMD dialect.
 
 ## Boundary semantics
 
@@ -103,10 +116,43 @@ records before the pure S2 solver; its capability is narrower than the pure
 zero-length numerical case. This is a declared input-support difference, not
 permission to bypass parser/native rules in the shared adapter.
 
+## Owner CMD-reference comparison and percentage reporting policy
+
+**Current policy supersedes any earlier text characterising native CMD as
+merely optional contextual evidence for overall engineering-v1 acceptance.**
+CMD output is the primary accuracy target for the default engine where
+matched effective input, site and clock identities are available. Differences
+need a causal explanation; an exception requires a **known, demonstrated**
+CMD defect and a specific independently reviewed justification. The native
+CMD-compatible Python engine remains separately strict to its frozen printed
+policy; no comparison budget or fixture is loosened to favour the default.
+
+Report both absolute and percentage discrepancies:
+- Peak discharge: `100*(Qpeak_python-Qpeak_CMD)/Qpeak_CMD`
+  (signed) and the peak-index/time shift on the matched model grid.
+- Full hydrograph: maximum `|Qpython-QCMD|` and RMS error,
+  each in m³/s and as **percentage of the CMD peak**. Do not divide
+  individual low/zero discharges by near-zero reference ordinates.
+- Model-grid trapezoidal volume: `100*(Vpython-VCMD)/VCMD`
+  (signed). This is **not** the native inclusive printed-volume statistic.
+- If the CMD peak or volume is zero, its relative percentage is
+  **undefined**; disclose the absolute discrepancy and zero reference
+  instead of silently presenting 0% or infinity.
+- Compare every ordered ordinate with exact source/clock/site identities.
+  Record excluded/unsupported events and never remove them from counts.
+
+Percentages are diagnostics, **not retroactively selected pass tolerances**.
+No overall acceptance threshold has been approved. Establish the
+post-correction residuals and causal classification before proposing a
+reviewed tolerance; preserve the native original one-based report labels.
+
 ## Independent accuracy and conservation gates (frozen prospectively)
 
-These are checks on the stated discrete/continuous mathematics, **not**
-tolerances selected after comparing with CMD.
+These are mathematical and physical *guardrail tests*, not a separate
+approved accuracy reference. Overall default-engine accuracy is evaluated
+against matched CMD cases unless an independently evidenced CMD defect
+justifies a named exception. These thresholds were originally set without
+access to the CMD residuals and are retained as supplemental safeguards.
 
 1. **Analytic controls:** zero-source and zero-storage events are exact;
    constant-inflow equilibrium is preserved; `m=1` agrees with its
@@ -202,11 +248,12 @@ revision and the individual diagnostic evidence fingerprint.
   apportioned** in this audit. Zero-loss cases also differ, so loss crossing
   cannot be invoked as a universal explanation.
 
-**Qualification verdict:** The independently manufactured mathematical
-scope and batch isolation retain their test results. Additional native
-CMD cases and physical-site/clock mapping remain `numerical_acceptance:
-unassessed` for the improved engine. Attribute material non-loss
-differences and source conversion/phase effects, then apply independently
-prospective engineering criteria before extending scope. No edited
+**Historical (pre-loss-fix) qualification verdict:** The independently
+manufactured mathematical scope and batch isolation retain their test
+results. This comparison predates the corrected CMD full-bin CL policy.
+Additional CMD cases and physical-site/clock mapping remain
+`numerical_acceptance: unassessed` until a post-fix fresh comparison,
+including percentages, demonstrates defensible agreement or pinpoints
+a known CMD defect. No alternative overall validation reference is proposed. No edited
 reference data, new regression schema, baseline updates or native process
 execution were used for this audit.
