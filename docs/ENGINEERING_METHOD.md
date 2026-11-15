@@ -171,3 +171,42 @@ C owns the overall per-engine feature/qualification matrix. A batch API must
 only reuse immutable event-independent geometry and parameters, never
 rainfall/loss/event state, and must verify event-alone/batch equality
 against this readable `calculate_storm` path before optimisation.
+
+## Registered CMD comparison — evidence, not a new acceptance policy
+
+The source-only one-time audit at [run 43651310519](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43651310519)
+reused the public 50-case register, hash-verified original inputs, the maintained
+S1 decoders, both explicit Python engine dispatches and the unmodified CMD
+printed comparator. The generated project, effective model SHA, ordered
+controls, print IDs, complete horizons and *Python model-elapsed* clocks were
+matched before comparing output arrays. Original CMD raw one-based timestamps
+were retained **without pretending to be the same physical time axis**.
+See the [issue #6 work record](work/2026-11-15-issue6-engineering.md) for exact
+revision and the individual diagnostic evidence fingerprint.
+
+- 36 models computed by both engines, **16,836 full indexed ordinates**;
+  `python-cmd` passes the case-specific frozen printed comparison in all
+  36. The default `python` differs on all 36; its largest max absolute
+  difference is **9.055480239753422 m³/s**. No common CMD tolerance is
+  adopted for `engineering-v1`, and no such difference is accepted merely
+  because native printing passes for `python-cmd`.
+- The remaining 14 records cannot enter the common typed S1 execution
+  boundary; they are **source-unsupported**, not numeric passes or failures.
+- Model-grid trapezoidal physical volume calculations are distinguished from
+  the original inclusive CMD reported-volume statistic. Input-minus-output
+  volume contains terminal network storage and is **not** a measured
+  continuity defect. Historical CMD raw print labels and the derived
+  model-elapsed axis remain distinct.
+- A different IL/CL crossing convention and floating-point/storage order
+  can explain some potential divergences but have **not been independently
+  apportioned** in this audit. Zero-loss cases also differ, so loss crossing
+  cannot be invoked as a universal explanation.
+
+**Qualification verdict:** The independently manufactured mathematical
+scope and batch isolation retain their test results. Additional native
+CMD cases and physical-site/clock mapping remain `numerical_acceptance:
+unassessed` for the improved engine. Attribute material non-loss
+differences and source conversion/phase effects, then apply independently
+prospective engineering criteria before extending scope. No edited
+reference data, new regression schema, baseline updates or native process
+execution were used for this audit.
