@@ -84,7 +84,7 @@ From the root of that public checkout, using a fresh wheel in `dist/` (replace t
 ~~~sh
 REPO="$(pwd)"
 VERIFY="$(mktemp -d)"
-WHEEL="$REPO/dist/runoff_routing-0.0.0.dev0-py3-none-any.whl"
+WHEEL="$REPO/dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl"
 test -f "$WHEEL" || { echo "Provide the exact source-matched wheel" >&2; exit 1; }
 python3.13 -m pip install --no-deps --no-index --target "$VERIFY/installed" "$WHEEL"
 sha256sum "$WHEEL"
