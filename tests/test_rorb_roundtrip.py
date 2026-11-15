@@ -378,9 +378,7 @@ def test_original_pyromb_and_pinned_pr16_export_differ_only_by_95_line_endings()
     assert b"\n" not in historical.replace(b"\r\n", b"")
     recovered = historical.replace(b"\r\n", b"\n")
     assert len(recovered) == 2818
-    assert hashlib.sha256(recovered).hexdigest() == (
-        "67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815"
-    )
+    assert hashlib.sha256(recovered).hexdigest() == ("67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815")
     parsed = parse_catg(recovered)
     assert parsed.source.newline == "lf"
     assert original_bytes(parsed) == recovered
