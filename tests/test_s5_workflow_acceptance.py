@@ -21,6 +21,7 @@ from runoff_routing.project_batch import ProjectEvent, run_project_events
 from runoff_routing.project_json import (
     EmbeddedRun,
     ExternalAsset,
+    LegacyRunFiles,
     Project,
     ProjectError,
     SourceFile,
@@ -180,11 +181,18 @@ def test_no_clobber_and_changed_or_missing_originals_fail_closed(tmp_path: Path)
     assert project_path.read_bytes() == manifest_before
     assert tuple(path.read_bytes() for path in paths) == original
 
-    paths[1].write_bytes(original[1] + b"\nC tampered source\n")
+    # Only the project's selected hash-pinned source may affect reopen.
+    # PAR-led import (#140) stages a copy, while the older three-file
+    # importer binds the originals. Both are tested via the effective binding.
+    pinned = project.model_source
+    assert isinstance(pinned, LegacyRunFiles)
+    bound = tuple(project_path.parent / ref.path for ref in (pinned.parameters, pinned.catchment, pinned.storm))
+    assert tuple(path.read_bytes() for path in bound) == original
+    bound[1].write_bytes(original[1] + b"\nC tampered source\n")
     with pytest.raises(ProjectError, match="SHA-256"):
         load_project(project_path)
-    paths[1].write_bytes(original[1])
-    paths[2].unlink()
+    bound[1].write_bytes(original[1])
+    bound[2].unlink()
     with pytest.raises(ProjectError, match="Missing project source"):
         load_project(project_path)
     assert project_path.read_bytes() == manifest_before
