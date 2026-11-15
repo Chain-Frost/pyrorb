@@ -211,7 +211,8 @@ def test_existing_retained_cmd_report_preserves_registered_rows_and_clock(case_i
     source = RorbSource.read(DATA / reference["path"])
     assert (source.size_bytes, source.sha256) == (reference["size_bytes"], reference["sha256"])
     inspected = inspect_output(source)
-    assert inspected.status == "parsed"
+    assert inspected.status == "partial"
+    assert any(item.code == "print_identity_unverified" for item in inspected.diagnostics)
     assert inspected.hydrographs is not None
     rows = inspected.hydrographs.rows
     assert len(rows) == case["clock"]["row_count"]
