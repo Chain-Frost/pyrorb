@@ -160,6 +160,22 @@ def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunF
     if any(asset.role != "reference" for asset in loaded.project.assets):
         message = "Native adapter cannot silently prepare external rainfall/curve data"
         raise NativeBoundaryError(message, status="unsupported_feature", code="unprepared_rainfall")
+    # The S0 native capture regenerates only the effective parameter scalars;
+    # it reads original immutable CATG/STM byte streams directly. A persisted
+    # edit or selected event must never be attributed to stale original inputs.
+    original = loaded.original_run
+    if original is None:
+        message = "Native CMD requires the independently verified original source model"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_source_model_unknown")
+    if model.catchment != original.catchment or model.storm != original.storm:
+        message = (
+            "Native capture cannot execute edited catchment/storm inputs from immutable source files. "
+            "Use python-cmd or export a separately validated native package."
+        )
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_effective_source_mismatch")
+    if model.parameters.verbosity != 3:
+        message = "Native capture forces verbosity 3; use native package export for the requested verbosity"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_verbosity_unsupported")
     params = model.parameters
     storm = model.storm
     if (

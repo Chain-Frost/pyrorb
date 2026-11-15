@@ -207,6 +207,7 @@ class LoadedProject:
     original_json_bytes: bytes
     file_hashes: tuple[tuple[str, str], ...]
     validation_status: Literal["structural_only"] = "structural_only"
+    original_run: RunModel | None = None
 
 
 def _object(raw: object, fields: set[str], label: str) -> dict[str, object]:
@@ -513,7 +514,9 @@ def load_project(path: Path) -> LoadedProject:
     all_files = (*references, *(asset.source for asset in project.assets))
     for asset in project.assets:
         _source_bytes(directory, asset.source)
-    return LoadedProject(project, run, source, tuple((item.path, item.sha256) for item in all_files))
+    return LoadedProject(
+        project, run, source, tuple((item.path, item.sha256) for item in all_files), original_run=original_run
+    )
 
 
 def write_project(path: Path, project: Project) -> None:
@@ -758,7 +761,9 @@ def _cli_import_rorb(args: list[str]) -> None:
     overrides: dict[str, Path] = {}
     if len(remaining) == 3 and not any(item.startswith("--") for item in remaining):
         catg, stm, destination = remaining
-        overrides = {"catchment": Path(catg), "storm": Path(stm)}
+        # The legacy positional interface used CWD-relative paths. Preserve
+        # that real caller behaviour; flag-based overrides use the PAR base.
+        overrides = {"catchment": Path(catg).absolute(), "storm": Path(stm).absolute()}
     else:
         destination, *options = remaining
         if len(options) % 2:
@@ -794,6 +799,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command d
         from .engine_execution import run_cli  # noqa: PLC0415 -- avoids a JSON/dispatch import cycle
 
         return run_cli(args[1:])
+    if args and args[0] == "export-native":
+        try:
+            from .native_export import main as export_native_cli  # noqa: PLC0415 -- #141 owns native package code
+        except ModuleNotFoundError as exc:
+            if exc.name != "runoff_routing.native_export":
+                raise
+            print("Native CMD package export requires integration of #141 native_export", file=sys.stderr)
+            return 2
+        return export_native_cli(args[1:])
     try:
         if len(args) == 8 and args[0] == "review-native":
             from .project_native_review import (  # noqa: PLC0415 -- CLI-only, depends on S5 source validation
@@ -919,7 +933,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command d
         "| import-rorb <id> <rainfall-profile> <par> <project.json> "
         "[--catchment FILE] [--storm FILE] [--base DIR] "
         "| save-run <project.json> <edited-run.json> <new-project.json> "
-        "| export-run <project.json> <run.json> | compare <left.json> <right.json> "
+        "| export-run <project.json> <run.json> "
+        "| export-native <project.json> <new-package-dir> --target cmd-6.44 [--events request.json] "
+        "| compare <left.json> <right.json> "
         "| run <project.json> <result.json> [--engine ID --numerical-profile PROFILE] "
         "[--native-config LOCAL.json] | compare-runs <left.json> <right.json> "
         "| review-native <project.json> <manifest.json> <manifest-sha256> "
