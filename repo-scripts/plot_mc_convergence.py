@@ -19,7 +19,8 @@ LEFT, RIGHT, TOP, BOTTOM = 105, 38, 65, 75
 def _svg_plot(title: str, ylabel: str, curves: list[tuple[str, str, list[tuple[float, float]]]],
               *, ymax: float, reference_y: float | None = None) -> str:
     if ymax <= 0:
-        raise ValueError("y limit must be positive")
+        message = "y limit must be positive"
+        raise ValueError(message)
     svg = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", width=str(WIDTH), height=str(HEIGHT),
                      viewBox=f"0 0 {WIDTH} {HEIGHT}", role="img", **{"aria-label": title})
     ET.SubElement(svg, "title").text = title
@@ -72,7 +73,8 @@ def render(summary: dict[str, Any], output: Path) -> None:
                   and item["aep"] == aep and item["variant"].startswith("h50-")]
         curves.append((label, color, points))
     if not all(points for _, _, points in curves):
-        raise ValueError("the retained pilot data for both envelope curves are required")
+        message = "the retained pilot data for both envelope curves are required"
+        raise ValueError(message)
     ymax = max(y for _, _, points in curves for _, y in points) * 1.15
     output.mkdir(parents=True, exist_ok=True)
     (output / "single_run_sd.svg").write_text(_svg_plot("Independent-run dispersion, analytic reference",

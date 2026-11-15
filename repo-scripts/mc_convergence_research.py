@@ -76,7 +76,8 @@ def _hinge_integral(x: float) -> float:
 def exact_survival(response: Response, peak: float, *, lower_u: float = 0.0, upper_u: float = 1.0) -> float:
     """Unnormalised P(Q>peak, lower_u<=U<upper_u), peak>=0, integrating V and TP exactly."""
     if not 0.0 <= lower_u <= upper_u <= 1.0 or peak < 0:
-        raise ValueError("invalid integration range or peak")
+        message = "invalid integration range or peak"
+        raise ValueError(message)
     result = 0.0
     for tp, probability in ((0, 1.0 - TP_PROBABILITY), (1, TP_PROBABILITY)):
         offset = response.base + response.tp_bump * tp - peak
@@ -91,7 +92,8 @@ def exact_survival(response: Response, peak: float, *, lower_u: float = 0.0, upp
 def exact_quantile(response: Response, aep: float) -> float:
     """Find inf{q>=0: P(Q>q)<=aep}; exact integral, numerical bisection."""
     if not 0.0 < aep < 1.0:
-        raise ValueError("AEP must be in (0, 1)")
+        message = "AEP must be in (0, 1)"
+        raise ValueError(message)
     if exact_survival(response, 0.0) <= aep:
         return 0.0
     left = 0.0
@@ -113,7 +115,8 @@ def endpoint_quantile_bounds(response: Response, aep: float, *, covered_upper_u:
     upper bound is asserted without an externally justified response support.
     """
     if not 0.0 < aep < 1.0 or not 0.0 < covered_upper_u < 1.0:
-        raise ValueError("invalid AEP or incomplete upper endpoint")
+        message = "invalid AEP or incomplete upper endpoint"
+        raise ValueError(message)
     missing = 1.0 - covered_upper_u
 
     def invert(target: float) -> float:
@@ -135,7 +138,8 @@ def endpoint_quantile_bounds(response: Response, aep: float, *, covered_upper_u:
 def strata_edges(count: int) -> list[float]:
     """Equal z-bin spacing with unequal U masses; first/last bins cover all tails."""
     if count < 1:
-        raise ValueError("at least one stratum is required")
+        message = "at least one stratum is required"
+        raise ValueError(message)
     normal = NormalDist()
     return [0.0, *(normal.cdf(-3.5 + 7.0 * i / count) for i in range(1, count)), 1.0]
 
@@ -149,12 +153,15 @@ def derive_seed(root: int, stage: str, replication: int, duration: str, strata: 
 def weighted_quantile(peaks: list[tuple[float, float]], aep: float, *, method: str = "rank") -> float:
     """Research-only complete weighted inverse-CDF: rank or explicit linear variant."""
     if not peaks or not 0.0 < aep < 1.0:
-        raise ValueError("missing peaks or invalid AEP")
+        message = "missing peaks or invalid AEP"
+        raise ValueError(message)
     if any(not math.isfinite(q) or q < 0.0 or not math.isfinite(w) or w <= 0.0 for q, w in peaks):
-        raise ValueError("invalid or failed weighted event")
+        message = "invalid or failed weighted event"
+        raise ValueError(message)
     total = math.fsum(w for _, w in peaks)
     if abs(total - 1.0) > 1e-9:
-        raise ValueError("missing probability mass: estimate is unavailable")
+        message = "missing probability mass: estimate is unavailable"
+        raise ValueError(message)
     sorted_peaks = sorted(peaks, key=lambda pair: pair[0])
     target = (1.0 - aep) * total
     cumulative = 0.0
@@ -167,7 +174,8 @@ def weighted_quantile(peaks: list[tuple[float, float]], aep: float, *, method: s
             if method == "linear":
                 fraction = max(0.0, min(1.0, (target - cumulative) / w))
                 return last_q + fraction * (q - last_q)
-            raise ValueError("unknown quantile method")
+            message = "unknown quantile method"
+            raise ValueError(message)
         cumulative = next_cumulative
         last_q = q
     return sorted_peaks[-1][0]
@@ -177,19 +185,22 @@ def _evaluate(response: Response, u: float, v: float, tp: int) -> float:
     return max(0.0, response.slope * u + response.base + response.tp_bump * tp - response.loss_width * v)
 
 
-def _trial_peaks(
+def trial_peaks(
     *, root: int, stage: str, replication: int, duration: str, strata: int, n: int, tp_method: str
 ) -> dict[str, list[tuple[float, float]]]:
     edges = strata_edges(strata)
     peaks: dict[str, list[tuple[float, float]]] = {site: [] for site in RESPONSES}
     if tp_method == "paired_tp" and n % 2:
-        raise ValueError("paired finite-TP integration requires an even allocation")
+        message = "paired finite-TP integration requires an even allocation"
+        raise ValueError(message)
     if tp_method not in {"random_tp", "paired_tp"}:
-        raise ValueError("unknown finite-TP method")
+        message = "unknown finite-TP method"
+        raise ValueError(message)
     for h in range(strata):
         low, high = edges[h : h + 2]
         mass = high - low
-        rng = random.Random(derive_seed(root, stage, replication, duration, strata, n, tp_method, h))
+        # Reproducible scientific simulation; no cryptographic secrets are generated.
+        rng = random.Random(derive_seed(root, stage, replication, duration, strata, n, tp_method, h))  # noqa: S311
         base_samples = n if tp_method == "random_tp" else n // 2
         for _ in range(base_samples):
             u = low + mass * rng.random()
@@ -209,7 +220,7 @@ def one_trial(*, root: int, stage: str, replication: int, strata: int, n: int, t
     """Produce every site/duration/AEP and their envelope, with complete mass."""
     measured: dict[tuple[str, str, float], float] = {}
     for duration in DURATIONS:
-        for site, peak_weights in _trial_peaks(
+        for site, peak_weights in trial_peaks(
             root=root, stage=stage, replication=replication, duration=duration, strata=strata, n=n,
             tp_method=tp_method,
         ).items():
@@ -239,7 +250,8 @@ def one_trial(*, root: int, stage: str, replication: int, strata: int, n: int, t
 def binomial_upper_tail(k: int, n: int, p: float) -> float:
     """Exact P_p(X>=k) for n Bernoulli trials, using a stable finite recurrence."""
     if not 0 <= k <= n or not 0.0 <= p <= 1.0:
-        raise ValueError("invalid binomial arguments")
+        message = "invalid binomial arguments"
+        raise ValueError(message)
     if k == 0:
         return 1.0
     if p == 0.0:
@@ -267,7 +279,8 @@ def binomial_upper_tail(k: int, n: int, p: float) -> float:
 def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> float:
     """Exact one-sided Clopper-Pearson lower bound (not normal/Wald)."""
     if not 0 <= successes <= trials or trials < 1 or not 0 < alpha < 1:
-        raise ValueError("invalid confidence-bound arguments")
+        message = "invalid confidence-bound arguments"
+        raise ValueError(message)
     if successes == 0:
         return 0.0
     low, high = 0.0, 1.0
@@ -284,7 +297,8 @@ def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> 
 def upper_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> float:
     """Exact one-sided Clopper-Pearson upper bound, for rejection of adequacy."""
     if not 0 <= successes <= trials or trials < 1 or not 0 < alpha < 1:
-        raise ValueError("invalid confidence-bound arguments")
+        message = "invalid confidence-bound arguments"
+        raise ValueError(message)
     if successes == trials:
         return 1.0
     low, high = 0.0, 1.0
@@ -304,9 +318,11 @@ def sd_bootstrap_interval(values: list[float], seed_key: str, *, resamples: int 
     This is diagnostic and not a rigorous simultaneous multi-output interval.
     """
     if len(values) < 2 or resamples < 20:
-        raise ValueError("requires at least two replications and 20 resamples")
+        message = "requires at least two replications and 20 resamples"
+        raise ValueError(message)
     seed = int.from_bytes(hashlib.sha256(seed_key.encode("utf-8")).digest()[:16], "big")
-    rng = random.Random(seed)
+    # Scientific bootstrap reuses seeded pseudorandom numbers, not cryptographic entropy.
+    rng = random.Random(seed)  # noqa: S311
     estimates = []
     for _ in range(resamples):
         drawn = rng.choices(values, k=len(values))
@@ -322,7 +338,8 @@ def _run_stage(stage: str, root: int, replications: int, budget: int, wall_cap: 
     variants = STAGE_VARIANTS[stage]
     requested = sum(strata * n * len(DURATIONS) * replications for strata, n, _, _ in variants)
     if requested > budget:
-        raise ValueError(f"requested {requested} evaluations exceeds explicit {budget} cap")
+        message = f"requested {requested} evaluations exceeds explicit {budget} cap"
+        raise ValueError(message)
     start = time.perf_counter()
     raw: list[dict[str, Any]] = []
     timing: list[dict[str, Any]] = []
@@ -332,7 +349,8 @@ def _run_stage(stage: str, root: int, replications: int, budget: int, wall_cap: 
             key = _variant_key(strata, n, tp_method, quantile_method)
             for replication in range(replications):
                 if time.perf_counter() - start > wall_cap:
-                    raise TimeoutError("wall-time cap reached; incomplete stage is not publishable")
+                    message = "wall-time cap reached; incomplete stage is not publishable"
+                    raise TimeoutError(message)
                 tracemalloc.reset_peak()
                 t0 = time.perf_counter()
                 trial_rows = one_trial(root=root, stage=stage, replication=replication, strata=strata, n=n,
@@ -341,8 +359,7 @@ def _run_stage(stage: str, root: int, replications: int, budget: int, wall_cap: 
                 _, peak_bytes = tracemalloc.get_traced_memory()
                 timing.append({"variant": key, "replication": replication, "elapsed_seconds": elapsed,
                                "peak_traced_mib": peak_bytes / (1024 * 1024), "evaluations": strata * n * 2})
-                for row in trial_rows:
-                    raw.append({"variant": key, "replication": replication, **row})
+                raw.extend({"variant": key, "replication": replication, **row} for row in trial_rows)
     finally:
         tracemalloc.stop()
     return raw, {"total_evaluations": requested, "wall_seconds": time.perf_counter() - start,
@@ -412,14 +429,18 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def run(stage: str, output: Path, *, root: int, replications: int | None,
         max_evaluations: int, max_wall_seconds: float, opt_in: bool) -> None:
     if stage != "smoke" and not opt_in:
-        raise ValueError("non-smoke research stages require --opt-in")
+        message = "non-smoke research stages require --opt-in"
+        raise ValueError(message)
     if max_evaluations < 1 or max_wall_seconds <= 0:
-        raise ValueError("positive explicit cost caps are required")
+        message = "positive explicit cost caps are required"
+        raise ValueError(message)
     if output.exists():
-        raise FileExistsError("research output directory must not exist (immutable result batches)")
+        message = "research output directory must not exist (immutable result batches)"
+        raise FileExistsError(message)
     count = REPLICATIONS[stage] if replications is None else replications
     if count < 2:
-        raise ValueError("at least two independent replications required")
+        message = "at least two independent replications required"
+        raise ValueError(message)
     output.mkdir(parents=True)
     raw, performance = _run_stage(stage, root, count, max_evaluations, max_wall_seconds)
     summary = _summarise(raw, performance["timing"])

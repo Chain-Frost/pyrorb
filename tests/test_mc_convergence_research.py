@@ -16,7 +16,8 @@ def _research() -> ModuleType:
     if not path.exists():  # For local independent authoring outside the repository.
         path = Path(__file__).with_name("mc_convergence_research.py")
     spec = importlib.util.spec_from_file_location("mc_convergence_research", path)
-    assert spec is not None and spec.loader is not None
+    assert spec is not None
+    assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -73,20 +74,21 @@ def test_missing_tail_bounds_do_not_normalise_or_invent_upper_quantiles() -> Non
 def test_complete_unequal_strata_and_exact_finite_tp() -> None:
     mc = _research()
     edges = mc.strata_edges(5)
-    assert edges[0] == 0 and edges[-1] == 1
+    assert edges[0] == 0
+    assert edges[-1] == 1
     assert edges[1] - edges[0] != pytest.approx(edges[3] - edges[2])
     for method in ("random_tp", "paired_tp"):
-        peaks = mc._trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+        peaks = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
                                 tp_method=method)
         assert set(peaks) == {"zero_atom", "near_tie"}
         assert all(len(values) == 20 for values in peaks.values())
         for values in peaks.values():
             assert sum(weight for _, weight in values) == pytest.approx(1.0)
-    first = mc._trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+    first = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
                             tp_method="random_tp")
-    repeat = mc._trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+    repeat = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
                              tp_method="random_tp")
-    changed = mc._trial_peaks(root=9, stage="test", replication=1, duration="short", strata=5, n=4,
+    changed = mc.trial_peaks(root=9, stage="test", replication=1, duration="short", strata=5, n=4,
                               tp_method="random_tp")
     assert first == repeat
     assert first != changed
