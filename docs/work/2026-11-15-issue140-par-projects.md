@@ -28,3 +28,12 @@ Codex reviewed `4dcad73e39` and identified two issues:
 2. **P2 legacy positional CLI:** three-file positional CATG/STM arguments previously belonged to the command working directory. They are now absolutised immediately at the CLI boundary. New explicit `--catchment`, `--storm`, `--base` still resolve relative to the documented PAR/base directory.
 
 The shared project dispatcher now delegates `export-native` to #141's `native_export.main` when available; #141 owns the exporter and #138 owns event edit resolution. Main branch integration preserves newer evidence receipts; tests and exact-head validation will be reported separately. Review findings are not treated as resolved until tested.
+
+## Second independent review — source identity and relocation containment
+
+The next Codex review at `0c3e6cc900` found two more concrete cases, corrected on a later #159 head:
+
+- **Recorded-native review:** `review_project_native_capture` also consumed the effective edited model but compared its original source hashes. The shared `LoadedProject.original_inputs_match_effective()` contract is now applied in both native execution and recorded-capture review. Changed CATG or STM semantics fail with an actionable source-identity diagnostic **before** reported numerical differences can be produced. A manufactured original-source evidence fixture tests both changed roles and confirms the original manifest remains byte-identical.
+- **Relocation containment:** a pre-existing destination `sources` symlink previously permitted `mkdir(parents=True)` outside the target *before* a later containment check. The directory walker now checks every existing ancestor for symlinks, creates missing components one at a time under the verified root, and refuses any unsafe parent before outside mutation. A symlink escape regression proves no external directory is created.
+
+The source test suite, strict Ruff/Pyright, fresh original CMD probe and installed-wheel checks are qualified only by CI at the final exact head, not an earlier success. #140 remains a focused PR; there is no native numerical or general GUI PAR support assertion.

@@ -345,7 +345,6 @@ def test_native_review_rejects_zero_based_cmd_row_identity(tmp_path: Path) -> No
         )
 
 
-
 @pytest.mark.parametrize("changed_source", ["catchment", "storm"])
 def test_recorded_native_review_rejects_edited_effective_original_mismatch(
     tmp_path: Path, changed_source: str
@@ -364,6 +363,7 @@ def test_recorded_native_review_rejects_edited_effective_original_mismatch(
             subareas=(replace(subarea, area_km2=subarea.area_km2 * 2), *run.catchment.subareas[1:]),
         )
         edited = replace(run, catchment=catchment)
+    original_manifest_bytes = manifest_path.read_bytes()
     saved = project_path.with_name("edited-source.json")
     save_project_as(project_path, saved, effective_run=edited)
     assert load_project(saved).run == edited
@@ -376,4 +376,4 @@ def test_recorded_native_review_rejects_edited_effective_original_mismatch(
             model_print_id="print_1",
             native_column_id="Hyd001",
         )
-    assert manifest_path.read_bytes() == (manifest_path.parent / "manifest.json").read_bytes()
+    assert manifest_path.read_bytes() == original_manifest_bytes
