@@ -636,7 +636,7 @@ def _storm(raw: object) -> StormModel:
     }
     if isinstance(raw, dict) and "pattern_basis" in raw:
         fields.add("pattern_basis")
-    record = _object(raw, fields)
+    record = _object(cast("object", raw), fields)
     basis = _string(record.get("pattern_basis", "percent_of_depth"))
     if basis not in ("percent_of_depth", "relative_weights"):
         message = "Unknown temporal pattern basis"
@@ -652,7 +652,7 @@ def _storm(raw: object) -> StormModel:
         _integer_field(record, "pluviograph_count"),
         _integer_field(record, "isa_count"),
         _integer_field(record, "burst_count"),
-        cast("PatternBasis", basis),
+        basis,
     )
 
 
