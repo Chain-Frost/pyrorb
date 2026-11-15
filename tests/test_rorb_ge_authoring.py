@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import subprocess
 from dataclasses import replace
 from decimal import Decimal
@@ -433,8 +434,6 @@ def test_pyromb_writer_rejects_unrepresentable_reach_precision() -> None:
 
 
 def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatch) -> None:
-    import importlib
-
     model = _model()
     original = parse_catg(
         b"Legacy\nC RORB_GE 002\nC #NODES\nC 0\nC #REACHES\nC 0\n"
@@ -452,5 +451,5 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(importlib, "import_module", no_writer)
     assert parse_catg(original.source.data).model == original.model
-    with pytest.raises(ValueError, match="install .\\[catg\\]"):
+    with pytest.raises(ValueError, match=r"install .\\[catg\\]"):
         serialize_catg(model)
