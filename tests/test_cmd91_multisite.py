@@ -186,6 +186,28 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
     assert outcome.physical_time_hours == ()
 
 
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -1.0])
+def test_cmd_rejects_invalid_numeric_print_ordinates_before_exposing_any_site(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalid: float
+) -> None:
+    """Even a nonterminal site must not leak invalid physical discharge."""
+    project = _project(tmp_path, _multiple_prints())
+
+    def corrupted_execute(event: Event, revision: str) -> CandidateResult:
+        original = execute_unmodified(event, revision)
+        first = original.network.prints[0]
+        corrupt = replace(first, q=(*first.q[:2], invalid, *first.q[3:]))
+        return replace(original, network=replace(original.network, prints=(corrupt, *original.network.prints[1:])))
+
+    monkeypatch.setattr("runoff_routing.cmd_engine.execute", corrupted_execute)
+    outcome = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert outcome.status == "incomplete_output"
+    assert outcome.diagnostics[0].code == "cmd_print_values"
+    assert outcome.requested_print_ids == ("interior", "print_1")
+    assert outcome.hydrographs == ()
+    assert outcome.physical_time_hours == ()
+
+
 def _native_two_prints() -> RunModel:
     """Canonical IDs make this authored multi-site model round-trip via RORB_GE 002."""
     model = _model()

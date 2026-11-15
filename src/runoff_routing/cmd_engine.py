@@ -167,6 +167,10 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
         raise CmdBoundaryError(
             _INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated"
         )
+    if any(not math.isfinite(value) or value < 0 for record in result.network.prints for value in record.q):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_values", "Computed physical print contains non-finite or negative discharge"
+        )
     expected_print_positions = tuple(
         index for index, step in enumerate(loaded.run.catchment.controls, start=1) if step.code == 7
     )
