@@ -85,6 +85,7 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     assert [record["original_tp_id"] for record in records[20:30]] == [f"{value:04d}" for value in range(101, 111)]
     assert [item["status"] for item in _audit(result)["cells"]] == ["ready"] * 4
     assert len({outcome.event_id for outcome in result.routed.outcomes}) == 40
+    assert _audit(result)["source_files"]["design_config"]["sha256"] == hashlib.sha256(config.read_bytes()).hexdigest()
     assert _audit(result)["generated_input_reference_status"] == "not_assessed"
     assert _audit(result)["critical_duration_rule"] == "not_selected_unverified"
     assert _audit(result)["representative_event_rule"] == "not_selected_unverified"
@@ -114,7 +115,7 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
         (a.event_id, a.model_sha256, a.hydrographs, a.physical_time_hours) for a in result.routed.outcomes
     ]
     assert json.loads((tmp_path / "design-results.json").read_text())["requested_event_count"] == 40
-    assert "computed_unvalidated" in (tmp_path / "design-results.txt").read_text()
+    assert "Computed: 40" in (tmp_path / "design-results.txt").read_text()
     assert "Input: 40/40" in (tmp_path / "design-results.summary.txt").read_text()
     before = tuple(path.read_bytes() for path in paths)
     with pytest.raises(DesignConfigError, match="already exist"):
@@ -134,6 +135,10 @@ def test_missing_tenth_tp_is_incomplete_without_substitution(tmp_path: Path) -> 
     assert [cell["status"] for cell in _audit(result)["cells"]] == ["ready", "ready", "input_error", "input_error"]
     assert all(cell["expected_count"] == 10 for cell in _audit(result)["cells"])
     assert all(cell["ready_count"] == 0 for cell in _audit(result)["cells"][2:])
+    assert _audit(result)["cells"][2]["unqualified_source_candidate_ids"] == [
+        f"{value:04d}" for value in range(101, 110)
+    ]
+    assert _audit(result)["cells"][2]["unqualified_source_candidate_count"] == 9
     assert len(result.routed.outcomes) == 20
     assert all(outcome.status == "computed_unvalidated" for outcome in result.routed.outcomes)
     assert _audit(result)["status"] == "incomplete"

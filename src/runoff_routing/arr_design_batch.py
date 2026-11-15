@@ -56,6 +56,7 @@ class DesignConfigError(ValueError):
 @dataclass(frozen=True, slots=True)
 class DesignConfig:
     path: Path
+    source_sha256: str
     project: Path
     bom_ifd: Path
     temporal_patterns: Path
@@ -233,6 +234,7 @@ def read_design_config(path: Path) -> DesignConfig:
         _fail("In-memory generated events cannot be represented by the native rorb-cmd file adapter")
     return DesignConfig(
         path=path.absolute(),
+        source_sha256=hashlib.sha256(raw).hexdigest(),
         project=_file(path, source["project"], "project"),
         bom_ifd=_file(path, source["bom_ifd"], "bom_ifd"),
         temporal_patterns=_file(path, source["temporal_patterns"], "temporal_patterns"),
@@ -428,6 +430,18 @@ def _cell_failure(
         }
         for p in patterns
     ]
+    if not records:
+        records.append(
+            {
+                "event_id": None,
+                "status": "input_error",
+                "duration_min": duration,
+                "aep_label": label,
+                "original_tp_id": None,
+                "error_stage": stage,
+                "error": reason,
+            }
+        )
     return cell, records
 
 
@@ -476,6 +490,18 @@ def _prepare_cell(
     except (ARRFormatError, ValueError, ArithmeticError) as exc:
         stage = "ensemble_selection" if ensemble is None else "effective_event_preparation"
         cell, rejected = _cell_failure(duration, aep_label, stage, exc, ensemble.patterns if ensemble else ())
+        if ensemble is None:
+            # These are *unqualified candidates*, not an accepted ten-member
+            # area/frequency selection; their real source IDs are never lost.
+            candidates = tuple(
+                pattern
+                for pattern in patterns.patterns
+                if pattern.duration_min == duration and pattern.region == config.temporal_region
+            )
+            cell["unqualified_source_candidate_ids"] = [pattern.event_id for pattern in candidates]
+            cell["unqualified_source_candidate_orders"] = [source_orders[pattern] for pattern in candidates]
+            cell["unqualified_source_candidate_count"] = len(candidates)
+            rejected[0]["unqualified_source_candidate_ids"] = cell["unqualified_source_candidate_ids"]
         return cell, [], rejected
     cell: dict[str, object] = {
         "duration_min": duration,
@@ -501,7 +527,7 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     bom = read_bom_ifd_csv(config.bom_ifd)
     patterns = read_pattern_file(config.temporal_patterns, kind=config.pattern_kind)
     legacy = (
-        read_arr_file(config.legacy_arr_txt, legacy_profile="arr2016_txt")
+        read_arr_file(config.legacy_arr_txt, legacy_profile="arr2016")
         if config.legacy_arr_txt is not None
         else None
     )
@@ -553,7 +579,7 @@ def run_design_batch(path: Path) -> DesignBatchResult:
         "representative_event_rule": "not_selected_unverified",
         "critical_duration_rule": "not_selected_unverified",
         "source_files": {
-            "design_config": {"path": str(config.path), "sha256": hashlib.sha256(config.path.read_bytes()).hexdigest()},
+            "design_config": {"path": str(config.path), "sha256": config.source_sha256},
             "project": {
                 "path": str(config.project),
                 "sha256": hashlib.sha256(loaded.original_json_bytes).hexdigest(),
