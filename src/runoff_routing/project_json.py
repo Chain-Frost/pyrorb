@@ -101,13 +101,17 @@ class SourceBinding:
 
     def __post_init__(self) -> None:
         if self.role not in {"parameters", "catchment", "storm"}:
-            raise ProjectError(f"Unsupported source binding role: {self.role}")
+            message = f"Unsupported source binding role: {self.role}"
+            raise ProjectError(message)
         if self.origin not in {"explicit", "embedded", "override"}:
-            raise ProjectError(f"Unsupported binding origin: {self.origin}")
+            message = f"Unsupported binding origin: {self.origin}"
+            raise ProjectError(message)
         if not self.selected_reference or not self.resolved_source:
-            raise ProjectError("Selected source reference and resolved provenance must be nonempty")
+            message = "Selected source reference and resolved provenance must be nonempty"
+            raise ProjectError(message)
         if any(ord(char) < 32 for char in self.declared_reference + self.selected_reference + self.resolved_source):
-            raise ProjectError("Source binding contains a control character")
+            message = "Source binding contains a control character"
+            raise ProjectError(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,18 +181,22 @@ class Project:
             message = "Duplicate external asset IDs"
             raise ProjectError(message)
         if self.effective_run is not None and not isinstance(self.model_source, LegacyRunFiles):
-            raise ProjectError("Use EmbeddedRun for an edited source-free project")
+            message = "Use EmbeddedRun for an edited source-free project"
+            raise ProjectError(message)
         if self.source_bindings:
             if not isinstance(self.model_source, LegacyRunFiles):
-                raise ProjectError("Source bindings require original RORB input files")
+                message = "Source bindings require original RORB input files"
+                raise ProjectError(message)
             if tuple(item.role for item in self.source_bindings) != ("parameters", "catchment", "storm"):
-                raise ProjectError("Source bindings must contain parameters, catchment, storm in order")
+                message = "Source bindings must contain parameters, catchment, storm in order"
+                raise ProjectError(message)
             original = self.model_source
             for binding, pinned in zip(
                 self.source_bindings, (original.parameters, original.catchment, original.storm), strict=True
             ):
                 if binding.staged != pinned:
-                    raise ProjectError(f"{binding.role} binding does not match its hash-pinned source")
+                    message = f"{binding.role} binding does not match its hash-pinned source"
+                    raise ProjectError(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -356,6 +364,44 @@ def _reject_nonfinite(value: str) -> None:
     raise ProjectError(message)
 
 
+def _decode_effective_run(raw: object) -> RunModel | None:
+    if raw is None:
+        return None
+    run_document = _object(raw, {"schema_version", "kind", "units", "model"}, "effective run")
+    try:
+        parsed = from_dict(cast("dict[str, Any]", run_document))
+    except (TypeError, ValueError) as exc:
+        message = f"Invalid effective run: {exc}"
+        raise ProjectError(message) from exc
+    if not isinstance(parsed, RunModel):
+        message = "Effective model must be a complete S1 RunModel"
+        raise ProjectError(message)
+    return parsed
+
+
+def _read_engine(data: dict[str, object], version: int) -> EngineSelection:
+    if version == 1:
+        return EngineSelection.for_engine("python")
+    raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
+    try:
+        return EngineSelection.for_engine(
+            _string(raw_engine["id"], "Engine ID"),
+            _string(raw_engine["numerical_profile"], "Numerical profile"),
+        )
+    except ValueError as exc:
+        raise ProjectError(str(exc)) from exc
+
+
+def _v3_bindings(data: dict[str, object], version: int) -> tuple[SourceBinding, ...]:
+    if version != 3:
+        return ()
+    raw_bindings = data["source_bindings"]
+    if not isinstance(raw_bindings, list):
+        message = "Source bindings must be a JSON array"
+        raise ProjectError(message)
+    return tuple(_binding(item) for item in cast("list[object]", raw_bindings))
+
+
 def project_from_json(text: str) -> Project:
     """Fail closed for duplicate keys, unexpected fields and schema versions."""
     try:
@@ -363,60 +409,35 @@ def project_from_json(text: str) -> Project:
     except (TypeError, ValueError) as exc:
         raise ProjectError(str(exc)) from exc
     if not isinstance(raw, dict):
-        raise ProjectError("Project must be a JSON object")
+        message = "Project must be a JSON object"
+        raise ProjectError(message)
     header = cast("dict[str, object]", raw)
     version = header.get("schema_version")
     if header.get("format") != PROJECT_FORMAT or type(version) is not int or version not in (1, 2, 3):
-        raise ProjectError("Unsupported JSON project format or version")
+        message = "Unsupported JSON project format or version"
+        raise ProjectError(message)
     fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
     if version >= 2:
         fields.add("engine")
     if version == 3:
         fields.update({"source_bindings", "effective_run"})
     data = _object(header, fields, "project")
-    if version == 1:
-        # Preserve engine-less schema-1 as python/engineering-v1, not today's default.
-        engine = EngineSelection.for_engine("python")
-    else:
-        raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
-        try:
-            engine = EngineSelection.for_engine(
-                _string(raw_engine["id"], "Engine ID"),
-                _string(raw_engine["numerical_profile"], "Numerical profile"),
-            )
-        except ValueError as exc:
-            raise ProjectError(str(exc)) from exc
     profile = _string(data["rainfall_profile"], "Rainfall profile")
     if profile not in {"explicit", "legacy-rorb", "arr-2026v1"}:
-        raise ProjectError(f"Unknown rainfall-method profile: {profile}")
+        message = f"Unknown rainfall-method profile: {profile}"
+        raise ProjectError(message)
     items = data["external_assets"]
     if not isinstance(items, list):
-        raise ProjectError("External assets must be a JSON array")
-    bindings: tuple[SourceBinding, ...] = ()
-    effective_run: RunModel | None = None
-    if version == 3:
-        raw_bindings = data["source_bindings"]
-        if not isinstance(raw_bindings, list):
-            raise ProjectError("Source bindings must be a JSON array")
-        bindings = tuple(_binding(item) for item in cast("list[object]", raw_bindings))
-        raw_run = data["effective_run"]
-        if raw_run is not None:
-            run_document = _object(raw_run, {"schema_version", "kind", "units", "model"}, "effective run")
-            try:
-                parsed = from_dict(cast("dict[str, Any]", run_document))
-            except (TypeError, ValueError) as exc:
-                raise ProjectError(f"Invalid effective run: {exc}") from exc
-            if not isinstance(parsed, RunModel):
-                raise ProjectError("Effective model must be a complete S1 RunModel")
-            effective_run = parsed
+        message = "External assets must be a JSON array"
+        raise ProjectError(message)
     return Project(
         _string(data["project_id"], "Project ID"),
         cast("RainfallProfile", profile),
         _model_source(data["model_source"]),
         tuple(_asset(item) for item in cast("list[object]", items)),
-        engine,
-        bindings,
-        effective_run,
+        _read_engine(data, version),
+        _v3_bindings(data, version),
+        _decode_effective_run(data["effective_run"]) if version == 3 else None,
     )
 
 
@@ -520,6 +541,47 @@ def import_rorb_project(
     )
 
 
+
+def _relocated_source_files(source: Path, target: Path, project: Project) -> None:
+    """Copy verified immutable asset closure, rolling back only files we created."""
+    refs: list[SourceFile] = []
+    if isinstance(project.model_source, LegacyRunFiles):
+        original = project.model_source
+        refs.extend((original.parameters, original.catchment, original.storm))
+    refs.extend(asset.source for asset in project.assets)
+    unique: dict[str, SourceFile] = {}
+    for reference in refs:
+        if reference.path in unique and unique[reference.path].sha256 != reference.sha256:
+            message = f"Conflicting immutable source path: {reference.path}"
+            raise ProjectError(message)
+        unique[reference.path] = reference
+    planned: list[tuple[Path, bytes]] = []
+    for reference in unique.values():
+        output = target / reference.path
+        if output.exists() or output.is_symlink():
+            message = f"Relocated source already exists: {reference.path}"
+            raise ProjectError(message)
+        planned.append((output, _source_bytes(source, reference)))
+    written: list[Path] = []
+    try:
+        for output, raw in planned:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            _ensure_relocation_directory(output.parent, target)
+            with output.open("xb") as stream:
+                stream.write(raw)
+            written.append(output)
+    except (OSError, ProjectError):
+        for output in written:
+            output.unlink(missing_ok=True)
+        raise
+
+
+def _ensure_relocation_directory(directory: Path, target: Path) -> None:
+    if not directory.resolve(strict=True).is_relative_to(target.resolve(strict=True)):
+        message = f"Relocated source directory escapes destination: {directory}"
+        raise ProjectError(message)
+
+
 def save_project_as(
     source: Path, destination: Path, *, effective_run: RunModel | None = None
 ) -> Project:
@@ -540,39 +602,17 @@ def save_project_as(
     origin = source.absolute().parent
     target = destination.absolute().parent
     if not target.is_dir():
-        raise ProjectError(f"Destination directory does not exist: {target}")
+        message = f"Destination directory does not exist: {target}"
+        raise ProjectError(message)
     if origin == target:
         write_project(destination, project)
         return project
-    refs: list[SourceFile] = []
-    if isinstance(project.model_source, LegacyRunFiles):
-        s = project.model_source
-        refs.extend((s.parameters, s.catchment, s.storm))
-    refs.extend(asset.source for asset in project.assets)
-    unique: dict[str, SourceFile] = {}
-    for ref in refs:
-        if ref.path in unique and unique[ref.path].sha256 != ref.sha256:
-            raise ProjectError(f"Conflicting immutable source path: {ref.path}")
-        unique[ref.path] = ref
-    planned: list[tuple[Path, bytes]] = []
-    for ref in unique.values():
-        output = target / ref.path
-        if output.exists() or output.is_symlink():
-            raise ProjectError(f"Relocated source already exists: {ref.path}")
-        planned.append((output, _source_bytes(origin, ref)))
-    written: list[Path] = []
+    _relocated_source_files(origin, target, project)
     try:
-        for output, raw in planned:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            if not output.parent.resolve(strict=True).is_relative_to(target.resolve(strict=True)):
-                raise ProjectError(f"Relocated source directory escapes destination: {output}")
-            with output.open("xb") as stream:
-                stream.write(raw)
-            written.append(output)
         write_project(destination, project)
-    except (OSError, ProjectError):
-        for output in written:
-            output.unlink(missing_ok=True)
+    except OSError:
+        # Keep hash-pinned sources for a retry only when destination write races.
+        # The JSON is still exclusive; no original data are ever overwritten.
         raise
     return project
 
@@ -701,6 +741,52 @@ def _validated_profile(value: str) -> RainfallProfile:
     return cast("RainfallProfile", value)
 
 
+
+def _cli_save_run(source: str, edited: str, destination: str) -> None:
+    edited_bytes = _read_bounded(Path(edited))
+    parsed = from_dict(cast("dict[str, Any]", json.loads(edited_bytes.decode("utf-8-sig"))))
+    if not isinstance(parsed, RunModel):
+        message = "save-run requires an S1 complete run document"
+        raise ProjectError(message)
+    saved = save_project_as(Path(source), Path(destination), effective_run=parsed)
+    print(json.dumps({"status": "written", "project_id": saved.identifier, "path": destination}, sort_keys=True))
+
+
+def _cli_import_rorb(args: list[str]) -> None:
+    _, identifier, profile, par, *remaining = args
+    selected_profile = _validated_profile(profile)
+    overrides: dict[str, Path] = {}
+    if len(remaining) == 3 and not any(item.startswith("--") for item in remaining):
+        catg, stm, destination = remaining
+        overrides = {"catchment": Path(catg), "storm": Path(stm)}
+    else:
+        destination, *options = remaining
+        if len(options) % 2:
+            message = "Import flags require value pairs"
+            raise ProjectError(message)
+        for flag, path_value in zip(options[::2], options[1::2], strict=True):
+            key = {"--catchment": "catchment", "--storm": "storm", "--base": "base_directory"}.get(flag)
+            if key is None or key in overrides:
+                message = f"Unknown or repeated PAR import flag: {flag}"
+                raise ProjectError(message)
+            overrides[key] = Path(path_value)
+    target = Path(destination)
+    project = import_rorb_project(
+        target,
+        identifier=identifier,
+        rainfall_profile=selected_profile,
+        parameters=Path(par),
+        **overrides,
+    )
+    write_project(target, project)
+    print(
+        json.dumps(
+            {"status": "written", "path": str(target), "source_bindings": len(project.source_bindings)},
+            sort_keys=True,
+        )
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     """Small Windows-friendly CLI without argparse, native calls or side effects."""
     args = sys.argv[1:] if argv is None else argv
@@ -789,12 +875,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0 if inspection.status == "parsed" else 1
         if len(args) == 4 and args[0] == "save-run":
-            edited_bytes = _read_bounded(Path(args[2]))
-            parsed = from_dict(cast("dict[str, Any]", json.loads(edited_bytes.decode("utf-8-sig"))))
-            if not isinstance(parsed, RunModel):
-                raise ProjectError("save-run requires an S1 complete run document")
-            saved = save_project_as(Path(args[1]), Path(args[3]), effective_run=parsed)
-            print(json.dumps({"status": "written", "project_id": saved.identifier, "path": args[3]}, sort_keys=True))
+            _cli_save_run(args[1], args[2], args[3])
             return 0
         if len(args) == 2 and args[0] in {"validate", "inspect"}:
             loaded = load_project(Path(args[1]))
@@ -827,37 +908,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0
         if len(args) >= 5 and args[0] == "import-rorb":
-            _, identifier, profile, par, *remaining = args
-            selected_profile = _validated_profile(profile)
-            overrides: dict[str, Path] = {}
-            if len(remaining) == 3 and not any(item.startswith("--") for item in remaining):
-                # Existing source's actual three-file command remains valid.
-                catg, stm, destination = remaining
-                overrides = {"catchment": Path(catg), "storm": Path(stm)}
-            else:
-                destination, *options = remaining
-                if len(options) % 2:
-                    raise ProjectError("Import flags require value pairs")
-                for flag, path_value in zip(options[::2], options[1::2], strict=True):
-                    key = {"--catchment": "catchment", "--storm": "storm", "--base": "base_directory"}.get(flag)
-                    if key is None or key in overrides:
-                        raise ProjectError(f"Unknown or repeated PAR import flag: {flag}")
-                    overrides[key] = Path(path_value)
-            target = Path(destination)
-            project = import_rorb_project(
-                target,
-                identifier=identifier,
-                rainfall_profile=selected_profile,
-                parameters=Path(par),
-                **overrides,
-            )
-            write_project(target, project)
-            print(
-                json.dumps(
-                    {"status": "written", "path": str(target), "source_bindings": len(project.source_bindings)},
-                    sort_keys=True,
-                )
-            )
+            _cli_import_rorb(args)
             return 0
     except (ProjectError, OSError, TypeError, ValueError, UnicodeError) as exc:
         print(f"Project validation failed: {exc}", file=sys.stderr)

@@ -41,27 +41,27 @@ from runoff_routing.rorb_par import inspect_par_bytes, read_par_file
 def _inputs(
     root: Path,
     *,
-    cat_token: str = "catchment.catg",
-    storm_token: str = "storm.stm",
+    cat_reference: str = "catchment.catg",
+    storm_reference: str = "storm.stm",
     cat_name: str = "catchment.catg",
     storm_name: str = "storm.stm",
 ) -> tuple[Path, Path, Path, RunModel]:
     root.mkdir(parents=True, exist_ok=True)
     params = ParameterSet(
-        cat_token, storm_token, True, 3, 1, 1, 1,
-        (RoutingValue(1, Decimal("12"), Decimal("0.8")),),
-        (LossValue(1, 1, Decimal("20"), Decimal("2")),),
+        cat_reference, storm_reference, True, 3, 1, 1, 1,
+        (RoutingValue(1, Decimal(12), Decimal("0.8")),),
+        (LossValue(1, 1, Decimal(20), Decimal(2)),),
     )
     catchment = CatchmentModel(
-        "Synthetic model", (SubArea("area_1", Decimal("2"), "A"),),
-        (Reach("reach_1", Decimal("3"), "Reach 1 Sub-area A"),),
+        "Synthetic model", (SubArea("area_1", Decimal(2), "A"),),
+        (Reach("reach_1", Decimal(3), "Reach 1 Sub-area A"),),
         (ControlStep(1, "area_1", "reach_1", label="Reach 1 Sub-area A"),
          ControlStep(7, print_id="print_1", label="Outlet")),
         (PrintLocation("print_1", "Outlet"),),
     )
     storm = StormModel(
         "Synthetic storm", Decimal("0.5"), 10, 0,
-        (Decimal("25"), Decimal("75")), (Decimal("10"),), ("area_1",),
+        (Decimal(25), Decimal(75)), (Decimal(10),), ("area_1",),
     )
     run = RunModel(params, catchment, storm)
     par_path = root / "settings.par"
@@ -143,7 +143,7 @@ def test_par_only_stages_and_reopens_without_original_source_tree(tmp_path: Path
 
 
 def test_missing_reference_exposes_declared_token_and_override(tmp_path: Path) -> None:
-    par, cat, stm, run = _inputs(tmp_path / "legacy", cat_token="obsolete.catg")
+    par, cat, _, run = _inputs(tmp_path / "legacy", cat_reference="obsolete.catg")
     target = tmp_path / "project.json"
     with pytest.raises(ProjectError, match=r"catchment.*obsolete.catg.*--catchment"):
         _import(target, par)
@@ -160,8 +160,8 @@ def test_missing_reference_exposes_declared_token_and_override(tmp_path: Path) -
 
 def test_spaced_quoted_and_windows_relative_path_tokens(tmp_path: Path) -> None:
     par, _, _, run = _inputs(
-        tmp_path / "original", cat_token=r'"nested\my catchment.catg"',
-        cat_name="nested/my catchment.catg", storm_token='"storm.stm"',
+        tmp_path / "original", cat_reference=r'"nested\my catchment.catg"',
+        cat_name="nested/my catchment.catg", storm_reference='"storm.stm"',
     )
     target = tmp_path / "project.json"
     _import(target, par)
@@ -175,19 +175,19 @@ def test_spaced_quoted_and_windows_relative_path_tokens(tmp_path: Path) -> None:
     r"C:relative.catg",
 ])
 def test_foreign_drive_and_unc_do_not_fall_back_to_basename(tmp_path: Path, token: str) -> None:
-    par, _, _, _ = _inputs(tmp_path / "input", cat_token=token)
+    par, _, _, _ = _inputs(tmp_path / "input", cat_reference=token)
     target = tmp_path / "project.json"
-    with pytest.raises(ProjectError, match="override|--catchment"):
+    with pytest.raises(ProjectError, match=r"override|--catchment"):
         _import(target, par)
     assert not (tmp_path / "sources").exists()
 
 
 def test_explicit_reference_base_does_not_use_cwd(tmp_path: Path) -> None:
-    par, cat, _, _ = _inputs(tmp_path / "a", cat_token="other/catchment.catg")
+    par, cat, _, _ = _inputs(tmp_path / "a", cat_reference="other/catchment.catg")
     supplied = tmp_path / "new base"
     (supplied / "other").mkdir(parents=True)
     (supplied / "other" / "catchment.catg").write_bytes(cat.read_bytes())
-    (_, _, stm, _) = _inputs(supplied, cat_token="other/catchment.catg")
+    (_, _, stm, _) = _inputs(supplied, cat_reference="other/catchment.catg")
     (supplied / "storm.stm").write_bytes(stm.read_bytes())
     target = tmp_path / "project.json"
     _import(target, par, base_directory=supplied)
@@ -223,7 +223,7 @@ def test_edit_save_relocate_reopen_retains_original_bytes_and_edited_settings(tm
 
 
 def test_cli_import_inspect_save_and_no_overwrite(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    par, cat, _, run = _inputs(tmp_path / "inputs", cat_token="stale.catg")
+    par, cat, _, run = _inputs(tmp_path / "inputs", cat_reference="stale.catg")
     target = tmp_path / "first.json"
     assert main(["inspect-par", str(par)]) == 0
     assert json.loads(capsys.readouterr().out)["references"]["catchment"] == "stale.catg"
@@ -233,7 +233,7 @@ def test_cli_import_inspect_save_and_no_overwrite(tmp_path: Path, capsys: pytest
     ]) == 0
     capsys.readouterr()
     edited = replace(
-        run, parameters=replace(run.parameters, routing=(RoutingValue(1, Decimal("15"), Decimal("0.8")),))
+        run, parameters=replace(run.parameters, routing=(RoutingValue(1, Decimal(15), Decimal("0.8")),))
     )
     edited_file = tmp_path / "effective.json"
     edited_file.write_text(to_json(edited), encoding="utf-8")

@@ -29,23 +29,37 @@ def _reference_path(
     if len(value) >= 2 and value[0] in {"'", '"'} and value[-1] == value[0]:
         value = value[1:-1]
     elif value.startswith(("'", '"')) or value.endswith(("'", '"')):
-        raise ProjectError(f"Unbalanced quotes in {role} reference {token!r}; use {override_flag}")
+        message = f"Unbalanced quotes in {role} reference {token!r}; use {override_flag}"
+        raise ProjectError(message)
     if not value or any(ord(char) < 32 for char in value):
-        raise ProjectError(f"Invalid {role} reference {token!r}; use {override_flag}")
+        message = f"Invalid {role} reference {token!r}; use {override_flag}"
+        raise ProjectError(message)
     win = PureWindowsPath(value)
     if win.drive:
         if os.name != "nt":
-            raise ProjectError(
+            message = (
                 f"{role} reference {token!r} is an unresolved foreign Windows drive/UNC path; "
                 f"use {override_flag} with a local file"
             )
+            raise ProjectError(message)
         if not win.is_absolute():
-            raise ProjectError(f"Drive-relative {role} reference {token!r} is ambiguous; use {override_flag}")
+            message = f"Drive-relative {role} reference {token!r} is ambiguous; use {override_flag}"
+            raise ProjectError(message)
     elif value.startswith("\\") and os.name != "nt":
         # A single leading Windows-root slash has no portable drive identity.
-        raise ProjectError(f"Windows-rooted {role} reference {token!r} is ambiguous; use {override_flag}")
+        message = f"Windows-rooted {role} reference {token!r} is ambiguous; use {override_flag}"
+        raise ProjectError(message)
     local = Path(value if os.name == "nt" else value.replace("\\", "/"))
     return local.absolute() if local.is_absolute() else (base / local).absolute()
+
+
+
+def _ensure_stage_within_project(stage_dir: Path, root: Path) -> None:
+    from .project_json import ProjectError  # noqa: PLC0415 -- filesystem import adapter avoids cycle
+
+    if not stage_dir.resolve(strict=True).is_relative_to(root.resolve(strict=True)):
+        message = f"Staged source directory escapes project destination: {stage_dir}"
+        raise ProjectError(message)
 
 
 def import_from_par(
@@ -72,7 +86,8 @@ def import_from_par(
     destination = target.absolute()
     root = destination.parent
     if not root.is_dir():
-        raise ProjectError(f"Project destination directory does not exist: {root}")
+        message = f"Project destination directory does not exist: {root}"
+        raise ProjectError(message)
     if destination.exists() or destination.is_symlink():
         raise FileExistsError(destination)
     par_path = parameters.absolute()
@@ -80,9 +95,10 @@ def import_from_par(
     inspection = inspect_par_bytes(par_data, source_path=par_path)
     if inspection.status != "parsed" or inspection.parameters is None:
         diagnostic = inspection.diagnostics[0]
-        raise ProjectError(
+        message = (
             f"Cannot import parameters: {inspection.kind} ({diagnostic.code}): {diagnostic.message}"
         )
+        raise ProjectError(message)
     try:
         parameter_model = parse_cmd_par(par_data).model
     except FormatProblem as exc:
@@ -90,7 +106,8 @@ def import_from_par(
 
     base = par_path.parent if base_directory is None else base_directory.absolute()
     if not base.is_dir():
-        raise ProjectError(f"PAR reference base directory does not exist: {base}")
+        message = f"PAR reference base directory does not exist: {base}"
+        raise ProjectError(message)
     chosen: list[tuple[str, str, str, str, Path, bytes]] = [
         ("parameters", str(parameters), str(parameters), "explicit", par_path, par_data)
     ]
@@ -103,22 +120,25 @@ def import_from_par(
         flag = f"--{role}"
         path = _reference_path(selected, role=role, base=base, override_flag=flag)
         if not path.is_file():
-            raise ProjectError(
+            message = (
                 f"Missing {role} input: declared {declared!r}, selected {selected!r}. "
                 f"Provide {flag} FILE to override the PAR reference."
             )
+            raise ProjectError(message)
         try:
             raw = _read_bounded(path)
         except ProjectError as exc:
-            raise ProjectError(
+            message = (
                 f"Cannot read {role} input: declared {declared!r}, selected {selected!r}; "
                 f"use {flag} FILE: {exc}"
             ) from exc
         supported_suffixes = (".catg", ".cat") if role == "catchment" else (".stm",)
         if path.suffix.lower() not in supported_suffixes:
-            raise ProjectError(
+            message = (
                 f"Unsupported {role} input type {path.suffix!r}: {selected!r}; use {flag} FILE"
             )
+            raise ProjectError(message)
+            raise ProjectError(message)
         chosen.append((role, declared, selected, origin, path, raw))
     try:
         RunModel(parameter_model, parse_catg(chosen[1][-1]).model, parse_design_stm(chosen[2][-1]).model)
@@ -145,11 +165,11 @@ def import_from_par(
 
     parent = staged_dir.parent
     if parent.is_symlink() or staged_dir.exists() or staged_dir.is_symlink():
-        raise ProjectError(f"Unsafe or occupied staged source directory: {staged_dir}")
+        message = f"Unsafe or occupied staged source directory: {staged_dir}"
+        raise ProjectError(message)
     try:
         staged_dir.mkdir(parents=True)
-        if not staged_dir.resolve(strict=True).is_relative_to(root.resolve(strict=True)):
-            raise ProjectError(f"Staged source directory escapes project destination: {staged_dir}")
+        _ensure_stage_within_project(staged_dir, root)
         for _, _, _, _, _, raw, pinned in records:
             with (root / pinned.path).open("xb") as output:
                 output.write(raw)

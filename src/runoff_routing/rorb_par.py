@@ -5,8 +5,8 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from decimal import Decimal
+from pathlib import Path
 from typing import Literal
 
 from .rorb_documents import (
@@ -112,7 +112,7 @@ def _parse(cursor: _Cursor) -> ParameterModel:
 
 
 
-def _recognised_rorbwin_saved_par(lines: tuple[str, ...]) -> bool:
+def _recognised_rorbwin_saved_par(lines: tuple[str, ...]) -> bool:  # noqa: C901 -- independent saved-layout signatures
     """Narrow 6.52-family saved-PAR signature from four retained native GUI captures.
 
     Original saved files have a directory, run-mode integer, blank separator,
