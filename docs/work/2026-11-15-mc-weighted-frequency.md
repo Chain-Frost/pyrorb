@@ -27,3 +27,12 @@ provenance, unmodelled tails and unchanged project method.
 Exact source/wheel CI and a new independent #150 acceptance review
 remain required on the corrected head. No native or engineering claims.
 
+**Independent code-review correction:** Codex review of #181 at `5c7c6c5`
+identified valid Python integers greater than 2**53 losing exact peak
+group mass during float reporting. The follow-up explicitly rejects those
+integer-valued peaks before grouping and tests the exact binary64
+integer boundary and an enormous integer. This is a fail-closed input
+boundary for a float-valued reporting API, not a change to solver
+precision or hydrological acceptance. A fresh independent review of
+the correction and exact-head CI is required.
+

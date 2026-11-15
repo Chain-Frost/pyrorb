@@ -148,6 +148,11 @@ class PeakRecord:
             _identifier(self.event_id, "event_id")
         if self.effective_input_id is not None:
             _identifier(self.effective_input_id, "effective_input_id")
+        # Reporting groups are binary64 floats. A larger Python integer can
+        # round to a DIFFERENT attained peak and detach its probability mass
+        # from the exact inverse. Reject it rather than mis-select a quantile.
+        if isinstance(self.peak_m3_s, int) and abs(self.peak_m3_s) > (1 << 53):
+            _fail("Unrepresentable integer peak exceeds the exact binary64 range")
         if self.status == "valid":
             if (
                 self.event_id is None

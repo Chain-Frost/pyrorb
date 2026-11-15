@@ -72,6 +72,8 @@ extrapolated. The special complete-population final-step fallback is limited
 to original mass sums within the previously documented 1e-12 input roundoff,
 and returns only the last *attained* peak.
 
+A subsequent independent PR review identified that accepted Python integer peaks above 2**53 can round when converted to binary64 `PeakGroup.peak_m3_s`, losing their original group key and its probability mass. The public API now **rejects** integer peaks beyond the exactly representable binary64 integer range instead of silently selecting a different quantile. Float peaks remain valid; the response contract already reports binary64 values. This explicit rejection also avoids `math.isfinite` overflow for enormous integers.
+
 New independent literal-rank regression cases cover 10/20 equal samples,
 adjacent floating-point AEP values, unequal masses, and incomplete tail bounds.
 This corrects software arithmetic, not native RORBwin or engineering acceptance.

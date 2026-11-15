@@ -277,6 +277,16 @@ def test_missing_replay_identity_or_invalid_success_status_rejected() -> None:
         _record(s, "h", "s", None, status=cast(PeakStatus, "computed_unvalidated"))
 
 
+def test_unrepresentable_integer_peak_rejected_before_quantile_grouping() -> None:
+    scope = _scope()
+    accepted = _record(scope, "h", "exact-boundary", 1 << 53, weight=1 / 3)
+    assert accepted.peak_m3_s == float(1 << 53)
+    with pytest.raises(FrequencyInputError, match="Unrepresentable integer peak"):
+        _record(scope, "h", "unrepresentable", (1 << 53) + 1, weight=1 / 3)
+    with pytest.raises(FrequencyInputError, match="Unrepresentable integer peak"):
+        _record(scope, "h", "huge", 10**400, weight=1 / 3)
+
+
 def test_multiple_physical_sites_and_durations_do_not_pool() -> None:
     s_a = _scope(site="downstream", duration=60)
     s_b = _scope(site="upstream", duration=60)
