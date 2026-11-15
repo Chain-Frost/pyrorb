@@ -22,7 +22,8 @@ from .arr_patterns import PatternSet
 from .arr_storm import RawHyetograph
 from .project_batch import ProjectEvent
 from .project_json import SourceFile
-from .rorb_model import RunModel, to_json as model_to_json
+from .rorb_model import RunModel
+from .rorb_model import to_json as model_to_json
 
 EFFECTIVE_FORMAT = "python-runoff-routing-mc-effective-events"
 EFFECTIVE_VERSION = 3
