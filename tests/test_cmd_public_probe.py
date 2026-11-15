@@ -305,7 +305,6 @@ def test_required_case_selection_rejects_unknown_or_duplicate_without_computing(
     assert "--require-case must name distinct registered CMD-eligible" in capsys.readouterr().err
 
 
-
 @pytest.mark.parametrize(
     "case_id",
     ["H2-four-source-nested-odd-rain", "N4-six-source-serial-nested", "pyromb-novel-storm"],
