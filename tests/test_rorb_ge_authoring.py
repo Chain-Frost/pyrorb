@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import subprocess
 from dataclasses import replace
 from decimal import Decimal
@@ -374,3 +375,91 @@ def test_optional_gdal_is_not_imported_for_pure_writer(monkeypatch: pytest.Monke
     assert parse_catg(serialize_catg_with_drawing(_model(), _drawing())).model == _model()
     with pytest.raises(RuntimeError, match="Simulated missing GDAL"):
         drawing_from_layers(_model(), *_layers(), projected_crs="EPSG:28350")
+
+
+def _modern_model_and_drawing() -> tuple[CatchmentModel, GeDrawing]:
+    """Ordinary PR16 control 2/FI case; drawing coordinates never determine km."""
+    model = CatchmentModel(
+        "MODERN CODE TWO",
+        (
+            SubArea("area_1", Decimal("1.25"), impervious_fraction=Decimal("0.25")),
+            SubArea("area_2", Decimal("2.0"), impervious_fraction=Decimal("0.5")),
+        ),
+        (Reach("reach_1", Decimal("5.000")), Reach("reach_2", Decimal("2.500"))),
+        (
+            ControlStep(1, "area_1", "reach_1"),
+            ControlStep(2, "area_2", "reach_2"),
+            ControlStep(7, print_id="print_1"),
+        ),
+        (PrintLocation("print_1", "Outlet"),),
+        reach_mode="explicit_reach_types",
+    )
+    drawing = GeDrawing(
+        (
+            GeNode("A", 0, 0, "area_1"),
+            GeNode("B", 5000, 0, "area_2"),
+            GeNode("OUT", 7500, 0, outlet=True),
+        ),
+        (
+            GeReach("reach_1", ((0, 0), (5000, 0))),
+            GeReach("reach_2", ((5000, 0), (7500, 0))),
+        ),
+        "EPSG:28350",
+        "m",
+    )
+    return model, drawing
+
+
+def test_pyromb_modern_ordered_code_two_fi_and_physical_lengths() -> None:
+    model, drawing = _modern_model_and_drawing()
+    result = serialize_catg_with_drawing(model, drawing)
+    parsed = parse_catg(result)
+    assert parsed.dialect == "rorb_ge_645"
+    assert parsed.model == model
+    assert [step.code for step in parsed.model.controls] == [1, 2, 7]
+    assert [reach.length_km for reach in parsed.model.reaches] == [Decimal("5.000"), Decimal("2.500")]
+    assert [area.impervious_fraction for area in parsed.model.subareas] == [Decimal("0.25"), Decimal("0.5")]
+    assert b"0\n1,1,5.000,-99\n2,1,2.500,-99\n7\nOutlet\n0\n" in result
+    # With 7500 m total graphical extent, the display normalizer will
+    # rescale XY into ~90 drawing units; it cannot replace 5/2.5 km.
+    assert b"C RORB_GE 6.45" in result
+
+
+def test_pyromb_writer_rejects_unrepresentable_reach_precision() -> None:
+    model, drawing = _modern_model_and_drawing()
+    short = replace(model.reaches[1], length_km=Decimal("2.5001"))
+    edited = replace(model, reaches=(model.reaches[0], short))
+    with pytest.raises(ValueError, match="3-decimal"):
+        serialize_catg_with_drawing(edited, drawing)
+
+
+def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatch) -> None:
+    model = _model()
+    original = parse_catg(
+        b"Legacy\nC RORB_GE 002\nC #NODES\nC 0\nC #REACHES\nC 0\n"
+        b"C #STORAGES\nC 0\nC #INFLOW/OUTFLOW\nC 0\nC END RORB_GE\n"
+        b"1\n1, 2.5, -99, Reach Sub-area A\n7\nOutlet\n0\n"
+        b"C Sub Area Data\n1, -99\nC Impervious Fraction Data\n0, -99\n"
+    )
+    assert original.model.subareas[0].label == "A"
+    real_import = importlib.import_module
+
+    def no_writer(name: str, package: str | None = None) -> object:
+        if name == "pyromb.models.rorb":
+            message = "optional PyRomb unavailable"
+            raise ImportError(message)
+        return real_import(name, package)
+
+    monkeypatch.setattr(importlib, "import_module", no_writer)
+    assert parse_catg(original.source.data).model == original.model
+    with pytest.raises(ValueError, match="optional dependency") as caught:
+        serialize_catg(model)
+    assert "install .[catg]" in str(caught.value)
+
+
+def test_graphical_node_name_overwidth_fails_without_truncation() -> None:
+    model, drawing = _modern_model_and_drawing()
+    explicit_name = replace(drawing.nodes[-1], display_label="Outlet")
+    edited = replace(drawing, nodes=(*drawing.nodes[:-1], explicit_name))
+    with pytest.raises(ValueError, match="Graphical node name"):
+        serialize_catg_with_drawing(model, edited)

@@ -7,8 +7,10 @@ operate only on validated typed models and never promise native compatibility.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import math
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -648,14 +650,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
-    basis = PatternBasis.RELATIVE_WEIGHTS if relative_weights else PatternBasis.PERCENT_OF_DEPTH
+    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
     preburst_bins = 0
     preburst_spans: tuple[SourceSpan, ...] = ()
     if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
         # Source annotations must independently prove the split. A nonunit
         # pattern without its original pre-burst+burst identity is rejected.
         preburst_bins, preburst_spans = _original_combined_preburst(lines, dt, percentages, depths)
-        basis = PatternBasis.COMBINED_PREBURST_PERCENT
+        basis = "combined_preburst_percent"
     try:
         model = StormModel(
             lines[0].strip(),
@@ -754,73 +756,106 @@ def serialize_cmd_par(model: ParameterSet) -> bytes:
     return ("\n".join([*lines, "# END", ""])).encode("utf-8")
 
 
-def serialize_catg(model: CatchmentModel) -> bytes:
-    """Canonical computation vector with an *empty* drawing scaffold, not a native-verified redraw."""
+class CatgWriterLossError(ValueError):
+    """The PyRomb representation would not round-trip all typed CATG semantics."""
+
+
+# The writer's public ordered-record API is deliberately loaded only on export.
+# Ordinary source parsing and routing never import PyRomb or its GIS dependencies.
+_GraphNode = tuple[int, str, float, float, int, bool, bool, Decimal, Decimal]
+_GraphReach = tuple[int, str, int, int, float, float, Decimal]
+
+
+def render_catg_with_graphics(
+    model: CatchmentModel,
+    *,
+    node_records: tuple[_GraphNode, ...] = (),
+    reach_records: tuple[_GraphReach, ...] = (),
+) -> bytes:
+    """Adapt validated ordered model records to the pinned PyRomb renderer."""
     model.__post_init__()
     _canonical_ids(model)
-    if model.reach_mode != "implicit_natural" or any(area.impervious_fraction != 0 for area in model.subareas):
-        message = "No verified canonical CATG writer for explicit reach types and impervious tables"
-        raise ValueError(message)
-    lines = [
-        _safe_label(model.title),
-        "C RORB_GE 002",
-        "C #NODES",
-        "C 0",
-        "C #REACHES",
-        "C 0",
-        "C #STORAGES",
-        "C 0",
-        "C #INFLOW/OUTFLOW",
-        "C 0",
-        "C END RORB_GE",
-        "1",
-    ]
-    reaches = {reach.identifier: reach for reach in model.reaches}
-    print_locations = {point.identifier: point.label for point in model.print_locations}
-    for step in model.controls:
-        label = _safe_label(step.label)
-        if step.code in (1, 5):
-            if step.reach_id is None:
-                message = "Missing reach identity"
-                raise ValueError(message)
-            lines.append(f"{step.code}, {reaches[step.reach_id].length_km}, -99, {label}")
-        elif step.code == 7:
-            if step.print_id is None:
-                message = "Missing code 7 print location identity"
-                raise ValueError(message)
-            physical_location = _safe_label(print_locations[step.print_id])
-            if physical_location == "0":
-                message = "Native print location cannot be the zero control terminator"
-                raise ValueError(message)
-            # Preserve the optional inline annotation independently of the
-            # subsequent physical record interpreted as the native print site.
-            control_record = f"7, {label}" if label else "7"
-            lines.extend((control_record, physical_location))
-        else:
-            lines.append(f"{step.code}, {label}")
-    lines.extend(
-        [
-            "0",
-            "C Sub Area Data",
-            ", ".join([*(str(item.area_km2) for item in model.subareas), "-99"]),
-            "C Impervious Fraction Data",
-            "0, -99",
-            "",
-        ]
+    try:
+        writer = importlib.import_module("pyromb.models.rorb")
+    except ImportError as exc:
+        message = "PyRomb CATG writing requires the pinned optional dependency: install .[catg]"
+        raise ValueError(message) from exc
+    control_factory = cast("Callable[[int, Decimal | None, str, str], object]", writer.OrderedControl)
+    node_factory = cast("Callable[..., object]", writer.OrderedNode)
+    reach_factory = cast("Callable[..., object]", writer.OrderedReach)
+    render = cast("Callable[..., str]", writer.render_ordered_catg)
+    reaches = {reach.identifier: reach.length_km for reach in model.reaches}
+    locations = {point.identifier: point.label for point in model.print_locations}
+    ordered = tuple(
+        control_factory(
+            int(step.code),
+            reaches[step.reach_id] if step.reach_id is not None else None,
+            step.label,
+            locations[step.print_id] if step.print_id is not None else "",
+        )
+        for step in model.controls
     )
-    return "\n".join(lines).encode("utf-8")
+    nodes = tuple(node_factory(*record) for record in node_records)
+    graphics_reaches = tuple(reach_factory(*record) for record in reach_records)
+    output = render(
+        model.title,
+        ordered,
+        tuple(area.area_km2 for area in model.subareas),
+        tuple(area.impervious_fraction for area in model.subareas),
+        explicit_reach_types=model.reach_mode == "explicit_reach_types",
+        nodes=nodes,
+        reaches=graphics_reaches,
+    ).encode("utf-8")
+    try:
+        restored = parse_catg(output).model
+    except RorbFormatError as exc:
+        message = f"PyRomb CATG cannot be reparsed as a supported model ({exc.status}): {exc}"
+        raise ValueError(message) from exc
+    if restored != model:
+        message = "PyRomb CATG export would lose source order, labels, physical lengths or output intent"
+        raise CatgWriterLossError(message)
+    return output
+
+
+def serialize_catg(model: CatchmentModel) -> bytes:
+    """Emit a checked CATG through PyRomb; use original_bytes() for unchanged sources.
+
+    Explicit-reach RORB_GE 6.45 needs validated graphical data supplied through
+    serialize_catg_with_drawing(). No local CATG formatter or fallback exists.
+    """
+    return render_catg_with_graphics(model)
 
 
 def serialize_design_stm(model: StormModel) -> bytes:
-    """Explicit DESIGN pattern; percentages/depths remain Decimal tokens."""
+    """Export supported DESIGN records, keeping generator history distinct."""
     model.__post_init__()
     _canonical_ids(model)
+    annotations: list[str] = []
     if model.pattern_basis == "combined_preburst_percent":
-        message = "A combined pre-burst storm's original generator metadata has no verified canonical writer"
-        raise ValueError(message)
+        if len(set(model.depths_mm)) != 1:
+            message = "Combined pre-burst DESIGN export currently requires uniform source depths"
+            raise ValueError(message)
+        total = sum(model.percentages, Decimal(0))
+        prefix = sum(model.percentages[: model.preburst_bins], Decimal(0))
+        suffix = sum(model.percentages[model.preburst_bins :], Decimal(0))
+        duration = model.timestep_hours * (len(model.percentages) - model.preburst_bins)
+        depth = model.depths_mm[0]
+        preburst_depth, burst_depth = depth * prefix / total, depth * suffix / total
+        if duration <= 0 or preburst_depth <= 0 or burst_depth <= 0:
+            message = "Combined pre-burst annotation quantities must be positive"
+            raise ValueError(message)
+        # Required by the source reader for a nonunit 100%-burst-plus-preburst
+        # pattern. These are new calculations, not copied generator provenance.
+        annotations = [
+            "C Export annotation: derived from typed combined storm; not original generator metadata",
+            f"C Storm duration: {duration} hours",
+            f"C ARF*BurDepth(mm): {burst_depth}",
+            f"C Pre-burst depth(mm): {preburst_depth}",
+        ]
     lines = [
         _safe_label(model.title),
         "DESIGN",
+        *annotations,
         f"{model.timestep_hours},{model.calculation_increments},1,1,1,-99",
         f"{model.start_increment},{len(model.percentages)}",
         "Temporal weights" if model.pattern_basis == "relative_weights" else "Temporal pattern (% of depth)",
@@ -829,7 +864,11 @@ def serialize_design_stm(model: StormModel) -> bytes:
         ", ".join([*(str(item) for item in model.depths_mm), "-99"]),
         "",
     ]
-    return "\n".join(lines).encode("utf-8")
+    result = "\n".join(lines).encode("utf-8")
+    if parse_design_stm(result).model != model:
+        message = "DESIGN export would alter the typed storm model"
+        raise ValueError(message)
+    return result
 
 
 def write_new(path: Path, data: bytes) -> None:

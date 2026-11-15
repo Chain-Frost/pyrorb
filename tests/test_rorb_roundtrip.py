@@ -236,8 +236,7 @@ def test_s2_boundary_converts_once_and_rejects_unverified_losses() -> None:
     assert adapter.controls == ((1, 5.0), (3, 0.0), (1, 4.0), (4, 0.0), (5, 2.5), (7, 0.0))
     assert adapter.areas_km2 == (30.0, 20.0)
     assert adapter.kc == 12.0
-    supported_mode_two_loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
-    unsupported = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(supported_mode_two_loss,)))
+    unsupported = replace(run, parameters=replace(run.parameters, loss_model=2))
     with pytest.raises(ValueError, match="IL/CL"):
         to_s2_payload(unsupported)
 
@@ -369,7 +368,7 @@ def test_original_pyromb_645_mode_zero_preserves_code2_impervious_and_graphical_
     assert from_json(to_json(model)) == model
     assert parse_bytes(original, ".cat").model == model
     assert parse_bytes(original, ".catg").model == model
-    with pytest.raises(ValueError, match="No verified canonical CATG writer"):
+    with pytest.raises(ValueError, match="requires explicit ordered graphical"):
         serialize_catg(model)
 
 
@@ -666,8 +665,10 @@ def test_original_102p10_is_reconciled_preburst_plus_full_burst_not_arbitrary_no
         assert original_bytes(parsed) == source
         assert len([field for field in parsed.source_map if field.field.startswith("preburst_")]) == 3
         assert from_json(to_json(parsed.model)) == parsed.model
-        with pytest.raises(ValueError, match="no verified canonical writer"):
-            serialize_design_stm(parsed.model)
+        authored = serialize_design_stm(parsed.model)
+        assert parse_design_stm(authored).model == parsed.model
+        assert b"C Export annotation: derived from typed combined storm" in authored
+        assert authored != source
     assert len(storms) == 1
 
 
