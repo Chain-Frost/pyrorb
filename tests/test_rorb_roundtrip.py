@@ -237,9 +237,7 @@ def test_s2_boundary_converts_once_and_rejects_unverified_losses() -> None:
     assert adapter.areas_km2 == (30.0, 20.0)
     assert adapter.kc == 12.0
     supported_mode_two_loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
-    unsupported = replace(
-        run, parameters=replace(run.parameters, loss_model=2, losses=(supported_mode_two_loss,))
-    )
+    unsupported = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(supported_mode_two_loss,)))
     with pytest.raises(ValueError, match="IL/CL"):
         to_s2_payload(unsupported)
 

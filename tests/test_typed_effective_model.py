@@ -96,9 +96,7 @@ def test_loss_policies_discriminate_units_and_immutable_edits() -> None:
         losses=(LossValue(1, 1, Decimal(4), Decimal("0.5")),),
     )
     assert isinstance(mode_two.loss_policies[0], InitialRunoffCoefficientLoss)
-    changed = mode_two.with_loss_policies(
-        (InitialRunoffCoefficientLoss(1, 1, Decimal(5), Decimal("0.75")),)
-    )
+    changed = mode_two.with_loss_policies((InitialRunoffCoefficientLoss(1, 1, Decimal(5), Decimal("0.75")),))
     assert changed.losses[0].continuing == Decimal("0.75")
     with pytest.raises(ValueError, match="incompatible"):
         mode_two.with_loss_policies((InitialContinuingLoss(1, 1, Decimal(5), Decimal(1)),))

@@ -428,9 +428,9 @@ class StormModel:
     pluviograph_count: int = 1
     isa_count: int = 1
     burst_count: int = 1
-    pattern_basis: PatternBasis | Literal[
-        "percent_of_depth", "relative_weights", "combined_preburst_percent"
-    ] = PatternBasis.PERCENT_OF_DEPTH
+    pattern_basis: PatternBasis | Literal["percent_of_depth", "relative_weights", "combined_preburst_percent"] = (
+        PatternBasis.PERCENT_OF_DEPTH
+    )
     preburst_bins: int = 0
 
     def __post_init__(self) -> None:
