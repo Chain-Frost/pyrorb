@@ -259,9 +259,7 @@ def _derive_routing(original: ParameterSet, raw: object) -> ParameterSet:
     return restored
 
 
-def _validated_override[T](
-    original: T, raw: object, converter: Callable[[T, object], T], code: str
-) -> T:
+def _validated_override[T](original: T, raw: object, converter: Callable[[T, object], T], code: str) -> T:
     """Retain typed per-event failure codes without obscuring unsupported fields."""
     try:
         return converter(original, raw)

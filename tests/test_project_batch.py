@@ -411,16 +411,16 @@ def test_five_authentic_cmd_seed_cases_and_four_event_isolation_with_cli(tmp_pat
     root = Path(__file__).parent / "fixtures" / "regression-v1"
     baseline_paths = _registered_original_files(root, "review-design-baseline")
     tp1_paths = _registered_original_files(root, "review-ensemble-tp1")
-    baseline = read_run_files(
-        baseline_paths[".par"], baseline_paths[".catg"], baseline_paths[".stm"]
-    ).model
+    baseline = read_run_files(baseline_paths[".par"], baseline_paths[".catg"], baseline_paths[".stm"]).model
     tp1 = read_run_files(tp1_paths[".par"], tp1_paths[".catg"], tp1_paths[".stm"]).model
     assert baseline.catchment == tp1.catchment
     project = tmp_path / "baseline.json"
     write_project(
         project,
         Project(
-            "cmd_original_seed", "legacy-rorb", EmbeddedRun(baseline),
+            "cmd_original_seed",
+            "legacy-rorb",
+            EmbeddedRun(baseline),
             engine=EngineSelection.for_engine("python-cmd"),
         ),
     )
@@ -444,7 +444,10 @@ def test_five_authentic_cmd_seed_cases_and_four_event_isolation_with_cli(tmp_pat
     )
     report = run_project_events(project, requests)
     assert [item.status for item in report.outcomes] == [
-        "computed_unvalidated", "computed_unvalidated", "invalid_input", "computed_unvalidated",
+        "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
     ]
     first, second, invalid, repeated = report.outcomes
     assert invalid.hydrographs == ()
@@ -475,11 +478,13 @@ def test_five_authentic_cmd_seed_cases_and_four_event_isolation_with_cli(tmp_pat
     ]
     events_file = tmp_path / "events.json"
     events_file.write_text(
-        json.dumps({
-            "format": "python-runoff-routing-explicit-events",
-            "schema_version": 1,
-            "events": serialized_events,
-        }),
+        json.dumps(
+            {
+                "format": "python-runoff-routing-explicit-events",
+                "schema_version": 1,
+                "events": serialized_events,
+            }
+        ),
         encoding="utf-8",
     )
     output = tmp_path / "cmd-seed"
@@ -505,7 +510,9 @@ def test_unsupported_storage_event_is_explicit_and_does_not_change_adjacent_resu
         selection=EngineSelection.for_engine("python-cmd"),
     )
     assert [outcome.status for outcome in report.outcomes] == [
-        "computed_unvalidated", "unsupported_feature", "computed_unvalidated",
+        "computed_unvalidated",
+        "unsupported_feature",
+        "computed_unvalidated",
     ]
     assert report.outcomes[1].diagnostics[0].code == "event_storages"
     assert report.outcomes[1].hydrographs == ()

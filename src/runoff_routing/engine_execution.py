@@ -87,9 +87,7 @@ def attribute_engine_outcome(base: EngineOutcome, wheel_artifact: Path | None) -
     return replace(attributed, verified_wheel_sha256=wheel_hash)
 
 
-def _python(
-    loaded: LoadedProject, base: EngineOutcome, *, prepared: PreparedCatchment | None = None
-) -> EngineOutcome:
+def _python(loaded: LoadedProject, base: EngineOutcome, *, prepared: PreparedCatchment | None = None) -> EngineOutcome:
     if loaded.project.rainfall_profile == "arr-2026v1":
         return _failure(
             base,
