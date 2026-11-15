@@ -10,14 +10,14 @@ import hashlib
 import json
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import Any, cast
 
 from .engine_types import EngineHydrograph, EngineStatus
-from .project_json import LegacyRunFiles, LoadedProject
+from .project_json import LegacyRunFiles, LoadedProject, SourceFile, load_project, write_project
 from .project_native_review import (
     _check_capture_settings,  # pyright: ignore[reportPrivateUsage] -- reuse S5 evidence contract
 )
@@ -149,6 +149,8 @@ class NativeObservation:
     observed_version: str
     output_sha256: str
     manifest_path: str
+    prepared_package_manifest: str | None = None
+    prepared_package_sha256: str | None = None
 
 
 def _guard_native_effective_sources(loaded: LoadedProject) -> None:
@@ -392,3 +394,60 @@ def run_native_cmd(loaded: LoadedProject, config: NativeConfiguration, project_p
         message = "Opt-in S0 capture unexpectedly returned without execution"
         raise NativeBoundaryError(message, status="native_execution_failed", code="native_not_executed")
     return _inspect(manifest, loaded, config)
+
+
+def run_native_event(
+    loaded: LoadedProject, config: NativeConfiguration, project_path: Path, *, event_id: str = "prepared"
+) -> NativeObservation:
+    """Materialise an explicit event through the verified portable exporter.
+
+    Both emitted inputs and capture results persist under the configured output
+    root. The unchanged single-project path retains its original-source guard.
+    """
+    from .native_export import (  # noqa: PLC0415 -- event-only integration avoids CLI import cycles
+        NativeCmdExportTarget,
+        NativeExportError,
+        NativeExportEvent,
+        export_cmd_package,
+    )
+
+    original = load_project(project_path)
+    if original.original_run is None:
+        message = "Native event materialisation requires hash-pinned original CMD files"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_event_source")
+    source_files = _preflight(replace(original, run=original.original_run), config)
+    config.output_root.mkdir(parents=True, exist_ok=True)
+    directory = Path(mkdtemp(prefix="prepared-event-", dir=config.output_root))
+    try:
+        receipt = export_cmd_package(
+            project_path,
+            directory / "package",
+            target=NativeCmdExportTarget("cmd-6.44"),
+            events=(NativeExportEvent(event_id, loaded.run),),
+        )
+    except (NativeExportError, OSError) as exc:
+        raise NativeBoundaryError(str(exc), status="unsupported_feature", code="native_event_export") from exc
+    event_directory = receipt.destination / "events/001"
+    catchment = event_directory / f"catchment{Path(source_files.catchment.path).suffix.lower()}"
+
+    def source(path: Path) -> SourceFile:
+        return SourceFile(path.relative_to(directory).as_posix(), cast("str", fingerprint(path)["sha256"]))
+
+    project = replace(
+        loaded.project,
+        model_source=LegacyRunFiles(
+            source(event_directory / "model.par"), source(catchment), source(event_directory / "storm.stm")
+        ),
+        assets=(),
+        source_bindings=(),
+        effective_run=None,
+    )
+    materialized_path = directory / "project.json"
+    write_project(materialized_path, project)
+    materialized = load_project(materialized_path)
+    observation = run_native_cmd(materialized, config, materialized_path)
+    return replace(
+        observation,
+        prepared_package_manifest=str(receipt.destination / "manifest.json"),
+        prepared_package_sha256=receipt.manifest_sha256,
+    )

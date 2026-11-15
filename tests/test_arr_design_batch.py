@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
@@ -17,6 +18,7 @@ from runoff_routing.arr_design_batch import (
     run_design_batch,
     write_design_outputs,
 )
+from runoff_routing.arr_result_summary import read_deterministic_results
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_batch import load_event_request, run_project_events
 from runoff_routing.project_json import EmbeddedRun, Project, write_project
@@ -68,6 +70,93 @@ def _config(directory: Path, *, ifd: Path = IFD, patterns: Path = PATTERNS) -> t
 
 def _write_config(path: Path, data: dict[str, object]) -> None:
     path.write_text(json.dumps(data) + "\n", encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("gross", "total", "increments", "difference"),
+    [
+        ("12.034", "12.03", ["1.203", "10.827"], "-0.004"),
+        ("12.035", "12.04", ["1.204", "10.836"], "0.005"),
+        ("12.045", "12.04", ["1.204", "10.836"], "-0.005"),
+    ],
+)
+def test_written_depth_profile_keeps_published_rainfall_and_prepared_input_distinct(
+    tmp_path: Path, gross: str, total: str, increments: list[str], difference: str
+) -> None:
+    source = tmp_path / "source.csv"
+    source.write_text(IFD.read_text().replace("1 hour,60,12,10", f"1 hour,60,{gross},10"), encoding="utf-8")
+    config, data = _config(tmp_path, ifd=source)
+    run = from_json(MODEL.read_text(encoding="utf-8"))
+    assert isinstance(run, RunModel)
+    # One square kilometre makes published ARF exactly one: the expected depth
+    # and increments below are hand-calculable independent of ARF evaluation.
+    catchment = replace(run.catchment, subareas=(replace(run.catchment.subareas[0], area_km2=Decimal(1)),))
+    project = tmp_path / "unit-area.json"
+    write_project(project, Project("unit_area", "explicit", EmbeddedRun(replace(run, catchment=catchment))))
+    data.update(project=str(project), catchment_area_km2="1", durations_min=[60], aep_labels=["1%"])
+    _write_config(config, data)
+    published = run_design_batch(config)
+    assert Decimal(_audit(published)["members"][0]["areal_total_mm"]) == Decimal(gross)
+    data["rainfall_preparation"] = "published_arf_stm_2dp"
+    _write_config(config, data)
+    prepared = run_design_batch(config)
+    assert prepared.succeeded
+    member = _audit(prepared)["members"][0]
+    assert Decimal(member["published_areal_total_mm"]) == Decimal(gross)
+    assert member["areal_total_mm"] == total
+    assert member["areal_increments_mm"] == increments
+    assert Decimal(member["prepared_depth_minus_published_mm"]) == Decimal(difference)
+    assert member["raw_pattern_percent"] == ["10", "90"]
+    assert member["effective_storm"]["depths_mm"] == [total]
+    assert member["native_arf_arithmetic_parity"] == "not_assessed"
+    assert _audit(prepared)["method_profile"] == "arr2019-bom-published-arf-stm-2dp-burst-only-v1"
+    assert _audit(prepared)["routed_native_reference_status"] == "not_assessed"
+    write_design_outputs(tmp_path / "prepared", prepared)
+    summary = read_deterministic_results(tmp_path / "prepared.effective.json", tmp_path / "prepared.json")
+    assert summary.data["method_profile"] == _audit(prepared)["method_profile"]
+    assert summary.data["source_files"] == _audit(prepared)["source_files"]
+
+
+def test_written_depth_profile_does_not_silently_round_high_precision_patterns(tmp_path: Path) -> None:
+    patterns = tmp_path / "patterns.csv"
+    patterns.write_text(PATTERNS.read_text().replace("rare,10,90", "rare,10.001,89.999"), encoding="utf-8")
+    config, data = _config(tmp_path, patterns=patterns)
+    data.update(rainfall_preparation="published_arf_stm_2dp", durations_min=[60], aep_labels=["1%"])
+    _write_config(config, data)
+    result = run_design_batch(config)
+    assert not result.succeeded
+    assert _audit(result)["prepared_population"] == 0
+    assert "0.01% resolution" in _audit(result)["cells"][0]["error"]
+
+
+def test_unknown_rainfall_preparation_is_rejected(tmp_path: Path) -> None:
+    config, data = _config(tmp_path)
+    data["rainfall_preparation"] = "native-identical"
+    _write_config(config, data)
+    with pytest.raises(DesignConfigError, match="Unknown rainfall_preparation"):
+        read_design_config(config)
+
+
+def test_native_written_design_requires_explicit_native_configuration(tmp_path: Path) -> None:
+    config, data = _config(tmp_path)
+    data.update(engine="rorb-cmd", rainfall_preparation="published_arf_stm_2dp")
+    _write_config(config, data)
+    with pytest.raises(DesignConfigError, match="explicit native configuration"):
+        run_design_batch(config)
+
+
+def test_written_profile_does_not_admit_unqualified_preburst_conventions(tmp_path: Path) -> None:
+    config, data = _config(tmp_path)
+    data["rainfall_preparation"] = "published_arf_stm_2dp"
+    data["loss"] = {
+        "mode": "legacy_source_depth_burst_only",
+        "arr_txt": str(LEGACY),
+        "percentile": 50,
+        "excess_policy": "reject",
+    }
+    _write_config(config, data)
+    with pytest.raises(DesignConfigError, match="without preburst adjustment"):
+        read_design_config(config)
 
 
 def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path: Path) -> None:
