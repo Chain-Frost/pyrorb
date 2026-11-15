@@ -52,9 +52,7 @@ Quote paths at the shell boundary. The reader handles quoted filename tokens, sp
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
-from runoff_routing.project_json import (
-    import_rorb_project, load_project, save_project_as, write_project
-)
+from runoff_routing.project_json import import_rorb_project, load_project, save_project_as, write_project
 
 target = Path("/workspace/project.json")
 project = import_rorb_project(

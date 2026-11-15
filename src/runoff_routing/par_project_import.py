@@ -54,7 +54,9 @@ def _reference_path(token: str, *, role: InputRole, base: Path, override_flag: s
     return local.absolute() if local.is_absolute() else (base / local).absolute()
 
 
-def _selected_input(role: Literal["catchment", "storm"], declared: str, explicit: Path | None, base: Path) -> SelectedSource:
+def _selected_input(
+    role: Literal["catchment", "storm"], declared: str, explicit: Path | None, base: Path
+) -> SelectedSource:
     from .project_json import ProjectError, _read_bounded  # noqa: PLC0415 -- filesystem adapter boundary
 
     selected = str(explicit) if explicit is not None else declared
@@ -95,8 +97,12 @@ def _create_staged_directory(root: Path, destination: Path) -> Path:
 
 
 def _stage_selected(
-    root: Path, destination: Path, selected: list[SelectedSource], *,
-    identifier: str, rainfall_profile: RainfallProfile,
+    root: Path,
+    destination: Path,
+    selected: list[SelectedSource],
+    *,
+    identifier: str,
+    rainfall_profile: RainfallProfile,
 ) -> Project:
     from .project_json import (  # noqa: PLC0415 -- typed project model is the shared project boundary
         LegacyRunFiles,

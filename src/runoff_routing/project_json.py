@@ -84,7 +84,6 @@ class SourceFile:
             raise ProjectError(message)
 
 
-
 @dataclass(frozen=True, slots=True)
 class SourceBinding:
     """Selected input role, original PAR token and relocatable staged source.
@@ -541,7 +540,6 @@ def import_rorb_project(
     )
 
 
-
 def _relocated_source_files(source: Path, target: Path, project: Project) -> None:
     """Copy verified immutable asset closure, rolling back only files we created."""
     refs: list[SourceFile] = []
@@ -582,9 +580,7 @@ def _ensure_relocation_directory(directory: Path, target: Path) -> None:
         raise ProjectError(message)
 
 
-def save_project_as(
-    source: Path, destination: Path, *, effective_run: RunModel | None = None
-) -> Project:
+def save_project_as(source: Path, destination: Path, *, effective_run: RunModel | None = None) -> Project:
     """Save typed edits into a new project, copying exact pinned assets when relocated.
 
     Never overwrites destination files. Original PAR/CATG/STM bytes and bindings
@@ -734,7 +730,6 @@ def _validated_profile(value: str) -> RainfallProfile:
         message = f"Unknown rainfall-method profile: {value}"
         raise ProjectError(message)
     return cast("RainfallProfile", value)
-
 
 
 def _cli_save_run(source: str, edited: str, destination: str) -> None:
