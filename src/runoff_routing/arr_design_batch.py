@@ -12,7 +12,7 @@ import json
 import sys
 from collections import Counter
 from dataclasses import dataclass, replace
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Literal, Never, cast
 
@@ -35,6 +35,7 @@ from .arr_selection import TemporalPatternSelection, select_arr2019_ensemble
 from .arr_storm import storm_from_bom
 from .bom_ifd import BoMIFD, read_bom_ifd_csv
 from .engine_types import EngineSelection
+from .native_cmd import NativeConfiguration
 from .project_batch import REQUEST_FORMAT, REQUEST_VERSION, ProjectBatchReport, ProjectEvent, run_project_events
 from .project_json import LoadedProject, load_project
 
@@ -42,6 +43,8 @@ DESIGN_FORMAT = "python-runoff-routing-arr2019-design"
 EFFECTIVE_FORMAT = "python-runoff-routing-arr2019-effective-events"
 DESIGN_VERSION = 1
 METHOD_PROFILE = "arr2019-bom-published-arf-burst-only-v1"
+WRITTEN_METHOD_PROFILE = "arr2019-bom-published-arf-stm-2dp-burst-only-v1"
+RainfallPreparation = Literal["published_decimal", "published_arf_stm_2dp"]
 LossProfile = Literal["project_il_cl", "legacy_source_depth_burst_only", "legacy_ratio_areal_burst_only"]
 PatternKind = Literal["point", "areal"]
 MAX_CONFIG_BYTES = 128 * 1024
@@ -72,6 +75,11 @@ class DesignConfig:
     legacy_arr_txt: Path | None
     preburst_percentile: Literal[10, 25, 50, 75, 90] | None
     excess_policy: Literal["reject", "clamp_burst_il_to_zero"] | None
+    rainfall_preparation: RainfallPreparation = "published_decimal"
+
+    @property
+    def method_profile(self) -> str:
+        return METHOD_PROFILE if self.rainfall_preparation == "published_decimal" else WRITTEN_METHOD_PROFILE
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +188,16 @@ def _read_loss_config(
     return cast("LossProfile", mode), legacy_path, percentile, excess_policy
 
 
+def _read_preparation(raw: object, loss: LossProfile, engine: EngineSelection) -> RainfallPreparation:
+    if raw not in ("published_decimal", "published_arf_stm_2dp"):
+        _fail("Unknown rainfall_preparation profile")
+    if raw == "published_arf_stm_2dp" and loss != "project_il_cl":
+        _fail("Written-storm preparation currently requires project_il_cl without preburst adjustment")
+    if engine.engine == "rorb-cmd" and raw != "published_arf_stm_2dp":
+        _fail("The native rorb-cmd design path requires explicit published_arf_stm_2dp preparation")
+    return raw
+
+
 def read_design_config(path: Path) -> DesignConfig:
     """Read a strict bounded text configuration; paths belong to its directory."""
     if path.stat().st_size > MAX_CONFIG_BYTES:
@@ -209,7 +227,11 @@ def read_design_config(path: Path) -> DesignConfig:
         "numerical_profile",
         "loss",
     }
-    if set(source) != expected or source["format"] != DESIGN_FORMAT or type(source["schema_version"]) is not int:
+    if (
+        set(source) - {"rainfall_preparation"} != expected
+        or source["format"] != DESIGN_FORMAT
+        or type(source["schema_version"]) is not int
+    ):
         _fail("Unknown design configuration format, version or fields")
     if source["schema_version"] != DESIGN_VERSION:
         _fail("Unsupported design configuration version")
@@ -230,8 +252,7 @@ def read_design_config(path: Path) -> DesignConfig:
     selected = EngineSelection.for_engine(
         _string(source["engine"], "engine"), _string(source["numerical_profile"], "numerical_profile")
     )
-    if selected.engine == "rorb-cmd":
-        _fail("In-memory generated events cannot be represented by the native rorb-cmd file adapter")
+    preparation = _read_preparation(source.get("rainfall_preparation", "published_decimal"), mode, selected)
     return DesignConfig(
         path=path.absolute(),
         source_sha256=hashlib.sha256(raw).hexdigest(),
@@ -250,6 +271,7 @@ def read_design_config(path: Path) -> DesignConfig:
         legacy_arr_txt=legacy_path,
         preburst_percentile=percentile,
         excess_policy=excess_policy,
+        rainfall_preparation=preparation,
     )
 
 
@@ -350,6 +372,30 @@ def _loss_for_event(
     }
 
 
+def _prepared_areal_rainfall(
+    areal: AreaAdjustedHyetograph, pattern: Pattern, profile: RainfallPreparation
+) -> AreaAdjustedHyetograph:
+    """Apply an explicit text-depth policy, independently of engine arithmetic.
+
+    The published ARF remains the calculation source. This does not emulate
+    native ARF helper arithmetic or claim universal RORBwin formatting parity.
+    """
+    if profile == "published_decimal":
+        return areal
+    quantum = Decimal("0.01")
+    if any(value != value.quantize(quantum) for value in pattern.increments_percent):
+        message = "Written-storm preparation requires source temporal percentages at 0.01% resolution"
+        raise ARRFormatError(message)
+    total = areal.total_mm.quantize(quantum, rounding=ROUND_HALF_EVEN)
+    increments = tuple(total * value / 100 for value in pattern.increments_percent)
+    return replace(
+        areal,
+        total_mm=total,
+        increments_mm=increments,
+        operations=(*areal.operations, "PUBLISHED_ARF_DEPTH_SERIALIZED_0P01MM_HALF_EVEN"),
+    )
+
+
 def _event(
     config: DesignConfig,
     bom: BoMIFD,
@@ -372,7 +418,8 @@ def _event(
         aep_percent=selection.aep_percent,
         coefficients=published_coefficients(config.arf_region),
     )
-    areal = apply_arr2019_arf_to_bom_storm(gross, factor)
+    published = apply_arr2019_arf_to_bom_storm(gross, factor)
+    areal = _prepared_areal_rainfall(published, pattern, config.rainfall_preparation)
     if config.dry_tail_min % pattern.timestep_min:
         message = "Requested dry tail is not an integer number of selected temporal-pattern timesteps"
         raise ARRFormatError(message)
@@ -406,6 +453,11 @@ def _event(
         "raw_gross_increments_mm": [str(value) for value in gross.increments_mm],
         "areal_total_mm": str(areal.total_mm),
         "areal_increments_mm": [str(value) for value in areal.increments_mm],
+        "published_areal_total_mm": str(published.total_mm),
+        "published_areal_increments_mm": [str(value) for value in published.increments_mm],
+        "rainfall_preparation": config.rainfall_preparation,
+        "prepared_depth_minus_published_mm": str(areal.total_mm - published.total_mm),
+        "native_arf_arithmetic_parity": "not_assessed",
         "arf_factor": str(factor.factor),
         "arf_policy_version": factor.policy_version,
         "arf_coefficient_region": factor.region,
@@ -539,9 +591,13 @@ def _prepare_cell(
     return cell, local, records
 
 
-def run_design_batch(path: Path) -> DesignBatchResult:
+def run_design_batch(path: Path, *, native_config: NativeConfiguration | None = None) -> DesignBatchResult:
     """Construct all requested input cells, then dispatch only materialised events via #119."""
     config = read_design_config(path)
+    if config.engine.engine == "rorb-cmd" and native_config is None:
+        _fail("rorb-cmd requires an explicit native configuration; no Python engine substitution")
+    if config.engine.engine != "rorb-cmd" and native_config is not None:
+        _fail("Native configuration is only used with rorb-cmd")
     loaded = load_project(config.project)
     _validate_project(config, loaded)
     bom = read_bom_ifd_csv(config.bom_ifd)
@@ -571,7 +627,11 @@ def run_design_batch(path: Path) -> DesignBatchResult:
             cells.append(cell)
             events.extend(selected)
             records.extend(member_records)
-    routed = run_project_events(config.project, events, selection=config.engine) if events else ProjectBatchReport(())
+    routed = (
+        run_project_events(config.project, events, selection=config.engine, native_config=native_config)
+        if events
+        else ProjectBatchReport(())
+    )
     if len(routed.outcomes) != len(events):
         _fail("Common #119 execution did not return exactly one outcome per materialised event")
     outcomes = {item.event_id: item for item in routed.outcomes}
@@ -590,7 +650,7 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     effective: dict[str, object] = {
         "format": EFFECTIVE_FORMAT,
         "schema_version": DESIGN_VERSION,
-        "method_profile": METHOD_PROFILE,
+        "method_profile": config.method_profile,
         "status": "computed_unvalidated" if succeeded else "incomplete",
         "generated_input_reference_status": "not_assessed",
         "routed_native_reference_status": "not_assessed",
@@ -638,6 +698,7 @@ def run_design_batch(path: Path) -> DesignBatchResult:
             "engine": config.engine.engine,
             "numerical_profile": config.engine.numerical_profile,
             "loss_profile": config.loss_profile,
+            "rainfall_preparation": config.rainfall_preparation,
             "preburst_percentile": config.preburst_percentile,
             "excess_policy": config.excess_policy,
         },
@@ -673,7 +734,7 @@ def design_summary(result: DesignBatchResult) -> str:
     effective = result.effective
     lines = [
         "ARR2019 deterministic design rainfall (BoM / published ARF)",
-        f"Method: {METHOD_PROFILE}",
+        f"Method: {effective['method_profile']}",
         f"Input: {effective['prepared_population']}/{effective['expected_population']} events prepared",
         f"Input population complete: {effective['input_population_complete']}",
         f"Routed events: {len(result.routed.outcomes)}",
@@ -722,12 +783,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m runoff_routing.arr_design_batch")
     parser.add_argument("config", type=Path, help="bounded design-rainfall JSON configuration")
     parser.add_argument("output_prefix", type=Path, help="new exclusive output prefix")
+    parser.add_argument("--native-config", type=Path, help="explicit local executable profile for rorb-cmd")
     try:
         options = parser.parse_args(argv)
     except SystemExit as exc:
         return exc.code if isinstance(exc.code, int) else 2
     try:
-        result = run_design_batch(options.config)
+        native = NativeConfiguration.from_file(options.native_config) if options.native_config is not None else None
+        result = run_design_batch(options.config, native_config=native)
         write_design_outputs(options.output_prefix, result)
     except (DesignConfigError, ARRFormatError, OSError, ValueError, TypeError) as exc:
         print(f"Design rainfall batch failed: {exc}", file=sys.stderr)
