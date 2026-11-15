@@ -14,6 +14,7 @@ from typing import Literal, cast
 
 import pytest
 
+from runoff_routing._cmd644.geometry import Geometry
 from runoff_routing._cmd644.models import Control, Event, NumberInput
 from runoff_routing._cmd644.precision import store
 from runoff_routing._cmd644.reporting import CandidateResult
@@ -158,8 +159,8 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
     """Reject damaged backend output before mapping any physical print identity."""
     path = _project(tmp_path, _multiple_prints())
 
-    def damaged_execute(event: Event, revision: str) -> CandidateResult:
-        actual = execute_unmodified(event, revision)
+    def damaged_execute(event: Event, revision: str, *, geometry: Geometry | None = None) -> CandidateResult:
+        actual = execute_unmodified(event, revision, geometry=geometry)
         recorded = actual.network.prints
         if damage == "missing":
             changed = recorded[:-1]
@@ -194,8 +195,8 @@ def test_cmd_rejects_invalid_numeric_print_ordinates_before_exposing_any_site(
     """Even a nonterminal site must not leak invalid physical discharge."""
     project = _project(tmp_path, _multiple_prints())
 
-    def corrupted_execute(event: Event, revision: str) -> CandidateResult:
-        original = execute_unmodified(event, revision)
+    def corrupted_execute(event: Event, revision: str, *, geometry: Geometry | None = None) -> CandidateResult:
+        original = execute_unmodified(event, revision, geometry=geometry)
         first = original.network.prints[0]
         corrupt = replace(first, q=(*first.q[:2], invalid, *first.q[3:]))
         return replace(original, network=replace(original.network, prints=(corrupt, *original.network.prints[1:])))
