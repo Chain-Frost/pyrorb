@@ -408,3 +408,143 @@ def test_relative_weight_json_rejects_unknown_pattern_basis() -> None:
     payload["model"]["pattern_basis"] = "unknown"
     with pytest.raises(ValueError, match="Unknown temporal pattern basis"):
         from_dict(payload)
+
+
+def _figure67_original_cases() -> tuple[list[dict[str, Any]], Path]:
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case_ids = (
+        "failure-baseline-before",
+        "failure-baseline-after",
+        "fig67-ilcl-confirmed",
+        "fig67-ilcl-low",
+        "fig67-ilcl-probe",
+        "fig67-zero",
+        "wheel-ilcl-confirmed",
+        "wheel-zero",
+    )
+    cases: list[dict[str, Any]] = [
+        next(case for case in register["cases"] if case["case_id"] == case_id)
+        for case_id in case_ids
+    ]
+    assert len({item["reference"]["sha256"] for item in cases}) == 8
+    return cases, root
+
+
+def test_original_102p10_is_reconciled_preburst_plus_full_burst_not_arbitrary_nonunit() -> None:
+    cases, root = _figure67_original_cases()
+    storms: set[str] = set()
+    for case in cases:
+        record = next(item for item in case["files"] if item["path"].endswith(".stm"))
+        storms.add(record["sha256"])
+        source = (root / record["path"]).read_bytes()
+        assert hashlib.sha256(source).hexdigest() == record["sha256"]
+        assert len(source) == record["size_bytes"] == 1310
+        parsed = parse_design_stm(source)
+        assert parsed.dialect == "design_preburst_combined"
+        assert parsed.model.pattern_basis == "combined_preburst_percent"
+        assert parsed.model.preburst_bins == 48
+        assert parsed.model.timestep_hours == Decimal("0.50000")
+        assert parsed.model.calculation_increments + 1 == case["clock"]["row_count"] == 301
+        assert len(parsed.model.percentages) == 72
+        assert sum(parsed.model.percentages[:48], Decimal(0)) == Decimal("2.10")
+        assert sum(parsed.model.percentages[48:], Decimal(0)) == Decimal("100.00")
+        assert sum(parsed.model.percentages, Decimal(0)) == Decimal("102.10")
+        assert parsed.model.depths_mm == (Decimal("69.02"),) * 5
+        assert original_bytes(parsed) == source
+        assert len([field for field in parsed.source_map if field.field.startswith("preburst_")]) == 3
+        assert from_json(to_json(parsed.model)) == parsed.model
+        with pytest.raises(ValueError, match="no verified canonical writer"):
+            serialize_design_stm(parsed.model)
+    assert len(storms) == 1
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("C  Storm duration     : 12 hour", "C  Storm duration     : 11 hour"),
+        ("C  Storm duration     : 12 hour", "C  Storm duration     : unknown"),
+        ("C  ARF*BurDepth(mm)   :    67.60", "C  ARF*BurDepth(mm)   :    68.60"),
+        ("C  Pre-burst depth(mm):     1.42", "C  Pre-burst depth(mm):     0.00"),
+        ("  69.02,  69.02,  69.02,  69.02,  69.02, -99.00", "  69.02,  69.02,  69.02,  69.02,  69.12, -99.00"),
+    ],
+)
+def test_102p10_rejects_inconsistent_source_preburst_provenance(before: str, after: str) -> None:
+    cases, root = _figure67_original_cases()
+    record = next(item for item in cases[0]["files"] if item["path"].endswith(".stm"))
+    source = (root / record["path"]).read_bytes()
+    changed = source.replace(before.encode(), after.encode())
+    assert source != changed
+    with pytest.raises(FormatProblem) as caught:
+        parse_design_stm(changed)
+    assert caught.value.status in ("unsupported", "invalid")
+
+
+def test_combined_preburst_typed_boundary_rejects_false_split() -> None:
+    cases, root = _figure67_original_cases()
+    record = next(item for item in cases[0]["files"] if item["path"].endswith(".stm"))
+    original = parse_design_stm((root / record["path"]).read_bytes()).model
+    with pytest.raises(ValueError, match="100% burst"):
+        replace(original, preburst_bins=47)
+    with pytest.raises(ValueError, match="pre-burst"):
+        replace(original, preburst_bins=0)
+    payload = to_dict(original)
+    payload["model"]["preburst_bins"] = True
+    with pytest.raises(TypeError, match="integer"):
+        from_dict(payload)
+    with pytest.raises(ValueError, match="only"):
+        replace(original, pattern_basis="percent_of_depth")
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "failure-baseline-before",
+        "failure-baseline-after",
+        "fig67-ilcl-confirmed",
+        "fig67-ilcl-low",
+        "fig67-ilcl-probe",
+        "fig67-zero",
+        "wheel-ilcl-confirmed",
+        "wheel-zero",
+    ],
+)
+def test_original_102p10_all_eight_three_file_imports_are_typed_without_rewriting(
+    case_id: str, tmp_path: Path
+) -> None:
+    cases, root = _figure67_original_cases()
+    case = next(c for c in cases if c["case_id"] == case_id)
+    source_paths: dict[str, Path] = {}
+    for record in case["files"]:
+        path = Path(record["path"])
+        if path.suffix not in (".catg", ".stm", ".par"):
+            continue
+        raw = (root / path).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+        assert len(raw) == record["size_bytes"]
+        target = tmp_path / ("input" + path.suffix)
+        target.write_bytes(raw)
+        source_paths[path.suffix] = target
+    assert set(source_paths) == {".catg", ".stm", ".par"}
+    model = parse_run_bytes(
+        source_paths[".par"].read_bytes(), source_paths[".catg"].read_bytes(), source_paths[".stm"].read_bytes()
+    ).model
+    assert model.storm.pattern_basis == "combined_preburst_percent"
+    assert from_json(to_json(model)) == model
+    manifest = tmp_path / "imported.json"
+    project = import_rorb_project(
+        manifest,
+        identifier=case_id,
+        rainfall_profile="legacy-rorb",
+        parameters=source_paths[".par"],
+        catchment=source_paths[".catg"],
+        storm=source_paths[".stm"],
+    )
+    write_project(manifest, project)
+    assert load_project(manifest).run == model
+    compatible = run_engine_project(manifest, selection=EngineSelection.for_engine("python-cmd"))
+    assert compatible.status == "computed_unvalidated"
+    assert len(compatible.hydrographs) == 1
+    assert len(compatible.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
+    improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
+    assert improved.status == "unsupported_feature"
