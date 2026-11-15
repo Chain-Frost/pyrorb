@@ -407,7 +407,7 @@ def test_pyromb_pr16_source_rejects_invalid_control_and_fraction_records(
     before: str, after: str, status: str
 ) -> None:
     original, _register = _registered_pyromb_originals()
-    text = original.decode("utf-8")
+    text = original.decode("utf-8").replace("\r\n", "\n")
     edited = text.replace(before.replace("\\n", "\n"), after.replace("\\n", "\n"))
     assert edited != text
     with pytest.raises(FormatProblem) as caught:
@@ -417,7 +417,7 @@ def test_pyromb_pr16_source_rejects_invalid_control_and_fraction_records(
 
 def test_pyromb_pr16_original_source_rejects_unqualified_reach_type_and_unsafe_flags() -> None:
     source, _register = _registered_pyromb_originals()
-    text = source.decode("utf-8")
+    text = source.decode("utf-8").replace("\r\n", "\n")
     cases = (
         ("C #STORAGES\\nC      0", "C #STORAGES\\nC      1"),
         ("C #INFLOW/OUTFLOW\\nC      0", "C #INFLOW/OUTFLOW\\nC      1"),
