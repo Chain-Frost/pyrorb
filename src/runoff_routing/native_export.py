@@ -280,6 +280,7 @@ def _launcher(number_of_events: int) -> bytes:
     lines = [
         "@echo off",
         "setlocal",
+        'set "PACKAGE_ROOT=%~dp0"',
         'if "%~1"=="" (',
         '  echo Usage: run.cmd "C:\\full\\path\\to\\RORB_CMD.exe" 1>&2',
         "  exit /b 2",
@@ -297,7 +298,7 @@ def _launcher(number_of_events: int) -> bytes:
         (
             "exit /b %FAILED%",
             ":run_case",
-            'pushd "%~dp0%~1"',
+            'pushd "%PACKAGE_ROOT%%~1"',
             "if errorlevel 1 exit /b 2",
             '"%NATIVE_EXE%" "model.par"',
             'set "CASE_RESULT=%errorlevel%"',
