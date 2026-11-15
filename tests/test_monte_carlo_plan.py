@@ -6,6 +6,7 @@ import copy
 import hashlib
 import hmac
 import json
+from collections.abc import Callable
 from dataclasses import replace
 from decimal import Decimal, localcontext
 from pathlib import Path
@@ -474,6 +475,10 @@ def test_145_published_hmac_three_purpose_vectors() -> None:
             "tp": Decimal(7325063005905719) / Decimal(18014398509481984),
             "loss": Decimal(7249325353445475) / Decimal(18014398509481984),
         }
+    # Resolve the private pure kernel only in this byte-level contract test.
+    draw = cast(
+        "Callable[[int, SamplePlan, dict[str, object], dict[str, object], int, str], Decimal]",
+        vars(module)["_draw"],
+    )
     for purpose, unit in expected.items():
-        # Test the private pure kernel against independently published byte-level reference vectors.
-        assert module._draw(42, plan, spec, row, 0, purpose) == unit  # noqa: SLF001
+        assert draw(42, plan, spec, row, 0, purpose) == unit
