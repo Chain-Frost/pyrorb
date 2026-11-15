@@ -1,6 +1,7 @@
 """Pure, explicitly configured Monte Carlo samples; no routing or native-RORB claims.
 
-The contract is deliberately provisional until issue #145 adopts numerical distributions.
+The sampler implements the versioned project method in issue #145; native scientific
+qualification remains independent of software correctness.
 All probabilities are annual exceedance *fractions*; all stored numbers are decimal strings.
 """
 
@@ -22,6 +23,9 @@ PLAN_FORMAT = "python-runoff-routing-mc-sample-plan"
 SCHEMA_VERSION = 1
 RNG_ALGORITHM = "hmac-sha256-53-v1"
 RNG_DERIVATION = "canonical-json-domain-separated-v1"
+# Explicit v1 choice: conditional TP on sampled AEP, loss independent of rainfall.
+# Other conditional loss laws require a new reviewed and implemented profile.
+JOINT_POLICY = "conditional-tp-on-aep__independent-storm-il-v1"
 MAX_SAMPLES = 1_000_000
 MAX_STRATA = 1000
 
@@ -42,7 +46,10 @@ def _fail(message: str) -> Never:
 
 
 def _obj(value: object, label: str) -> dict[str, object]:
-    if not isinstance(value, dict) or any(not isinstance(key, str) for key in value):
+    if not isinstance(value, dict):
+        _fail(f"{label} must be a JSON object with string keys")
+    candidate = cast("dict[object, object]", value)
+    if any(not isinstance(key, str) for key in candidate):
         _fail(f"{label} must be a JSON object with string keys")
     return cast("dict[str, object]", value)
 
@@ -93,7 +100,7 @@ def _prob(value: object, label: str) -> Decimal:
 def _int(value: object, label: str, minimum: int, maximum: int) -> int:
     if type(value) is not int or not minimum <= value <= maximum:
         _fail(f"{label} requires an integer in {minimum}..{maximum}")
-    return cast("int", value)
+    return value
 
 
 def _digest(value: object, label: str) -> str:
@@ -173,10 +180,14 @@ def _check_spec(spec: dict[str, object]) -> None:
     _name(policy["version"], "policy.version")
     if policy["status"] not in {"provisional", "reviewed"}:
         _fail("policy.status must be provisional or reviewed")
+    if policy["status"] == "reviewed" and (policy["id"], policy["version"]) != ("monte-carlo-statistics", "1"):
+        _fail("Only the adopted monte-carlo-statistics/1 method may declare a reviewed project policy")
     _name(spec["scenario_id"], "scenario_id")
     _int(spec["duration_min"], "duration_min", 1, 10080)
-    for key in ("arf_policy", "preburst_policy", "joint_policy"):
+    for key in ("arf_policy", "preburst_policy"):
         _name(spec[key], key)
+    if spec["joint_policy"] != JOINT_POLICY:
+        _fail("Unsupported joint_policy: explicit independent storm loss with AEP-conditional TP is required")
     if spec["within_stratum"] != "uniform_aep_mass_v1":
         _fail("Only explicit uniform-AEP-mass conditional sampling is implemented")
     sources = _check_sources_and_rng(spec)

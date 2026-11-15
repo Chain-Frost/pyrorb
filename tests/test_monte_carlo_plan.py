@@ -6,11 +6,10 @@ import copy
 import hashlib
 import hmac
 import json
-from collections.abc import Callable
 from dataclasses import replace
 from decimal import Decimal, localcontext
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -103,7 +102,7 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
         ],
         "arf_policy": "catchment-wide-once-after-sampling-by-event-owner",
         "preburst_policy": "storm-IL-before-one-time-preburst-adjustment-by-event-owner",
-        "joint_policy": "conditional-TP-on-AEP; independent-storm-IL-for-synthetic-only",
+        "joint_policy": "conditional-tp-on-aep__independent-storm-il-v1",
     }
 
 
@@ -157,7 +156,10 @@ def test_plan_roundtrip_and_explicit_replay_never_redraws(tmp_path: Path, monkey
     loaded = read_sample_plan(paths[0])
     assert loaded == plan
     expected = list(iter_plan_samples(plan))
-    monkeypatch.setattr(module, "_draw", lambda *_args: (_ for _ in ()).throw(AssertionError("RNG called")))
+    def _unexpected_draw(*_args: object) -> Decimal:
+        pytest.fail("RNG called during persisted replay")
+
+    monkeypatch.setattr(module, "_draw", _unexpected_draw)
     replay = read_sample_records(paths[1], loaded)
     assert replay == expected
     assert [x.to_dict() for x in replay] == [x.to_dict() for x in expected]
@@ -223,31 +225,35 @@ def test_fixed_losses_are_distinct_from_stochastic_loss_draws() -> None:
 
 
 @pytest.mark.parametrize(
-    ("mutate", "message"),
+    ("path", "replacement", "message"),
     [
-        (lambda s: s["strata"][1].__setitem__("aep_lower", "0.21"), "gaps/overlap"),
-        (lambda s: s["strata"][0].__setitem__("probability_mass", "0.099"), "mass"),
-        (lambda s: s["strata"][0].__setitem__("count", -1), "count"),
-        (lambda s: s["strata"][0].__setitem__("count", True), "count"),
-        (lambda s: s["strata"][0].__setitem__("count", 1000001), "count"),
-        (lambda s: s["ifd"]["points"][1].__setitem__("depth_mm", "NaN"), "finite"),
-        (lambda s: s["ifd"]["points"][1].__setitem__("depth_mm", "200"), "depth"),
-        (lambda s: s["tp_bins"][0]["choices"][0].__setitem__("probability", "0.8"), "sum"),
-        (lambda s: s["tp_bins"][1].__setitem__("aep_lower", "0.3"), "gaps/overlap"),
-        (lambda s: s["loss"]["cdf_quantiles"][1].__setitem__("ratio_to_median", "0.1"), "monotone"),
-        (lambda s: s["loss"]["cdf_quantiles"][1].__setitem__("ratio_to_median", "1.5"), "median factor"),
-        (lambda s: s["loss"]["cdf_quantiles"][0].__setitem__("nonexceedance", "0.1"), "endpoints"),
-        (lambda s: s["rng"].__setitem__("algorithm", "MT19937"), "Unsupported RNG"),
-        (lambda s: s["sources"].__setitem__("ifd", "wrong"), "SHA-256"),
-        (lambda s: s["ifd"]["points"][-1].__setitem__("aep", "0.6"), "IFD support"),
+        (("strata", 1, "aep_lower"), "0.21", "gaps/overlap"),
+        (("strata", 0, "probability_mass"), "0.099", "mass"),
+        (("strata", 0, "count"), -1, "count"),
+        (("strata", 0, "count"), True, "count"),
+        (("strata", 0, "count"), 1000001, "count"),
+        (("ifd", "points", 1, "depth_mm"), "NaN", "finite"),
+        (("ifd", "points", 1, "depth_mm"), "200", "depth"),
+        (("tp_bins", 0, "choices", 0, "probability"), "0.8", "sum"),
+        (("tp_bins", 1, "aep_lower"), "0.3", "gaps/overlap"),
+        (("loss", "cdf_quantiles", 1, "ratio_to_median"), "0.1", "monotone"),
+        (("loss", "cdf_quantiles", 1, "ratio_to_median"), "1.5", "median factor"),
+        (("loss", "cdf_quantiles", 0, "nonexceedance"), "0.1", "endpoints"),
+        (("rng", "algorithm"), "MT19937", "Unsupported RNG"),
+        (("sources", "ifd"), "wrong", "SHA-256"),
+        (("ifd", "points", -1, "aep"), "0.6", "IFD support"),
+        (("policy", "status"), "unknown", "policy.status"),
+        (("joint_policy",), "loss-conditionally-correlated-with-rainfall-v1", "Unsupported joint_policy"),
     ],
 )
-def test_invalid_config_is_rejected(mutate: Callable[[dict[str, Any]], None], message: str) -> None:
+def test_invalid_config_is_rejected(path: tuple[str | int, ...], replacement: object, message: str) -> None:
     spec = _spec()
-    mutate(spec)
+    target: Any = spec
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = replacement
     with pytest.raises(SamplePlanError, match=message):
         SamplePlan.create(spec)
-
 
 def test_corrupt_plan_and_ledger_are_rejected(tmp_path: Path) -> None:
     plan = SamplePlan.create(_spec())
@@ -326,15 +332,17 @@ def test_zero_allocation_is_explicit_missing_interior_mass_and_can_be_extended()
     spec = _spec()
     spec["strata"][1]["count"] = 0
     original = SamplePlan.create(spec)
-    assert original.to_dict()["domain"]["unallocated_stratum_mass"] == "0.5"
-    assert original.to_dict()["domain"]["allocated_stratum_mass"] == "0.1"
+    original_domain = cast("dict[str, str]", original.to_dict()["domain"])
+    assert original_domain["unallocated_stratum_mass"] == "0.5"
+    assert original_domain["allocated_stratum_mass"] == "0.1"
     assert len(list(iter_plan_samples(original))) == 2
     assert list(iter_stratum_samples(original, "h2")) == []
     validate_sample_records(original, list(iter_plan_samples(original)))
     extended = original.extend({"h1": 2, "h2": 4})
     assert extended.population_id == original.population_id
     assert extended.plan_id != original.plan_id
-    assert extended.to_dict()["domain"]["unallocated_stratum_mass"] == "0"
+    extended_domain = cast("dict[str, str]", extended.to_dict()["domain"])
+    assert extended_domain["unallocated_stratum_mass"] == "0"
     old = list(iter_plan_samples(original))
     full = list(iter_plan_samples(extended))
     assert [x.sample_id for x in old] == [x.sample_id for x in full[:2]]
@@ -363,6 +371,7 @@ def test_hmac_53bit_rng_uses_canonical_message_and_root_key() -> None:
     }
     raw = json.dumps(message, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     digest = hmac.digest((1234).to_bytes(8, "big"), raw, "sha256")
+    assert digest.hex() == "7ec4c19b07ce55a19cf1c9f16fab828a4c1fed5802d6a49b746263f39fa9fed5"
     with localcontext() as context:
         context.prec = 60
         unit = Decimal((int.from_bytes(digest[:8], "big") >> 11) * 2 + 1) / Decimal(2**54)
@@ -403,3 +412,28 @@ def test_ledger_rejects_oversize_unterminated_rows(tmp_path: Path) -> None:
     path.write_text("{}")
     with pytest.raises(SamplePlanError, match="unterminated"):
         read_sample_records(path, plan)
+
+
+def test_reviewed_policy_status_requires_adopted_project_method() -> None:
+    spec = _spec()
+    spec["policy"]["status"] = "reviewed"
+    with pytest.raises(SamplePlanError, match="Only the adopted"):
+        SamplePlan.create(spec)
+    spec["policy"] = {"id": "monte-carlo-statistics", "version": "1", "status": "reviewed"}
+    plan = SamplePlan.create(spec)
+    assert plan.spec()["joint_policy"] == module.JOINT_POLICY
+    assert plan.spec()["policy"]["status"] == "reviewed"
+
+
+def test_loss_independence_is_explicit_not_implicitly_inferred() -> None:
+    spec = _spec()
+    spec["joint_policy"] = "conditional-loss-from-rainfall-v1"
+    with pytest.raises(SamplePlanError, match="Unsupported joint_policy"):
+        SamplePlan.create(spec)
+    spec["joint_policy"] = module.JOINT_POLICY
+    plan = SamplePlan.create(spec)
+    first = next(iter_plan_samples(plan))
+    assert first.loss_uniform is not None
+    assert first.tp_uniform is not None
+    assert 0 < first.loss_uniform < 1
+    assert 0 < first.tp_uniform < 1
