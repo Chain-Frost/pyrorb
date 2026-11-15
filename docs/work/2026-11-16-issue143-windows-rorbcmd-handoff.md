@@ -130,12 +130,20 @@ $filesBefore = Get-ChildItem -LiteralPath $event -File |
 $filesBefore | ConvertTo-Json -Depth 5 |
   Set-Content -LiteralPath (Join-Path $log 'files-before.json') -Encoding utf8
 
-Push-Location -LiteralPath $event
-try {
-  & $exe 'model.par' 1> (Join-Path $log 'native-stdout.txt') 2> (Join-Path $log 'native-stderr.txt')
-  $exitCode = $LASTEXITCODE
-} finally {
-  Pop-Location
+# The executable runs directly: no Python wrapper or regenerated native inputs.
+# Bound this single process to 180 seconds; timeout is NOT a successful run.
+$process = Start-Process -FilePath $exe -ArgumentList 'model.par' `
+  -WorkingDirectory $event `
+  -RedirectStandardOutput (Join-Path $log 'native-stdout.txt') `
+  -RedirectStandardError (Join-Path $log 'native-stderr.txt') `
+  -PassThru
+$completed = $process.WaitForExit(180000)
+if ($completed) {
+  $exitCode = $process.ExitCode
+} else {
+  $process.Kill()
+  $process.WaitForExit()
+  $exitCode = $null
 }
 
 $after = (Get-FileHash -LiteralPath $par -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -151,6 +159,7 @@ $filesAfter | ConvertTo-Json -Depth 5 |
   cwd = $event
   argv = @($exe, 'model.par')
   native_exit_code = $exitCode
+  native_timed_out = (-not $completed)
   par_before_sha256 = $before
   par_after_sha256 = $after
   par_unchanged = ($before -eq $after)
@@ -158,7 +167,16 @@ $filesAfter | ConvertTo-Json -Depth 5 |
   numerical_equivalence = 'not_assessed'
 } | ConvertTo-Json -Depth 6 |
   Set-Content -LiteralPath (Join-Path $log 'execution-receipt.json') -Encoding utf8
+# Every file present before execution must remain byte-identical afterward.
+# Pre-run output files must be absent; inspect the before/after inventories.
+foreach ($original in $filesBefore) {
+  $current = @($filesAfter | Where-Object { $_.Name -eq $original.Name })
+  if ($current.Count -ne 1 -or $current[0].sha256 -ne $original.sha256) {
+    throw "STOP: original event file mutated during native run: $($original.Name)"
+  }
+}
 if ($before -ne $after) { throw 'STOP: emitted PAR changed during native execution' }
+if (-not $completed) { throw 'Native CMD exceeded the 180-second bounded timeout' }
 if ($exitCode -ne 0) { throw "Native CMD returned nonzero status: $exitCode" }
 ~~~
 
