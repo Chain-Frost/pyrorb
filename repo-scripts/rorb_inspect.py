@@ -26,8 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.report:
             document = inspect_report(args.path)
-            if args.format == "csv":
-                assert args.section is not None
+            if args.format == "csv" and args.section is not None:
                 result = report_csv(document, args.section, offset=args.offset, limit=args.limit)
             else:
                 result = report_json(document, section=args.section, offset=args.offset, limit=args.limit)
