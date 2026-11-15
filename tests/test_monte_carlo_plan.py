@@ -424,7 +424,8 @@ def test_reviewed_policy_status_requires_adopted_project_method() -> None:
     spec["policy"] = {"id": "monte-carlo-statistics", "version": "1", "status": "reviewed"}
     plan = SamplePlan.create(spec)
     assert plan.spec()["joint_policy"] == module.JOINT_POLICY
-    assert plan.spec()["policy"]["status"] == "reviewed"
+    approved_policy = cast("dict[str, object]", plan.spec()["policy"])
+    assert approved_policy["status"] == "reviewed"
 
 
 def test_loss_independence_is_explicit_not_implicitly_inferred() -> None:
@@ -454,3 +455,24 @@ def test_max_length_stratum_ids_remain_replayable_and_source_specific() -> None:
     spec["sources"]["ifd"] = _sha(b"changed input")
     changed = SamplePlan.create(spec)
     assert next(iter_plan_samples(changed)).sample_id != records[0].sample_id
+
+
+def test_145_published_hmac_three_purpose_vectors() -> None:
+    """Independent #145 byte-level stream receipt; no native RNG parity claim."""
+    plan = replace(SamplePlan.create(_spec()), population_id="0" * 64)
+    spec: dict[str, object] = {
+        "policy": {"id": "monte-carlo-statistics", "version": "1", "status": "reviewed"},
+        "sources": {"ifd": "1" * 64, "temporal_patterns": "2" * 64},
+        "scenario_id": "synthetic",
+        "duration_min": 60,
+    }
+    row: dict[str, object] = {"id": "bin0", "aep_lower": "0.1", "aep_upper": "0.5"}
+    with localcontext() as context:
+        context.prec = 60
+        expected = {
+            "rainfall": Decimal(7152193880365849) / Decimal(18014398509481984),
+            "tp": Decimal(7325063005905719) / Decimal(18014398509481984),
+            "loss": Decimal(7249325353445475) / Decimal(18014398509481984),
+        }
+    for purpose, unit in expected.items():
+        assert module._draw(42, plan, spec, row, 0, purpose) == unit
