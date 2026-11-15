@@ -7,10 +7,12 @@ All probabilities are annual exceedance *fractions*; all stored numbers are deci
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation, localcontext
+from itertools import pairwise
 from math import isfinite
 from pathlib import Path
 from statistics import NormalDist
@@ -18,8 +20,8 @@ from typing import TYPE_CHECKING, Never, cast
 
 PLAN_FORMAT = "python-runoff-routing-mc-sample-plan"
 SCHEMA_VERSION = 1
-RNG_ALGORITHM = "sha256-counter53-v1"
-RNG_DERIVATION = "sha256-utf8-zero-separated-v1"
+RNG_ALGORITHM = "hmac-sha256-53-v1"
+RNG_DERIVATION = "canonical-json-domain-separated-v1"
 MAX_SAMPLES = 1_000_000
 MAX_STRATA = 1000
 
@@ -71,8 +73,8 @@ def _decimal(value: object, label: str, *, minimum: Decimal = Decimal(0)) -> Dec
         _fail(f"{label} must be a decimal string, not a JSON number")
     try:
         number = Decimal(value)
-    except InvalidOperation as exc:
-        raise SamplePlanError(f"{label} must be a valid decimal") from exc
+    except InvalidOperation:
+        _fail(f"{label} must be a valid decimal")
     if not number.is_finite() or number < minimum or number.adjusted() > 300 or len(number.as_tuple().digits) > 60:
         _fail(f"{label} must be finite and within supported range")
     return number
@@ -121,11 +123,24 @@ def _reject_constant(value: str) -> Never:
 def _decode(content: str) -> object:
     try:
         return json.loads(content, object_pairs_hook=_no_duplicates, parse_constant=_reject_constant)
-    except (ValueError, TypeError) as exc:
-        raise SamplePlanError("Invalid sample plan JSON") from exc
+    except (ValueError, TypeError):
+        _fail("Invalid sample plan JSON")
+
+
+def _normal_z(p: Decimal) -> Decimal:
+    """Finite standard-normal nonexceedance coordinate, with explicit numeric domain."""
+    if not 0 < p < 1:
+        _fail("AEP probability must be strictly interior for normal-coordinate interpolation")
+    with localcontext() as ctx:
+        ctx.prec = 60
+        q = float(Decimal(1) - p)
+    if not 0 < q < 1:
+        _fail("Source AEP is outside representable normal-coordinate probability support")
+    return Decimal(str(NormalDist().inv_cdf(q)))
 
 
 def _check_spec(spec: dict[str, object]) -> None:
+    """Validate a pinned numerical policy before deriving a plan or any draw."""
     _keys(
         spec,
         {
@@ -149,20 +164,30 @@ def _check_spec(spec: dict[str, object]) -> None:
         _name(spec[key], key)
     if spec["within_stratum"] != "uniform_aep_mass_v1":
         _fail("Only explicit uniform-AEP-mass conditional sampling is implemented")
+    sources = _check_sources_and_rng(spec)
+    strata = _check_strata(spec)
+    _check_ifd(spec, strata)
+    _check_temporal_patterns(spec, strata)
+    _check_loss(spec, sources)
+    _check_fixed_parameters(spec)
 
+
+def _check_sources_and_rng(spec: dict[str, object]) -> dict[str, object]:
     sources = _obj(spec["sources"], "sources")
     if not {"ifd", "temporal_patterns"}.issubset(sources):
         _fail("An original IFD and temporal-pattern source SHA-256 are required")
     for role, source_sha in sources.items():
         _name(role, "source role")
         _digest(source_sha, f"sources.{role}")
-
     rng = _obj(spec["rng"], "rng")
     _keys(rng, {"algorithm", "derivation", "root_seed"}, "rng")
     if rng["algorithm"] != RNG_ALGORITHM or rng["derivation"] != RNG_DERIVATION:
         _fail("Unsupported RNG algorithm or stream derivation")
-    _int(rng["root_seed"], "rng.root_seed", 0, 2**128 - 1)
+    _int(rng["root_seed"], "rng.root_seed", 0, 2**64 - 1)
+    return sources
 
+
+def _check_strata(spec: dict[str, object]) -> list[object]:
     strata = _list(spec["strata"], "strata")
     if not 1 <= len(strata) <= MAX_STRATA:
         _fail("A bounded, nonempty set of rainfall strata is required")
@@ -178,40 +203,73 @@ def _check_spec(spec: dict[str, object]) -> None:
         ids.add(stratum_id)
         lo = _prob(item["aep_lower"], "stratum.aep_lower")
         hi = _prob(item["aep_upper"], "stratum.aep_upper")
-        if not lo < hi or (previous is not None and previous != lo):
+        if not lo < hi or hi == 1 or (previous is not None and previous != lo):
             _fail("Strata must be ascending, disjoint and contiguous; interior gaps/overlap are invalid")
         if _prob(item["probability_mass"], "stratum.probability_mass") != hi - lo:
             _fail("Stratum mass must equal its AEP interval width")
-        allocated += _int(item["count"], "stratum.count", 1, MAX_SAMPLES)
+        allocated += _int(item["count"], "stratum.count", 0, MAX_SAMPLES)
         previous = hi
     if allocated > MAX_SAMPLES:
         _fail("Sample allocation exceeds bounded-plan limit")
+    return strata
 
+
+def _check_ifd(spec: dict[str, object], strata: list[object]) -> None:
     ifd = _obj(spec["ifd"], "ifd")
     _keys(ifd, {"source_id", "interpolation", "points"}, "ifd")
     _name(ifd["source_id"], "ifd.source_id")
-    if ifd["interpolation"] != "linear_aep_depth_v1":
+    if ifd["interpolation"] != "z_linear_depth_v1":
         _fail("Unsupported IFD interpolation; no silent interpolation/extrapolation")
-    ifd_points = _list(ifd["points"], "ifd.points")
-    if not 2 <= len(ifd_points) <= 128:
+    points = _list(ifd["points"], "ifd.points")
+    if not 2 <= len(points) <= 128:
         _fail("IFD interpolation needs 2..128 source cells")
-    prev_p: Decimal | None = None
-    prev_d: Decimal | None = None
-    for value in ifd_points:
+    previous_p: Decimal | None = None
+    previous_depth: Decimal | None = None
+    for value in points:
         point = _obj(value, "ifd point")
         _keys(point, {"aep", "depth_mm"}, "ifd point")
         p = _prob(point["aep"], "ifd.aep")
         depth = _decimal(point["depth_mm"], "ifd.depth_mm")
-        if p == 0 or (prev_p is not None and p <= prev_p) or (prev_d is not None and depth > prev_d):
-            _fail("IFD AEP must increase strictly and rainfall depth must not increase with AEP")
-        prev_p, prev_d = p, depth
+        if p == 0 or p == 1 or (previous_p is not None and p <= previous_p):
+            _fail("IFD AEP must increase strictly and stay inside (0,1)")
+        if previous_depth is not None and depth > previous_depth:
+            _fail("IFD rainfall depth must not increase with AEP")
+        _normal_z(p)
+        previous_p, previous_depth = p, depth
     if _prob(_obj(strata[0], "stratum")["aep_lower"], "stratum.aep_lower") < _prob(
-        _obj(ifd_points[0], "IFD")["aep"], "ifd.aep"
+        _obj(points[0], "IFD")["aep"], "ifd.aep"
     ) or _prob(_obj(strata[-1], "stratum")["aep_upper"], "stratum.aep_upper") > _prob(
-        _obj(ifd_points[-1], "IFD")["aep"], "ifd.aep"
+        _obj(points[-1], "IFD")["aep"], "ifd.aep"
     ):
         _fail("Modelled AEP strata exceed measured IFD support; tail extrapolation is forbidden")
 
+
+def _check_tp_choices(choices: list[object]) -> None:
+    if not 1 <= len(choices) <= 4096:
+        _fail("Eligible TP population must be nonempty and bounded")
+    total = Decimal(0)
+    event_ids: set[str] = set()
+    orders: set[int] = set()
+    for choice in choices:
+        member = _obj(choice, "TP member")
+        _keys(member, {"event_id", "source_order", "probability"}, "TP member")
+        event_id = _name(member["event_id"], "TP source EventID")
+        if event_id in event_ids:
+            _fail("Duplicate TP EventID in conditional population")
+        event_ids.add(event_id)
+        source_order = _int(member["source_order"], "TP source order", 1, 1_000_000)
+        if source_order in orders:
+            _fail("Duplicate TP source order in conditional population")
+        orders.add(source_order)
+        weight = _prob(member["probability"], "TP conditional probability")
+        with localcontext() as ctx:
+            ctx.prec = 60
+            total += weight
+    if total != 1:
+        _fail("TP conditional probabilities must sum to exactly one")
+
+
+def _check_temporal_patterns(spec: dict[str, object], strata: list[object]) -> None:
     bins = _list(spec["tp_bins"], "tp_bins")
     if not 1 <= len(bins) <= 128:
         _fail("Temporal-pattern bins must be nonempty and bounded")
@@ -229,61 +287,52 @@ def _check_spec(spec: dict[str, object]) -> None:
         if lo != expected_lo or hi <= lo:
             _fail("TP conditional bins must cover all modelled rainfall AEP values without gaps/overlap")
         expected_lo = hi
-        choices = _list(band["choices"], "tp choices")
-        if not 1 <= len(choices) <= 4096:
-            _fail("Eligible TP population must be nonempty and bounded")
-        total = Decimal(0)
-        event_ids: set[str] = set()
-        for choice in choices:
-            member = _obj(choice, "TP member")
-            _keys(member, {"event_id", "source_order", "probability"}, "TP member")
-            event_id = _name(member["event_id"], "TP source EventID")
-            if event_id in event_ids:
-                _fail("Duplicate TP EventID in conditional population")
-            event_ids.add(event_id)
-            _int(member["source_order"], "TP source order", 1, 1_000_000)
-            weight = _prob(member["probability"], "TP conditional probability")
-            if weight <= 0:
-                _fail("TP member probability must be positive")
-            with localcontext() as ctx:
-                ctx.prec = 60
-                total += weight
-        if total != 1:
-            _fail("TP conditional probabilities must sum to exactly one")
+        _check_tp_choices(_list(band["choices"], "tp choices"))
     if expected_lo != _prob(_obj(strata[-1], "stratum")["aep_upper"], "stratum.aep_upper"):
         _fail("TP bins do not cover the entire rainfall probability domain")
 
+
+def _check_loss(spec: dict[str, object], sources: dict[str, object]) -> None:
     loss = _obj(spec["loss"], "loss")
     mode = loss.get("mode")
     if mode == "fixed_storm_il":
         _keys(loss, {"mode", "storm_il_mm"}, "loss")
         _decimal(loss["storm_il_mm"], "fixed storm IL")
-    elif mode == "empirical_scaled_storm_il":
-        _keys(loss, {"mode", "source_id", "median_storm_il_mm", "cdf_quantiles"}, "loss")
-        if "initial_loss" not in sources:
-            _fail("Empirical loss sampling requires a hashed initial_loss source")
-        _name(loss["source_id"], "loss.source_id")
-        _decimal(loss["median_storm_il_mm"], "median storm IL")
-        quantiles = _list(loss["cdf_quantiles"], "loss.cdf_quantiles")
-        if not 2 <= len(quantiles) <= 4096:
-            _fail("Empirical loss CDF needs 2..4096 points")
-        prev_u: Decimal | None = None
-        prev_ratio: Decimal | None = None
-        for item in quantiles:
-            point = _obj(item, "loss quantile")
-            _keys(point, {"nonexceedance", "ratio_to_median"}, "loss quantile")
-            u = _prob(point["nonexceedance"], "loss nonexceedance probability")
-            ratio = _decimal(point["ratio_to_median"], "loss median multiplier")
-            if prev_u is not None and (u <= prev_u or ratio < cast("Decimal", prev_ratio)):
-                _fail("Loss inverse CDF must be monotone with increasing nonexceedance probability")
-            prev_u, prev_ratio = u, ratio
-        if _prob(_obj(quantiles[0], "loss quantile")["nonexceedance"], "loss CDF start") != 0 or _prob(
-            _obj(quantiles[-1], "loss quantile")["nonexceedance"], "loss CDF end"
-        ) != 1:
-            _fail("Empirical loss inverse table must cover CDF endpoints zero and one")
-    else:
-        _fail("Loss mode must be explicitly fixed or source-specified empirical storm IL")
+        return
+    if mode == "empirical_scaled_storm_il":
+        _check_empirical_loss(loss, sources)
+        return
+    _fail("Loss mode must be explicitly fixed or source-specified empirical storm IL")
 
+
+def _check_empirical_loss(loss: dict[str, object], sources: dict[str, object]) -> None:
+    _keys(loss, {"mode", "source_id", "median_storm_il_mm", "cdf_quantiles"}, "loss")
+    if "initial_loss" not in sources:
+        _fail("Empirical loss sampling requires a hashed initial_loss source")
+    _name(loss["source_id"], "loss.source_id")
+    _decimal(loss["median_storm_il_mm"], "median storm IL")
+    quantiles = _list(loss["cdf_quantiles"], "loss.cdf_quantiles")
+    if not 2 <= len(quantiles) <= 4096:
+        _fail("Empirical loss CDF needs 2..4096 points")
+    prev_u: Decimal | None = None
+    prev_ratio: Decimal | None = None
+    table: list[tuple[Decimal, Decimal]] = []
+    for item in quantiles:
+        point = _obj(item, "loss quantile")
+        _keys(point, {"nonexceedance", "ratio_to_median"}, "loss quantile")
+        u = _prob(point["nonexceedance"], "loss nonexceedance probability")
+        ratio = _decimal(point["ratio_to_median"], "loss median multiplier")
+        if prev_u is not None and (u <= prev_u or ratio < cast("Decimal", prev_ratio)):
+            _fail("Loss inverse CDF must be monotone with increasing nonexceedance probability")
+        prev_u, prev_ratio = u, ratio
+        table.append((u, ratio))
+    if table[0][0] != 0 or table[-1][0] != 1:
+        _fail("Empirical loss inverse table must cover CDF endpoints zero and one")
+    if _linear_table(Decimal("0.5"), table) != 1:
+        _fail("Standardised empirical loss inverse must have median factor one")
+
+
+def _check_fixed_parameters(spec: dict[str, object]) -> None:
     fixed = _list(spec["fixed_parameters"], "fixed_parameters")
     if len(fixed) > 64:
         _fail("Too many fixed parameters")
@@ -297,7 +346,6 @@ def _check_spec(spec: dict[str, object]) -> None:
         fixed_names.add(key)
         _decimal(item["value"], "fixed parameter value", minimum=Decimal("-1e100"))
         _name(item["unit"], "fixed parameter unit")
-
 
 
 def ifd_from_bom(source: BoMIFD, duration_min: int) -> dict[str, object]:
@@ -323,7 +371,7 @@ def ifd_from_bom(source: BoMIFD, duration_min: int) -> dict[str, object]:
     points.sort(key=lambda p: Decimal(p["aep"]))
     if len(points) < 2:
         _fail("Source BoM IFD needs two explicit percentage-AEP points; no EY/ARI conversion")
-    return {"source_id": source.label or "BoM IFD source", "interpolation": "linear_aep_depth_v1", "points": points}
+    return {"source_id": source.label or "BoM IFD source", "interpolation": "z_linear_depth_v1", "points": points}
 
 
 def ifd_from_arr(table: IFDDataset, duration_min: int) -> dict[str, object]:
@@ -332,14 +380,14 @@ def ifd_from_arr(table: IFDDataset, duration_min: int) -> dict[str, object]:
         _fail("ARR IFD requires original percentage AEP and millimetre depth")
     try:
         index = table.durations_min.index(duration_min)
-    except ValueError as exc:
-        raise SamplePlanError("Requested duration absent from ARR source table") from exc
+    except ValueError:
+        _fail("Requested duration absent from ARR source table")
     points = [
         {"aep": str(aep / Decimal(100)), "depth_mm": str(depth)}
         for aep, depth in zip(table.aep_percent, table.depths_mm[index], strict=True)
     ]
     points.sort(key=lambda p: Decimal(p["aep"]))
-    return {"source_id": table.name, "interpolation": "linear_aep_depth_v1", "points": points}
+    return {"source_id": table.name, "interpolation": "z_linear_depth_v1", "points": points}
 
 
 def _population_spec(spec: dict[str, object]) -> dict[str, object]:
@@ -353,12 +401,22 @@ def _domain(spec: dict[str, object]) -> dict[str, str]:
     strata = _list(spec["strata"], "strata")
     lo = _prob(_obj(strata[0], "stratum")["aep_lower"], "stratum.aep_lower")
     hi = _prob(_obj(strata[-1], "stratum")["aep_upper"], "stratum.aep_upper")
+    unallocated = sum(
+        (
+            _prob(item["probability_mass"], "stratum.mass")
+            for item in (_obj(row, "stratum") for row in strata)
+            if item["count"] == 0
+        ),
+        Decimal(0),
+    )
     with localcontext() as ctx:
         ctx.prec = 60
         return {
             "convention": "AEP_FRACTION",
             "endpoint_rule": "[lower,upper); final upper closed; inverse draws strictly interior",
             "modelled_mass": str(hi - lo),
+            "unallocated_stratum_mass": str(unallocated),
+            "allocated_stratum_mass": str(hi - lo - unallocated),
             "lower_unmodelled_mass": str(lo),
             "upper_unmodelled_mass": str(1 - hi),
         }
@@ -425,7 +483,7 @@ class SamplePlan:
         increased = False
         for row in strata:
             item = _obj(row, "stratum")
-            old = _int(item["count"], "count", 1, MAX_SAMPLES)
+            old = _int(item["count"], "count", 0, MAX_SAMPLES)
             new = _int(counts[cast("str", item["id"])], "new count", old, MAX_SAMPLES)
             increased |= new > old
             item["count"] = new
@@ -434,19 +492,40 @@ class SamplePlan:
         return SamplePlan.create(spec, parent_plan_id=self.plan_id)
 
 
-def _draw(seed: int, population_id: str, sample_id: str, purpose: str) -> Decimal:
-    """Platform-stable, independent per-purpose 53-bit stream; no mutable RNG state."""
-    key = f"{RNG_ALGORITHM}\0{RNG_DERIVATION}\0{seed}\0{population_id}\0{sample_id}\0{purpose}"
-    bits = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big") >> 11
+def _draw(
+    seed: int,
+    plan: SamplePlan,
+    spec: dict[str, object],
+    stratum: dict[str, object],
+    index: int,
+    purpose: str,
+) -> Decimal:
+    """Adopted HMAC-SHA256/53-v1 stream: identity is independent of allocation and scheduling."""
+    payload = {
+        "namespace": "python-runoff-routing/mc-sampler",
+        "version": 1,
+        "population_id": plan.population_id,
+        "policy": spec["policy"],
+        "sources": spec["sources"],
+        "scenario_id": spec["scenario_id"],
+        "duration_min": spec["duration_min"],
+        "stratum_id": stratum["id"],
+        "aep_lower": stratum["aep_lower"],
+        "aep_upper": stratum["aep_upper"],
+        "index": index,
+        "purpose": purpose,
+    }
+    digest = hmac.new(seed.to_bytes(8, "big"), _json(payload).encode("utf-8"), hashlib.sha256).digest()
+    bits = int.from_bytes(digest[:8], "big") >> 11
     with localcontext() as ctx:
         ctx.prec = 60
-        return Decimal(2 * bits + 1) / Decimal(2**54)  # exact interior 53-bit cell centres
+        return Decimal(2 * bits + 1) / Decimal(2**54)
 
 
 def _linear_table(x: Decimal, points: list[tuple[Decimal, Decimal]], *, descending: bool = False) -> Decimal:
     if x < points[0][0] or x > points[-1][0]:
         _fail("Requested probability is outside explicit table support; no extrapolation")
-    for (x0, y0), (x1, y1) in zip(points, points[1:], strict=False):
+    for (x0, y0), (x1, y1) in pairwise(points):
         if x <= x1:
             with localcontext() as ctx:
                 ctx.prec = 60
@@ -458,15 +537,35 @@ def _linear_table(x: Decimal, points: list[tuple[Decimal, Decimal]], *, descendi
 
 
 def _ifd_depth(p: Decimal, ifd: dict[str, object]) -> Decimal:
+    """Z-linear *source depth* interpolation; never infer source AEP/EY conversions."""
     points = [
         (_prob(pt["aep"], "IFD aep"), _decimal(pt["depth_mm"], "IFD depth"))
         for pt in (_obj(x, "IFD point") for x in _list(ifd["points"], "ifd.points"))
     ]
-    return _linear_table(p, points, descending=True)
+    if p < points[0][0] or p > points[-1][0]:
+        _fail("Requested probability is outside explicit IFD support; no extrapolation")
+    for (p0, d0), (p1, d1) in pairwise(points):
+        if p == p0:
+            return d0
+        if p == p1:
+            return d1
+        if p0 < p < p1:
+            # z = inverse standard-normal CDF at rainfall *nonexceedance* 1-p.
+            # The Normal coordinate does not assert normally distributed rainfall depth.
+            z = _normal_z(p)
+            z0 = _normal_z(p0)
+            z1 = _normal_z(p1)
+            with localcontext() as ctx:
+                ctx.prec = 60
+                result = d0 + (d1 - d0) * (z - z0) / (z1 - z0)
+            if result < 0:
+                _fail("Negative IFD depth after z interpolation")
+            return result
+    _fail("No IFD bracket for a valid sampled probability")
 
 
 def interpolate_ifd_depth(plan: SamplePlan, aep_fraction: Decimal) -> Decimal:
-    """Only explicit linear-AEP depth interpolation, never outside the original IFD support."""
+    """Adopted z-linear source depth interpolation, with exact anchors and no extrapolation."""
     if not aep_fraction.is_finite() or not 0 <= aep_fraction <= 1:
         _fail("AEP must be a finite fraction in [0,1]")
     return _ifd_depth(aep_fraction, _obj(plan.spec()["ifd"], "IFD"))
@@ -606,7 +705,11 @@ def iter_stratum_samples(
     if len(matches) != 1:
         _fail("Unknown stratum ID")
     row = matches[0]
-    count = _int(row["count"], "count", 1, MAX_SAMPLES)
+    count = _int(row["count"], "count", 0, MAX_SAMPLES)
+    if count == 0:
+        if start != 0 or stop not in {0, None}:
+            _fail("Cannot draw from a zero-allocation stratum")
+        return
     end = count if stop is None else _int(stop, "stop", 0, count)
     _int(start, "start", 0, end)
     lo = _prob(row["aep_lower"], "stratum lower")
@@ -617,15 +720,15 @@ def iter_stratum_samples(
     bins = _list(spec["tp_bins"], "TP bins")
     ifd = _obj(spec["ifd"], "IFD")
     loss = _obj(spec["loss"], "loss")
-    seed = _int(_obj(spec["rng"], "rng")["root_seed"], "root seed", 0, 2**128 - 1)
+    seed = _int(_obj(spec["rng"], "rng")["root_seed"], "root seed", 0, 2**64 - 1)
     for index in range(start, end):
         sample_id = _sample_id(plan, stratum_id, index)
         with localcontext() as ctx:
             ctx.prec = 60
-            aep = lo + mass * _draw(seed, plan.population_id, sample_id, "rainfall_aep")
-        tp_u = _draw(seed, plan.population_id, sample_id, "conditional_temporal_pattern")
+            aep = lo + mass * _draw(seed, plan, spec, row, index, "rainfall")
+        tp_u = _draw(seed, plan, spec, row, index, "tp")
         tp_bin_id, event_id, source_order = _tp_selection(aep, tp_u, bins)
-        loss_u = _draw(seed, plan.population_id, sample_id, "storm_initial_loss") if loss["mode"] == "empirical_scaled_storm_il" else None
+        loss_u = _draw(seed, plan, spec, row, index, "loss") if loss["mode"] == "empirical_scaled_storm_il" else None
         ratio, storm_il = _loss_value(loss_u if loss_u is not None else Decimal("0.5"), loss)
         yield SampleRecord(
             plan_id=plan.plan_id,
@@ -653,10 +756,52 @@ def iter_plan_samples(plan: SamplePlan) -> Iterator[SampleRecord]:
         yield from iter_stratum_samples(plan, cast("str", _obj(row, "stratum")["id"]))
 
 
+def _validate_sample_identity(
+    plan: SamplePlan, spec: dict[str, object], sample: SampleRecord, row: dict[str, object], count: int
+) -> None:
+    with localcontext() as ctx:
+        ctx.prec = 60
+        expected_weight = _prob(row["probability_mass"], "mass") / count
+    lo = _prob(row["aep_lower"], "lower")
+    hi = _prob(row["aep_upper"], "upper")
+    if (
+        sample.plan_id != plan.plan_id
+        or sample.sample_id != _sample_id(plan, sample.stratum_id, sample.index)
+        or sample.scenario_id != spec["scenario_id"]
+        or sample.duration_min != spec["duration_min"]
+        or sample.event_probability_weight != expected_weight
+        or not lo < sample.aep_fraction < hi
+    ):
+        _fail("Sample provenance, identity, AEP or plan-revision weight mismatch")
+    if sample.gross_ifd_depth_mm != _ifd_depth(sample.aep_fraction, _obj(spec["ifd"], "IFD")):
+        _fail("Sample source-interpolated depth changed")
+
+
+def _validate_sample_tp_and_loss(spec: dict[str, object], sample: SampleRecord) -> None:
+    if not 0 < sample.tp_uniform < 1:
+        _fail("Invalid temporal-pattern inverse draw")
+    tp_id, event_id, source_order = _tp_selection(
+        sample.aep_fraction, sample.tp_uniform, _list(spec["tp_bins"], "TP bins")
+    )
+    if (tp_id, event_id, source_order) != (sample.tp_bin_id, sample.tp_event_id, sample.tp_source_order):
+        _fail("Sample selected an unavailable/incorrect conditional temporal pattern")
+    loss = _obj(spec["loss"], "loss")
+    if loss["mode"] == "empirical_scaled_storm_il":
+        if sample.loss_uniform is None or not 0 < sample.loss_uniform < 1:
+            _fail("Missing/invalid empirical loss primitive")
+        ratio, mm = _loss_value(sample.loss_uniform, loss)
+    else:
+        if sample.loss_uniform is not None:
+            _fail("Fixed storm loss cannot have a stochastic loss draw")
+        ratio, mm = _loss_value(Decimal("0.5"), loss)
+    if sample.storm_initial_loss_mm != mm or sample.storm_il_ratio_to_median != ratio:
+        _fail("Sample storm initial-loss interpretation/value mismatch")
+
+
 def iter_validated_samples(
     plan: SamplePlan, records: Iterable[SampleRecord], *, require_complete: bool = True
 ) -> Iterator[SampleRecord]:
-    """Validate an unordered ledger as it streams; remember only sample-index identities."""
+    """Validate unordered explicit samples without invoking the RNG."""
     spec = plan.spec()
     strata = {_name(r["id"], "stratum ID"): r for r in (_obj(x, "stratum") for x in _list(spec["strata"], "strata"))}
     seen: set[tuple[str, int]] = set()
@@ -664,46 +809,14 @@ def iter_validated_samples(
         row = strata.get(sample.stratum_id)
         if row is None:
             _fail("Sample refers to an unknown stratum")
-        count = _int(row["count"], "count", 1, MAX_SAMPLES)
+        count = _int(row["count"], "count", 0, MAX_SAMPLES)
         if not 0 <= sample.index < count or (sample.stratum_id, sample.index) in seen:
             _fail("Duplicate or out-of-allocation sample index")
         seen.add((sample.stratum_id, sample.index))
-        with localcontext() as ctx:
-            ctx.prec = 60
-            expected_weight = _prob(row["probability_mass"], "mass") / count
-        lo = _prob(row["aep_lower"], "lower")
-        hi = _prob(row["aep_upper"], "upper")
-        if (
-            sample.plan_id != plan.plan_id
-            or sample.sample_id != _sample_id(plan, sample.stratum_id, sample.index)
-            or sample.scenario_id != spec["scenario_id"]
-            or sample.duration_min != spec["duration_min"]
-            or sample.event_probability_weight != expected_weight
-            or not lo < sample.aep_fraction < hi
-        ):
-            _fail("Sample provenance, identity, AEP or plan-revision weight mismatch")
-        if sample.gross_ifd_depth_mm != _ifd_depth(sample.aep_fraction, _obj(spec["ifd"], "IFD")):
-            _fail("Sample source-interpolated depth changed")
-        if not 0 < sample.tp_uniform < 1:
-            _fail("Invalid temporal-pattern inverse draw")
-        tp_id, event_id, source_order = _tp_selection(
-            sample.aep_fraction, sample.tp_uniform, _list(spec["tp_bins"], "TP bins")
-        )
-        if (tp_id, event_id, source_order) != (sample.tp_bin_id, sample.tp_event_id, sample.tp_source_order):
-            _fail("Sample selected an unavailable/incorrect conditional temporal pattern")
-        loss = _obj(spec["loss"], "loss")
-        if loss["mode"] == "empirical_scaled_storm_il":
-            if sample.loss_uniform is None or not 0 < sample.loss_uniform < 1:
-                _fail("Missing/invalid empirical loss primitive")
-            ratio, mm = _loss_value(sample.loss_uniform, loss)
-        else:
-            if sample.loss_uniform is not None:
-                _fail("Fixed storm loss cannot have a stochastic loss draw")
-            ratio, mm = _loss_value(Decimal("0.5"), loss)
-        if sample.storm_initial_loss_mm != mm or sample.storm_il_ratio_to_median != ratio:
-            _fail("Sample storm initial-loss interpretation/value mismatch")
+        _validate_sample_identity(plan, spec, sample, row, count)
+        _validate_sample_tp_and_loss(spec, sample)
         yield sample
-    if require_complete and len(seen) != sum(_int(r["count"], "count", 1, MAX_SAMPLES) for r in strata.values()):
+    if require_complete and len(seen) != sum(_int(r["count"], "count", 0, MAX_SAMPLES) for r in strata.values()):
         _fail("Incomplete sample ledger: positive-weight planned records are missing")
 
 
@@ -721,12 +834,16 @@ def write_sample_plan(prefix: Path, plan: SamplePlan) -> tuple[Path, Path]:
         _fail("Sample-plan path already exists; do not overwrite an immutable revision")
     with manifest.open("x", encoding="utf-8", newline="\n") as handle:
         handle.write(json.dumps(plan.to_dict(), indent=2, ensure_ascii=False, allow_nan=False) + "\n")
+    created_ledger = False
     try:
         with ledger.open("x", encoding="utf-8", newline="\n") as handle:
+            created_ledger = True
             for record in iter_plan_samples(plan):
                 handle.write(_json(record.to_dict()) + "\n")
     except Exception:
-        ledger.unlink(missing_ok=True)
+        # Never unlink a ledger that another writer created while this pair was being opened.
+        if created_ledger:
+            ledger.unlink(missing_ok=True)
         manifest.unlink(missing_ok=True)
         raise
     return manifest, ledger
@@ -744,9 +861,13 @@ def iter_saved_sample_records(
     """Bounded streaming ledger verification and replay without sampling again."""
     def _records() -> Iterator[SampleRecord]:
         with path.open("r", encoding="utf-8") as handle:
-            for i, line in enumerate(handle):
-                if len(line.encode("utf-8")) > _MAX_SAMPLE_LINE_BYTES:
-                    _fail("Sample row exceeds maximum size")
+            for i in range(MAX_SAMPLES + 1):
+                # Bound per-line memory before parsing; never read an unbounded arbitrary input line.
+                line = handle.readline(_MAX_SAMPLE_LINE_BYTES + 1)
+                if not line:
+                    return
+                if len(line.encode("utf-8")) > _MAX_SAMPLE_LINE_BYTES or not line.endswith("\n"):
+                    _fail("Sample row exceeds maximum size or is unterminated")
                 if i >= MAX_SAMPLES:
                     _fail("Sample ledger exceeds bounded-plan limit")
                 yield SampleRecord.from_dict(_decode(line))
@@ -760,14 +881,21 @@ def read_sample_records(path: Path, plan: SamplePlan, *, require_complete: bool 
 
 
 def normal_coordinate_strata(z_edges: tuple[float, ...], counts: tuple[int, ...]) -> list[dict[str, object]]:
-    """Build AEP-probability boundaries from normal coordinates (not Normal rainfall)."""
+    """Convert increasing nonexceedance-normal z bin edges to ascending AEP strata.
+
+    Returned order is rare-to-frequent in increasing AEP, reversing input z-bin
+    counts to preserve each bin's allocation and its true nonuniform p mass.
+    """
     if len(z_edges) < 2 or len(counts) != len(z_edges) - 1 or any(not isfinite(z) for z in z_edges):
         _fail("Finite normal-coordinate edges require one sample count per stratum")
-    p = [Decimal(str(NormalDist().cdf(z))) for z in z_edges]
-    if any(a >= b for a, b in zip(p, p[1:], strict=False)):
+    if any(a >= b for a, b in pairwise(z_edges)):
         _fail("Normal-coordinate strata must be strictly increasing")
+    probability_edges = [Decimal(str(1 - NormalDist().cdf(z))) for z in reversed(z_edges)]
+    if any(a >= b or a <= 0 or b >= 1 for a, b in pairwise(probability_edges)):
+        _fail("Normal-coordinate CDF endpoints must be distinct strictly interior AEP fractions")
+    allocations = reversed(counts)
     return [
         {"id": f"h{i:04d}", "aep_lower": str(a), "aep_upper": str(b),
          "probability_mass": str(b - a), "count": n}
-        for i, (a, b, n) in enumerate(zip(p[:-1], p[1:], counts, strict=True))
+        for i, (a, b, n) in enumerate(zip(probability_edges[:-1], probability_edges[1:], allocations, strict=True))
     ]

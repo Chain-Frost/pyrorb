@@ -4,26 +4,28 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import hmac
 import json
+from collections.abc import Callable
 from dataclasses import replace
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 
+import runoff_routing.monte_carlo_plan as module
 from runoff_routing.monte_carlo_plan import (
     SamplePlan,
     SamplePlanError,
-    SampleRecord,
     interpolate_ifd_depth,
     inverse_storm_loss,
     iter_plan_samples,
+    iter_saved_sample_records,
     iter_stratum_samples,
     normal_coordinate_strata,
     read_sample_plan,
     read_sample_records,
-    iter_saved_sample_records,
     select_temporal_pattern,
     validate_sample_records,
     write_sample_plan,
@@ -46,8 +48,8 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
             "initial_loss": _sha(b"synthetic source CDF"),
         },
         "rng": {
-            "algorithm": "sha256-counter53-v1",
-            "derivation": "sha256-utf8-zero-separated-v1",
+            "algorithm": "hmac-sha256-53-v1",
+            "derivation": "canonical-json-domain-separated-v1",
             "root_seed": seed,
         },
         "within_stratum": "uniform_aep_mass_v1",
@@ -56,7 +58,7 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
             {"id": "h2", "aep_lower": "0.2", "aep_upper": "0.7", "probability_mass": "0.5", "count": 4},
         ],
         "ifd": {
-            "source_id": "exact BoM source labels", "interpolation": "linear_aep_depth_v1",
+            "source_id": "exact BoM source labels", "interpolation": "z_linear_depth_v1",
             "points": [
                 {"aep": "0.05", "depth_mm": "100"},
                 {"aep": "0.20", "depth_mm": "80"},
@@ -109,6 +111,8 @@ def test_mass_and_sample_weights_are_exact_and_no_tail_renormalisation() -> None
         "convention": "AEP_FRACTION",
         "endpoint_rule": "[lower,upper); final upper closed; inverse draws strictly interior",
         "modelled_mass": "0.6",
+        "unallocated_stratum_mass": "0",
+        "allocated_stratum_mass": "0.6",
         "lower_unmodelled_mass": "0.1",
         "upper_unmodelled_mass": "0.3",
     }
@@ -117,13 +121,13 @@ def test_mass_and_sample_weights_are_exact_and_no_tail_renormalisation() -> None
 
 def test_inverse_table_direction_median_and_ifd_interpolation() -> None:
     plan = SamplePlan.create(_spec())
-    assert interpolate_ifd_depth(plan, Decimal("0.2")) == Decimal("80")
-    assert interpolate_ifd_depth(plan, Decimal("0.45")) == Decimal("60")
-    assert interpolate_ifd_depth(plan, Decimal("0.7")) == Decimal("40")
+    assert interpolate_ifd_depth(plan, Decimal("0.2")) == Decimal(80)
+    assert abs(interpolate_ifd_depth(plan, Decimal("0.45")) - Decimal("59.0351833368")) < Decimal("0.0000000001")
+    assert interpolate_ifd_depth(plan, Decimal("0.7")) == Decimal(40)
     assert inverse_storm_loss(plan, Decimal("0.0")) == (Decimal("0.2"), Decimal("4.0"))
     assert inverse_storm_loss(plan, Decimal("0.25")) == (Decimal("0.60"), Decimal("12.00"))
-    assert inverse_storm_loss(plan, Decimal("0.5")) == (Decimal("1"), Decimal("20"))
-    assert inverse_storm_loss(plan, Decimal("1")) == (Decimal("2"), Decimal("40"))
+    assert inverse_storm_loss(plan, Decimal("0.5")) == (Decimal(1), Decimal(20))
+    assert inverse_storm_loss(plan, Decimal(1)) == (Decimal(2), Decimal(40))
     with pytest.raises(SamplePlanError, match="extrapolation"):
         interpolate_ifd_depth(plan, Decimal("0.9"))
 
@@ -142,14 +146,12 @@ def test_exact_conditional_tp_bin_edges_and_original_source_ids() -> None:
 
 
 def test_plan_roundtrip_and_explicit_replay_never_redraws(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    import runoff_routing.monte_carlo_plan as module
-
     plan = SamplePlan.create(_spec())
     paths = write_sample_plan(tmp_path / "run1", plan)
     loaded = read_sample_plan(paths[0])
     assert loaded == plan
     expected = list(iter_plan_samples(plan))
-    monkeypatch.setattr(module, "_draw", lambda *args: (_ for _ in ()).throw(AssertionError("RNG called")))
+    monkeypatch.setattr(module, "_draw", lambda *_args: (_ for _ in ()).throw(AssertionError("RNG called")))
     replay = read_sample_records(paths[1], loaded)
     assert replay == expected
     assert [x.to_dict() for x in replay] == [x.to_dict() for x in expected]
@@ -195,7 +197,8 @@ def test_extension_preserves_logical_draws_and_reweights_all_old_records() -> No
 def test_seed_changes_draws_but_not_fixed_policy() -> None:
     a = SamplePlan.create(_spec(seed=1))
     b = SamplePlan.create(_spec(seed=2))
-    assert a.plan_id != b.plan_id and a.population_id != b.population_id
+    assert a.plan_id != b.plan_id
+    assert a.population_id != b.population_id
     a_rows, b_rows = list(iter_plan_samples(a)), list(iter_plan_samples(b))
     assert a_rows[0].aep_fraction != b_rows[0].aep_fraction
     assert [(r.stratum_id, r.index, r.event_probability_weight) for r in a_rows] == [
@@ -226,6 +229,7 @@ def test_fixed_losses_are_distinct_from_stochastic_loss_draws() -> None:
         (lambda s: s["tp_bins"][0]["choices"][0].__setitem__("probability", "0.8"), "sum"),
         (lambda s: s["tp_bins"][1].__setitem__("aep_lower", "0.3"), "gaps/overlap"),
         (lambda s: s["loss"]["cdf_quantiles"][1].__setitem__("ratio_to_median", "0.1"), "monotone"),
+        (lambda s: s["loss"]["cdf_quantiles"][1].__setitem__("ratio_to_median", "1.5"), "median factor"),
         (lambda s: s["loss"]["cdf_quantiles"][0].__setitem__("nonexceedance", "0.1"), "endpoints"),
         (lambda s: s["rng"].__setitem__("algorithm", "MT19937"), "Unsupported RNG"),
         (lambda s: s["sources"].__setitem__("ifd", "wrong"), "SHA-256"),
@@ -289,3 +293,107 @@ def test_streamed_saved_samples_validate_without_buffering(tmp_path: Path) -> No
         item.sample_id for item in iter_plan_samples(plan)
     ]
 
+
+
+def test_145_z_linear_rainfall_depth_is_not_linear_in_aep() -> None:
+    spec = _spec()
+    spec["ifd"]["points"] = [
+        {"aep": "0.1", "depth_mm": "100"},
+        {"aep": "0.5", "depth_mm": "50"},
+    ]
+    spec["strata"] = [
+        {"id": "h1", "aep_lower": "0.1", "aep_upper": "0.5", "probability_mass": "0.4", "count": 8}
+    ]
+    spec["tp_bins"] = [
+        {"id": "frequent", "aep_lower": "0.1", "aep_upper": "0.5", "choices": [
+            {"event_id": "0001", "source_order": 1, "probability": "1"}
+        ]}
+    ]
+    plan = SamplePlan.create(spec)
+    # Independent normal-quantile calculation: 50 + 50 * Phi^-1(0.7) / Phi^-1(0.9).
+    assert abs(interpolate_ifd_depth(plan, Decimal("0.3")) - Decimal("70.45959471342826")) < Decimal("0.000001")
+    assert interpolate_ifd_depth(plan, Decimal("0.1")) == 100
+    assert interpolate_ifd_depth(plan, Decimal("0.5")) == 50
+
+
+def test_zero_allocation_is_explicit_missing_interior_mass_and_can_be_extended() -> None:
+    spec = _spec()
+    spec["strata"][1]["count"] = 0
+    original = SamplePlan.create(spec)
+    assert original.to_dict()["domain"]["unallocated_stratum_mass"] == "0.5"
+    assert original.to_dict()["domain"]["allocated_stratum_mass"] == "0.1"
+    assert len(list(iter_plan_samples(original))) == 2
+    assert list(iter_stratum_samples(original, "h2")) == []
+    validate_sample_records(original, list(iter_plan_samples(original)))
+    extended = original.extend({"h1": 2, "h2": 4})
+    assert extended.population_id == original.population_id
+    assert extended.plan_id != original.plan_id
+    assert extended.to_dict()["domain"]["unallocated_stratum_mass"] == "0"
+    old = list(iter_plan_samples(original))
+    full = list(iter_plan_samples(extended))
+    assert [x.sample_id for x in old] == [x.sample_id for x in full[:2]]
+    assert [x.aep_fraction for x in old] == [x.aep_fraction for x in full[:2]]
+    with pytest.raises(SamplePlanError, match="revision weight mismatch"):
+        validate_sample_records(extended, old, require_complete=False)
+
+
+def test_hmac_53bit_rng_uses_canonical_message_and_root_key() -> None:
+    spec = _spec(seed=1234)
+    plan = SamplePlan.create(spec)
+    row = spec["strata"][0]
+    message = {
+        "namespace": "python-runoff-routing/mc-sampler",
+        "version": 1,
+        "population_id": plan.population_id,
+        "policy": spec["policy"],
+        "sources": spec["sources"],
+        "scenario_id": spec["scenario_id"],
+        "duration_min": spec["duration_min"],
+        "stratum_id": row["id"],
+        "aep_lower": row["aep_lower"],
+        "aep_upper": row["aep_upper"],
+        "index": 0,
+        "purpose": "rainfall",
+    }
+    raw = json.dumps(message, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    digest = hmac.digest((1234).to_bytes(8, "big"), raw, "sha256")
+    with localcontext() as context:
+        context.prec = 60
+        unit = Decimal((int.from_bytes(digest[:8], "big") >> 11) * 2 + 1) / Decimal(2**54)
+        expected_p = Decimal("0.1") + Decimal("0.1") * unit
+    assert next(iter_plan_samples(plan)).aep_fraction == expected_p
+
+
+def test_source_changes_and_unsupported_extreme_probability_are_rejected() -> None:
+    first = SamplePlan.create(_spec())
+    spec = _spec()
+    spec["sources"]["ifd"] = _sha(b"new source revision")
+    changed = SamplePlan.create(spec)
+    assert first.population_id != changed.population_id
+    assert next(iter_plan_samples(first)).aep_fraction != next(iter_plan_samples(changed)).aep_fraction
+    spec = _spec()
+    spec["ifd"]["points"][0]["aep"] = "1e-50"
+    with pytest.raises(SamplePlanError, match="representable normal-coordinate"):
+        SamplePlan.create(spec)
+
+
+def test_zero_weight_tp_never_selected_and_duplicate_source_order_rejected() -> None:
+    spec = _spec()
+    spec["tp_bins"][0]["choices"][0]["probability"] = "0"
+    spec["tp_bins"][0]["choices"][1]["probability"] = "1"
+    plan = SamplePlan.create(spec)
+    assert select_temporal_pattern(plan, Decimal("0.15"), Decimal("0.00001"))[1] == "0101"
+    spec["tp_bins"][0]["choices"][1]["source_order"] = 7
+    with pytest.raises(SamplePlanError, match="Duplicate TP source order"):
+        SamplePlan.create(spec)
+
+
+def test_ledger_rejects_oversize_unterminated_rows(tmp_path: Path) -> None:
+    plan = SamplePlan.create(_spec())
+    path = tmp_path / "bad.samples.jsonl"
+    path.write_text("x" * 20_000)
+    with pytest.raises(SamplePlanError, match="row exceeds maximum size"):
+        read_sample_records(path, plan)
+    path.write_text("{}")
+    with pytest.raises(SamplePlanError, match="unterminated"):
+        read_sample_records(path, plan)
