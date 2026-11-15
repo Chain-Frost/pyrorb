@@ -66,6 +66,27 @@ jobs:
             Pop-Location
           }
 
+      - name: Fail-closed installed-wheel MVP CLI and full reports
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'runoff-wheel-smoke'
+          $events = (Resolve-Path 'examples/mvp-events.json').Path
+          $negativeEvents = (Resolve-Path 'examples/mvp-events-with-failure.json').Path
+          $env:PYTHONPATH = $target
+          Push-Location $env:RUNNER_TEMP
+          try {
+            python -m runoff_routing.project_batch wheel-engine-smoke.json wheel-project-mvp --events "$events" --engine python-cmd
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python -c "import csv,io,json; from pathlib import Path; r=json.loads(Path('wheel-project-mvp.json').read_text(encoding='utf-8')); rows=list(csv.DictReader(io.StringIO(Path('wheel-project-mvp.csv').read_text(encoding='utf-8')))); assert r['requested_event_count']==r['completed_event_count']==3 and all(x['effective_selection']['engine']=='python-cmd' for x in r['outcomes']); assert len(rows)==18 and 'Requested: 3' in Path('wheel-project-mvp.txt').read_text(encoding='utf-8'); print('Installed-wheel MVP CLI full exports OK')"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            # An unsupported event must preserve all outcomes, create complete reports and exit nonzero.
+            python -m runoff_routing.project_batch wheel-engine-smoke.json wheel-project-negative --events "$negativeEvents" --engine python-cmd
+            if ($LASTEXITCODE -ne 2) { throw "Expected unsupported batch exit code 2; got $LASTEXITCODE" }
+            python -c "import json; from pathlib import Path; r=json.loads(Path('wheel-project-negative.json').read_text(encoding='utf-8')); assert [x['status'] for x in r['outcomes']]==['computed_unvalidated','unsupported_feature','computed_unvalidated']; assert Path('wheel-project-negative.csv').is_file() and Path('wheel-project-negative.txt').is_file(); print('Installed-wheel MVP partial-failure CLI exit/report gate OK')"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
       - name: Prove PowerShell CMD baseline failures cannot be masked
         shell: pwsh
         run: |
