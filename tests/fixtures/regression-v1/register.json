@@ -12998,7 +12998,7 @@
       "case_id": "failure-m-above-one",
       "description": "boundary/error observations; do not assume valid physical inputs",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13023,7 +13023,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/70021dc91d5177b4db95ddef64470b6e3e68c6903e4e742518d640805a21ef30.par",
+          "sha256": "70021dc91d5177b4db95ddef64470b6e3e68c6903e4e742518d640805a21ef30",
+          "size_bytes": 389
+        },
+        {
+          "path": "native-cmd/objects/82fac56994ed193e68dc5bba3bc59b62ae3a42950513b70c3b0a18d40648a048.out",
+          "sha256": "82fac56994ed193e68dc5bba3bc59b62ae3a42950513b70c3b0a18d40648a048",
+          "size_bytes": 19749
+        },
+        {
+          "path": "native-cmd/objects/a994f9dadfdf1ad2cb06637c0a0e2c8c2cb54a82912118b95aea584818c09191.json",
+          "sha256": "a994f9dadfdf1ad2cb06637c0a0e2c8c2cb54a82912118b95aea584818c09191",
+          "size_bytes": 8192
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "failure-m-above-one",
@@ -13033,14 +13059,119 @@
           "path": "failures/failure-m-above-one_20261111T104649_0e2937d76e63/manifest.json",
           "sha256": "a994f9dadfdf1ad2cb06637c0a0e2c8c2cb54a82912118b95aea584818c09191",
           "size_bytes": 8192
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "failures/failure-m-above-one_20261111T104649_0e2937d76e63/catchment.catg",
+            "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+            "size_bytes": 6787
+          },
+          {
+            "identity": "storm",
+            "path": "failures/failure-m-above-one_20261111T104649_0e2937d76e63/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "failures/failure-m-above-one_20261111T104649_0e2937d76e63/reference.par",
+            "sha256": "1d18f46cf249a9def4030af0d40cb768817a08d66d2fa087e7b3a8d46c3ec46e",
+            "size_bytes": 389
+          }
+        ],
+        "original_reference": {
+          "path": "failures/failure-m-above-one_20261111T104649_0e2937d76e63/catchment_storm.out",
+          "sha256": "64c92cc4c06c9644f89d67a0ea23c40aa60a1355fe4be1d269aae7d1be8c66dd",
+          "size_bytes": 19749
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/70021dc91d5177b4db95ddef64470b6e3e68c6903e4e742518d640805a21ef30.par",
+          "sha256": "70021dc91d5177b4db95ddef64470b6e3e68c6903e4e742518d640805a21ef30",
+          "size_bytes": 389
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/82fac56994ed193e68dc5bba3bc59b62ae3a42950513b70c3b0a18d40648a048.out",
+        "sha256": "82fac56994ed193e68dc5bba3bc59b62ae3a42950513b70c3b0a18d40648a048",
+        "size_bytes": 19749
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "mutation": "only routing exponent m changed from 0.8 to 1.001",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "1.001",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "parsed",
+        "original_manifest": {
+          "path": "native-cmd/objects/a994f9dadfdf1ad2cb06637c0a0e2c8c2cb54a82912118b95aea584818c09191.json",
+          "sha256": "a994f9dadfdf1ad2cb06637c0a0e2c8c2cb54a82912118b95aea584818c09191",
+          "size_bytes": 8192
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "failure-m-above-one:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "failure-m-below-one",
       "description": "boundary/error observations; do not assume valid physical inputs",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13065,7 +13196,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/1ebec13d17884c148dcc54b3d705671176f4c437e489b46f77b00585106f98d4.par",
+          "sha256": "1ebec13d17884c148dcc54b3d705671176f4c437e489b46f77b00585106f98d4",
+          "size_bytes": 389
+        },
+        {
+          "path": "native-cmd/objects/391ec60e5218167be5981fada860a3703fe0efcb1e6a59c049d04d38a6f87160.out",
+          "sha256": "391ec60e5218167be5981fada860a3703fe0efcb1e6a59c049d04d38a6f87160",
+          "size_bytes": 19749
+        },
+        {
+          "path": "native-cmd/objects/dc4e5e49b1621545085e579fe21acc7dfed9784e7294b283d354997a2b28f5ea.json",
+          "sha256": "dc4e5e49b1621545085e579fe21acc7dfed9784e7294b283d354997a2b28f5ea",
+          "size_bytes": 8191
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "failure-m-below-one",
@@ -13075,14 +13232,119 @@
           "path": "failures/failure-m-below-one_20261111T104649_4aed41a00746/manifest.json",
           "sha256": "dc4e5e49b1621545085e579fe21acc7dfed9784e7294b283d354997a2b28f5ea",
           "size_bytes": 8191
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "failures/failure-m-below-one_20261111T104649_4aed41a00746/catchment.catg",
+            "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+            "size_bytes": 6787
+          },
+          {
+            "identity": "storm",
+            "path": "failures/failure-m-below-one_20261111T104649_4aed41a00746/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "failures/failure-m-below-one_20261111T104649_4aed41a00746/reference.par",
+            "sha256": "4a9a7de4bf5d7f82e0d202c6e2b36f7653c48db9447b309e4ee63e906120c8f1",
+            "size_bytes": 389
+          }
+        ],
+        "original_reference": {
+          "path": "failures/failure-m-below-one_20261111T104649_4aed41a00746/catchment_storm.out",
+          "sha256": "d7a4df1382f2cd6ccc718b55c433c11fbcaec5a224e9437742474283a2f3ec9b",
+          "size_bytes": 19749
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/1ebec13d17884c148dcc54b3d705671176f4c437e489b46f77b00585106f98d4.par",
+          "sha256": "1ebec13d17884c148dcc54b3d705671176f4c437e489b46f77b00585106f98d4",
+          "size_bytes": 389
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/391ec60e5218167be5981fada860a3703fe0efcb1e6a59c049d04d38a6f87160.out",
+        "sha256": "391ec60e5218167be5981fada860a3703fe0efcb1e6a59c049d04d38a6f87160",
+        "size_bytes": 19749
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "mutation": "only routing exponent m changed from 0.8 to 0.999",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.999",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "parsed",
+        "original_manifest": {
+          "path": "native-cmd/objects/dc4e5e49b1621545085e579fe21acc7dfed9784e7294b283d354997a2b28f5ea.json",
+          "sha256": "dc4e5e49b1621545085e579fe21acc7dfed9784e7294b283d354997a2b28f5ea",
+          "size_bytes": 8191
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "failure-m-below-one:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "failure-negative-reach-repeat",
       "description": "boundary/error observations; do not assume valid physical inputs",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13107,7 +13369,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020.catg",
+          "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/5e7f207e406c0c3936c3d4286c3295cc64588c45cfb2c570cf83bbd545257788.par",
+          "sha256": "5e7f207e406c0c3936c3d4286c3295cc64588c45cfb2c570cf83bbd545257788",
+          "size_bytes": 407
+        },
+        {
+          "path": "native-cmd/objects/2d60aaf4d36d5d76aadeaa05a5eaf1e6f45a48a3e288dcedeb9f317ddc1fd738.out",
+          "sha256": "2d60aaf4d36d5d76aadeaa05a5eaf1e6f45a48a3e288dcedeb9f317ddc1fd738",
+          "size_bytes": 19769
+        },
+        {
+          "path": "native-cmd/objects/23a88c9c5a3e0548b7a87cc51449757955e2f201d64c22a9b071591760341e55.json",
+          "sha256": "23a88c9c5a3e0548b7a87cc51449757955e2f201d64c22a9b071591760341e55",
+          "size_bytes": 8226
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "failure-negative-reach-repeat",
@@ -13117,14 +13405,119 @@
           "path": "failures/failure-negative-reach-repeat_20261111T104749_39235b7f5803/manifest.json",
           "sha256": "23a88c9c5a3e0548b7a87cc51449757955e2f201d64c22a9b071591760341e55",
           "size_bytes": 8226
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "failures/failure-negative-reach-repeat_20261111T104749_39235b7f5803/catchment.catg",
+            "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+            "size_bytes": 6788
+          },
+          {
+            "identity": "storm",
+            "path": "failures/failure-negative-reach-repeat_20261111T104749_39235b7f5803/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "failures/failure-negative-reach-repeat_20261111T104749_39235b7f5803/reference.par",
+            "sha256": "147d00cdb4393e2816835f49b3eb8e8947cb1d5aa14ce869a73f7f184de35d16",
+            "size_bytes": 407
+          }
+        ],
+        "original_reference": {
+          "path": "failures/failure-negative-reach-repeat_20261111T104749_39235b7f5803/catchment_storm.out",
+          "sha256": "2e6af78f651aa49a87e1cb6957f9937f4506e56dbde8e258b4ac6337791fea39",
+          "size_bytes": 19769
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020.catg",
+          "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/5e7f207e406c0c3936c3d4286c3295cc64588c45cfb2c570cf83bbd545257788.par",
+          "sha256": "5e7f207e406c0c3936c3d4286c3295cc64588c45cfb2c570cf83bbd545257788",
+          "size_bytes": 407
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/2d60aaf4d36d5d76aadeaa05a5eaf1e6f45a48a3e288dcedeb9f317ddc1fd738.out",
+        "sha256": "2d60aaf4d36d5d76aadeaa05a5eaf1e6f45a48a3e288dcedeb9f317ddc1fd738",
+        "size_bytes": 19769
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "mutation": "repeat identical negative first-reach bytes in a separate process",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.8",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "unsupported",
+        "original_manifest": {
+          "path": "native-cmd/objects/23a88c9c5a3e0548b7a87cc51449757955e2f201d64c22a9b071591760341e55.json",
+          "sha256": "23a88c9c5a3e0548b7a87cc51449757955e2f201d64c22a9b071591760341e55",
+          "size_bytes": 8226
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "failure-negative-reach-repeat:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "failure-negative-reach",
       "description": "boundary/error observations; do not assume valid physical inputs",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13149,7 +13542,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020.catg",
+          "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/7c32f772e9a60820b71f962f90f8b03f7863a0f3944d74de500df9f05d47822b.par",
+          "sha256": "7c32f772e9a60820b71f962f90f8b03f7863a0f3944d74de500df9f05d47822b",
+          "size_bytes": 393
+        },
+        {
+          "path": "native-cmd/objects/d1250468eaa0d7b5634e638bf98be0a067086cb5b22cd44f94883eeaaec6ad32.out",
+          "sha256": "d1250468eaa0d7b5634e638bf98be0a067086cb5b22cd44f94883eeaaec6ad32",
+          "size_bytes": 19755
+        },
+        {
+          "path": "native-cmd/objects/630463fd8e7131e0141f65b430d9686d1bfd1bac79fc7e79dc16b4c59654eae8.json",
+          "sha256": "630463fd8e7131e0141f65b430d9686d1bfd1bac79fc7e79dc16b4c59654eae8",
+          "size_bytes": 8209
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "failure-negative-reach",
@@ -13159,8 +13578,113 @@
           "path": "failures/failure-negative-reach_20261111T104649_33e57e818191/manifest.json",
           "sha256": "630463fd8e7131e0141f65b430d9686d1bfd1bac79fc7e79dc16b4c59654eae8",
           "size_bytes": 8209
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "failures/failure-negative-reach_20261111T104649_33e57e818191/catchment.catg",
+            "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+            "size_bytes": 6788
+          },
+          {
+            "identity": "storm",
+            "path": "failures/failure-negative-reach_20261111T104649_33e57e818191/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "failures/failure-negative-reach_20261111T104649_33e57e818191/reference.par",
+            "sha256": "527072339a9cf7ebb62e638954659e7e2ba15e14a23dbed01f95c43edb3fe295",
+            "size_bytes": 393
+          }
+        ],
+        "original_reference": {
+          "path": "failures/failure-negative-reach_20261111T104649_33e57e818191/catchment_storm.out",
+          "sha256": "d6fa65db72cbd0dca493200dfe33f572a4cf468bfd4433d1beed5cb8c30e27f0",
+          "size_bytes": 19755
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020.catg",
+          "sha256": "65480c2d010a9a48f4fb0b838112841ee69534b24c047c2867bdaa2a1cbaa020",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/7c32f772e9a60820b71f962f90f8b03f7863a0f3944d74de500df9f05d47822b.par",
+          "sha256": "7c32f772e9a60820b71f962f90f8b03f7863a0f3944d74de500df9f05d47822b",
+          "size_bytes": 393
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/d1250468eaa0d7b5634e638bf98be0a067086cb5b22cd44f94883eeaaec6ad32.out",
+        "sha256": "d1250468eaa0d7b5634e638bf98be0a067086cb5b22cd44f94883eeaaec6ad32",
+        "size_bytes": 19755
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "mutation": "first reach length +5 changed to -5; all other bytes unchanged",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.8",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "unsupported",
+        "original_manifest": {
+          "path": "native-cmd/objects/630463fd8e7131e0141f65b430d9686d1bfd1bac79fc7e79dc16b4c59654eae8.json",
+          "sha256": "630463fd8e7131e0141f65b430d9686d1bfd1bac79fc7e79dc16b4c59654eae8",
+          "size_bytes": 8209
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "failure-negative-reach:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "failure-truncated-storm",
@@ -13208,7 +13732,7 @@
       "case_id": "failure-zero-reach",
       "description": "boundary/error observations; do not assume valid physical inputs",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13233,7 +13757,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/dcbe36cbd817e2c88a85f98cf3fedf1530283ebd275bad876f044eb9b18037ac.catg",
+          "sha256": "dcbe36cbd817e2c88a85f98cf3fedf1530283ebd275bad876f044eb9b18037ac",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/0e2fdeef763c254fed8ee4639aa543d62e6bb1213f096112f311b03f9bde2ea7.par",
+          "sha256": "0e2fdeef763c254fed8ee4639aa543d62e6bb1213f096112f311b03f9bde2ea7",
+          "size_bytes": 385
+        },
+        {
+          "path": "native-cmd/objects/9d8d64b08d1134de2401c8e144a5f128a70088edae8342916fe862f035d991dd.out",
+          "sha256": "9d8d64b08d1134de2401c8e144a5f128a70088edae8342916fe862f035d991dd",
+          "size_bytes": 19747
+        },
+        {
+          "path": "native-cmd/objects/2bc6f7cebb4ba58df60cdbebc662c2bbf6475b5f4367dbfe860b3c03b9f8bae6.json",
+          "sha256": "2bc6f7cebb4ba58df60cdbebc662c2bbf6475b5f4367dbfe860b3c03b9f8bae6",
+          "size_bytes": 8216
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "failure-zero-reach",
@@ -13243,14 +13793,119 @@
           "path": "failures/failure-zero-reach_20261111T104749_4dc59492926b/manifest.json",
           "sha256": "2bc6f7cebb4ba58df60cdbebc662c2bbf6475b5f4367dbfe860b3c03b9f8bae6",
           "size_bytes": 8216
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "failures/failure-zero-reach_20261111T104749_4dc59492926b/catchment.catg",
+            "sha256": "dcbe36cbd817e2c88a85f98cf3fedf1530283ebd275bad876f044eb9b18037ac",
+            "size_bytes": 6787
+          },
+          {
+            "identity": "storm",
+            "path": "failures/failure-zero-reach_20261111T104749_4dc59492926b/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "failures/failure-zero-reach_20261111T104749_4dc59492926b/reference.par",
+            "sha256": "1aafefc9b447423b28a72b2d4b3fcbe1e7a3d8ab5eae53dc057feed8acd533b2",
+            "size_bytes": 385
+          }
+        ],
+        "original_reference": {
+          "path": "failures/failure-zero-reach_20261111T104749_4dc59492926b/catchment_storm.out",
+          "sha256": "3e51e9355fb36d1cbe7a43bc3401125dda2161cd50b61eaccf52f081593f1b8d",
+          "size_bytes": 19747
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/dcbe36cbd817e2c88a85f98cf3fedf1530283ebd275bad876f044eb9b18037ac.catg",
+          "sha256": "dcbe36cbd817e2c88a85f98cf3fedf1530283ebd275bad876f044eb9b18037ac",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/0e2fdeef763c254fed8ee4639aa543d62e6bb1213f096112f311b03f9bde2ea7.par",
+          "sha256": "0e2fdeef763c254fed8ee4639aa543d62e6bb1213f096112f311b03f9bde2ea7",
+          "size_bytes": 385
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/9d8d64b08d1134de2401c8e144a5f128a70088edae8342916fe862f035d991dd.out",
+        "sha256": "9d8d64b08d1134de2401c8e144a5f128a70088edae8342916fe862f035d991dd",
+        "size_bytes": 19747
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "mutation": "first reach length +5 changed to zero, documented admissible workflow control",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.8",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "unsupported",
+        "original_manifest": {
+          "path": "native-cmd/objects/2bc6f7cebb4ba58df60cdbebc662c2bbf6475b5f4367dbfe860b3c03b9f8bae6.json",
+          "sha256": "2bc6f7cebb4ba58df60cdbebc662c2bbf6475b5f4367dbfe860b3c03b9f8bae6",
+          "size_bytes": 8216
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "failure-zero-reach:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "fig67-code11",
       "description": "historical S0 reference cases; retain original per-case validation limits",
       "coverage": "gap",
-      "reason": "Incomplete raw native output",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13275,7 +13930,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f.catg",
+          "sha256": "07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/06faeb01f8b6874ba86dbc6931f5a53a7b542f54df8b0d45019ab0c8642e54a9.par",
+          "sha256": "06faeb01f8b6874ba86dbc6931f5a53a7b542f54df8b0d45019ab0c8642e54a9",
+          "size_bytes": 343
+        },
+        {
+          "path": "native-cmd/objects/abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13.out",
+          "sha256": "abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13",
+          "size_bytes": 32805
+        },
+        {
+          "path": "native-cmd/objects/3c5fc5447efc3c86cf54b5d35bea3f1a004f1c70dee8ba2a6230820a20990cc1.json",
+          "sha256": "3c5fc5447efc3c86cf54b5d35bea3f1a004f1c70dee8ba2a6230820a20990cc1",
+          "size_bytes": 3730
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "fig67-code11",
@@ -13285,14 +13966,148 @@
           "path": "s0-retained/fig67-code11_20261111T093406_70a97684f7e4/manifest.json",
           "sha256": "3c5fc5447efc3c86cf54b5d35bea3f1a004f1c70dee8ba2a6230820a20990cc1",
           "size_bytes": 3730
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "s0-retained/fig67-code11_20261111T093406_70a97684f7e4/catchment.catg",
+            "sha256": "07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f",
+            "size_bytes": 6788
+          },
+          {
+            "identity": "storm",
+            "path": "s0-retained/fig67-code11_20261111T093406_70a97684f7e4/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "s0-retained/fig67-code11_20261111T093406_70a97684f7e4/reference.par",
+            "sha256": "cad212e82557feeb8b63fcc23f0c15978f0ea46f68f403ef47fac8dfa98724d5",
+            "size_bytes": 343
+          }
+        ],
+        "original_reference": {
+          "path": "s0-retained/fig67-code11_20261111T093406_70a97684f7e4/catchment_storm.out",
+          "sha256": "2544b11afd4fa82f90187153995b5777b77b0a73d4aae7aa8c10008284cab1a6",
+          "size_bytes": 32805
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f.catg",
+          "sha256": "07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f",
+          "size_bytes": 6788
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/06faeb01f8b6874ba86dbc6931f5a53a7b542f54df8b0d45019ab0c8642e54a9.par",
+          "sha256": "06faeb01f8b6874ba86dbc6931f5a53a7b542f54df8b0d45019ab0c8642e54a9",
+          "size_bytes": 343
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13.out",
+        "sha256": "abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13",
+        "size_bytes": 32805
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "derivation": "first computational code 1 replaced by 11; all other bytes preserved; GUI graphics comments unchanged",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.8",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "unsupported",
+        "original_manifest": {
+          "path": "native-cmd/objects/3c5fc5447efc3c86cf54b5d35bea3f1a004f1c70dee8ba2a6230820a20990cc1.json",
+          "sha256": "3c5fc5447efc3c86cf54b5d35bea3f1a004f1c70dee8ba2a6230820a20990cc1",
+          "size_bytes": 3730
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md",
+        "output_contract": "unimplemented_separate_typed_diagnostics_pending_owner_agreement"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": null,
+          "physical_site_id": "fig67-code11:Hyd001",
+          "source_label": "Sub-area inflow point, sub-area A - Upstream",
+          "mapping_evidence": "Original report legend; extended code-11 output contract pending #3/#119 agreement"
+        },
+        {
+          "native_column_id": "Hyd002",
+          "model_print_id": null,
+          "physical_site_id": "fig67-code11:Hyd002",
+          "source_label": "Sub-area inflow point, sub-area A - Rain ex.",
+          "mapping_evidence": "Original report legend; extended code-11 output contract pending #3/#119 agreement"
+        },
+        {
+          "native_column_id": "Hyd003",
+          "model_print_id": null,
+          "physical_site_id": "fig67-code11:Hyd003",
+          "source_label": "Normal storage, reach no.   0   1 - Downstream",
+          "mapping_evidence": "Original report legend; extended code-11 output contract pending #3/#119 agreement"
+        },
+        {
+          "native_column_id": "Hyd004",
+          "model_print_id": null,
+          "physical_site_id": "fig67-code11:Hyd004",
+          "source_label": "Normal storage, reach no.   0   1 - Upstream",
+          "mapping_evidence": "Original report legend; extended code-11 output contract pending #3/#119 agreement"
+        },
+        {
+          "native_column_id": "Hyd005",
+          "model_print_id": null,
+          "physical_site_id": "fig67-code11:Hyd005",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Original report legend; extended code-11 output contract pending #3/#119 agreement"
+        }
+      ]
     },
     {
       "case_id": "fig67-ilroc",
       "description": "historical S0 reference cases; retain original per-case validation limits",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13317,7 +14132,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/ef0e8dc7d7a53d92848bf64be91e4c37c27bc8ef30e158f891bdf0012c1ddacb.par",
+          "sha256": "ef0e8dc7d7a53d92848bf64be91e4c37c27bc8ef30e158f891bdf0012c1ddacb",
+          "size_bytes": 343
+        },
+        {
+          "path": "native-cmd/objects/38fa377a141f662c9ada578765da948e814c40fed1859203e76f8ac5ef67ebb2.out",
+          "sha256": "38fa377a141f662c9ada578765da948e814c40fed1859203e76f8ac5ef67ebb2",
+          "size_bytes": 19711
+        },
+        {
+          "path": "native-cmd/objects/9be594f091e6fb5d7ae82e5df9a9fd57f6beff2bda38d1614fb7688bc8c3234e.json",
+          "sha256": "9be594f091e6fb5d7ae82e5df9a9fd57f6beff2bda38d1614fb7688bc8c3234e",
+          "size_bytes": 8186
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "fig67-ilroc",
@@ -13327,14 +14168,118 @@
           "path": "s0-retained/fig67-ilroc_20261111T093312_afa8580c7a5b/manifest.json",
           "sha256": "9be594f091e6fb5d7ae82e5df9a9fd57f6beff2bda38d1614fb7688bc8c3234e",
           "size_bytes": 8186
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "s0-retained/fig67-ilroc_20261111T093312_afa8580c7a5b/catchment.catg",
+            "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+            "size_bytes": 6787
+          },
+          {
+            "identity": "storm",
+            "path": "s0-retained/fig67-ilroc_20261111T093312_afa8580c7a5b/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "s0-retained/fig67-ilroc_20261111T093312_afa8580c7a5b/reference.par",
+            "sha256": "d744c4a2c2b38ae4df5041ca077f18a7948e60ddd60a508e264006fcef862801",
+            "size_bytes": 343
+          }
+        ],
+        "original_reference": {
+          "path": "s0-retained/fig67-ilroc_20261111T093312_afa8580c7a5b/catchment_storm.out",
+          "sha256": "465dbb981a3de66c8d92f274818543755c0fb18a08b91a3c0fa8571a82e9b4b6",
+          "size_bytes": 19711
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/ef0e8dc7d7a53d92848bf64be91e4c37c27bc8ef30e158f891bdf0012c1ddacb.par",
+          "sha256": "ef0e8dc7d7a53d92848bf64be91e4c37c27bc8ef30e158f891bdf0012c1ddacb",
+          "size_bytes": 343
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/38fa377a141f662c9ada578765da948e814c40fed1859203e76f8ac5ef67ebb2.out",
+        "sha256": "38fa377a141f662c9ada578765da948e814c40fed1859203e76f8ac5ef67ebb2",
+        "size_bytes": 19711
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "cmd_writer": {
+          "kc": "10",
+          "m": "0.8",
+          "initial_loss_mm": "20",
+          "continuing": "0.5",
+          "continuing_unit": "runoff_coefficient",
+          "loss_model": 2,
+          "loss_interpretation": "IL/runoff coefficient",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "parsed",
+        "original_manifest": {
+          "path": "native-cmd/objects/9be594f091e6fb5d7ae82e5df9a9fd57f6beff2bda38d1614fb7688bc8c3234e.json",
+          "sha256": "9be594f091e6fb5d7ae82e5df9a9fd57f6beff2bda38d1614fb7688bc8c3234e",
+          "size_bytes": 8186
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "fig67-ilroc:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "fig67-kc5-m1",
       "description": "historical S0 reference cases; retain original per-case validation limits",
       "coverage": "gap",
-      "reason": "Captured, but not reviewed for typed execution/compatibility",
+      "reason": "Original bytes, controls, profile, report legend and full horizon authenticated; retained as gap pending independent admission and feature-specific numerical/output review; generator revision unknown",
       "engine_profile": {
         "engine_id": "rorb-cmd",
         "native_profile": "CMD_6.44",
@@ -13359,7 +14304,33 @@
         "native-all",
         "native-gaps"
       ],
-      "files": [],
+      "files": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/015ad979a22f64883063548074b8b12d94f9581f3f010c277689463a96e51f29.par",
+          "sha256": "015ad979a22f64883063548074b8b12d94f9581f3f010c277689463a96e51f29",
+          "size_bytes": 340
+        },
+        {
+          "path": "native-cmd/objects/ec60fdc55533e52f5cff2c791ebaf02512d0de2a83b6a03481370667c06e0f02.out",
+          "sha256": "ec60fdc55533e52f5cff2c791ebaf02512d0de2a83b6a03481370667c06e0f02",
+          "size_bytes": 19705
+        },
+        {
+          "path": "native-cmd/objects/18257c29ccc8cc47fcb66194ac9dad7e5788641dab9c05be366e29fbb0d6c570.json",
+          "sha256": "18257c29ccc8cc47fcb66194ac9dad7e5788641dab9c05be366e29fbb0d6c570",
+          "size_bytes": 8104
+        }
+      ],
       "source_identity": {
         "register_revision": "78d257745e94cdca74d1fdcdc8a615d472a8bf9c",
         "case_id": "fig67-kc5-m1",
@@ -13369,8 +14340,112 @@
           "path": "s0-retained/fig67-kc5-m1_20261111T093312_e128c0b7d82b/manifest.json",
           "sha256": "18257c29ccc8cc47fcb66194ac9dad7e5788641dab9c05be366e29fbb0d6c570",
           "size_bytes": 8104
+        },
+        "original_inputs": [
+          {
+            "identity": "catchment",
+            "path": "s0-retained/fig67-kc5-m1_20261111T093312_e128c0b7d82b/catchment.catg",
+            "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+            "size_bytes": 6787
+          },
+          {
+            "identity": "storm",
+            "path": "s0-retained/fig67-kc5-m1_20261111T093312_e128c0b7d82b/storm.stm",
+            "sha256": "330b11a03628f56de1c22090729b615f07e9299cc8e7280476a3b8c12d0db0f6",
+            "size_bytes": 1310
+          },
+          {
+            "identity": "parameters",
+            "path": "s0-retained/fig67-kc5-m1_20261111T093312_e128c0b7d82b/reference.par",
+            "sha256": "01048d0aae7013540edcd3f031feae13af555cfa4a54e46830dfe2a8dafbcdef",
+            "size_bytes": 340
+          }
+        ],
+        "original_reference": {
+          "path": "s0-retained/fig67-kc5-m1_20261111T093312_e128c0b7d82b/catchment_storm.out",
+          "sha256": "41c1dba2eabba421a8f46b043d1afdc6757d61f7d6902563ea8d9247a3274422",
+          "size_bytes": 19705
         }
-      }
+      },
+      "inputs": [
+        {
+          "path": "native-cmd/objects/5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07.catg",
+          "sha256": "5ca232d0ac52719458b39582f28b2634012325329345816f3b4daf74140bba07",
+          "size_bytes": 6787
+        },
+        {
+          "path": "native-cmd/objects/4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b.stm",
+          "sha256": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+          "size_bytes": 1310
+        },
+        {
+          "path": "native-cmd/objects/015ad979a22f64883063548074b8b12d94f9581f3f010c277689463a96e51f29.par",
+          "sha256": "015ad979a22f64883063548074b8b12d94f9581f3f010c277689463a96e51f29",
+          "size_bytes": 340
+        }
+      ],
+      "reference": {
+        "path": "native-cmd/objects/ec60fdc55533e52f5cff2c791ebaf02512d0de2a83b6a03481370667c06e0f02.out",
+        "sha256": "ec60fdc55533e52f5cff2c791ebaf02512d0de2a83b6a03481370667c06e0f02",
+        "size_bytes": 19705
+      },
+      "reference_format": "native_report",
+      "reference_kind": "native_printed_interval",
+      "effective_inputs": {
+        "timestep_hours": "0.5",
+        "horizon": "300 increments; source header",
+        "isa_mapping": [
+          1
+        ],
+        "burst_mapping": [
+          1
+        ],
+        "raw_time_grid": "Inc 1..301; printed hours 0.50..150.50; no time shift applied",
+        "cmd_writer": {
+          "kc": "5",
+          "m": "1",
+          "initial_loss_mm": "20",
+          "continuing": "2",
+          "continuing_unit": "mm/h",
+          "loss_model": 1,
+          "loss_interpretation": "IL/CL",
+          "num_isa": 1,
+          "num_bursts": 1
+        }
+      },
+      "clock": {
+        "row_count": 301,
+        "timestep_hours": "0.5",
+        "raw_convention": "Original Inc 1..301 / Time 0.50..150.50; model elapsed clock is separate",
+        "full_horizon_required": true
+      },
+      "evidence_review": {
+        "status": "authenticated_original_pending_admission",
+        "native_execution": "complete_table_not_native_rejected",
+        "indexed_members_verified": 9,
+        "source_generator_revision": "unknown",
+        "typed_source_status": "parsed",
+        "original_manifest": {
+          "path": "native-cmd/objects/18257c29ccc8cc47fcb66194ac9dad7e5788641dab9c05be366e29fbb0d6c570.json",
+          "sha256": "18257c29ccc8cc47fcb66194ac9dad7e5788641dab9c05be366e29fbb0d6c570",
+          "size_bytes": 8104
+        },
+        "review_record": "docs/work/2026-11-15-independent-native-closeout.md"
+      },
+      "observations": {
+        "native_printed": "authenticated_complete",
+        "physical_site_identity": "source_and_report_legend_only_not_independent_native_node_observation",
+        "storage": "unavailable"
+      },
+      "sites": [
+        {
+          "native_column_id": "Hyd001",
+          "model_print_id": "print_1",
+          "physical_site_id": "fig67-kc5-m1:Hyd001",
+          "source_label": "Calculated hydrograph,",
+          "mapping_evidence": "Unique original terminal code7, original control sequence and calculated-hydrograph legend"
+        }
+      ]
     },
     {
       "case_id": "gui652-ilcl-baseline",
@@ -13875,7 +14950,7 @@
   },
   "file_index": {
     "path": "native-cmd/index.json",
-    "sha256": "6a6456e5a08a25059eec9a1c88febee7464da7ac98f60d6305232604097a75fe",
-    "size_bytes": 47636
+    "sha256": "0a132bb113f704b7d4d863336ff442e21da3556a1ada87f514ea4b8c1e7597d3",
+    "size_bytes": 53400
   }
 }
