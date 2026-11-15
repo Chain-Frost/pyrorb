@@ -435,6 +435,7 @@ def execute_mc_request(
         selection=selected,
         selection_source="api_override",
         wheel_artifact=wheel_artifact,
+        _loaded_project=loaded,
     )
     for record, outcome in zip(remaining, outcomes, strict=True):
         _fixed_parameters(record, loaded)
@@ -506,7 +507,13 @@ def replay_mc_event(
         message = "Representative-event replay requires a successfully checkpointed actual sample"
         raise MCRunError(message)
     _fixed_parameters(match, loaded)
-    report = run_project_events(project_path, (match.event,), selection=selected, wheel_artifact=wheel_artifact)
+    report = run_project_events(
+        project_path,
+        (match.event,),
+        selection=selected,
+        wheel_artifact=wheel_artifact,
+        _loaded_project=loaded,
+    )
     outcome = report.outcomes[0]
     replayed = _event_row(match, outcome)
     for key in ("effective_event_sha256", "effective_model_sha256", "status", "sites"):
@@ -653,6 +660,7 @@ def extend_mc_execution(
             _uncached_events(db, new_request_path),
             selection=selected,
             wheel_artifact=wheel_artifact,
+            _loaded_project=loaded,
         )
         for event in iter_effective_events(new_request_path):
             matched = db.execute("SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)).fetchone()

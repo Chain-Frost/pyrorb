@@ -16,6 +16,7 @@ from typing import cast
 
 import pytest
 
+from runoff_routing import monte_carlo_execution as mc_execution
 from runoff_routing.bom_ifd import read_bom_ifd_csv
 from runoff_routing.monte_carlo_bridge import prepare_saved_sample_plan
 from runoff_routing.monte_carlo_effective import iter_effective_events, validate_effective_request
@@ -136,6 +137,48 @@ def test_changed_model_cannot_execute_saved_b_draws(tmp_path: Path, model_change
     with pytest.raises(MCRunError, match="prepared for a different source model"):
         execute_mc_request(project, request, ledger)
     assert not ledger.exists()
+
+
+def test_routes_validated_model_snapshot_when_project_changes_at_checkpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project, config, ifd, patterns = _fixture(tmp_path)
+    prefix = tmp_path / "snapshot"
+    assert main(["plan", str(config), str(prefix)]) == 0
+    request = tmp_path / "snapshot-effective.jsonl"
+    prepare_saved_sample_plan(
+        project,
+        prefix.with_suffix(".plan.json"),
+        prefix.with_suffix(".samples.jsonl"),
+        request,
+        ifd_path=ifd,
+        patterns_path=patterns,
+        arf_region="South-West Western Australia",
+        dry_tail_min=120,
+    )
+    baseline = tmp_path / "snapshot-baseline.jsonl"
+    assert execute_mc_request(project, request, baseline).complete
+
+    original_new_ledger = mc_execution._new_ledger
+
+    def mutate_after_identity_check(path: Path, header: dict[str, object]) -> str:
+        previous = original_new_ledger(path, header)
+        loaded = load_project(project)
+        params = loaded.run.parameters
+        modified = replace(loaded.run, parameters=replace(params, routing=(replace(params.routing[0], kc=Decimal(5)),)))
+        project.unlink()
+        write_project(project, replace(loaded.project, model_source=EmbeddedRun(modified)))
+        return previous
+
+    raced = tmp_path / "snapshot-raced.jsonl"
+    with monkeypatch.context() as patch:
+        patch.setattr(mc_execution, "_new_ledger", mutate_after_identity_check)
+        assert execute_mc_request(project, request, raced).complete
+    # Every routed event came from the originally validated source snapshot,
+    # not the changed project file reopened by the common event runner.
+    assert raced.read_bytes() == baseline.read_bytes()
+    with pytest.raises(MCRunError, match="prepared for a different source model"):
+        execute_mc_request(project, request, tmp_path / "snapshot-new-run.jsonl")
 
 
 def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:

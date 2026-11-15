@@ -225,6 +225,12 @@ Every appended row is flushed/fsynced. The project must have the same
 canonical RunModel used at sample preparation: a change to kc, m, area,
 geometry, source storm or loss parameters invalidates run/resume/replay/
 extension and cannot silently reuse the previous ARF or routed peaks.
+The common event runner consumes the exact validated `LoadedProject`
+snapshot through an internal-only keyword rather than independently
+reopening the project after checking the digest. This protects against
+a source change in the window between opening a checkpoint and routing.
+Native `rorb-cmd` does not accept this in-memory snapshot mechanism;
+the bounded MC executor supports only `python-cmd/cmd-6.44`.
 Resume accepts **only a verified
 unchanged prefix** of the same request and engine implementation. It
 rejects changed plan/policy/source/engine code, mixed samples/weights,

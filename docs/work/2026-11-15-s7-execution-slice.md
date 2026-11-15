@@ -140,3 +140,25 @@ bounded execution adapter is present.
   qualifications remain separate from software acceptability.
 - Exact-head quality, source CMD regression, isolated installed-wheel
   tests and independent review still determine staging merge readiness.
+
+## 16 November independent follow-up — prevent validation/run model race
+
+- Codex at `b720303` found that the verified E model was not necessarily
+  the model routed: `iter_project_events()` separately reloaded the source
+  when the event iterator began. A project or source modified immediately
+  after the checkpoint was opened could be routed under the old source
+  fingerprint.
+- Reused the *same validated `LoadedProject` snapshot* for python-cmd
+  batch iteration, representative replay and new extended-plan event
+  routing by adding a narrow internal-only optional argument to the
+  existing shared event runner and materialising no duplicate solver.
+  Native rorb-cmd explicitly rejects snapshot-only execution.
+- An integration regression mutates project kc immediately after
+  `_new_ledger()`. The resulting checkpoint must byte-match a completed
+  reference execution of the verified original model, and a subsequent
+  run against the altered source must fail before ledger creation.
+- The new execution flow holds one immutable source snapshot per run,
+  preserving prepared geometry caching and preventing a model read
+  between validated provenance and numerical routing.
+- Re-review and fresh exact-head source/wheel quality checks remain
+  mandatory before merging E into staging #151.
