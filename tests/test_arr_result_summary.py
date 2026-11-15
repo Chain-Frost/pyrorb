@@ -326,7 +326,6 @@ def test_complete_length_requires_declared_physical_clock(
     assert len(first["diagnostic_peak_ranking"]) == 9
 
 
-
 def test_critical_duration_comparison_rejects_missing_grid_in_one_duration(
     sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
@@ -361,6 +360,7 @@ def test_critical_duration_comparison_rejects_empty_observed_population(
     report = summarize_deterministic_results(effective, routed)
     assert all(row["time_grid_sha256"] is None for row in report.data["cell_sites"])
     assert all(not record["comparable_across_durations"] for record in report.data["critical_durations"])
+
 
 def test_empty_routed_population_cannot_claim_software_success(
     sample: tuple[dict[str, Any], dict[str, Any]],
