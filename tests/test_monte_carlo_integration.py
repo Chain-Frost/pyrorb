@@ -123,7 +123,8 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     body = json.loads((tmp_path / "frequency.json").read_text(encoding="utf-8"))
     assert body["point_results_complete"] is False
     scopes = cast("list[dict[str, object]]", body["frequency_scopes"])
-    assert len(scopes) == 1 and scopes[0]["physical_site_id"] == "print_1"
+    assert len(scopes) == 1
+    assert scopes[0]["physical_site_id"] == "print_1"
     targets = cast("list[dict[str, object]]", scopes[0]["targets"])
     assert targets[0]["status"] == "incomplete"
     assert targets[0]["peak_m3_s"] is None

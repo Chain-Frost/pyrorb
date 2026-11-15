@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterator
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
-from collections.abc import Iterator
 
 import pytest
 
@@ -20,11 +20,11 @@ from runoff_routing.arr_patterns import read_pattern_file
 from runoff_routing.bom_ifd import BoMIFD
 from runoff_routing.monte_carlo_bridge import prepare_saved_sample_plan
 from runoff_routing.monte_carlo_effective import (
-    materialise_arr_sample,
     MCAllocation,
     MCPopulation,
     MCRequestHeader,
     iter_effective_events,
+    materialise_arr_sample,
     validate_effective_request,
     write_effective_request,
 )
