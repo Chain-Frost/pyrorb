@@ -21,3 +21,30 @@ source objects retain their respective owner branch Git blobs unchanged.
 
 No native executable is installed or launched by the approved CI. Source/wheel
 checks against this tree demonstrate provisional software integration only.
+
+## Independent software verification on initial combined head
+
+[Windows quality run #43732524791](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43732524791)
+completed successfully at exact source head
+`5cfc5e114d83d62c568384a768e3676b45b26bde`
+(Windows, CPython 3.13.17, Ruff 0.16.6, strict Pyright 1.1.414).
+It verified repository hygiene, strict static checks, **1,151 source tests
+passing / 3 expected POSIX-only skips**, the maintained fresh original CMD
+source probe, and **168 installed-wheel tests passing** from an external
+installation. Both maintained CMD probes, wheel provenance and CLI/negative
+smokes completed. Wheel SHA-256:
+`14c59823a1d003a66b8ee2afecd7bd67ab776c201e9bd9615d635ddb8361d3ff`.
+
+The four integrated contract tests passed at that exact head (PAR-only import,
+typed edits, relocated emitted PAR/source files, actual imported PyRomb renderer,
+original 301-row RORBwin ordinary output and **80-row/eight-reference** original
+batch via actual ryan-tools reader). No host RORB CMD binary was executed;
+the 80-row batch is retained 6.52 native output, not a new CMD result.
+
+**Later unverified changes on this test-only branch:** additional parameter-only
+export coverage of the original ordinary `pyromb-pr2-full` graphical 6.45
+CATG with code 2/FI and explicit test selection in the external wheel suite.
+They are pending an exact later-head CI receipt; the above numbers must not
+be attributed to those new tests until run. Source heads of the implementation
+owners may also advance independently; this synthetic tree is frozen at the
+listed earlier source revision snapshots.
