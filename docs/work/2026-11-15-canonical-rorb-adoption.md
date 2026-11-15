@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `a00f41cfe2fa5b20491698eb5c8af5e265dcd086`, pinned
+The chosen upstream candidate revision is `7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -63,7 +63,7 @@ in parser tests. Pip recursively fetched the unrelated ryan-tools test-data
 submodule during a `git+https` dependency checkout and hit Windows
 `Filename too long`. The dependency is now an **exact-commit GitHub source
 archive**, without submodule payload or Git checkout, pinned to upstream
-`a00f41cfe2fa5b20491698eb5c8af5e265dcd086`. This is a packaging correction, not a numerical result. Re-run
+`7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`. This is a packaging correction, not a numerical result. Re-run
 installed-wheel and regression checks for the new head.
 
 The frozen scalar binding now gets only generic original scalar and site
@@ -77,7 +77,7 @@ The first archive-based Windows 3.13 source install succeeded; Ruff and
 formatter checks passed after fixes. Strict Pyright then reported missing
 type stubs because the minimal wheel had omitted `ryan_library/py.typed`.
 Upstream revised focused setuptools packaging (reviewed candidate
-`a00f41cfe2fa5b20491698eb5c8af5e265dcd086`) to carry the **existing** root PEP 561 marker with its six
+`7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`) to carry the **existing** root PEP 561 marker with its six
 canonical reader modules, without broadening dependencies. A clean local
 package-layout wheel test verified the marker was included; hosted strict
 type checking and installed-wheel regressions must now rerun.
@@ -85,3 +85,14 @@ type checking and installed-wheel regressions must now rerun.
 Upstream added conditional original RORBWin 6.52 fixtures for the 301-row
 ordinary report and 80-row/eight-reference batch. These require the pinned
 fixture submodule; no CI pass is claimed where that submodule is absent.
+
+## PEP 561 namespace packaging refinement
+
+The `a00f41cfe2fa5b20491698eb5c8af5e265dcd086` hosted wheel contained a `py.typed` root marker, but strict
+Pyright still reported all `ryan_library.functions.RORB` modules as missing
+typing stubs. The focused setuptools wheel has now been revised to carry both
+upstream regular parent package initialisers (`ryan_library` and
+`ryan_library.functions`) with the marker and the same six canonical reader
+modules. A clean local wheel-layout build confirmed both initialisers and the
+marker are present; downstream hosted Pyright/installed-wheel checks remain
+the completion gate for this change.
