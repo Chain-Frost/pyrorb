@@ -94,14 +94,19 @@ def test_order_repeat_and_intervening_bad_event_do_not_change_results(tmp_path: 
     records = run_project_events(project, (base, wet, invalid, base, wet), selection=selected)
     assert [r.event_id for r in records.outcomes] == ["base", "wet", "broken", "base", "wet"]
     assert [r.status for r in records.outcomes] == [
-        "computed_unvalidated", "computed_unvalidated", "invalid_input",
-        "invalid_input", "invalid_input",
+        "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "invalid_input",
+        "invalid_input",
     ]
     assert records.outcomes[3].diagnostics[0].code == "duplicate_event_id"
     assert records.outcomes[4].diagnostics[0].code == "duplicate_event_id"
     other = run_project_events(project, (wet, invalid, base), selection=selected)
     assert [r.status for r in other.outcomes] == [
-        "computed_unvalidated", "invalid_input", "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
     ]
     assert other.outcomes[0].hydrographs == records.outcomes[1].hydrographs
     assert other.outcomes[2].hydrographs == records.outcomes[0].hydrographs
@@ -140,8 +145,13 @@ def test_invalid_and_unsupported_events_remain_in_full_reports(tmp_path: Path) -
     report = run_project_events(project, inputs)
     assert len(report.outcomes) == len(inputs)
     assert [item.status for item in report.outcomes] == [
-        "computed_unvalidated", "unsupported_feature", "invalid_input",
-        "invalid_input", "invalid_input", "invalid_input", "invalid_input",
+        "computed_unvalidated",
+        "unsupported_feature",
+        "invalid_input",
+        "invalid_input",
+        "invalid_input",
+        "invalid_input",
+        "invalid_input",
     ]
     assert report.outcomes[4].diagnostics[0].code == "duplicate_event_id"
     assert report.outcomes[5].event_id == "<request:6>"
@@ -164,16 +174,18 @@ def test_event_request_json_and_cli_report_all_requested_failures(tmp_path: Path
     project = _project(tmp_path)
     request_path = tmp_path / "events.json"
     request_path.write_text(
-        json.dumps({
-            "format": "python-runoff-routing-explicit-events",
-            "schema_version": 1,
-            "events": [
-                {"event_id": "original"},
-                {"event_id": "wet", "storm": {"depths_mm": ["40"]}},
-                {"event_id": "bad", "storm": {"calculation_increments": -1}},
-                {"event_id": "wet"},
-            ],
-        }),
+        json.dumps(
+            {
+                "format": "python-runoff-routing-explicit-events",
+                "schema_version": 1,
+                "events": [
+                    {"event_id": "original"},
+                    {"event_id": "wet", "storm": {"depths_mm": ["40"]}},
+                    {"event_id": "bad", "storm": {"calculation_increments": -1}},
+                    {"event_id": "wet"},
+                ],
+            }
+        ),
         encoding="utf-8",
     )
     assert len(load_event_request(request_path)) == 4
@@ -183,7 +195,10 @@ def test_event_request_json_and_cli_report_all_requested_failures(tmp_path: Path
     assert report["requested_event_count"] == 4
     assert report["completed_event_count"] == 2
     assert [item["status"] for item in report["outcomes"]] == [
-        "computed_unvalidated", "computed_unvalidated", "invalid_input", "invalid_input",
+        "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "invalid_input",
     ]
     assert all(item["effective_selection"]["engine"] == "python-cmd" for item in report["outcomes"])
     assert Path(f"{prefix}.csv").exists()
@@ -239,7 +254,8 @@ def test_selected_native_fails_explicitly_without_using_python(tmp_path: Path) -
     )
     assert [item.status for item in report.outcomes] == ["unavailable_engine", "unsupported_feature"]
     assert [item.diagnostics[0].code for item in report.outcomes] == [
-        "native_config_required", "native_event_override",
+        "native_config_required",
+        "native_event_override",
     ]
     assert all(item.effective_selection.engine == "rorb-cmd" and not item.hydrographs for item in report.outcomes)
 
@@ -282,7 +298,9 @@ def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, 
     )
     assert single.status == "computed_unvalidated"
     assert [item.status for item in combined.outcomes] == [
-        "computed_unvalidated", "invalid_input", "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
     ]
     assert combined.outcomes[0].hydrographs == single.hydrographs == combined.outcomes[2].hydrographs
     assert combined.outcomes[0].physical_time_hours == single.physical_time_hours

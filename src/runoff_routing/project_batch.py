@@ -57,13 +57,35 @@ _STORM_FIELDS = {
 }
 _LOSS_FIELDS = {"initial_loss_mm", "continuing"}
 _CSV_HEADER = (
-    "event_index", "event_id", "status", "error_code", "error_message",
-    "project_id", "project_sha256", "effective_model_sha256", "original_source_sha256_json",
-    "stored_engine", "engine", "numerical_profile", "rainfall_profile", "source_kind",
-    "timestep_hours", "calculation_increments", "print_id", "print_label", "native_column_id",
-    "sample_index", "physical_time_hours", "native_increment_token", "native_time_token",
-    "discharge_m3_s", "physical_trapezoidal_volume_m3", "native_inclusive_reported_volume_m3",
-    "discharge_units", "volume_units", "clock_convention",
+    "event_index",
+    "event_id",
+    "status",
+    "error_code",
+    "error_message",
+    "project_id",
+    "project_sha256",
+    "effective_model_sha256",
+    "original_source_sha256_json",
+    "stored_engine",
+    "engine",
+    "numerical_profile",
+    "rainfall_profile",
+    "source_kind",
+    "timestep_hours",
+    "calculation_increments",
+    "print_id",
+    "print_label",
+    "native_column_id",
+    "sample_index",
+    "physical_time_hours",
+    "native_increment_token",
+    "native_time_token",
+    "discharge_m3_s",
+    "physical_trapezoidal_volume_m3",
+    "native_inclusive_reported_volume_m3",
+    "discharge_units",
+    "volume_units",
+    "clock_convention",
 )
 
 
@@ -356,13 +378,22 @@ class ProjectBatchReport:
             error_code = outcome.diagnostics[0].code if outcome.diagnostics else ""
             error_message = outcome.diagnostics[0].message if outcome.diagnostics else ""
             common = (
-                ordinal, outcome.event_id, outcome.status, error_code, error_message,
-                outcome.project_id, outcome.project_sha256, outcome.model_sha256,
+                ordinal,
+                outcome.event_id,
+                outcome.status,
+                error_code,
+                error_message,
+                outcome.project_id,
+                outcome.project_sha256,
+                outcome.model_sha256,
                 json.dumps(outcome.source_file_hashes, ensure_ascii=False, separators=(",", ":")),
-                outcome.stored_selection.engine, outcome.effective_selection.engine,
-                outcome.effective_selection.numerical_profile, outcome.rainfall_profile,
+                outcome.stored_selection.engine,
+                outcome.effective_selection.engine,
+                outcome.effective_selection.numerical_profile,
+                outcome.rainfall_profile,
                 outcome.effective_inputs.get("source_kind", ""),
-                outcome.effective_inputs["timestep_hours"], outcome.effective_inputs["calculation_increments"],
+                outcome.effective_inputs["timestep_hours"],
+                outcome.effective_inputs["calculation_increments"],
             )
             if not outcome.hydrographs:
                 writer.writerow((*common, *("" for _ in range(len(_CSV_HEADER) - len(common)))))
@@ -371,13 +402,32 @@ class ProjectBatchReport:
                 volume = _trapezoidal_volume(outcome, graph.discharge_m3_s)
                 for index, discharge in enumerate(graph.discharge_m3_s):
                     hour = outcome.physical_time_hours[index] if index < len(outcome.physical_time_hours) else ""
-                    inc = outcome.native_raw_increment_tokens[index] if index < len(outcome.native_raw_increment_tokens) else ""
-                    raw_time = outcome.native_raw_time_tokens[index] if index < len(outcome.native_raw_time_tokens) else ""
-                    writer.writerow((
-                        *common, graph.print_id, graph.label, graph.native_column_id or "", index, hour,
-                        inc, raw_time, discharge, volume if index == 0 else "", "",
-                        graph.units, "m3", outcome.native_clock_convention or "model_elapsed_from_zero",
-                    ))
+                    inc = (
+                        outcome.native_raw_increment_tokens[index]
+                        if index < len(outcome.native_raw_increment_tokens)
+                        else ""
+                    )
+                    raw_time = (
+                        outcome.native_raw_time_tokens[index] if index < len(outcome.native_raw_time_tokens) else ""
+                    )
+                    writer.writerow(
+                        (
+                            *common,
+                            graph.print_id,
+                            graph.label,
+                            graph.native_column_id or "",
+                            index,
+                            hour,
+                            inc,
+                            raw_time,
+                            discharge,
+                            volume if index == 0 else "",
+                            "",
+                            graph.units,
+                            "m3",
+                            outcome.native_clock_convention or "model_elapsed_from_zero",
+                        )
+                    )
         return buffer.getvalue()
 
     def to_text(self) -> str:
@@ -385,11 +435,13 @@ class ProjectBatchReport:
         header = ["Runoff routing: explicit event results"]
         if self.outcomes:
             first = self.outcomes[0]
-            header.extend((
-                f"Project: {first.project_id} ({first.project_sha256})",
-                f"Stored engine: {first.stored_selection.engine}/{first.stored_selection.numerical_profile}",
-                f"Effective engine: {first.effective_selection.engine}/{first.effective_selection.numerical_profile}",
-            ))
+            header.extend(
+                (
+                    f"Project: {first.project_id} ({first.project_sha256})",
+                    f"Stored engine: {first.stored_selection.engine}/{first.stored_selection.numerical_profile}",
+                    f"Effective engine: {first.effective_selection.engine}/{first.effective_selection.numerical_profile}",
+                )
+            )
         header.append(
             f"Requested: {len(self.outcomes)}  Computed: {counts['computed_unvalidated']}  "
             f"Other: {len(self.outcomes) - counts['computed_unvalidated']}"
@@ -474,7 +526,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         selected = (
             EngineSelection.for_engine(options.engine, options.numerical_profile)
-            if options.engine is not None else None
+            if options.engine is not None
+            else None
         )
         native = NativeConfiguration.from_file(options.native_config) if options.native_config is not None else None
         requested = (
