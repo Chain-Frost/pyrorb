@@ -1,5 +1,11 @@
 # #143 — independent S5 import/edit/export/report qualification
 
+**Later executed evidence:** [16 November Windows-native receipt](2026-11-16-issue143-native-acceptance.md)
+records five genuine relocated emitted-PAR CMD 6.44 runs at reviewed integrated
+candidate `fe00066`. Its bounded portability pass, partial reader statuses and
+remaining numerical limits supersede older `not_run` statements only within
+that exact scope. Earlier receipts below remain historical.
+
 - Date: 15 November 2026.
 - Issue: [#143](https://github.com/Chain-Frost/python-runoff-routing/issues/143), parents [#7](https://github.com/Chain-Frost/python-runoff-routing/issues/7) and [#3](https://github.com/Chain-Frost/python-runoff-routing/issues/3).
 - Baseline inspected: main **0675d75b05dba7728b389fdd8af743060b4469b2**.

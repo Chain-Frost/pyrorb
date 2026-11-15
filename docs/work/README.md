@@ -6,6 +6,8 @@
 
 ## Current implementation / regression receipts
 
+- [Issue #143 Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — five direct relocated emitted-PAR runs; bounded portability passed, canonical reader partial states and physical-site/numerical limitations retained.
+
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
