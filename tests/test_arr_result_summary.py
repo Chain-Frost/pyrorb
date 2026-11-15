@@ -259,18 +259,71 @@ def test_reject_mixed_or_unbound_populations(sample: tuple[dict[str, Any], dict[
         summarize_deterministic_results(effective, routed)
 
 
-def test_incompatible_within_cell_horizon_does_not_pool_or_rank(sample: tuple[dict[str, Any], dict[str, Any]]) -> None:
+def test_truncated_member_is_incomplete_but_other_observed_peaks_remain(
+    sample: tuple[dict[str, Any], dict[str, Any]],
+) -> None:
     effective, routed = _copy(sample)
     outcome = routed["outcomes"][0]
     outcome["physical_time_hours"] = outcome["physical_time_hours"][:-1]
     outcome["hydrographs"][0]["discharge_m3_s"] = outcome["hydrographs"][0]["discharge_m3_s"][:-1]
     report = summarize_deterministic_results(effective, routed)
     first = report.data["cell_sites"][0]
-    assert first["completed_member_count"] == 10
+    assert first["completed_member_count"] == 9
+    assert first["failed_or_incomplete_member_count"] == 1
+    assert first["members"][0]["metric_status"] == "incomplete_output"
+    assert first["members"][0]["metric_reason"] == "declared_horizon_mismatch"
+    assert first["members"][0]["observed_sample_count"] < first["members"][0]["declared_sample_count"]
     assert not first["complete_comparable_population"]
-    assert first["observed_peak_median_m3_s"] is None
-    assert first["diagnostic_peak_ranking"] == []
+    assert first["observed_peak_median_m3_s"] is not None
+    assert len(first["diagnostic_peak_ranking"]) == 9
     assert all(item["selected_duration_min"] is None for item in report.data["critical_durations"])
+
+
+def test_uniformly_truncated_hydrographs_cannot_pass_complete_population(
+    sample: tuple[dict[str, Any], dict[str, Any]],
+) -> None:
+    effective, routed = _copy(sample)
+    for outcome in routed["outcomes"]:
+        outcome["physical_time_hours"] = outcome["physical_time_hours"][:2]
+        for graph in outcome["hydrographs"]:
+            graph["discharge_m3_s"] = graph["discharge_m3_s"][:2]
+        # Deliberately retain the original full-horizon volume record.
+    report = summarize_deterministic_results(effective, routed)
+    assert report.data["software_execution_success"]
+    assert not report.data["software_population_complete"]
+    for cell in report.data["cell_sites"]:
+        assert cell["completed_member_count"] == 0
+        assert cell["failed_or_incomplete_member_count"] == 10
+        assert cell["observed_peak_median_m3_s"] is None
+        assert cell["diagnostic_peak_ranking"] == []
+        assert all(row["metric_reason"] == "declared_horizon_mismatch" for row in cell["members"])
+        assert cell["representative_selection"]["calculated_by_package"] is None
+    assert "declared_horizon_mismatch" in report.to_json()
+    assert "declared_horizon_mismatch" in report.to_csv()
+    assert all(row["selected_duration_min"] is None for row in report.data["critical_durations"])
+
+
+@pytest.mark.parametrize("change", ["shifted", "scaled", "invalid_step", "wrong_step"])
+def test_complete_length_requires_declared_physical_clock(
+    sample: tuple[dict[str, Any], dict[str, Any]], change: str
+) -> None:
+    effective, routed = _copy(sample)
+    outcome = routed["outcomes"][0]
+    if change == "shifted":
+        outcome["physical_time_hours"] = [str(float(t) + 1) for t in outcome["physical_time_hours"]]
+    elif change == "scaled":
+        outcome["physical_time_hours"] = [str(float(t) * 2) for t in outcome["physical_time_hours"]]
+    elif change == "invalid_step":
+        outcome["effective_inputs"]["timestep_hours"] = "0"
+    else:
+        outcome["effective_inputs"]["timestep_hours"] = "2"
+    report = summarize_deterministic_results(effective, routed)
+    first = report.data["cell_sites"][0]
+    assert first["members"][0]["metric_status"] == "incomplete_output"
+    assert first["members"][0]["metric_reason"] in {"declared_time_grid_mismatch", "invalid_declared_horizon"}
+    assert first["completed_member_count"] == 9
+    assert not first["complete_comparable_population"]
+    assert len(first["diagnostic_peak_ranking"]) == 9
 
 
 def test_empty_routed_population_cannot_claim_software_success(

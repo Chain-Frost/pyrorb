@@ -131,10 +131,32 @@ def _volume_map(routed: Mapping[str, Any]) -> dict[tuple[str, str], float | None
 
 
 def _metric(outcome: Mapping[str, Any], graph: Mapping[str, Any], volume: float | None) -> dict[str, Any]:
+    """Accept only full, declared elapsed-time series; retain audit counts for partial outcomes."""
     values = _array(graph.get("discharge_m3_s"), "discharge")
     times = _array(outcome.get("physical_time_hours"), "physical times")
-    if not values or len(values) != len(times) or volume is None:
-        return {"metric_status": "incomplete_output"}
+    settings = _object(outcome.get("effective_inputs"), "effective_inputs")
+    increments = settings.get("calculation_increments")
+    timestep_token = settings.get("timestep_hours")
+    declared_count = increments + 1 if type(increments) is int and increments >= 1 else None
+    audit = {
+        "observed_sample_count": len(values),
+        "observed_time_count": len(times),
+        "declared_sample_count": declared_count,
+        "declared_timestep_hours": timestep_token if isinstance(timestep_token, str) else None,
+    }
+    if declared_count is None or not isinstance(timestep_token, str):
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_declared_horizon"}
+    try:
+        timestep = float(timestep_token)
+    except ValueError:
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_declared_horizon"}
+    if not math.isfinite(timestep) or timestep <= 0:
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_declared_horizon"}
+    if len(values) != declared_count or len(times) != declared_count:
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "declared_horizon_mismatch"}
+    if volume is None:
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "missing_physical_volume"}
+
     discharge = [_finite(item, "discharge ordinate") for item in values]
     if not all(isinstance(item, str) for item in times):
         _fail("Physical time tokens must be strings")
@@ -143,18 +165,26 @@ def _metric(outcome: Mapping[str, Any], graph: Mapping[str, Any], volume: float 
         try:
             time = float(item)
         except ValueError:
-            return {"metric_status": "incomplete_output"}
+            return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_physical_clock"}
         if not math.isfinite(time):
-            return {"metric_status": "incomplete_output"}
+            return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_physical_clock"}
         time_values.append(time)
     if len(time_values) < 2 or any(b <= a for a, b in pairwise(time_values)):
-        return {"metric_status": "incomplete_output"}
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "invalid_physical_clock"}
+    # #136 runs only Python backends, both with physical elapsed time t_i = i * step.
+    # Reject a uniformly shifted, compressed or truncated grid even if members agree.
+    if any(
+        not math.isclose(time, index * timestep, rel_tol=1e-10, abs_tol=1e-9)
+        for index, time in enumerate(time_values)
+    ):
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "declared_time_grid_mismatch"}
     if graph.get("units") != "m3/s":
-        return {"metric_status": "incomplete_output"}
+        return {**audit, "metric_status": "incomplete_output", "metric_reason": "unsupported_discharge_units"}
     peak = max(discharge)
     peak_indices = [index for index, item in enumerate(discharge) if item == peak]
     clock = json.dumps(times, ensure_ascii=False, separators=(",", ":"))
     return {
+        **audit,
         "metric_status": "complete",
         "peak_m3_s": peak,
         "peak_sample_indices": peak_indices,
@@ -163,7 +193,7 @@ def _metric(outcome: Mapping[str, Any], graph: Mapping[str, Any], volume: float 
         "time_start_hours": times[0],
         "time_end_hours": times[-1],
         "time_grid_sha256": sha256(clock.encode("utf-8")).hexdigest(),
-        "timestep_hours": _object(outcome.get("effective_inputs"), "effective_inputs").get("timestep_hours"),
+        "timestep_hours": timestep_token,
         "physical_trapezoidal_volume_m3": volume,
         "native_inclusive_reported_volume_m3": None,
     }
@@ -359,6 +389,11 @@ class DeterministicSummary:
             "input_status",
             "routing_status",
             "metric_status",
+            "metric_reason",
+            "declared_sample_count",
+            "observed_sample_count",
+            "observed_time_count",
+            "declared_timestep_hours",
             "peak_m3_s",
             "peak_time_hours",
             "physical_trapezoidal_volume_m3",
