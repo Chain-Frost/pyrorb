@@ -152,7 +152,7 @@ class ParameterSet:
             raise ValueError(message)
         if isinstance(self.loss_model, bool) or not isinstance(self.loss_model, int):
             message = "Unsupported CMD loss model"
-            raise ValueError(message)
+            raise TypeError(message)
         try:
             mode = LossMode(self.loss_model)
         except ValueError as exc:
@@ -273,7 +273,7 @@ class ControlStep:
     def __post_init__(self) -> None:
         if isinstance(self.code, bool) or not isinstance(self.code, int):
             message = "Unrecognised RORB computational control code"
-            raise ValueError(message)
+            raise TypeError(message)
         try:
             code = ControlCode(self.code)
         except ValueError as exc:

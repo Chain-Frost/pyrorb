@@ -62,10 +62,10 @@ def test_closed_values_are_enums_in_memory_and_native_values_on_the_wire() -> No
 def test_closed_codes_and_counts_reject_unknown_values_and_booleans() -> None:
     run = _model()
     for code in (True, False, 6, 11):
-        with pytest.raises(ValueError, match="control code"):
+        with pytest.raises((TypeError, ValueError), match="control code"):
             ControlStep(cast("ControlCode", code))
     for mode in (True, False, 0, 3):
-        with pytest.raises(ValueError, match="loss model"):
+        with pytest.raises((TypeError, ValueError), match="loss model"):
             replace(run.parameters, loss_model=cast("LossMode", mode))
     with pytest.raises(ValueError, match="one explicit burst"):
         replace(run.parameters, num_bursts=True)

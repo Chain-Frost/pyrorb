@@ -38,7 +38,18 @@ from .project_json import (
     ProjectError,
     load_project,
 )
-from .rorb_model import CatchmentModel, LossMode, ParameterSet, RoutingValue, RunModel, StormModel, edit_run_model, from_dict, to_dict, to_json
+from .rorb_model import (
+    CatchmentModel,
+    LossMode,
+    ParameterSet,
+    RoutingValue,
+    RunModel,
+    StormModel,
+    edit_run_model,
+    from_dict,
+    to_dict,
+    to_json,
+)
 from .single_storm import PreparedCatchment
 
 REQUEST_FORMAT = "python-runoff-routing-explicit-events"

@@ -39,9 +39,9 @@ EngineStatus = Literal[
     "native_execution_failed",
 ]
 _DEFAULT_PROFILES: dict[EngineKind, str] = {
-    "python": "engineering-v1",
-    "python-cmd": "cmd-6.44",
-    "rorb-cmd": "cmd-6.44",
+    EngineKind.PYTHON: "engineering-v1",
+    EngineKind.PYTHON_CMD: "cmd-6.44",
+    EngineKind.RORB_CMD: "cmd-6.44",
 }
 
 
