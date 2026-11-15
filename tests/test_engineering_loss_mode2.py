@@ -31,7 +31,9 @@ def _mode_two_model(*, initial: str = "5", coefficient: str = "0.5") -> RunModel
 
 
 def _project(path: Path, model: RunModel) -> Path:
-    write_project(path, Project("engineering_ilroc", "explicit", EmbeddedRun(model), engine=EngineSelection.for_engine("python")))
+    write_project(
+        path, Project("engineering_ilroc", "explicit", EmbeddedRun(model), engine=EngineSelection.for_engine("python"))
+    )
     return path
 
 
