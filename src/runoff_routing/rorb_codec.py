@@ -30,7 +30,7 @@ from .rorb_model import (
 )
 from .rorb_par import inspect_cmd_parameters
 
-Dialect = Literal["cmd_v2", "rorb_ge_002", "design_explicit"]
+Dialect = Literal["cmd_v2", "rorb_ge_002", "design_explicit", "design_relative_weights"]
 Status = Literal["invalid", "unsupported"]
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eEdD][+-]?[0-9]+)?\Z")
 _AREA_NAME = re.compile(r"Sub-area\s+(\S+)", re.IGNORECASE)
@@ -415,10 +415,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
         message = "Nonzero burst start requires a different storm convention"
         raise _problem(message, timing_line, unsupported=True)
     marker_line, marker = records[2]
-    if marker.casefold() != "temporal pattern (% of depth)":
-        message = "Missing temporal pattern marker"
+    if marker.casefold() not in ("temporal pattern (% of depth)", "temporal weights"):
+        message = "Missing supported temporal pattern marker"
         raise _problem(message, marker_line)
-    percentages, next_index, percent_spans = _terminated(records, 3, "temporal_percent")
+    relative_weights = marker.casefold() == "temporal weights"
+    # Preserve original weights and the distinct denominator convention.
+    percentages, next_index, percent_spans = _terminated(
+        records, 3, "temporal_weight" if relative_weights else "temporal_percent"
+    )
     if len(percentages) != count:
         message = "Temporal pattern length does not match the declared rainfall-bin count"
         raise _problem(message, timing_line)
@@ -435,6 +439,7 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
             percentages,
             depths,
             tuple(f"area_{index + 1}" for index in range(len(depths))),
+            pattern_basis="relative_weights" if relative_weights else "percent_of_depth",
         )
     except ValueError as exc:
         raise _problem(str(exc)) from exc
@@ -445,7 +450,8 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
         *percent_spans,
         *depth_spans,
     )
-    return ParsedDocument("design_explicit", source, model, spans)
+    dialect: Dialect = "design_relative_weights" if relative_weights else "design_explicit"
+    return ParsedDocument(dialect, source, model, spans)
 
 
 def parse_bytes(
@@ -577,7 +583,7 @@ def serialize_design_stm(model: StormModel) -> bytes:
         "DESIGN",
         f"{model.timestep_hours},{model.calculation_increments},1,1,1,-99",
         f"{model.start_increment},{len(model.percentages)}",
-        "Temporal pattern (% of depth)",
+        "Temporal weights" if model.pattern_basis == "relative_weights" else "Temporal pattern (% of depth)",
         ", ".join([*(str(item) for item in model.percentages), "-99"]),
         "C Sub-area rainfall depths",
         ", ".join([*(str(item) for item in model.depths_mm), "-99"]),
@@ -627,6 +633,9 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
+        raise ValueError(message)
+    if storm.pattern_basis != "percent_of_depth":
+        message = "S2 requires percentage patterns; native relative-weight semantics are not yet qualified"
         raise ValueError(message)
     lengths = {item.identifier: item.length_km for item in catchment.reaches}
     steps = tuple(

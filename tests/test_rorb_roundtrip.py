@@ -26,6 +26,10 @@ from runoff_routing.rorb_codec import (
     to_s2_payload,
     write_new,
 )
+from runoff_routing.integration import parse_run_bytes
+from runoff_routing.project_json import import_rorb_project, load_project, write_project
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
 from runoff_routing.rorb_model import (
     CatchmentModel,
     ControlStep,
@@ -314,3 +318,93 @@ def test_code7_blank_physical_location_is_not_the_inline_annotation() -> None:
     assert parsed.model.controls[-1].label == "metadata only"
     assert b"7, metadata only\n\n0\n" in serialize_catg(parsed.model)
     assert parse_catg(serialize_catg(parsed.model)).model == parsed.model
+
+
+@pytest.mark.parametrize(
+    ("case_id", "expected_total", "expected_bins", "expected_sources"),
+    [
+        ("H1-three-source-asymmetric", "3.3", 4, 3),
+        ("H2-four-source-nested-odd-rain", "2.0", 5, 4),
+        ("H3-single-source-equality-chain", "4.0", 5, 1),
+    ],
+)
+def test_original_relative_weight_storms_preserve_source_and_import(
+    case_id: str, expected_total: str, expected_bins: int, expected_sources: int, tmp_path: Path
+) -> None:
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    originals: dict[str, bytes] = {}
+    for record in case["files"]:
+        source_path = Path(record["path"])
+        if source_path.suffix not in (".par", ".catg", ".stm"):
+            continue
+        raw = (root / source_path).read_bytes()
+        assert len(raw) == record["size_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+        originals[source_path.suffix] = raw
+        (tmp_path / ("original" + source_path.suffix)).write_bytes(raw)
+    assert len(originals) == 3
+
+    parsed = parse_design_stm(originals[".stm"])
+    assert parsed.dialect == "design_relative_weights"
+    assert original_bytes(parsed) == originals[".stm"]
+    assert parsed.model.pattern_basis == "relative_weights"
+    assert len(parsed.model.percentages) == expected_bins
+    assert sum(parsed.model.percentages, Decimal(0)) == Decimal(expected_total)
+    assert len(parsed.model.depths_mm) == expected_sources
+    assert tuple(parsed.model.subarea_ids) == tuple(f"area_{index}" for index in range(1, expected_sources + 1))
+    assert parsed.model.calculation_increments + 1 == case["clock"]["row_count"]
+    assert any(span.field == "temporal_weight" for span in parsed.source_map)
+    assert from_json(to_json(parsed.model)) == parsed.model
+    assert parse_design_stm(serialize_design_stm(parsed.model)).model == parsed.model
+
+    parsed_run = parse_run_bytes(originals[".par"], originals[".catg"], originals[".stm"]).model
+    assert parsed_run.storm == parsed.model
+    assert from_json(to_json(parsed_run)) == parsed_run
+    manifest = tmp_path / "source-run.json"
+    project = import_rorb_project(
+        manifest,
+        identifier=case_id,
+        rainfall_profile="legacy-rorb",
+        parameters=tmp_path / "original.par",
+        catchment=tmp_path / "original.catg",
+        storm=tmp_path / "original.stm",
+    )
+    write_project(manifest, project)
+    assert load_project(manifest).run == parsed_run
+    # Only python-cmd's existing stored-denominator path can execute these
+    # raw weights; improved python must not silently treat them as percents.
+    compatible = run_engine_project(manifest, selection=EngineSelection.for_engine("python-cmd"))
+    assert compatible.status == "computed_unvalidated"
+    improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
+    assert improved.status == "unsupported_feature"
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("Temporal weights", "Temporal unrecognised"),
+        ("0, 2", "0, 3"),
+        ("60.0,\\t40.0", "0,\\t0"),
+        ("60.0,\\t40.0", "-1,\\t2"),
+        ("60.0,\\t40.0", "1,2,3"),
+        ("60.0,\\t40.0", "2,-99,1"),
+        ("100.00,90.0,-99", "100.00,90.0,-99,5"),
+    ],
+)
+def test_relative_weight_storm_rejects_malformed_boundaries(before: str, after: str) -> None:
+    valid = _stm().replace("Temporal pattern (% of depth)", "Temporal weights")
+    modified = valid.replace(before.replace("\\t", "\t"), after.replace("\\t", "\t"))
+    assert modified != valid
+    with pytest.raises(FormatProblem) as caught:
+        parse_design_stm(modified.encode())
+    assert caught.value.status == "invalid"
+
+
+def test_relative_weight_json_rejects_unknown_pattern_basis() -> None:
+    valid = parse_design_stm(_stm().replace("Temporal pattern (% of depth)", "Temporal weights").encode()).model
+    payload = to_dict(valid)
+    payload["model"]["pattern_basis"] = "unknown"
+    with pytest.raises(ValueError, match="Unknown temporal pattern basis"):
+        from_dict(payload)
