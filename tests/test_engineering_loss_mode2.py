@@ -108,9 +108,7 @@ def test_default_mode_two_never_interprets_coefficient_as_continuing_rate(tmp_pa
 
 
 def test_default_mode_two_rejects_out_of_range_coefficient(tmp_path: Path) -> None:
-    source = _project(tmp_path / "run.json", _mode_two_model(coefficient="1.01"))
-    result = run_engine_project(source)
-    assert result.status == "unsupported_feature"
-    assert result.diagnostics[0].code == "unsupported_s2_profile"
-    assert "Runoff coefficient" in result.diagnostics[0].message
-    assert not result.hydrographs
+    # The S1 contract rejects invalid mode-2 parameters before either engine.
+    with pytest.raises(ValueError, match="Runoff coefficient"):
+        _mode_two_model(coefficient="1.01")
+    assert not (tmp_path / "run.json").exists()

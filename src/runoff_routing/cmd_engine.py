@@ -10,6 +10,7 @@ import hashlib
 import math
 from dataclasses import asdict, dataclass
 from decimal import Decimal
+from typing import Literal
 
 from ._cmd644.geometry import Geometry, compute_geometry
 from ._cmd644.models import Control, Event, NumberInput
@@ -148,6 +149,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
     if not any(weight.stored > 0 for weight in weights):
         _unsupported("cmd_zero_pattern", "All rainfall pattern weights vanished after CMD storage")
     parameters = run.parameters
+    native_loss_mode: Literal[1, 2] = 1 if parameters.loss_model == 1 else 2
     original_model_json = to_json(run)
     return Event(
         loaded.project.identifier,
@@ -164,7 +166,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
         _number(parameters.losses[0].initial_loss_mm),
         _number(parameters.losses[0].continuing),
         run.storm.calculation_increments,
-        parameters.loss_model,
+        native_loss_mode,
     )
 
 

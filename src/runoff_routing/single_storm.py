@@ -34,7 +34,7 @@ class Storm:
     calculation_increments: int
     percentages: tuple[float, ...]
     depths_mm: tuple[float, ...]
-    pattern_basis: PatternBasis = "percent_of_depth"
+    pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
 
 
 @dataclass(frozen=True, slots=True)

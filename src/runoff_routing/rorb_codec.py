@@ -650,14 +650,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
-    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
+    basis = PatternBasis.RELATIVE_WEIGHTS if relative_weights else PatternBasis.PERCENT_OF_DEPTH
     preburst_bins = 0
     preburst_spans: tuple[SourceSpan, ...] = ()
     if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
         # Source annotations must independently prove the split. A nonunit
         # pattern without its original pre-burst+burst identity is rejected.
         preburst_bins, preburst_spans = _original_combined_preburst(lines, dt, percentages, depths)
-        basis = "combined_preburst_percent"
+        basis = PatternBasis.COMBINED_PREBURST_PERCENT
     try:
         model = StormModel(
             lines[0].strip(),
@@ -893,7 +893,7 @@ class S2Payload:
     m: float
     runoff_coefficient: float | None = None
     impervious_fractions: tuple[float, ...] = ()
-    pattern_basis: PatternBasis = "percent_of_depth"
+    pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
 
 
 def _as_float(value: Decimal) -> float:
@@ -919,7 +919,7 @@ def to_s2_payload(model: RunModel) -> S2Payload:
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
-    basis = storm.pattern_basis
+    basis = PatternBasis(storm.pattern_basis)
     if basis not in ("percent_of_depth", "relative_weights"):
         message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
         raise ValueError(message)

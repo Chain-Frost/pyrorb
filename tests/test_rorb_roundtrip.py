@@ -236,9 +236,9 @@ def test_s2_boundary_converts_once_and_keeps_loss_modes_distinct() -> None:
     assert adapter.controls == ((1, 5.0), (3, 0.0), (1, 4.0), (4, 0.0), (5, 2.5), (7, 0.0))
     assert adapter.areas_km2 == (30.0, 20.0)
     assert adapter.kc == 12.0
-    invalid = replace(run, parameters=replace(run.parameters, loss_model=2))
+    # Invalid coefficients are rejected by typed S1 before S2 dispatch.
     with pytest.raises(ValueError, match="Runoff coefficient"):
-        to_s2_payload(invalid)
+        replace(run.parameters, loss_model=2)
     loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
     mode_two = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(loss,)))
     admitted = to_s2_payload(mode_two)
