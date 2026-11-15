@@ -260,3 +260,66 @@ def test_original_rorbwin_652_reports_preserve_rows_frequencies_and_representati
     assert len({str(ref["reference"]) for ref in representatives.rows}) == 8
     assert all(str(ref["reference"]).endswith(".out") for ref in representatives.rows)
     assert {row["aep_kind"] for row in runs.rows} == {"percent", "EY"}
+
+
+def test_original_pyromb_pr16_parameter_only_export_retains_graphical_bytes(tmp_path: Path) -> None:
+    """Code-2/impervious graphical CATG is copied, not re-rendered without a drawing."""
+    register: dict[str, Any] = json.loads(REGISTER.read_text(encoding="utf-8"))
+    original = next(item for item in register["cases"] if item["case_id"] == "pyromb-pr2-full")
+    input_dir = tmp_path / "original PyRomb folder"
+    input_dir.mkdir()
+    payloads: dict[str, bytes] = {}
+    for suffix, name in ((".par", "parameters.par"), (".catg", "catchment.catg"), (".stm", "storm.stm")):
+        item = next(record for record in original["files"] if record["path"].endswith(suffix))
+        raw = (REGISTER.parent / item["path"]).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == item["sha256"]
+        assert len(raw) == item["size_bytes"]
+        (input_dir / name).write_bytes(raw)
+        payloads[suffix] = raw
+
+    project_dir = tmp_path / "independent project"
+    project_dir.mkdir()
+    source_project = project_dir / "source.json"
+    project = import_rorb_project(
+        source_project,
+        identifier="pyromb_original_s5",
+        rainfall_profile="legacy-rorb",
+        parameters=input_dir / "parameters.par",
+    )
+    write_project(source_project, project)
+    loaded = load_project(source_project)
+    assert loaded.run.catchment.reach_mode == "explicit_reach_types"
+    assert any(step.code == 2 for step in loaded.run.catchment.controls)
+    assert any(area.impervious_fraction > 0 for area in loaded.run.catchment.subareas)
+    routing = replace(
+        loaded.run.parameters.routing[0],
+        kc=loaded.run.parameters.routing[0].kc + Decimal("0.10"),
+    )
+    edited = replace(
+        loaded.run,
+        parameters=replace(loaded.run.parameters, routing=(routing,)),
+    )
+    destination = tmp_path / "parameter-only native bundle"
+    export_cmd_package(
+        source_project,
+        destination,
+        target=NativeCmdExportTarget("cmd-6.44"),
+        events=(NativeExportEvent("pyromb_settings", edited),),
+    )
+    relocated = tmp_path / "relocated native PyRomb bundle"
+    shutil.move(str(destination), str(relocated))
+    shutil.rmtree(input_dir)
+    shutil.rmtree(project_dir)
+    staged = relocated / "events" / "001"
+    assert (staged / "catchment.catg").read_bytes() == payloads[".catg"]
+    assert (staged / "storm.stm").read_bytes() == payloads[".stm"]
+    parsed = RunModel(
+        parse_cmd_par((staged / "model.par").read_bytes()).model,
+        parse_catg((staged / "catchment.catg").read_bytes()).model,
+        parse_design_stm((staged / "storm.stm").read_bytes()).model,
+    )
+    assert parsed.catchment == edited.catchment
+    assert parsed.storm == edited.storm
+    assert parsed.parameters.routing == edited.parameters.routing
+    assert parsed.parameters.catchment_reference == "catchment.catg"
+    assert parsed.parameters.storm_reference == "storm.stm"
