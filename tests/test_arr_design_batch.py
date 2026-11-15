@@ -78,8 +78,7 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     assert _audit(result)["prepared_population"] == 40
     assert _audit(result)["input_population_complete"] is True
     assert all(item.status == "computed_unvalidated" for item in result.routed.outcomes)
-    records = _audit(result)["members"]
-    assert isinstance(records, list)
+    records = cast("list[dict[str, object]]", _audit(result)["members"])
     assert [record["original_tp_id"] for record in records[:10]] == [f"{value:04d}" for value in range(1, 11)]
     assert [record["source_order"] for record in records[:10]] == list(range(1, 11))
     assert [record["ensemble_order"] for record in records[:10]] == list(range(1, 11))
@@ -96,14 +95,15 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     assert sources["temporal_patterns"]["members"][0]["sha256"] == hashlib.sha256(PATTERNS.read_bytes()).hexdigest()
     assert all(record["effective_losses"] is None for record in records)
     for record in records:
-        assert Decimal(record["raw_gross_total_mm"]) == sum(
-            (Decimal(value) for value in record["raw_gross_increments_mm"]), Decimal(0)
+        assert Decimal(str(record["raw_gross_total_mm"])) == sum(
+            (Decimal(value) for value in cast("list[str]", record["raw_gross_increments_mm"])), Decimal(0)
         )
-        assert Decimal(record["areal_total_mm"]) == sum(
-            (Decimal(value) for value in record["areal_increments_mm"]), Decimal(0)
+        assert Decimal(str(record["areal_total_mm"])) == sum(
+            (Decimal(value) for value in cast("list[str]", record["areal_increments_mm"])), Decimal(0)
         )
         assert record["arf_factor"] is not None
-        assert record["effective_storm"]["depths_mm"] == [record["areal_total_mm"]]
+        storm = cast("dict[str, object]", record["effective_storm"])
+        assert storm["depths_mm"] == [record["areal_total_mm"]]
         assert record["execution_status"] == "computed_unvalidated"
     paths = write_design_outputs(tmp_path / "design-results", result)
     assert len(paths) == 6
