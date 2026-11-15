@@ -14,7 +14,8 @@ from typing import cast
 
 import pytest
 
-from runoff_routing._cmd644.models import Event
+from runoff_routing._cmd644.models import Control, Event, NumberInput
+from runoff_routing._cmd644.precision import store
 from runoff_routing._cmd644.reporting import CandidateResult
 from runoff_routing._cmd644.reporting import execute as execute_unmodified
 from runoff_routing.engine_execution import run_engine_project
@@ -302,3 +303,53 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
     assert result.native_raw_increment_tokens == ("1", "2", "3", "4", "5", "6")
     assert result.native_raw_time_tokens == ("0.50", "1.00", "1.50", "2.00", "2.50", "3.00")
     assert result.physical_time_hours == result.native_raw_time_tokens
+
+def _synthetic_number(value: float) -> NumberInput:
+    return NumberInput(str(value), value, store(value))
+
+
+@pytest.mark.parametrize("loss_model", [1, 2])
+def test_code_two_and_impervious_fraction_preserve_ordered_multiple_prints(loss_model: int) -> None:
+    """Internal #96/#91 interoperation: authored controls, not a PR16 original CMD golden."""
+    number = _synthetic_number
+    event = Event(
+        "authored_code2_two_prints",
+        "not-an-original-source-hash",
+        "{}",
+        (
+            Control(1, number(1.0)),
+            Control(7, number(0.0)),
+            Control(2, number(2.0)),
+            Control(7, number(0.0)),
+        ),
+        (number(2.0), number(3.0)),
+        (number(10.0), number(20.0)),
+        (number(0.5), number(0.2)),
+        (number(50.0), number(50.0)),
+        number(0.5),
+        number(5.0),
+        number(1.0),
+        number(2.0),
+        number(0.5),
+        4,
+        loss_model,
+    )
+    candidate = execute_unmodified(event, "authored")
+    print_records = candidate.network.prints
+    assert tuple(site.control_index_one_based for site in print_records) == (2, 4)
+    assert tuple(site.membership for site in print_records) == ((1,), (1, 2))
+    assert len(candidate.network.reaches) == 2
+    assert candidate.network.reaches[0].membership == (1,)
+    assert candidate.network.reaches[1].membership == (1, 2)
+    assert all(len(site.q) == event.n + 1 for site in print_records)
+    assert print_records[0].q == candidate.network.reaches[0].q
+    assert print_records[1].q == candidate.network.outlet
+    assert print_records[0].q != print_records[1].q
+
+    no_impervious = replace(event, impervious=(number(0.0), number(0.0)))
+    unmodified = execute_unmodified(no_impervious, "authored")
+    assert candidate.preparation.excess[0] != unmodified.preparation.excess[0]
+    assert candidate.preparation.excess[1] != unmodified.preparation.excess[1]
+    assert print_records[0].q != unmodified.network.prints[0].q
+    assert print_records[1].q != unmodified.network.prints[1].q
+
