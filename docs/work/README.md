@@ -6,8 +6,6 @@
 
 ## Current implementation / regression receipts
 
-- [Independent S5 source/edit/export/report acceptance](2026-11-15-issue143-s5-acceptance.md) — #143 / PR #160; original bytes, source/wheel checks, conditional integration review and explicit native Windows gate.
-
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
@@ -41,3 +39,7 @@
 - [Source-level primary decision record](2026-11-11-computational-reference-guidance.md) and [historical parser/source verification](2026-11-11-s1-code7-serialization.md).
 
 Other retained dated records describe the exact historical source, experiment and constraints they were written for. They **do not** reopen obsolete PRs, replace the single CMD feature matrix or require the private workspace for product use. Unneeded first-agent handoffs, obsolete status snapshots and the former ten-PR backlog matrix were removed from the active tree and remain in ordinary Git history.
+
+## Current S5 integration acceptance receipt
+
+- [Source-exact, edited, portable-input and native-report software qualification (#143)](2026-11-15-issue143-s5-acceptance.md) — source/wheel tested against original CMD/GUI reports; independently assembled owner branches, genuine Windows native launch still open.

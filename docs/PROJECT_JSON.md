@@ -14,11 +14,6 @@
 
 **Current note (15 November 2026):** merged [#119 CLI/text-file MVP](PROJECT_BATCH_MVP.md) delivers selected-engine original/JSON event batches. Upcoming #138–#143 typed edits/PAR-led import/native export/report reading extend the **same** project; source/manifest schema-1 paragraphs below are dated S5-P0 background. Current files are modern graphical CATG/STM and CMD PAR including characterised graphical `.cat`; old plain computational CAT and combined DAT excluded; saved RORBwin PAR deferred #144.
 
-The independent [S5 interoperability guide](S5_INTEROPERABILITY.md) and
-[#143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md)
-separate demonstrated project/reader software behavior from provisional
-unmerged feature work and direct native Windows acceptance.
-
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
@@ -153,3 +148,12 @@ This is a source/provenance safeguard, not a native RORB or rainfall-method pari
 ## S5-P2 SHA-pinned CMD reference diagnostic
 
 The [S5 native review contract](S5_RECORDED_NATIVE_REVIEW.md) documents the `review-native` CLI. An actual 201-row CMD replay verified source evidence but **failed frozen printed parity: 11/201 within budget, maximum 0.22707849 m³/s**. The native column mapping is caller-asserted; numerical acceptance remains `unassessed`.
+
+## Current S5 interchange qualification
+
+For the separately reviewed import/edit/native-export/report workflow, see the
+[S5 interoperability capability table](S5_INTEROPERABILITY.md) and the
+[exact-head independent acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md).
+The current JSON/CLI functions are distinct from the unmerged PAR-led and
+portable native-export implementations. Native CMD execution and numerical
+acceptance are not implied by project-model equality.

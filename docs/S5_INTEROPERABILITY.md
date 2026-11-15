@@ -36,8 +36,9 @@ implementation owners reconcile and merge the contracts:
 
 ~~~sh
 python -m runoff_routing.project_json inspect-par "historic/settings.par"
-python -m runoff_routing.project_json import-rorb case-one legacy-rorb "historic/settings.par" "project.json" --catchment "historic/actual catchment.catg"
+python -m runoff_routing.project_json import-rorb case-one legacy-rorb "historic/settings.par" "project.json" --catchment "actual catchment.catg"
 python -m runoff_routing.project_json validate "project.json"
+mkdir relocated
 python -m runoff_routing.project_json save-run "project.json" "edited-run.json" "relocated/edited-project.json"
 python -m runoff_routing.native_export "relocated/edited-project.json" "native-bundle" --target cmd-6.44
 ~~~

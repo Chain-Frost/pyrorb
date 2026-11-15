@@ -30,10 +30,6 @@ This checks that an already-supplied supported DESIGN event can execute. It does
 
 ## 3. JSON project and engine selection
 
-For the distinct source-exact, edited JSON, proposed native package and
-canonical native-report capabilities, see [S5 interoperability](S5_INTEROPERABILITY.md)
-and the [independent #143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md).
-
 For an existing supported [JSON project](PROJECT_JSON.md) (`project.json` below), use a *new* output filename:
 
 ```sh
@@ -98,3 +94,13 @@ python -m build --wheel
 ```
 
 Verify the resulting wheel with an **out-of-tree installation and import** before claiming wheel behaviour; do not import from the source checkout by accident. The existing CI checks pure-Python software quality and isolated wheel use; it does not run native CMD. Report distinctly: parser/software conformance; cached reference comparison; freshly executed source and installed-wheel computation; CMD-native numerical equivalence; independent engineering accuracy/conservation/refinement; and batch performance. Do not promote one category to another. [Regression policy](REGRESSION.md).
+
+## 7. Native CMD interoperability acceptance status
+
+The current main JSON/CLI project path is distinct from the unmerged #138–#142
+PAR-led import, editing, PyRomb export and ryan-tools reader work. Their
+provisional commands and supported/excluded capabilities are documented in the
+[S5 interoperability guide](S5_INTEROPERABILITY.md) and the
+[#143 independent source/wheel acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md).
+The native relocated-PAR execution and native numerical equivalence gates remain
+open; no GUI work is included.
