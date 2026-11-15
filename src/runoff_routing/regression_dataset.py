@@ -12,7 +12,6 @@ import gzip
 import hashlib
 import importlib.util
 import json
-import math
 import platform
 import re
 import sys
@@ -25,7 +24,7 @@ from typing import Any, cast
 from . import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
 from .engine_types import EngineOutcome
 from .regression_metrics import SiteMetrics
-from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_float
+from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_cmd_reporting_clock, stored_float
 from .rorb_documents import RorbSource
 from .rorb_out import inspect_output
 
@@ -618,10 +617,7 @@ def _fresh_cmd_reporting_metrics(root: Path, case: dict[str, Any], outcome: Engi
         actual_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
         if actual_hours <= 0:
             return {"classification": "invalid", "reason": "Nonpositive actual computed source timestep"}
-        stored_hours = float(actual_hours)
-        stored_seconds = float(actual_hours * Decimal(3600))
-        if not math.isfinite(stored_hours) or not math.isfinite(stored_seconds):
-            return {"classification": "invalid", "reason": "Nonfinite computed time representation"}
+        stored_hours, stored_seconds = stored_cmd_reporting_clock(actual_hours)
         if (stored_hours.hex(), stored_seconds.hex()) != (binding["stored_h_hex"], binding["stored_dt_hex"]):
             return {"classification": "incomplete", "reason": "Unqualified source-to-stored CMD time representation"}
         original_site = _binding(case, root, root)
