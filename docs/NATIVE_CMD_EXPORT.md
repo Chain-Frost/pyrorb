@@ -1,5 +1,7 @@
 # S5 - portable native RORB CMD export (issue #141)
 
+**Software implementation merged:** [PR #162](https://github.com/Chain-Frost/python-runoff-routing/pull/162), 16 November 2026, squash `766b56a8ba6fe42785f05bb5d8df51a741a07e2c`. The exact-head source/installed-wheel quality and package/launcher software tests passed. **Native RORB CMD executable acceptance remains `not_run`; numerical equivalence remains `not_assessed`.**
+
 The native export is distinct from S1 `export-run`, which writes a typed JSON model, and from S0 `capture_cmd`, which constructs its *own* PAR with verbosity 3. The native exporter stages and reparses **the exact PAR handed to a recipient**, without running Python or regenerating a different PAR at native execution time.
 
 ## Current bounded capability
@@ -18,11 +20,14 @@ The native export is distinct from S1 `export-run`, which writes a typed JSON mo
 First import or reopen a verified RORB CMD source project with the maintained project APIs. Then:
 
 ```powershell
+py -3.13 -m runoff_routing.project_json export-native "C:\models\project.json" "C:\deliveries\portable case" --target cmd-6.44
+py -3.13 -m runoff_routing.project_json export-native "C:\models\project.json" "C:\deliveries\selected batch" --target cmd-6.44 --events "C:\models\events.json"
+
+# Equivalent standalone exporter entry point:
 py -3.13 -m runoff_routing.native_export "C:\models\project.json" "C:\deliveries\portable case" --target cmd-6.44
-py -3.13 -m runoff_routing.native_export "C:\models\project.json" "C:\deliveries\selected batch" --target cmd-6.44 --events "C:\models\events.json"
 ```
 
-The second command accepts the existing `python-runoff-routing-explicit-events` schema-1 JSON request used by `project_batch`, with all event edits resolved through #138's shared `resolve_effective_model` function (including named continuing-loss input). The command-line entry point is isolated until #140 integrates a corresponding handler into the shared project dispatcher. A malformed or unsupported selected event fails the whole export rather than silently omitting the event.
+The second command accepts the existing `python-runoff-routing-explicit-events` schema-1 JSON request used by `project_batch`, with all event edits resolved through #138's shared `resolve_effective_model` function (including named continuing-loss input). The `export-native` command is now integrated into the shared project JSON dispatcher through merged #140, and delegates to the same exporter API; the standalone `native_export` CLI remains available. A malformed or unsupported selected event fails the whole export rather than silently omitting the event.
 
 ## Python API
 
@@ -61,10 +66,10 @@ For acceptance record the native executable's original SHA-256 and observed vers
 
 ### Remaining dependencies and limits
 
-- #138 owns typed/enumerated editing and one effective-event model. The CLI consumes `resolve_effective_model` from #138's typed editing branch (PR #157). This is a real branch dependency; merge/rebase the reviewed #138 contract before retargeting this PR to `main`.
-- #140 owns PAR-led path override bindings, persisted edited settings and integration into the shared project CLI. The exporter uses the staged immutable `LegacyRunFiles` inputs, `LoadedProject.run` for persisted effective edits, and the existing versioned project serializer to record source-binding choices once #140's branch is integrated. It never re-resolves the original embedded paths.
-- #139 owns PyRomb-backed CATG edits and expanded STM writer. The exporter now conditionally delegates edited CATG with explicit graphical metadata to the reviewed `serialize_catg_with_drawing` function; that writer is not present in #141's current #138-based CI until #139 PR #166 is integrated, so the positive edited-CATG case remains pending cross-branch tests. Unchanged CATG never requires PyRomb.
+- Merged #138 [PR #157](https://github.com/Chain-Frost/python-runoff-routing/pull/157) supplies the public typed `resolve_effective_model` that native export and Python event selection share. Persisted engine choices and schema-1 historical meaning are retained.
+- Merged #140 [PR #159](https://github.com/Chain-Frost/python-runoff-routing/pull/159) supplies PAR-led binding, schema-3 effective editing, `LoadedProject.run` and the shared `export-native` CLI delegation. Export copies the selected staged inputs and does not follow original embedded paths or package local `resolved_source` paths.
+- Merged #139 [PR #166](https://github.com/Chain-Frost/python-runoff-routing/pull/166) supplies the optional pinned PyRomb writer and STM serializer. The positive edited-CATG test ran as part of the merged-main PR #162 source suite. Exact unmodified CATG copy does not need PyRomb; edited graphical input still requires a valid `GeDrawing` and the optional writer dependency.
 - Optional external rainfall/curve/temporal-pattern inputs cannot be inferred from metadata. Non-reference external assets currently fail closed rather than yield an incomplete native package. RORBwin saved PAR, plain computational CAT and DAT remain unsupported.
 - Native output names, verbosity-dependent available reports and actual CMD success are **not characterised in this bounded software slice**. An export remains marked native-not-run until the actual relocated-par Windows acceptance case is performed. No native executable, numerical method, private data dependency, GUI, second comparator or feature matrix is added.
 
-The independent #143 qualification owner should check source-exact hashes, relocated closure, output semantics and the Windows acceptance evidence against the merged integration revision. Keep #7 and native/numerical gate #5 open until their separate requirements are genuinely met.
+The independent #143 qualification owner must still check actual native CMD execution of the **relocated emitted PAR**, exact native output/verbosity availability and any numerical comparator verdict against the merged integration revision. Keep #7 and native/numerical gate #5 open until their separate requirements are genuinely met.
