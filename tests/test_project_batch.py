@@ -421,9 +421,7 @@ def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, 
         encoding="utf-8",
     )
     report_prefix = tmp_path / "original-cli"
-    assert main(
-        [str(project), str(report_prefix), "--events", str(requests_path), "--engine", "python-cmd"]
-    ) == 2
+    assert main([str(project), str(report_prefix), "--events", str(requests_path), "--engine", "python-cmd"]) == 2
     cli_payload = json.loads(Path(f"{report_prefix}.json").read_text(encoding="utf-8"))
     assert cli_payload["requested_event_count"] == 3
     assert cli_payload["completed_event_count"] == 2
