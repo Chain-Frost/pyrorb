@@ -25,6 +25,22 @@ The new [independent acceptance tests](../../tests/test_s5_workflow_acceptance.p
 
 The original modern graphical source can have a .cat suffix and is admitted by content. Old plain CAT and combined DAT are excluded. Unknown PAR is explicitly unsupported; positive recognition of genuine RORBwin saved PAR with deferred support awaits #140. No invented RORBwin signature is admitted. Validation of both typed loss modes, enum/bool boundaries, event overrides and unsupported edit failures awaits the integrated #138/#140/#141 API. Unchanged PyRomb parameter-only export is a #141 qualification candidate, not a current claim.
 
+## Original RORBwin 6.52 report bytes retained for canonical reader qualification
+
+Two unchanged public source blobs have been admitted solely as a compact
+reader-acceptance population in [tests/fixtures/s5-acceptance](../../tests/fixtures/s5-acceptance/README.md).
+They came from the pinned
+[ryan-tools-test-data revision f3c49e8](https://github.com/Chain-Frost/ryan-tools-test-data/tree/f3c49e867cd8a165e031217a148293a8968c2d88/RORB/12hr-areal-example).
+Their exact Git-blob hashes were verified **on copy** (not reconstructed
+line-endings or rounded numeric tokens): the 19,020-byte 301-row ordinary
+report is `95826bccdbe1f2410ef372ef6b6c2c161d847b99`;
+the 8,558-byte 80-event/eight-representative batch is
+`08ae1d94ef74d666836c8d3fab842e6421851030`.
+Focused tests re-verify both actual checkout objects with the Git-blob
+algorithm. **Keeping original bytes is not proof that #142 parses them**:
+canonical row and identity assertions are independently exercised only on
+the separate unmerged integration snapshot, [test-only PR #172](https://github.com/Chain-Frost/python-runoff-routing/pull/172).
+
 ## Verification and execution provenance
 
 The new test file is selected by the existing [approved Windows quality workflow](../../.github/workflows/quality.yml) in both the source suite and the installed wheel-target test suite. The wheel suite already checks the package's import origin outside the checkout; the tests read only the public checked-out fixture paths as evidence data. Repeat after the shared implementation PRs land. This neither adds hosted native execution nor changes the frozen comparator/case register.

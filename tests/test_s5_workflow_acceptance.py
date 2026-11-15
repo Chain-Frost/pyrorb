@@ -219,3 +219,21 @@ def test_existing_retained_cmd_report_preserves_registered_rows_and_clock(case_i
     assert tuple(row.increment for row in rows) == tuple(range(1, len(rows) + 1))
     assert inspected.hydrographs.time_increment_hours == Decimal(case["clock"]["timestep_hours"])
     assert all(row.raw_time and row.values for row in rows)
+
+
+@pytest.mark.parametrize(
+    ("filename", "size_bytes", "git_blob"),
+    [
+        ("rorbwin652-12h-standard.out", 19_020, "95826bccdbe1f2410ef372ef6b6c2c161d847b99"),
+        ("rorbwin652-12h-batch.out", 8_558, "08ae1d94ef74d666836c8d3fab842e6421851030"),
+    ],
+)
+def test_public_rorbwin_652_original_report_bytes_are_authenticated(
+    filename: str, size_bytes: int, git_blob: str
+) -> None:
+    """Pin exact public GUI bytes; installed ryan-tools parsing is a distinct gate."""
+    path = DATA.parent / "s5-acceptance" / filename
+    data = path.read_bytes()
+    assert len(data) == size_bytes
+    header = f"blob {len(data)}\0".encode("ascii")
+    assert hashlib.sha1(header + data, usedforsecurity=False).hexdigest() == git_blob
