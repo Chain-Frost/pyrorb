@@ -156,6 +156,7 @@ def test_plan_roundtrip_and_explicit_replay_never_redraws(tmp_path: Path, monkey
     loaded = read_sample_plan(paths[0])
     assert loaded == plan
     expected = list(iter_plan_samples(plan))
+
     def _unexpected_draw(*_args: object) -> Decimal:
         pytest.fail("RNG called during persisted replay")
 
@@ -254,6 +255,7 @@ def test_invalid_config_is_rejected(path: tuple[str | int, ...], replacement: ob
     target[path[-1]] = replacement
     with pytest.raises(SamplePlanError, match=message):
         SamplePlan.create(spec)
+
 
 def test_corrupt_plan_and_ledger_are_rejected(tmp_path: Path) -> None:
     plan = SamplePlan.create(_spec())
@@ -437,3 +439,18 @@ def test_loss_independence_is_explicit_not_implicitly_inferred() -> None:
     assert first.tp_uniform is not None
     assert 0 < first.loss_uniform < 1
     assert 0 < first.tp_uniform < 1
+
+
+def test_max_length_stratum_ids_remain_replayable_and_source_specific() -> None:
+    spec = _spec()
+    spec["strata"][0]["id"] = "x" * 128
+    plan = SamplePlan.create(spec)
+    records = list(iter_plan_samples(plan))
+    assert records[0].stratum_id == "x" * 128
+    assert len(records[0].sample_id) == 67
+    assert records[0].sample_id.startswith("mc:")
+    validate_sample_records(plan, records)
+    assert type(records[0]).from_dict(records[0].to_dict()) == records[0]
+    spec["sources"]["ifd"] = _sha(b"changed input")
+    changed = SamplePlan.create(spec)
+    assert next(iter_plan_samples(changed)).sample_id != records[0].sample_id

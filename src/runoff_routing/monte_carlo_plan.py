@@ -721,7 +721,9 @@ class SampleRecord:
 
 
 def _sample_id(plan: SamplePlan, stratum_id: str, index: int) -> str:
-    return f"mc:{plan.population_id[:16]}:{stratum_id}:{index:08d}"
+    # Full 256-bit logical identity keeps even 128-character stratum IDs in bounds.
+    # It excludes plan revision/allocation but includes every population/source choice.
+    return f"mc:{_sha({'version': 1, 'population_id': plan.population_id, 'stratum_id': stratum_id, 'index': index})}"
 
 
 def iter_stratum_samples(
