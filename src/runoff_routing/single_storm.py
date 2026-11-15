@@ -14,7 +14,7 @@ from typing import Literal
 
 from runoff_routing.reach_routing import RoutingDomainError, RoutingNumericalError, route_reach
 
-ControlCode = Literal[1, 3, 4, 5, 7]
+ControlCode = Literal[1, 2, 3, 4, 5, 7]
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +48,7 @@ class Catchment:
 
     controls: tuple[Control, ...]
     areas_km2: tuple[float, ...]
+    impervious_fractions: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,16 +94,22 @@ def _check_catchment(catchment: Catchment) -> None:
     if not all(area > 0 for area in catchment.areas_km2):
         message = "All subarea areas must be positive."
         raise RoutingDomainError(message)
+    if catchment.impervious_fractions and len(catchment.impervious_fractions) != len(catchment.areas_km2):
+        message = "Every source needs one ordered impervious fraction."
+        raise RoutingDomainError(message)
+    if any(not math.isfinite(fi) or not 0 <= fi <= 1 for fi in catchment.impervious_fractions):
+        message = "Impervious fractions must be finite values in [0, 1]."
+        raise RoutingDomainError(message)
     if not catchment.controls or catchment.controls[-1].code != 7:
         message = "The model must terminate at a printed outlet."
         raise RoutingDomainError(message)
     for command in catchment.controls:
-        if command.code not in {1, 3, 4, 5, 7}:
+        if command.code not in {1, 2, 3, 4, 5, 7}:
             message = f"Unsupported control code: {command.code}."
             raise RoutingDomainError(message)
         _check_finite_nonnegative(command.reach_length_km, "Reach length")
-        if command.code not in {1, 5} and command.reach_length_km != 0:
-            message = "Only control codes 1 and 5 may specify reach length."
+        if command.code not in {1, 2, 5} and command.reach_length_km != 0:
+            message = "Only control codes 1, 2 and 5 may specify reach length."
             raise RoutingDomainError(message)
 
 
@@ -115,11 +122,19 @@ def _distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
     reaches: list[float] = []
     for command in catchment.controls:
         match command.code:
-            case 1:
+            case 1 | 2:
                 if source_index >= len(catchment.areas_km2):
                     message = "More source operations than subarea areas."
                     raise RoutingDomainError(message)
-                running = {source_index: command.reach_length_km}
+                if command.code == 2 and running is None:
+                    message = "Code 2 requires an existing running branch."
+                    raise RoutingDomainError(message)
+                running = (
+                    {index: distance + command.reach_length_km for index, distance in running.items()}
+                    if running is not None
+                    else {}
+                )
+                running[source_index] = command.reach_length_km
                 source_index += 1
                 reaches.append(command.reach_length_km)
             case 3:
@@ -127,6 +142,7 @@ def _distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
                     message = "Cannot store an uninitialised running hydrograph."
                     raise RoutingDomainError(message)
                 stack.append(dict(running))
+                running = None
             case 4:
                 if running is None or not stack:
                     message = "Confluence has no running/stored hydrographs."
@@ -165,7 +181,9 @@ def distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
     return _distance_analysis(catchment)
 
 
-def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float) -> tuple[float, ...]:
+def rainfall_excess(
+    rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float, impervious_fraction: float = 0.0
+) -> tuple[float, ...]:
     """Apply distinct CMD-referenced IL/CL or IL/RoC pervious loss rules.
 
     For IL/CL, charge the full CL*dt allowance after IL is exceeded,
@@ -175,6 +193,9 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
     """
     _check_finite_nonnegative(losses.initial_mm, "Initial loss")
     _check_finite_nonnegative(losses.continuing_mm_h, "Continuing loss")
+    if not math.isfinite(impervious_fraction) or not 0 <= impervious_fraction <= 1:
+        message = "Impervious fraction must be between 0 and 1."
+        raise RoutingDomainError(message)
     if losses.runoff_coefficient is not None:
         coefficient = losses.runoff_coefficient
         if not math.isfinite(coefficient) or not 0.0 <= coefficient <= 1.0 or losses.continuing_mm_h != 0:
@@ -183,11 +204,12 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
     if not math.isfinite(timestep_hours) or timestep_hours <= 0:
         message = "Timestep must be finite and positive."
         raise RoutingDomainError(message)
-    continuing_per_bin = losses.continuing_mm_h * timestep_hours
+    pervious = 1.0 - impervious_fraction
+    continuing_per_bin = losses.continuing_mm_h * timestep_hours * pervious
     if not math.isfinite(continuing_per_bin):
         message = "Continuing loss per increment overflowed."
         raise RoutingDomainError(message)
-    initial_remaining = losses.initial_mm
+    initial_remaining = losses.initial_mm * pervious
     excess: list[float] = []
     for rainfall in rainfall_mm:
         _check_finite_nonnegative(rainfall, "Rainfall")
@@ -257,13 +279,15 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
         message = "Temporal pattern percentages must total 100 within printed precision."
         raise RoutingDomainError(message)
+    fractions = catchment.impervious_fractions or (0.0,) * len(catchment.areas_km2)
     excesses = tuple(
         rainfall_excess(
             tuple(percent * depth / total_percent for percent in storm.percentages),
             losses=losses,
             timestep_hours=storm.timestep_hours,
+            impervious_fraction=fi,
         )
-        for depth in storm.depths_mm
+        for depth, fi in zip(storm.depths_mm, fractions, strict=True)
     )
     count = storm.calculation_increments + 1
     sources = tuple(
@@ -281,9 +305,18 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     source_index = 0
     for command in catchment.controls:
         match command.code:
-            case 1:
+            case 1 | 2:
+                if command.code == 2 and routed is None:
+                    message = "Code 2 requires an existing running hydrograph."
+                    raise RoutingDomainError(message)
+                incoming = sources[source_index]
+                if routed is not None:
+                    incoming = tuple(a + b for a, b in zip(routed, incoming, strict=True))
+                    if any(not math.isfinite(value) for value in incoming):
+                        message = "Source-addition discharge overflowed."
+                        raise RoutingNumericalError(message)
                 routed = route_reach(
-                    sources[source_index],
+                    incoming,
                     coefficient_k=coefficients[factor_index],
                     exponent_m=m,
                     time_step_hours=storm.timestep_hours,
@@ -295,6 +328,7 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
                     message = "No running hydrograph to store."
                     raise RoutingDomainError(message)
                 stack.append(routed)
+                routed = None
             case 4:
                 if routed is None or not stack:
                     message = "No stored hydrograph to join."
