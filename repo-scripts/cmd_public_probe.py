@@ -14,7 +14,7 @@ from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, cast
 
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineOutcome, EngineSelection
@@ -148,6 +148,7 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
         "mismatch_count": len(mismatches),
         "first_mismatch": mismatches[0] if mismatches else None,
         "reason": comparison.get("reason"),
+        "fresh_reporting": comparison.get("fresh_reporting"),
         # The matched Hyd001 column is registered source/control-derived;
         # there is no independently observed native physical-site label.
         "site_identity_evidence": case.get("observations", {}).get("physical_site_identity", "unverified"),
@@ -163,6 +164,20 @@ def _one(case: dict[str, Any]) -> dict[str, Any]:
         "model_sha256": outcome.model_sha256,
         "implementation_revision": outcome.implementation_revision,
     }
+
+
+def _fresh_reporting_classification(item: dict[str, Any]) -> str:
+    """Do not convert missing/invalid scalar result metadata into a passing status."""
+    raw: object = item.get("fresh_reporting")
+    if not isinstance(raw, dict):
+        return "not_run"
+    classification: object = cast("dict[str, object]", raw).get("classification")
+    return classification if isinstance(classification, str) else "not_run"
+
+
+def _retained_scalar_failures(expected: dict[str, int], observed: dict[str, dict[str, Any]]) -> list[str]:
+    """A matching Q must not conceal missing or failing retained scalar results."""
+    return [case_id for case_id in expected if _fresh_reporting_classification(observed[case_id]) != "pass"]
 
 
 def main() -> int:
@@ -183,10 +198,25 @@ def main() -> int:
         if observed[case_id]["status"] != "printed_pass" or observed[case_id].get("rows") != length
     ]
     gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
+    scalar_failures = _retained_scalar_failures(expected, observed)
+    scalar_gate_ok = gate_ok and not scalar_failures
+    scalar_statuses = dict(sorted(Counter(_fresh_reporting_classification(item) for item in outcomes).items()))
+    full_scalar_status = (
+        "fail"
+        if scalar_statuses.get("fail", 0) or scalar_statuses.get("invalid", 0)
+        else "pass"
+        if scalar_statuses == {"pass": 50}
+        else "incomplete"
+    )
     print(
         json.dumps(
             {
                 "format": "runoff-public-cmd-fresh-probe-v1",
+                "fresh_reporting_status_counts": scalar_statuses,
+                "fresh_reporting_full_population": full_scalar_status,
+                "retained_36_case_fresh_scalar_baseline": "pass" if scalar_gate_ok else "fail",
+                "retained_scalar_baseline_failures": scalar_failures,
+                "fresh_reporting_acceptance": "unassessed_pending_independent_review",
                 "cases_checked": len(outcomes),
                 "status_counts": counts,
                 "retained_36_case_printed_baseline": "pass" if gate_ok else "fail",
@@ -203,7 +233,7 @@ def main() -> int:
             allow_nan=False,
         )
     )
-    return 0 if gate_ok else 1
+    return 0 if scalar_gate_ok else 1
 
 
 if __name__ == "__main__":

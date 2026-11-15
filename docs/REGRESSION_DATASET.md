@@ -6,31 +6,45 @@ The existing [register](../tests/fixtures/regression-v1/register.json) and `runo
 
 Native references are original CMD 6.44 printed observations. The ten authored cases remain mathematical oracles. All 21 native gaps preserve individual reasons and CMD/RORBwin identities under `native-gaps`; their experimental files are excluded. `all` contains 85 records and intentionally returns non-success.
 
-The bundled Python output is an **immutable prior source-execution snapshot** at `fea9c80c521127325b779ea0ea87ddf77795b290`, independently authenticated before transfer. Its CSV and binary64 hexadecimal series are separate from native truth. The cached CSV records the original execution state `computed_unvalidated`: only the SHA-authenticated `--snapshot` path permits that legacy status to undergo an offline diagnostic comparison. An arbitrary external candidate CSV with this status is still rejected by the general fail-closed computation-state gate. `--snapshot` authenticates both payloads, rejects mixed external identities, and reports `cached_candidate_snapshot` / `candidate_execution: not_run`. This compares original observations with prior execution; it does **not** execute or accept today's production solver. The qualified public backend remains pending [#75](https://github.com/Chain-Frost/python-runoff-routing/issues/75). Future actual engine execution must feed this same runner using `--csv` / `--series` and a newly qualified profile. Never copy native references into predictions. No candidate source code or wheel is distributed.
+The bundled Python output is an **immutable prior source-execution snapshot** at `fea9c80c521127325b779ea0ea87ddf77795b290`, independently authenticated before transfer. Its CSV and binary64 hexadecimal series are separate from native truth. The cached CSV records the original execution state `computed_unvalidated`: only the SHA-authenticated `--snapshot` path permits that legacy status to undergo an offline diagnostic comparison. An arbitrary external candidate CSV with this status is still rejected by the general fail-closed computation-state gate. `--snapshot` authenticates both payloads, rejects mixed external identities, and reports `cached_candidate_snapshot` / `candidate_execution: not_run`. This compares original observations with prior execution; it does **not** execute or accept today's production solver. The bounded public `python-cmd` backend is integrated through merged [#79](https://github.com/Chain-Frost/python-runoff-routing/pull/79), but full numerical equivalence and physical accuracy are not accepted. Its fresh actual source/wheel diagnostic is separate from `--snapshot`, as described below. The existing runner still supports externally qualified `--csv` / `--series` comparisons; do not copy native references into predictions. No standalone historical candidate source or wheel is distributed.
 
 Frozen `cmd644-report-scalars-v1` is unchanged: **19,550 ordinate rows pass**, peak magnitude 50 pass, peak time 48 pass / two incomplete (`fig67-zero`, `wheel-zero`), reported volume 50 pass. Scalar aggregate returns **1**. Reported volume is the native **inclusive sample sum**, distinct from physical volume/conservation. Exact ties, sub-print clocks, physical acceptance and production-engine qualification remain open. No tolerances, defaults or goldens changed.
 
-## Windows / Python 3.14 commands
+## Windows / Python 3.13 or 3.14 commands
 
 Use fresh output names: existing destinations are rejected. Install only from the public checkout:
 
 ```powershell
-py -3.14 -m pip install -e ".[dev]"
+py -3.13 -m pip install -e ".[dev]"
 New-Item -ItemType Directory -Force .local | Out-Null
 $Register = 'tests/fixtures/regression-v1/register.json'
-py -3.14 -m runoff_routing.regression_dataset preflight $Register --set cmd-eligible --full-index --output .local/preflight.json
-py -3.14 -m runoff_routing.regression_dataset diagnose $Register --case H1-three-source-asymmetric --snapshot --output .local/one.json
-py -3.14 -m runoff_routing.regression_dataset compare $Register --set timestep --snapshot --output .local/timestep.json
-py -3.14 -m runoff_routing.regression_dataset compare $Register --set cmd-eligible --snapshot --output .local/scalars.json
-py -3.14 -m runoff_routing.regression_dataset preflight $Register --set native-all --output .local/native-coverage.json
-py -3.14 -m runoff_routing.regression_dataset preflight $Register --set authored --engine python --output .local/analytic.json
-py -3.14 -m pytest tests/test_regression_dataset.py tests/test_regression_scalars.py tests/test_regression_public_native.py -q
-py -3.14 repo-scripts/check_local.py
+py -3.13 -m runoff_routing.regression_dataset preflight $Register --set cmd-eligible --full-index --output .local/preflight.json
+py -3.13 -m runoff_routing.regression_dataset diagnose $Register --case H1-three-source-asymmetric --snapshot --output .local/one.json
+py -3.13 -m runoff_routing.regression_dataset compare $Register --set timestep --snapshot --output .local/timestep.json
+py -3.13 -m runoff_routing.regression_dataset compare $Register --set cmd-eligible --snapshot --output .local/scalars.json
+py -3.13 -m runoff_routing.regression_dataset preflight $Register --set native-all --output .local/native-coverage.json
+py -3.13 -m runoff_routing.regression_dataset preflight $Register --set authored --engine python --output .local/analytic.json
+py -3.13 -m pytest tests/test_regression_dataset.py tests/test_regression_scalars.py tests/test_regression_public_native.py -q
+py -3.13 repo-scripts/check_local.py
 ```
 
 Preflight / one / timestep / authored exit 0; the complete scalar comparison and `native-all` exit 1 by design. **The bundled `candidate-snapshot.csv.gz` is not an ordinary `--csv` ordinate-only pass fixture:** its original `computed_unvalidated` execution status is deliberately rejected by the general candidate-state guard (50 `invalid` classifications, exit 1), even when the historical `--implementation` SHA is supplied. Use `--snapshot` for the authenticated cached comparison of all 19,550 native ordinates and scalar fields; this returns 48 pass / two incomplete overall (exit 1) because zero-flow peak times remain unresolved. An **ordinate-only pass (exit 0)** requires a separately executed and qualified engine CSV whose case records have valid `computed/pass` states; no such fresh production-engine execution is bundled. The external candidate format remains the existing S5 CSV schema; `.gz` is supported losslessly. Existing `--series`, `--wheel` and `--custody-root` remain supported. Bundled cases use relative in-repository bindings and need no custody option. `--wheel` attests the **numerical candidate**, distinct from the comparator wheel.
 
 Selections: `cmd-eligible` (50), `cmd-selected` (44 archive), `supplemental` (six), `cmd-migrated-eight`, `timestep`, `authored` (ten), `smoke` (original three authored), `native-all` (71), `native-gaps` (21), and `all` (85).
+
+### Fresh actual `python-cmd` diagnosis — distinct from the historical snapshot
+
+From a clean source checkout using Python 3.13 or 3.14 on either Linux or Windows, run the **existing** bounded original-input CMD probe; it calls the existing S1 source decoders and the public `python-cmd` engine, without launching RORB or importing private investigation data:
+
+```sh
+python3.13 repo-scripts/cmd_public_probe.py
+```
+
+It reads the same authenticated published register, visits **all 50 eligible original CMD cases**, and reports **36 fully computed original full-horizon printed Q passes / 16,836 ordinates** plus **14 explicit `source_unsupported`**, rather than treating unadmitted inputs as pass or fail. Its `retained_36_case_printed_baseline` is a bounded Q regression. The separate `retained_36_case_fresh_scalar_baseline` also fails the probe on a fresh peak/time/reported-volume failure or missing result in those 36 retained cases, even if their Q series still pass. Neither gate qualifies the full original 50 cases. The output independently checks generated **model elapsed** time `0,h,…,n*h` against typed source time/horizon and does not substitute original one-based CMD `Inc/Time` labels as generated output. Original archive physical `Hyd001` labels remain `unverified`; the one terminal code-7 source association is not an independently observed native physical-site label.
+
+The same **frozen `cmd644-report-scalars-v1`** comparator now evaluates actual newly computed Q, source-derived verified stored h/dt and authenticated original native report selectors, with *separate* fresh peak magnitude, uniquely defined peak time and **inclusive native reported volume** fields. At [public PR #100 exact code `e93c12b`](https://github.com/Chain-Frost/python-runoff-routing/pull/100) [Python 3.13 source+installed wheel CI #43651931036](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43651931036), all **36/36** admitted cases pass each fresh metric and the 50 per-case JSON records are identical between source and installed wheel; the other **14 are `not_run` for scalar**, so `fresh_reporting_full_population` remains explicitly **`incomplete`**. This evidence is **not** the earlier `fea9c80` historical cached 50/48/50 snapshot. No printed-native ties/hidden states, physical trapezoidal volume, conservation, full CMD capability or improved default-engine numerical accuracy are claimed.
+
+For an independently installed public wheel, build and install it outside the checkout as in the next section. With an isolated interpreter and the copied public checkout/fixture scaffold, execute that **same** `repo-scripts/cmd_public_probe.py` using the installed wheel. Check `runoff_routing.__file__` resolves to external site-packages, record both exact source commit and wheel SHA-256, and compare the 50 full per-case/field results with the source run. No second runner, catalogue, export or reference regeneration is needed.
 
 ### Installed comparator wheel and complete tests
 
@@ -40,8 +54,8 @@ Use a fresh external directory. Copy test scaffolding; isolated mode and import 
 $Checkout = (Get-Location).Path
 $Verify = Join-Path $env:TEMP ('runoff81-' + [guid]::NewGuid())
 New-Item -ItemType Directory $Verify | Out-Null
-py -3.14 -m build --wheel --outdir "$Verify/dist"
-py -3.14 -m venv "$Verify/env"
+py -3.13 -m build --wheel --outdir "$Verify/dist"
+py -3.13 -m venv "$Verify/env"
 $Python = Join-Path $Verify 'env/Scripts/python.exe'
 $Wheel = (Get-ChildItem "$Verify/dist/*.whl").FullName
 & $Python -m pip install $Wheel pytest
@@ -53,8 +67,9 @@ foreach ($Name in @('tests','examples','repo-scripts','src','.github','pyproject
 Push-Location "$Verify/checkout"
 & $Python -I -c "import runoff_routing; print(runoff_routing.__file__); assert 'site-packages' in runoff_routing.__file__"
 & $Python -I -m pytest -m 'not native and not benchmark'
-& $Python -I -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --output preflight.json
+& $Python -I -m runoff_routing.regression_dataset preflight tests/fixtures/regression-v1/register.json --set cmd-eligible --full-index --output preflight.json
 & $Python -I -m runoff_routing.regression_dataset compare tests/fixtures/regression-v1/register.json --set cmd-eligible --snapshot --output scalars.json
+& $Python -I repo-scripts/cmd_public_probe.py
 Pop-Location
 ```
 

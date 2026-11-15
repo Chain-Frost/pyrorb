@@ -12,6 +12,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import math
 import platform
 import re
 import sys
@@ -554,6 +555,111 @@ def _compare(
     }
 
 
+def _fresh_cmd_identity_problem(
+    case: dict[str, Any], outcome: EngineOutcome, point: dict[str, Any]
+) -> dict[str, str] | None:
+    """Check output selection independently before assigning original clock or Q labels."""
+    if outcome.project_id != case["case_id"] or outcome.event_id != case["case_id"]:
+        return {"classification": "invalid", "reason": "Computed project/event does not match original case"}
+    if outcome.effective_selection.numerical_profile != "cmd-6.44":
+        return {"classification": "invalid", "reason": "Unexpected CMD numerical profile"}
+    if outcome.requested_print_ids != (point["model_print_id"],):
+        return {"classification": "invalid", "reason": "Computed requested print ID differs from original case"}
+    if not outcome.control_order or outcome.control_order[-1] != 7 or outcome.control_order.count(7) != 1:
+        return {"classification": "invalid", "reason": "Computed outlet does not have one terminal code-7 print"}
+    if outcome.native_raw_increment_tokens or outcome.native_raw_time_tokens:
+        return {
+            "classification": "invalid",
+            "reason": "Python-generated time cannot claim observed native clock tokens",
+        }
+    return None
+
+
+def _fresh_cmd_elapsed_problem(
+    case: dict[str, Any], outcome: EngineOutcome, original_rows: int
+) -> dict[str, str] | None:
+    """Verify computed elapsed i*h, never substituting original one-based Inc/Time."""
+    actual_rows = len(outcome.physical_time_hours)
+    if actual_rows != original_rows:
+        return {
+            "classification": "incomplete" if actual_rows < original_rows else "invalid",
+            "reason": "Generated elapsed-time horizon differs from original reference horizon",
+        }
+    step_hours = _scalar(case["clock"]["timestep_hours"])
+    if step_hours <= 0:
+        return {"classification": "invalid", "reason": "Invalid original timestep for generated clock"}
+    try:
+        generated_step_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
+    except RegressionError:
+        return {"classification": "invalid", "reason": "Malformed computed source timestep"}
+    if (
+        generated_step_hours != step_hours
+        or outcome.effective_inputs.get("calculation_increments") != original_rows - 1
+    ):
+        return {"classification": "invalid", "reason": "Computed source timestep/horizon metadata differs"}
+    for index, value in enumerate(outcome.physical_time_hours):
+        try:
+            computed_time = _scalar(value)
+        except RegressionError:
+            return {"classification": "invalid", "reason": "Malformed generated elapsed-time value"}
+        if computed_time != index * step_hours:
+            return {"classification": "invalid", "reason": f"Generated elapsed time differs at sample {index}"}
+    return None
+
+
+def _fresh_cmd_reporting_metrics(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
+    """Compare newly computed Q and clock to original native scalars, never the cached snapshot."""
+    binding: dict[str, Any] | None = case.get("scalar_binding")
+    if binding is None:
+        return {"classification": "incomplete", "reason": "Original native scalar binding is unavailable"}
+    if binding.get("policy_id") != POLICY:
+        return {"classification": "unsupported", "reason": "Unreviewed native scalar reporting policy"}
+    try:
+        actual_hours = _scalar(outcome.effective_inputs.get("timestep_hours"))
+        if actual_hours <= 0:
+            return {"classification": "invalid", "reason": "Nonpositive actual computed source timestep"}
+        stored_hours = float(actual_hours)
+        stored_seconds = float(actual_hours * Decimal(3600))
+        if not math.isfinite(stored_hours) or not math.isfinite(stored_seconds):
+            return {"classification": "invalid", "reason": "Nonfinite computed time representation"}
+        if (stored_hours.hex(), stored_seconds.hex()) != (binding["stored_h_hex"], binding["stored_dt_hex"]):
+            return {"classification": "incomplete", "reason": "Unqualified source-to-stored CMD time representation"}
+        original_site = _binding(case, root, root)
+        if original_site is None:
+            return {"classification": "incomplete", "reason": "Original native scalar report is not bound"}
+        actual = outcome.hydrographs[0].discharge_m3_s
+        generated = {
+            "q_hex": [value.hex() for value in actual],
+            "h_hex": stored_hours.hex(),
+            "dt_hex": stored_seconds.hex(),
+        }
+        fields = compare_scalars(generated, original_site)
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        return {"classification": "invalid", "reason": str(exc)}
+    verdicts = {field["verdict"] for field in fields.values()}
+    aggregate = "fail" if "fail" in verdicts else "incomplete" if "incomplete" in verdicts else "pass"
+    first = next(
+        (
+            {"field_path": f"fresh_reporting.{name}", "actual_exact": field["actual_exact"]}
+            for name, field in fields.items()
+            if field["verdict"] == "fail"
+        ),
+        None,
+    )
+    return {
+        "classification": aggregate,
+        "policy_id": POLICY,
+        "candidate_source": "actual_public_python_cmd_outcome_not_snapshot",
+        "stored_h_hex": stored_hours.hex(),
+        "stored_dt_hex": stored_seconds.hex(),
+        "original_native_physical_site_identity": case.get("observations", {}).get(
+            "physical_site_identity", "unverified"
+        ),
+        "metrics": fields,
+        "first_discrepancy": first,
+    }
+
+
 def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
     """Compare a freshly executed public CMD event with immutable printed evidence.
 
@@ -576,6 +682,12 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         return {"classification": "invalid", "reason": "Source-to-native print-site mapping differs"}
     if len(rows) != len(printed.discharge_m3_s):
         return {"classification": "incomplete", "reason": "Full native horizon not computed"}
+    identity_problem = _fresh_cmd_identity_problem(case, outcome, point)
+    if identity_problem is not None:
+        return identity_problem
+    elapsed_problem = _fresh_cmd_elapsed_problem(case, outcome, len(rows))
+    if elapsed_problem is not None:
+        return elapsed_problem
     supplied = {
         (case["case_id"], native_column, index): {
             "case_id": case["case_id"],
@@ -590,7 +702,11 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
         }
         for index, (row, value) in enumerate(zip(rows, printed.discharge_m3_s, strict=True))
     }
-    return _compare(case, columns, rows, supplied, "python-cmd")
+    result = _compare(case, columns, rows, supplied, "python-cmd")
+    result["fresh_reporting"] = _fresh_cmd_reporting_metrics(root, case, outcome)
+    result["generated_time_axis"] = "verified_model_elapsed_i_times_original_timestep"
+    result["native_physical_site_identity"] = case.get("observations", {}).get("physical_site_identity", "unverified")
+    return result
 
 
 def _run(
