@@ -9,9 +9,10 @@ contracts. It does not infer physical Hyd identities or shift printed clocks.
 from __future__ import annotations
 
 from decimal import Decimal
+from hashlib import sha256
 
 from ryan_library.functions.RORB.reader_types import RorbDocument, Section, exact_number
-from ryan_library.functions.RORB.readers import read_rorb_file
+from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file
 
 from .rorb_documents import Diagnostic, HydrographReport, HydrographRow, Inspection, RorbSource
 
@@ -54,9 +55,35 @@ class SourceChangedError(ValueError):
     """The selected report differs from the previously fingerprinted bytes."""
 
 
+def _reauthenticated_inline_bytes(source: RorbSource) -> bytes:
+    """Recover only an authenticated in-memory source, never infer original line endings.
+
+    The old synthetic evidence tests supply exact lines/size/SHA but no path
+    or raw-byte field. A candidate is used only if its *full original byte*
+    size and SHA-256 agree; unknown encodings or mixed line endings fail closed.
+    This is a source transport step, not a report grammar or numeric parser.
+    """
+    source_text = "\n".join(source.lines)
+    for separator in ("\n", "\r\n"):
+        for suffix in ("", separator):
+            candidate = (source_text.replace("\n", separator) + suffix).encode(source.encoding)
+            if len(candidate) == source.size_bytes and sha256(candidate).hexdigest() == source.sha256:
+                return candidate
+    message = "Cannot reauthenticate missing source path from original line/byte/hash evidence"
+    raise SourceChangedError(message)
+
+
 def checked_canonical_report(source: RorbSource) -> RorbDocument:
-    """Read and authenticate a canonical report without a second local grammar."""
-    canonical = read_rorb_file(source.path)
+    """Read and authenticate a file or exact in-memory source through ryan-tools."""
+    if source.path.is_file():
+        canonical = read_rorb_file(source.path)
+    else:
+        original = _reauthenticated_inline_bytes(source)
+        canonical = read_rorb_bytes(original, path=source.path, encoding=source.encoding)
+        canonical.issue(
+            "source_path_unavailable",
+            "Original source path is missing; bytes reauthenticated against supplied full hash and size.",
+        )
     if (
         canonical.original_bytes is None
         or canonical.size_bytes != source.size_bytes
@@ -105,7 +132,16 @@ def inspect_output(source: RorbSource) -> Inspection:
                 Diagnostic("ambiguous_tables", "Multiple hydrograph tables need separate identities", "error"),
             ),
         )
-    if canonical.status == "invalid" or not tables[0].valid:
+    if not tables[0].valid:
+        return Inspection("output_report", "invalid", source, tuple(diagnostics))
+    # Scalar parsing is independent of numeric hydrograph parsing. Retain a
+    # valid table for diagnostic review even if a scalar is malformed; report
+    # status remains invalid and cannot be treated as simulated acceptance.
+    scalar_codes = {"reported_scalar_value", "reported_scalar_values", "reported_scalar_layout"}
+    other_errors = [
+        diagnostic for diagnostic in diagnostics if diagnostic.severity == "error" and diagnostic.code not in scalar_codes
+    ]
+    if other_errors:
         return Inspection("output_report", "invalid", source, tuple(diagnostics))
     try:
         report = _report(canonical, tables[0])
@@ -123,4 +159,5 @@ def inspect_output(source: RorbSource) -> Inspection:
         )
     if report.time_increment_hours is None:
         diagnostics.append(Diagnostic("timestep_unverified", "No reported timestep; raw labels preserved", "warning"))
-    return Inspection("output_report", "partial", source, tuple(diagnostics), hydrographs=report)
+    status = "invalid" if canonical.status == "invalid" else "partial"
+    return Inspection("output_report", status, source, tuple(diagnostics), hydrographs=report)

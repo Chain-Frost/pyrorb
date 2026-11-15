@@ -59,7 +59,7 @@ def token_interval(token: str) -> tuple[Fraction, Fraction]:
         message = "Scalar must retain one complete original numeric token"
         raise ValueError(message)
     try:
-        value = Decimal(token)
+        value = Decimal(token.replace("D", "E").replace("d", "e"))
     except InvalidOperation as exc:
         message = "Invalid scalar token"
         raise ValueError(message) from exc
@@ -82,9 +82,6 @@ def _scalars(document: RorbDocument, prefix: str, unit: str) -> tuple[ScalarFiel
         message = "Scalar binding requires an explicit source unit"
         raise ValueError(message)
     section = document.section("reported_scalars")
-    if not section.valid:
-        message = "Reported scalar section contains invalid source records"
-        raise ValueError(message)
     fields: list[ScalarField] = []
     for row in section.rows:
         if row["family"] != family:
@@ -103,6 +100,9 @@ def _scalars(document: RorbDocument, prefix: str, unit: str) -> tuple[ScalarFiel
                 unit,
             )
         )
+    if not section.valid:
+        message = "Reported scalar section contains invalid source records"
+        raise ValueError(message)
     return tuple(fields)
 
 
@@ -118,8 +118,8 @@ def _site_scalars(fields: tuple[ScalarField, ...], count: int) -> tuple[ScalarFi
 def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[SiteMetrics, ...]:
     """Bind source-scoped canonical scalar/legend records without parsing lines."""
     document = checked_canonical_report(source)
-    if document.kind != "standard_output" or document.status == "invalid":
-        message = "Canonical report is not a supported valid native output"
+    if document.kind != "standard_output":
+        message = "Canonical report is not a supported native output"
         raise ValueError(message)
     if document.metadata.get("hydrograph_summary_count") != 1:
         message = "Exactly one native hydrograph-summary legend is required"

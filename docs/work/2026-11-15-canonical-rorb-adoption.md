@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`, pinned
+The chosen upstream candidate revision is `e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -63,7 +63,7 @@ in parser tests. Pip recursively fetched the unrelated ryan-tools test-data
 submodule during a `git+https` dependency checkout and hit Windows
 `Filename too long`. The dependency is now an **exact-commit GitHub source
 archive**, without submodule payload or Git checkout, pinned to upstream
-`7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`. This is a packaging correction, not a numerical result. Re-run
+`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`. This is a packaging correction, not a numerical result. Re-run
 installed-wheel and regression checks for the new head.
 
 The frozen scalar binding now gets only generic original scalar and site
@@ -77,7 +77,7 @@ The first archive-based Windows 3.13 source install succeeded; Ruff and
 formatter checks passed after fixes. Strict Pyright then reported missing
 type stubs because the minimal wheel had omitted `ryan_library/py.typed`.
 Upstream revised focused setuptools packaging (reviewed candidate
-`7ff9ac5a2f9930b9678bb28d2edbdad5c2522bfa`) to carry the **existing** root PEP 561 marker with its six
+`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`) to carry the **existing** root PEP 561 marker with its six
 canonical reader modules, without broadening dependencies. A clean local
 package-layout wheel test verified the marker was included; hosted strict
 type checking and installed-wheel regressions must now rerun.
@@ -96,3 +96,23 @@ upstream regular parent package initialisers (`ryan_library` and
 modules. A clean local wheel-layout build confirmed both initialisers and the
 marker are present; downstream hosted Pyright/installed-wheel checks remain
 the completion gate for this change.
+
+## Eight-finding Windows test closeout
+
+At the previous Python 3.13 archive head, lint, formatter and **strict
+Pyright passed** and 1,094 of 1,102 source tests passed. Eight fail-closed
+compatibility findings were classified: three mocked CMD captures use the
+characterised standalone `End` terminator, four independent metric tests
+supply hash-authenticated in-memory source evidence rather than an existing
+file path, and one new scalar test uses a legitimate Fortran D exponent.
+
+The reader keeps the `End` terminator and invalid original scalar lexemes
+upstream. The downstream adapter now recovers only original in-memory byte
+candidates matching **both SHA-256 and byte count**; a changed existing
+file is never replaced by a reconstructed source. This is neither source-line
+parsing nor a general unverified fallback. A hydrograph remains inspectable
+for malformed independent scalar records, but overall report status stays
+invalid and scalar qualification rejects it. The comparator's existing
+half-last-digit interval policy remains unchanged while D exponents are
+converted for exact Decimal evaluation. The amended pinned upstream is
+`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`; these findings require fresh current-head validation.
