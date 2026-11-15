@@ -324,10 +324,7 @@ def _registered_pyromb_originals() -> tuple[bytes, dict[str, Any]]:
         next(item for item in register["cases"] if item["case_id"] == case_id)
         for case_id in ("pyromb-pr2-full", "pyromb-novel-storm")
     )
-    files = [
-        next(item for item in case["files"] if item["path"].endswith(".catg"))
-        for case in cases
-    ]
+    files = [next(item for item in case["files"] if item["path"].endswith(".catg")) for case in cases]
     assert files[0] == files[1]
     original = (root / files[0]["path"]).read_bytes()
     assert hashlib.sha256(original).hexdigest() == files[0]["sha256"]
