@@ -49,7 +49,7 @@ python examples/create_cmd_project.py
 python -m runoff_routing.project_json run cmd-example-project.json cmd-example-result.json
 ```
 
-Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
+Use new result names; exclusive-create refuses overwrites. For **PAR-led import**, file overrides, source preservation, editable settings and relocation, see [PAR project workflow](PAR_PROJECTS.md). Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
 
 ## 4. Explicit-event batches
 
