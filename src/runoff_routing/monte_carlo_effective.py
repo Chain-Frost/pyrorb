@@ -85,6 +85,13 @@ def _event_weight(mass: Decimal, size: int) -> Decimal:
         return mass / size
 
 
+def _sum_precise(values: Iterable[Decimal]) -> Decimal:
+    """Account for #146's 60-digit probability masses regardless of caller context."""
+    with localcontext() as ctx:
+        ctx.prec = 60
+        return sum(values, Decimal(0))
+
+
 def _int(value: object, label: str, *, max_value: int = MAX_EVENTS) -> int:
     if type(value) is not int or not 0 < value <= max_value:
         _fail(f"{label} must be a positive bounded integer")
@@ -160,7 +167,7 @@ class MCPopulation:
                 or not self.frequent_unmodelled_mass.is_finite()
                 or self.rare_unmodelled_mass < 0
                 or self.frequent_unmodelled_mass < 0
-                or self.modelled_mass + self.rare_unmodelled_mass + self.frequent_unmodelled_mass != 1
+                or _sum_precise((self.modelled_mass, self.rare_unmodelled_mass, self.frequent_unmodelled_mass)) != 1
             )
         ):
             _fail("Modelled plus rare/frequent unmodelled probability mass must equal one")
@@ -215,13 +222,10 @@ def _check_header_allocations(
     if sum(a.planned_samples for a in allocations) != event_count:
         _fail("Full MC allocation count differs from declared event population")
     for pop in populations:
-        total = sum(
-            (
-                a.probability_mass
-                for a in allocations
-                if (a.scenario_id, a.duration_min) == (pop.scenario_id, pop.duration_min)
-            ),
-            Decimal(0),
+        total = _sum_precise(
+            a.probability_mass
+            for a in allocations
+            if (a.scenario_id, a.duration_min) == (pop.scenario_id, pop.duration_min)
         )
         if total != pop.modelled_mass:
             _fail("Full MC stratum masses differ from modelled population mass")
@@ -380,22 +384,29 @@ class EffectiveMCEvent:
             _fail("Effective rainfall increments and subarea depths must be nonempty arrays")
         percentages = cast("list[object]", percentages)
         depths = cast("list[object]", depths)
-        if sum((_decimal(v, "pattern percentage") for v in percentages), Decimal(0)) != 100:
+        if _sum_precise(_decimal(v, "pattern percentage") for v in percentages) != 100:
             _fail("Original pattern percentages must total exactly 100, without renormalisation")
-        # #136 first distributes each gross increment, then applies one ARF,
-        # and sums the adjusted increments. Direct gross*ARF may differ by
-        # a final Decimal rounding digit for otherwise identical rainfall.
-        gross_increments = (self.gross_depth_mm * _decimal(v, "pattern percentage") / 100 for v in percentages)
-        total = sum((increment * self.arf_factor for increment in gross_increments), Decimal(0))
+        # Match #136's Decimal-28 increment -> ARF -> sum operation order,
+        # independent of the calling application's Decimal context.
+        with localcontext() as ctx:
+            ctx.prec = 28
+            gross_increments = (self.gross_depth_mm * _decimal(v, "pattern percentage") / 100 for v in percentages)
+            total = sum((increment * self.arf_factor for increment in gross_increments), Decimal(0))
         if any(_decimal(v, "areal rainfall") != total for v in depths):
             _fail("Every pervious subarea needs gross rainfall multiplied by ARF exactly once")
         timestep = _decimal(storm["timestep_hours"], "timestep_hours", positive=True)
-        if timestep * len(percentages) * 60 != self.duration_min:
+        with localcontext() as ctx:
+            ctx.prec = 28
+            # 2/60 and 20/60 hours cannot be represented exactly by Decimal.
+            minute_error = abs(timestep * len(percentages) * 60 - self.duration_min)
+        if minute_error > Decimal("1e-12"):
             _fail("Temporal-pattern timestep and duration disagree")
         _int(storm["calculation_increments"], "calculation_increments")
         if cast("int", storm["calculation_increments"]) < len(percentages):
             _fail("Routing horizon must include the full storm")
-        burst = max(Decimal(0), self.storm_initial_loss_mm - self.preburst_depth_mm)
+        with localcontext() as ctx:
+            ctx.prec = 60
+            burst = max(Decimal(0), self.storm_initial_loss_mm - self.preburst_depth_mm)
         if _decimal(losses.get("initial_loss_mm"), "effective burst IL") != burst:
             _fail("Effective loss must be sampled storm IL minus preburst exactly once")
         _decimal(losses.get("continuing"), "fixed continuing loss")
@@ -646,7 +657,7 @@ def _check_record_allocations(
         for (scenario, duration, _), (mass, size, seen_count) in actual.items():
             if size != seen_count:
                 _fail("Missing or excessive event members for a declared stratum")
-            sums[(scenario, duration)] += mass
+            sums[(scenario, duration)] = _sum_precise((sums[(scenario, duration)], mass))
         if sums != target:
             _fail("A scenario/duration population omits probability strata or exceeds declared modelled mass")
 
@@ -753,47 +764,53 @@ def materialise_arr_sample(
         _fail("TP source ordinal is missing from the original pattern file")
     pattern = pattern_set.patterns[pattern_source_order - 1]
     _validate_tp_source_id(pattern.event_id, expected_original_tp_id)
-    if pattern_set.kind != ("point" if sum(a.area_km2 for a in model.catchment.subareas) < 75 else "areal"):
+    area = _sum_precise(a.area_km2 for a in model.catchment.subareas)
+    if pattern_set.kind != ("point" if area < 75 else "areal"):
         _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
         _fail("Storm duration and dry tail must divide exactly by the source TP timestep")
-    if sum(pattern.increments_percent, Decimal(0)) != 100:
+    if _sum_precise(pattern.increments_percent) != 100:
         _fail("MC requires exact original 100% TP increments")
     if not gross_depth_mm.is_finite() or gross_depth_mm < 0:
         _fail("B-sampled gross depth is not finite and nonnegative mm")
-    area = sum((part.area_km2 for part in model.catchment.subareas), Decimal(0))
-    gross = RawHyetograph(
-        duration_min=pattern.duration_min,
-        timestep_min=pattern.timestep_min,
-        pattern_event_id=pattern.event_id,
-        pattern_region=pattern.region,
-        pattern_aep_band=pattern.aep_band,
-        pattern_area_bin=pattern.area_bin,
-        source_label="BoM 2016 IFD (raw gross rainfall)",
-        source_sha256=bom_source_sha256,
-        pattern_source_sha256=pattern_set.source_sha256,
-        probability_label=f"{rainfall_aep_percent}%",
-        source_rainfall_depth_mm=gross_depth_mm,
-        increments_mm=tuple(gross_depth_mm * step / 100 for step in pattern.increments_percent),
-        end_times_min=tuple(range(pattern.timestep_min, pattern.duration_min + 1, pattern.timestep_min)),
-        total_mm=gross_depth_mm,
-        operations=("B_EXPLICIT_GROSS_DEPTH_MM", "SOURCE_TP_PERCENT_ONLY", "NO_ARF_OR_LOSS_YET"),
-    )
-    factor = calculate_arr2019_arf(
-        catchment_area_km2=area,
-        duration_min=pattern.duration_min,
-        aep_percent=rainfall_aep_percent,
-        coefficients=published_coefficients(arf_region),
-    )
-    areal = apply_arr2019_arf_to_bom_storm(gross, factor)
+    # Pin the established #136 ARR arithmetic independently of caller context.
+    with localcontext() as ctx:
+        ctx.prec = 28
+        gross = RawHyetograph(
+            duration_min=pattern.duration_min,
+            timestep_min=pattern.timestep_min,
+            pattern_event_id=pattern.event_id,
+            pattern_region=pattern.region,
+            pattern_aep_band=pattern.aep_band,
+            pattern_area_bin=pattern.area_bin,
+            source_label="BoM 2016 IFD (raw gross rainfall)",
+            source_sha256=bom_source_sha256,
+            pattern_source_sha256=pattern_set.source_sha256,
+            probability_label=f"{rainfall_aep_percent}%",
+            source_rainfall_depth_mm=gross_depth_mm,
+            increments_mm=tuple(gross_depth_mm * step / 100 for step in pattern.increments_percent),
+            end_times_min=tuple(range(pattern.timestep_min, pattern.duration_min + 1, pattern.timestep_min)),
+            total_mm=gross_depth_mm,
+            operations=("B_EXPLICIT_GROSS_DEPTH_MM", "SOURCE_TP_PERCENT_ONLY", "NO_ARF_OR_LOSS_YET"),
+        )
+        factor = calculate_arr2019_arf(
+            catchment_area_km2=area,
+            duration_min=pattern.duration_min,
+            aep_percent=rainfall_aep_percent,
+            coefficients=published_coefficients(arf_region),
+        )
+        areal = apply_arr2019_arf_to_bom_storm(gross, factor)
+        timestep_hours = str(Decimal(pattern.timestep_min) / 60)
     if preburst_policy == "none" and preburst_depth_mm != 0:
         _fail("No-preburst policy cannot subtract a positive preburst")
     if preburst_policy == "subtract_reject" and preburst_depth_mm > storm_initial_loss_mm:
         _fail("Preburst exceeds sampled storm IL; explicit clamp policy required")
-    burst_initial_loss = max(Decimal(0), storm_initial_loss_mm - preburst_depth_mm)
+    with localcontext() as ctx:
+        ctx.prec = 60
+        burst_initial_loss = max(Decimal(0), storm_initial_loss_mm - preburst_depth_mm)
     override: dict[str, object] = {
         "title": f"MC {pattern.duration_min} min {rainfall_aep_percent}% TP {pattern.event_id}",
-        "timestep_hours": str(Decimal(pattern.timestep_min) / 60),
+        "timestep_hours": timestep_hours,
         "start_increment": 0,
         "calculation_increments": len(pattern.increments_percent) + dry_tail_min // pattern.timestep_min,
         "percentages": [str(value) for value in pattern.increments_percent],

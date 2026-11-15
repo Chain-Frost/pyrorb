@@ -7,7 +7,7 @@ import json
 import time
 import tracemalloc
 from dataclasses import replace
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import cast
 
@@ -17,6 +17,7 @@ from runoff_routing.arr_patterns import read_pattern_file
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.monte_carlo_effective import (
     EffectiveMCEvent,
+    MCAllocation,
     MCInputError,
     MCPopulation,
     MCRequestHeader,
@@ -119,7 +120,15 @@ def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Pat
     sample = events[0]
     assert sample.event.storm is not None
     assert sample.event.losses is not None
-    expected_areal_depth = sample.gross_depth_mm * sample.arf_factor
+    with localcontext() as ctx:
+        ctx.prec = 28
+        expected_areal_depth = sum(
+            (
+                sample.gross_depth_mm * Decimal(value) / 100 * sample.arf_factor
+                for value in cast("list[str]", sample.event.storm["percentages"])
+            ),
+            Decimal(0),
+        )
     assert sample.event.storm["depths_mm"] == [str(expected_areal_depth)]
     assert sample.event.losses["initial_loss_mm"] == "5"
     direct = run_project_events(project, (sample.event,), selection=CMD).outcomes[0]
@@ -139,6 +148,58 @@ def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Pat
     assert (tmp_path / "selected.json").is_file()
     assert (tmp_path / "selected.csv").is_file()
     assert (tmp_path / "selected.txt").is_file()
+
+
+def test_effective_materialisation_is_independent_of_decimal_context(tmp_path: Path) -> None:
+    model = _source_model()
+    source = tmp_path / "patterns.csv"
+    source.write_bytes(SOURCE_PATTERNS.read_bytes())
+    patterns = read_pattern_file(source, kind="point")
+    requests: list[dict[str, object]] = []
+    for precision in (12, 28, 80):
+        with localcontext() as ctx:
+            ctx.prec = precision
+            event = materialise_arr_sample(
+                model=model,
+                pattern_set=patterns,
+                pattern_source_order=1,
+                sample_id="sample-context",
+                scenario_id="base",
+                stratum_id="h1",
+                stratum_mass=Decimal("0.123456789012345678901234567890"),
+                stratum_size=3,
+                rainfall_aep_percent=Decimal("2.12345678901234567890123456789"),
+                gross_depth_mm=Decimal("20.12345678901234567890123456789012345"),
+                bom_source_sha256=hashlib.sha256(b"synthetic_B_sampled_IFD").hexdigest(),
+                arf_region="South-West Western Australia",
+                storm_initial_loss_mm=Decimal("6.12345678901234567890"),
+                preburst_depth_mm=Decimal("1.11111111111111111111"),
+                preburst_policy="subtract_reject",
+                dry_tail_min=120,
+            )
+            requests.append(event.to_dict())
+    assert requests[0] == requests[1] == requests[2]
+
+
+def test_probability_mass_accounting_ignores_callers_decimal_context() -> None:
+    with localcontext() as ctx:
+        ctx.prec = 8
+        with pytest.raises(MCInputError, match="probability mass must equal one"):
+            MCPopulation(
+                "base", 60, Decimal("0.5"), Decimal("0.25"), Decimal("0.250000000000000000000000000001")
+            )
+        header = MCRequestHeader(
+            plan_sha256=hashlib.sha256(b"high-precision-plan").hexdigest(),
+            policy_id="authored_control_v1",
+            source_files=(),
+            populations=(MCPopulation("base", 60, Decimal("0.123456789012345678901234567890")),),
+            event_count=2,
+            strata=(
+                MCAllocation("base", 60, "h1", Decimal("0.061728394506172839450617283945"), 1),
+                MCAllocation("base", 60, "h2", Decimal("0.061728394506172839450617283945"), 1),
+            ),
+        )
+        assert header.event_count == 2
 
 
 def test_b_plan_colon_sample_id_is_preserved_and_engine_id_is_stable(tmp_path: Path) -> None:

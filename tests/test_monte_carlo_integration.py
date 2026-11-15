@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import cast
 
@@ -79,6 +79,29 @@ def _fixture(root: Path) -> tuple[Path, Path, Path, Path]:
     config = root / "spec.json"
     config.write_text(json.dumps(spec) + "\n", encoding="utf-8")
     return project, config, ifd, patterns
+
+
+def test_saved_b_to_e_request_is_decimal_context_independent(tmp_path: Path) -> None:
+    project, config, ifd, patterns = _fixture(tmp_path)
+    prefix = tmp_path / "context-study"
+    assert main(["plan", str(config), str(prefix)]) == 0
+    outputs: list[bytes] = []
+    for precision in (12, 28, 80):
+        request = tmp_path / f"context-{precision}.jsonl"
+        with localcontext() as ctx:
+            ctx.prec = precision
+            prepare_saved_sample_plan(
+                project,
+                prefix.with_suffix(".plan.json"),
+                prefix.with_suffix(".samples.jsonl"),
+                request,
+                ifd_path=ifd,
+                patterns_path=patterns,
+                arf_region="South-West Western Australia",
+                dry_tail_min=120,
+            )
+        outputs.append(request.read_bytes())
+    assert outputs[0] == outputs[1] == outputs[2]
 
 
 def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:

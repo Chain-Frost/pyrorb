@@ -1,6 +1,6 @@
 # S7 Monte Carlo effective-event execution boundary (#149)
 
-**Status:** Bounded, explicit-input execution adapter. Not a sampler, frequency estimator or qualified RORBwin Monte Carlo implementation. Scope [#146](https://github.com/Chain-Frost/python-runoff-routing/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/python-runoff-routing/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/python-runoff-routing/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
+**Status:** Bounded E execution adapter integrated with B's sampler and C's frequency layer on draft staging #151. Not a qualified RORBwin Monte Carlo implementation. Scope [#146](https://github.com/Chain-Frost/python-runoff-routing/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/python-runoff-routing/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/python-runoff-routing/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
 
 ## API and CLI
 
@@ -76,10 +76,9 @@ project/engine provenance.
 
 ## Staged B → E → C text-file workflow
 
-Once the separate #146 sampler and #147 results module are installed from
-the **reviewed staging package** (they are not bundled in this isolated E
-PR), the same CLI exposes the complete sequence without copying either
-implementation:
+The #146 sampler and #147 results module are now incorporated into the
+**#151 staging lineage**. The same CLI exposes the complete sequence
+without copying either implementation:
 
 ```sh
 python -m runoff_routing.monte_carlo_execution plan mc-spec.json study
@@ -118,18 +117,17 @@ curve.** Non-complete results return exit code 2 while retaining
 diagnostic output. The complete C method and independent F review
 remain separately owned.
 
-CLI plan/prepare/frequency end-to-end acceptance against the **actual
-#146/#147 modules** is pending integration of those independent
-PRs into staging #151. This E-only PR can validate the bounded
-adapter and synthetic explicit-event routing but cannot claim a
-production B→E→C source/wheel receipt before those dependencies are
-present.
+The actual B→E→C source-backed integration test exercises the staged
+sampler, saved source plan, effective-event routing, weighted incomplete-tail
+results and selected replay. Exact-head source/isolated-wheel CI receipts
+are tracked on PR #161. These checks qualify software behaviour only,
+not native RORBwin behaviour or hydrological acceptance.
 
 ## Streaming effective event request (not B's plan)
 
 One newline-terminated JSON header record (schema v2) contains:
 
-- format = python-runoff-routing-mc-effective-events; schema_version = 1
+- format = python-runoff-routing-mc-effective-events; schema_version = 2
 - plan_sha256: original immutable #146 plan content hash
 - policy_id: selected versioned statistical/materialisation policy
 - source_files: original input paths relative to this request and exact SHA-256
@@ -165,9 +163,20 @@ Separate populations preserve probability mass for each duration/scenario;
 unmodelled tails (modelled_mass < 1) remain explicit and are not
 renormalised. All originally sampled TP IDs and source-order ordinals
 are retained; physical print-site identities come from the verified
-existing project. The exact sampled depth and loss are retained for replay. The source TP kind, region,\nsource AEP category and area bin are retained separately from the #146 TP conditional-bin ID.
+existing project. The exact sampled depth and loss are retained for replay. The source TP kind, region,
+source AEP category and area bin are retained separately from the #146 TP conditional-bin ID.
 
-**Deliberate narrower project restriction:** for this first supported MC profile,\npoint TP is accepted only below 75 km2 and areal TP at or above 75 km2.\nRORBwin v6.52 describes this threshold as a recommendation which a user\nmay override, not a mandatory native rule. This software restriction is\nnot a RORBwin compatibility assertion. The sampled source IDs and TP\nfrequency categories are never replaced with an area-only category.\nThe explicitly optional `subtract_clamp` preburst policy is an\n**experimental separate statistical choice**, not `monte-carlo-statistics/1`;\nunder that policy ID it is rejected rather than silently adopted.\n\nThe validator checks original source hashes, all population masses,
+**Deliberate narrower project restriction:** for this first supported MC profile,
+point TP is accepted only below 75 km2 and areal TP at or above 75 km2.
+RORBwin v6.52 describes this threshold as a recommendation which a user
+may override, not a mandatory native rule. This software restriction is
+not a RORBwin compatibility assertion. The sampled source IDs and TP
+frequency categories are never replaced with an area-only category.
+The explicitly optional `subtract_clamp` preburst policy is an
+**experimental separate statistical choice**, not `monte-carlo-statistics/1`;
+under that policy ID it is rejected rather than silently adopted.
+
+The validator checks original source hashes, all population masses,
 per-stratum allocations and weights, duplicate samples, exact 100% TP
 percentages, original source IDs, duration/timestep consistency, one-time
 ARF application, and exact burst initial-loss reduction. The execution
@@ -188,13 +197,26 @@ site IDs and, on success, the peak, index and physical time for each site.
 A successful zero remains numeric zero; a failed/unsupported sample
 retains its probability weight but has no fabricated peak or hydrograph.
 
-**Ledger schema v2** includes a SHA-256 hash chain over *every* result\nrecord, starting from the versioned header digest and continuing through\nall site peaks, physical times, status, diagnostics, plan weights and\nTP/loss/ARF provenance. Resume, inspection and selected replay verify the\nchain, so accidental modification of an existing numerical result fails\neven if the sample/plan identities still match. This is a **checksum, not\na digital signature**: someone who can replace all records can recompute\nthe chain. The CLI prints the complete-ledger SHA-256 for **independent\nexternal retention**. `inspect --expected-ledger-sha256 HASH` verifies such\na separately retained SHA-256; independent scientific authenticity still\nrequires actual input/output custody and selected deterministic replays.\nEarlier v1 ledgers cannot be silently read as v2 checkpoints.\n\nEvery appended row is flushed/fsynced. Resume accepts **only a verified
+**Ledger schema v2** includes a SHA-256 hash chain over *every* result
+record, starting from the versioned header digest and continuing through
+all site peaks, physical times, status, diagnostics, plan weights and
+TP/loss/ARF provenance. Resume, inspection and selected replay verify the
+chain, so accidental modification of an existing numerical result fails
+even if the sample/plan identities still match. This is a **checksum, not
+a digital signature**: someone who can replace all records can recompute
+the chain. The CLI prints the complete-ledger SHA-256 for **independent
+external retention**. `inspect --expected-ledger-sha256 HASH` verifies such
+a separately retained SHA-256; independent scientific authenticity still
+requires actual input/output custody and selected deterministic replays.
+Earlier v1 ledgers cannot be silently read as v2 checkpoints.
+
+Every appended row is flushed/fsynced. Resume accepts **only a verified
 unchanged prefix** of the same request and engine implementation. It
 rejects changed plan/policy/source/engine code, mixed samples/weights,
 truncated JSONL and duplicate events. A changed/extended #146 plan needs
-a **new** effective request and ledger. Reusing prior computations across
-an explicit extension requires a separate reviewed identity/reweighting
-adapter; it is not silently emulated by resuming the old ledger. A new
+a **new** effective request and ledger. An explicit `extend` operation can reuse identical event computations from
+a separately verified parent ledger, rewriting all applicable weights for
+the new plan revision. Extension is not silently emulated by `--resume`. A new
 plan may preserve logical samples but change every affected stratum
 weight (w_h / n_h).
 
@@ -213,20 +235,26 @@ envelope policies; the CLI deliberately does not invent those results.
 
 ## Outstanding gates
 
-- A/B: adopt and review policy/distributions, arbitrary-depth interpolation,
-  conditional TP selection, plan creation and conversion into these
-  exact effective records.
-- C: weighted frequency, duration envelopes and representative-event
-  selection over this ledger; no independently implemented estimator here.
-- E: independent code review, source and isolated-wheel tests and bounded
-  memory/throughput receipt must be recorded at the exact PR revision.
-  Cross-plan reuse/reweighting is implemented as an explicitly selected
-new-revision operation and remains subject to independent code review and
-the source/wheel verification receipt.
-- F/#150: actual RORBwin MC distribution, source-preparation, native
-  comparison and statistical qualification remain not assessed.
+- B/E/C source-backed integration, source identities, saved-draw materialisation,
+  event results, weighted frequency, replay and explicit extension are
+  implemented on staging. Each new code revision still requires its own
+  exact-head CI and independent review receipts before merge.
+- The supported engineering subset and `monte-carlo-statistics/1` policy
+  remain distinct from native RORBwin qualification. Unmodelled tails,
+  missing samples and positive-weight failures cannot become complete
+  design-flood quantiles through reweighting or extra simulations.
+- F/#150 retains separate source, statistical and named native/effective-input
+  qualification. No broad GUI/native investigation is authorised.
 
 Neither a green execution test nor this adapter closes parent
 [#9](https://github.com/Chain-Frost/python-runoff-routing/issues/9),
 scientific rainfall qualification [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8),
 or the full CMD gate [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5).
+
+### Deterministic Decimal context
+
+The E adapter preserves #136's Decimal-28 gross-increment, ARR ARF and
+once-only adjusted-increment summation. B sampled AEP conversion, 60-digit
+sample/stratum mass and storm/burst IL arithmetic use a pinned Decimal-60
+context. Persisted effective inputs and probability-mass checks therefore
+do not depend on a Python API caller's current Decimal precision.

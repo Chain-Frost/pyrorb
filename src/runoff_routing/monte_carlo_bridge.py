@@ -10,7 +10,7 @@ from __future__ import annotations
 import importlib
 import json
 from collections.abc import Iterable, Iterator, Mapping
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import Never, Protocol, cast
 
@@ -251,6 +251,9 @@ def _materialised(
             or planned.planned_samples <= 0
         ):
             _fail("Sample scenario/duration/stratum allocation differs from its plan")
+        with localcontext() as ctx:
+            ctx.prec = 60
+            aep_percent = record.aep_fraction * 100
         event = materialise_arr_sample(
             model=model,
             pattern_set=patterns,
@@ -262,7 +265,7 @@ def _materialised(
             stratum_id=record.stratum_id,
             stratum_mass=planned.probability_mass,
             stratum_size=planned.planned_samples,
-            rainfall_aep_percent=record.aep_fraction * 100,
+            rainfall_aep_percent=aep_percent,
             gross_depth_mm=record.gross_ifd_depth_mm,
             bom_source_sha256=bom_sha256,
             arf_region=arf_region,
@@ -321,7 +324,10 @@ def prepare_saved_sample_plan(
         parent_plan_sha256=plan.parent_plan_id,
     )
     model = load_project(project_path).run
-    kind = "point" if sum(s.area_km2 for s in model.catchment.subareas) < 75 else "areal"
+    with localcontext() as ctx:
+        ctx.prec = 60
+        area_km2 = sum((s.area_km2 for s in model.catchment.subareas), Decimal(0))
+    kind = "point" if area_km2 < 75 else "areal"
     records = api.iter_saved_sample_records(samples_path, plan)
     events = _materialised(
         records,
