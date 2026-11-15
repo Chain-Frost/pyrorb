@@ -15,6 +15,7 @@ from typing import Any, Literal, cast
 SCHEMA_VERSION = 1
 ControlCode = Literal[1, 2, 3, 4, 5, 7]
 ReachMode = Literal["implicit_natural", "explicit_reach_types"]
+PatternBasis = Literal["percent_of_depth", "relative_weights", "combined_preburst_percent"]
 
 
 def _finite(value: Decimal, label: str, *, positive: bool = False) -> None:
@@ -285,7 +286,11 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
 
 @dataclass(frozen=True, slots=True)
 class StormModel:
-    """Explicit DESIGN pattern: source-order depth mapping is not a spatial join."""
+    """DESIGN raw temporal tokens; basis distinguishes percentages from weights.
+
+    Source-order depth mapping is not a spatial join. The legacy weights are
+    never overwritten by normalised percentages in the source/domain model.
+    """
 
     title: str
     timestep_hours: Decimal
@@ -297,9 +302,39 @@ class StormModel:
     pluviograph_count: int = 1
     isa_count: int = 1
     burst_count: int = 1
+    pattern_basis: PatternBasis = "percent_of_depth"
+    preburst_bins: int = 0
 
     def __post_init__(self) -> None:
         validate_storm(self)
+
+
+def _validate_pattern_basis(model: StormModel) -> None:
+    """Separate the strict 100% convention from native relative weights."""
+    total = sum(model.percentages, Decimal(0))
+    if model.pattern_basis == "percent_of_depth":
+        if abs(total - Decimal(100)) > Decimal("0.05"):
+            message = "Temporal pattern percentages must total 100 within recorded precision"
+            raise ValueError(message)
+    elif model.pattern_basis == "relative_weights":
+        if total <= 0:
+            message = "Relative temporal weights require a positive denominator"
+            raise ValueError(message)
+    elif model.pattern_basis == "combined_preburst_percent":
+        if type(model.preburst_bins) is not int or not 0 < model.preburst_bins < len(model.percentages):
+            message = "Combined pre-burst storm requires a validated positive prefix and separate burst"
+            raise ValueError(message)
+        prefix = sum(model.percentages[: model.preburst_bins], Decimal(0))
+        burst = sum(model.percentages[model.preburst_bins :], Decimal(0))
+        if prefix <= 0 or abs(burst - Decimal(100)) > Decimal("0.05"):
+            message = "Combined pre-burst requires positive preceding weights and a full 100% burst segment"
+            raise ValueError(message)
+    else:
+        message = "Unknown temporal pattern basis"
+        raise ValueError(message)
+    if model.pattern_basis != "combined_preburst_percent" and model.preburst_bins != 0:
+        message = "Only an authenticated combined pre-burst storm may store a pre-burst split"
+        raise ValueError(message)
 
 
 def validate_storm(model: StormModel) -> None:
@@ -327,9 +362,7 @@ def validate_storm(model: StormModel) -> None:
         _identity(name, "Storm subarea")
     for value in model.percentages:
         _finite(value, "temporal pattern percentage")
-    if abs(sum(model.percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
-        message = "Temporal pattern percentages must total 100 within recorded precision"
-        raise ValueError(message)
+    _validate_pattern_basis(model)
     for depth in model.depths_mm:
         _finite(depth, "storm rainfall depth")
 
@@ -425,7 +458,7 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
 
 
 def _storm_data(model: StormModel) -> dict[str, Any]:
-    return {
+    data: dict[str, Any] = {
         "title": model.title,
         "timestep_hours": str(model.timestep_hours),
         "calculation_increments": model.calculation_increments,
@@ -437,6 +470,13 @@ def _storm_data(model: StormModel) -> dict[str, Any]:
         "isa_count": model.isa_count,
         "burst_count": model.burst_count,
     }
+    # Omit the default in schema-1 JSON to preserve existing 36-case
+    # model hashes and source/installed-wheel identity contracts.
+    if model.pattern_basis != "percent_of_depth":
+        data["pattern_basis"] = model.pattern_basis
+    if model.preburst_bins != 0:
+        data["preburst_bins"] = model.preburst_bins
+    return data
 
 
 def to_dict(model: RorbModel) -> dict[str, Any]:
@@ -642,21 +682,28 @@ def _catchment(raw: object) -> CatchmentModel:
 
 
 def _storm(raw: object) -> StormModel:
-    record = _object(
-        raw,
-        {
-            "title",
-            "timestep_hours",
-            "calculation_increments",
-            "start_increment",
-            "percentages",
-            "depths_mm",
-            "subarea_ids",
-            "pluviograph_count",
-            "isa_count",
-            "burst_count",
-        },
-    )
+    fields = {
+        "title",
+        "timestep_hours",
+        "calculation_increments",
+        "start_increment",
+        "percentages",
+        "depths_mm",
+        "subarea_ids",
+        "pluviograph_count",
+        "isa_count",
+        "burst_count",
+    }
+    if isinstance(raw, dict):
+        if "pattern_basis" in raw:
+            fields.add("pattern_basis")
+        if "preburst_bins" in raw:
+            fields.add("preburst_bins")
+    record = _object(cast("object", raw), fields)
+    basis = _string(record.get("pattern_basis", "percent_of_depth"))
+    if basis not in ("percent_of_depth", "relative_weights", "combined_preburst_percent"):
+        message = "Unknown temporal pattern basis"
+        raise ValueError(message)
     return StormModel(
         _field_str(record, "title"),
         _decimal(record["timestep_hours"]),
@@ -668,6 +715,8 @@ def _storm(raw: object) -> StormModel:
         _integer_field(record, "pluviograph_count"),
         _integer_field(record, "isa_count"),
         _integer_field(record, "burst_count"),
+        basis,
+        _integer_field(record, "preburst_bins") if "preburst_bins" in record else 0,
     )
 
 

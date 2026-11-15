@@ -12,6 +12,8 @@ from typing import Any
 
 import pytest
 
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import parse_run_bytes
 from runoff_routing.project_json import import_rorb_project, load_project, write_project
 from runoff_routing.rorb_codec import (
@@ -499,3 +501,276 @@ def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_
     # S2 must not silently map nonzero fractions/code 2 to a pervious run.
     with pytest.raises(ValueError, match="control code 2"):
         to_s2_payload(parsed)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "expected_total", "expected_bins", "expected_sources"),
+    [
+        ("H1-three-source-asymmetric", "3.3", 4, 3),
+        ("H2-four-source-nested-odd-rain", "2.0", 5, 4),
+        ("H3-single-source-equality-chain", "4.0", 5, 1),
+    ],
+)
+def test_original_relative_weight_storms_preserve_source_and_import(
+    case_id: str, expected_total: str, expected_bins: int, expected_sources: int, tmp_path: Path
+) -> None:
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    originals: dict[str, bytes] = {}
+    for record in case["files"]:
+        source_path = Path(record["path"])
+        if source_path.suffix not in (".par", ".catg", ".stm"):
+            continue
+        raw = (root / source_path).read_bytes()
+        assert len(raw) == record["size_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+        originals[source_path.suffix] = raw
+        (tmp_path / ("original" + source_path.suffix)).write_bytes(raw)
+    assert len(originals) == 3
+
+    parsed = parse_design_stm(originals[".stm"])
+    assert parsed.dialect == "design_relative_weights"
+    assert original_bytes(parsed) == originals[".stm"]
+    assert parsed.model.pattern_basis == "relative_weights"
+    assert len(parsed.model.percentages) == expected_bins
+    assert sum(parsed.model.percentages, Decimal(0)) == Decimal(expected_total)
+    assert len(parsed.model.depths_mm) == expected_sources
+    assert tuple(parsed.model.subarea_ids) == tuple(f"area_{index}" for index in range(1, expected_sources + 1))
+    assert parsed.model.calculation_increments + 1 == case["clock"]["row_count"]
+    assert any(span.field == "temporal_weight" for span in parsed.source_map)
+    assert from_json(to_json(parsed.model)) == parsed.model
+    assert parse_design_stm(serialize_design_stm(parsed.model)).model == parsed.model
+
+    parsed_run = parse_run_bytes(originals[".par"], originals[".catg"], originals[".stm"]).model
+    assert parsed_run.storm == parsed.model
+    assert from_json(to_json(parsed_run)) == parsed_run
+    manifest = tmp_path / "source-run.json"
+    project = import_rorb_project(
+        manifest,
+        identifier=case_id,
+        rainfall_profile="legacy-rorb",
+        parameters=tmp_path / "original.par",
+        catchment=tmp_path / "original.catg",
+        storm=tmp_path / "original.stm",
+    )
+    write_project(manifest, project)
+    assert load_project(manifest).run == parsed_run
+    # Only python-cmd's existing stored-denominator path can execute these
+    # raw weights; improved python must not silently treat them as percents.
+    compatible = run_engine_project(manifest, selection=EngineSelection.for_engine("python-cmd"))
+    assert compatible.status == "computed_unvalidated"
+    improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
+    assert improved.status == "unsupported_feature"
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("Temporal weights", "Temporal unrecognised"),
+        ("0, 2", "0, 3"),
+        ("60.0,\\t40.0", "0,\\t0"),
+        ("60.0,\\t40.0", "-1,\\t2"),
+        ("60.0,\\t40.0", "1,2,3"),
+        ("60.0,\\t40.0", "2,-99,1"),
+        ("100.00,90.0,-99", "100.00,90.0,-99,5"),
+    ],
+)
+def test_relative_weight_storm_rejects_malformed_boundaries(before: str, after: str) -> None:
+    valid = _stm().replace("Temporal pattern (% of depth)", "Temporal weights")
+    modified = valid.replace(before.replace("\\t", "\t"), after.replace("\\t", "\t"))
+    assert modified != valid
+    with pytest.raises(FormatProblem) as caught:
+        parse_design_stm(modified.encode())
+    assert caught.value.status == "invalid"
+
+
+def test_relative_weight_json_rejects_unknown_pattern_basis() -> None:
+    valid = parse_design_stm(_stm().replace("Temporal pattern (% of depth)", "Temporal weights").encode()).model
+    payload = to_dict(valid)
+    payload["model"]["pattern_basis"] = "unknown"
+    with pytest.raises(ValueError, match="Unknown temporal pattern basis"):
+        from_dict(payload)
+
+
+def _figure67_original_cases() -> tuple[list[dict[str, Any]], Path]:
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case_ids = (
+        "failure-baseline-before",
+        "failure-baseline-after",
+        "fig67-ilcl-confirmed",
+        "fig67-ilcl-low",
+        "fig67-ilcl-probe",
+        "fig67-zero",
+        "wheel-ilcl-confirmed",
+        "wheel-zero",
+    )
+    cases: list[dict[str, Any]] = [
+        next(case for case in register["cases"] if case["case_id"] == case_id) for case_id in case_ids
+    ]
+    assert len({item["reference"]["sha256"] for item in cases}) == 8
+    return cases, root
+
+
+def test_original_102p10_is_reconciled_preburst_plus_full_burst_not_arbitrary_nonunit() -> None:
+    cases, root = _figure67_original_cases()
+    storms: set[str] = set()
+    for case in cases:
+        record = next(item for item in case["files"] if item["path"].endswith(".stm"))
+        storms.add(record["sha256"])
+        source = (root / record["path"]).read_bytes()
+        assert hashlib.sha256(source).hexdigest() == record["sha256"]
+        assert len(source) == record["size_bytes"] == 1310
+        parsed = parse_design_stm(source)
+        assert parsed.dialect == "design_preburst_combined"
+        assert parsed.model.pattern_basis == "combined_preburst_percent"
+        assert parsed.model.preburst_bins == 48
+        assert parsed.model.timestep_hours == Decimal("0.50000")
+        assert parsed.model.calculation_increments + 1 == case["clock"]["row_count"] == 301
+        assert len(parsed.model.percentages) == 72
+        assert sum(parsed.model.percentages[:48], Decimal(0)) == Decimal("2.10")
+        assert sum(parsed.model.percentages[48:], Decimal(0)) == Decimal("100.00")
+        assert sum(parsed.model.percentages, Decimal(0)) == Decimal("102.10")
+        assert parsed.model.depths_mm == (Decimal("69.02"),) * 5
+        assert original_bytes(parsed) == source
+        assert len([field for field in parsed.source_map if field.field.startswith("preburst_")]) == 3
+        assert from_json(to_json(parsed.model)) == parsed.model
+        with pytest.raises(ValueError, match="no verified canonical writer"):
+            serialize_design_stm(parsed.model)
+    assert len(storms) == 1
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("C  Storm duration     : 12 hour", "C  Storm duration     : 11 hour"),
+        ("C  Storm duration     : 12 hour", "C  Storm duration     : unknown"),
+        ("C  ARF*BurDepth(mm)   :    67.60", "C  ARF*BurDepth(mm)   :    68.60"),
+        ("C  Pre-burst depth(mm):     1.42", "C  Pre-burst depth(mm):     0.00"),
+        ("  69.02,  69.02,  69.02,  69.02,  69.02, -99.00", "  69.02,  69.02,  69.02,  69.02,  69.12, -99.00"),
+    ],
+)
+def test_102p10_rejects_inconsistent_source_preburst_provenance(before: str, after: str) -> None:
+    cases, root = _figure67_original_cases()
+    record = next(item for item in cases[0]["files"] if item["path"].endswith(".stm"))
+    source = (root / record["path"]).read_bytes()
+    changed = source.replace(before.encode(), after.encode())
+    assert source != changed
+    with pytest.raises(FormatProblem) as caught:
+        parse_design_stm(changed)
+    assert caught.value.status in ("unsupported", "invalid")
+
+
+def test_combined_preburst_typed_boundary_rejects_false_split() -> None:
+    cases, root = _figure67_original_cases()
+    record = next(item for item in cases[0]["files"] if item["path"].endswith(".stm"))
+    original = parse_design_stm((root / record["path"]).read_bytes()).model
+    with pytest.raises(ValueError, match="100% burst"):
+        replace(original, preburst_bins=47)
+    with pytest.raises(ValueError, match="pre-burst"):
+        replace(original, preburst_bins=0)
+    payload = to_dict(original)
+    payload["model"]["preburst_bins"] = True
+    with pytest.raises(TypeError, match="integer"):
+        from_dict(payload)
+    with pytest.raises(ValueError, match="total 100"):
+        replace(original, pattern_basis="percent_of_depth")
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "failure-baseline-before",
+        "failure-baseline-after",
+        "fig67-ilcl-confirmed",
+        "fig67-ilcl-low",
+        "fig67-ilcl-probe",
+        "fig67-zero",
+        "wheel-ilcl-confirmed",
+        "wheel-zero",
+    ],
+)
+def test_original_102p10_all_eight_three_file_imports_are_typed_without_rewriting(case_id: str, tmp_path: Path) -> None:
+    cases, root = _figure67_original_cases()
+    case = next(c for c in cases if c["case_id"] == case_id)
+    source_paths: dict[str, Path] = {}
+    for record in case["files"]:
+        path = Path(record["path"])
+        if path.suffix not in (".catg", ".stm", ".par"):
+            continue
+        raw = (root / path).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+        assert len(raw) == record["size_bytes"]
+        target = tmp_path / ("input" + path.suffix)
+        target.write_bytes(raw)
+        source_paths[path.suffix] = target
+    assert set(source_paths) == {".catg", ".stm", ".par"}
+    model = parse_run_bytes(
+        source_paths[".par"].read_bytes(), source_paths[".catg"].read_bytes(), source_paths[".stm"].read_bytes()
+    ).model
+    assert model.storm.pattern_basis == "combined_preburst_percent"
+    assert from_json(to_json(model)) == model
+    manifest = tmp_path / "imported.json"
+    project = import_rorb_project(
+        manifest,
+        identifier=case_id,
+        rainfall_profile="legacy-rorb",
+        parameters=source_paths[".par"],
+        catchment=source_paths[".catg"],
+        storm=source_paths[".stm"],
+    )
+    write_project(manifest, project)
+    assert load_project(manifest).run == model
+    compatible = run_engine_project(manifest, selection=EngineSelection.for_engine("python-cmd"))
+    assert compatible.status == "computed_unvalidated"
+    assert len(compatible.hydrographs) == 1
+    assert len(compatible.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
+    improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
+    assert improved.status == "unsupported_feature"
+
+
+def _n4_original_catchment() -> bytes:
+    """Read the registered original object, not an altered test re-creation."""
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == "N4-six-source-serial-nested")
+    record = next(item for item in case["files"] if item["path"].endswith(".catg"))
+    raw = (root / record["path"]).read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+    assert len(raw) == record["size_bytes"]
+    return raw
+
+
+def test_n4_original_serial_and_nested_control_stack_roundtrip() -> None:
+    original = _n4_original_catchment()
+    parsed = parse_catg(original)
+    model = parsed.model
+    assert original_bytes(parsed) == original
+    assert len(model.subareas) == 6
+    assert len(model.reaches) == 9
+    assert [step.code for step in model.controls] == [1, 1, 3, 1, 3, 1, 4, 5, 4, 5, 3, 1, 1, 4, 5, 7]
+    assert tuple(step.subarea_id for step in model.controls if step.code == 1) == tuple(
+        f"area_{index}" for index in range(1, 7)
+    )
+    assert model.print_locations[0].label == "Novel outlet"
+    assert from_json(to_json(model)) == model
+    assert parse_catg(serialize_catg(model)).model == model
+
+
+def test_n4_rejects_duplicate_subarea_and_invalid_stack_transitions() -> None:
+    model = parse_catg(_n4_original_catchment()).model
+    controls = list(model.controls)
+    controls[1] = replace(controls[1], subarea_id="area_1")
+    with pytest.raises(ValueError, match="Code 1"):
+        replace(model, controls=tuple(controls))
+
+    controls = list(model.controls)
+    controls[3] = ControlStep(3)
+    with pytest.raises(ValueError, match="Code 3"):
+        replace(model, controls=tuple(controls))
+
+    controls = list(model.controls)
+    controls[2] = ControlStep(4)
+    with pytest.raises(ValueError, match="Code 4"):
+        replace(model, controls=tuple(controls))

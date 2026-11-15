@@ -21,6 +21,7 @@ from .rorb_model import (
     ControlStep,
     LossValue,
     ParameterSet,
+    PatternBasis,
     PrintLocation,
     Reach,
     RoutingValue,
@@ -30,7 +31,9 @@ from .rorb_model import (
 )
 from .rorb_par import inspect_cmd_parameters
 
-Dialect = Literal["cmd_v2", "rorb_ge_002", "rorb_ge_645", "design_explicit"]
+Dialect = Literal[
+    "cmd_v2", "rorb_ge_002", "rorb_ge_645", "design_explicit", "design_relative_weights", "design_preburst_combined"
+]
 Status = Literal["invalid", "unsupported"]
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eEdD][+-]?[0-9]+)?\Z")
 _AREA_NAME = re.compile(r"Sub-area\s+(\S+)", re.IGNORECASE)
@@ -541,6 +544,59 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
     return ParsedDocument(dialect, source, model, (*graphical_spans, *spans), graphics)
 
 
+def _original_combined_preburst(
+    lines: tuple[str, ...], dt: Decimal, percentages: tuple[Decimal, ...], depths: tuple[Decimal, ...]
+) -> tuple[int, tuple[SourceSpan, ...]]:
+    """Admit only generator-evidenced pre-burst + 100% burst, not arbitrary >100%."""
+    annotations: list[SourceSpan] = []
+    values: list[Decimal] = []
+    labels = ("Storm duration", "ARF*BurDepth(mm)", "Pre-burst depth(mm)")
+    for label in labels:
+        matches = [
+            (line_number, raw.split(":", 1)[1].strip())
+            for line_number, raw in enumerate(lines, 1)
+            if re.fullmatch(r"C\s+" + re.escape(label) + r"\s*:.*", raw.strip(), re.IGNORECASE)
+        ]
+        if len(matches) != 1:
+            message = f"Nonunit percent pattern lacks unique {label} source evidence"
+            raise _problem(message, unsupported=True)
+        line_number, lexeme = matches[0]
+        if label == "Storm duration":
+            duration = re.fullmatch(r"([^ ]+)\s+hour(?:s)?", lexeme, re.IGNORECASE)
+            if duration is None:
+                message = "Only original hour-based design-burst duration is characterised"
+                raise _problem(message, line_number, unsupported=True)
+            lexeme = duration.group(1)
+        values.append(_number(lexeme, line_number))
+        annotations.append(SourceSpan("preburst_" + label.lower().replace(" ", "_"), line_number, lexeme))
+    duration_h, burst_depth, preburst_depth = values
+    if dt <= 0 or duration_h <= 0 or duration_h / dt != (duration_h / dt).to_integral_value():
+        message = "Original design-burst duration is not an exact positive count of storm increments"
+        raise _problem(message, unsupported=True)
+    burst_bins = int(duration_h / dt)
+    split = len(percentages) - burst_bins
+    if split < 1 or burst_bins < 1 or not depths or len(set(depths)) != 1:
+        message = "Combined pre-burst timing or uniform rainfall depths are not characterised"
+        raise _problem(message, unsupported=True)
+    prefix = sum(percentages[:split], Decimal(0))
+    suffix = sum(percentages[split:], Decimal(0))
+    total = prefix + suffix
+    if prefix <= 0 or abs(suffix - Decimal(100)) > Decimal("0.05") or total <= 0:
+        message = "Combined storm must have a positive pre-burst and an independent 100% design burst"
+        raise _problem(message, unsupported=True)
+    depth = depths[0]
+    if (
+        preburst_depth <= 0
+        or burst_depth <= 0
+        or abs(depth - (preburst_depth + burst_depth)) > Decimal("0.01")
+        or abs(depth * prefix / total - preburst_depth) > Decimal("0.01")
+        or abs(depth * suffix / total - burst_depth) > Decimal("0.01")
+    ):
+        message = "Original pre-burst/burst depths do not reconcile with the recorded nonunit pattern"
+        raise _problem(message, unsupported=True)
+    return split, tuple(annotations)
+
+
 def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -- distinct DESIGN input contracts
     """Strict explicit single-burst DESIGN storm reader, preserving percentages and depth tokens."""
     source = SourceDocument.from_bytes(data)
@@ -574,10 +630,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
         message = "Nonzero burst start requires a different storm convention"
         raise _problem(message, timing_line, unsupported=True)
     marker_line, marker = records[2]
-    if marker.casefold() != "temporal pattern (% of depth)":
-        message = "Missing temporal pattern marker"
+    if marker.casefold() not in ("temporal pattern (% of depth)", "temporal weights"):
+        message = "Missing supported temporal pattern marker"
         raise _problem(message, marker_line)
-    percentages, next_index, percent_spans = _terminated(records, 3, "temporal_percent")
+    relative_weights = marker.casefold() == "temporal weights"
+    # Preserve original weights and the distinct denominator convention.
+    percentages, next_index, percent_spans = _terminated(
+        records, 3, "temporal_weight" if relative_weights else "temporal_percent"
+    )
     if len(percentages) != count:
         message = "Temporal pattern length does not match the declared rainfall-bin count"
         raise _problem(message, timing_line)
@@ -585,6 +645,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
+    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
+    preburst_bins = 0
+    preburst_spans: tuple[SourceSpan, ...] = ()
+    if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
+        # Source annotations must independently prove the split. A nonunit
+        # pattern without its original pre-burst+burst identity is rejected.
+        preburst_bins, preburst_spans = _original_combined_preburst(lines, dt, percentages, depths)
+        basis = "combined_preburst_percent"
     try:
         model = StormModel(
             lines[0].strip(),
@@ -594,6 +662,8 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
             percentages,
             depths,
             tuple(f"area_{index + 1}" for index in range(len(depths))),
+            pattern_basis=basis,
+            preburst_bins=preburst_bins,
         )
     except ValueError as exc:
         raise _problem(str(exc)) from exc
@@ -601,10 +671,18 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
         SourceSpan("timestep_hours", header_line, header_fields[0]),
         SourceSpan("calculation_increments", header_line, header_fields[1]),
         SourceSpan("start_increment", timing_line, timing_fields[0]),
+        *preburst_spans,
         *percent_spans,
         *depth_spans,
     )
-    return ParsedDocument("design_explicit", source, model, spans)
+    dialect: Dialect = (
+        "design_relative_weights"
+        if relative_weights
+        else "design_preburst_combined"
+        if preburst_bins
+        else "design_explicit"
+    )
+    return ParsedDocument(dialect, source, model, spans)
 
 
 def parse_bytes(
@@ -734,12 +812,15 @@ def serialize_design_stm(model: StormModel) -> bytes:
     """Explicit DESIGN pattern; percentages/depths remain Decimal tokens."""
     model.__post_init__()
     _canonical_ids(model)
+    if model.pattern_basis == "combined_preburst_percent":
+        message = "A combined pre-burst storm's original generator metadata has no verified canonical writer"
+        raise ValueError(message)
     lines = [
         _safe_label(model.title),
         "DESIGN",
         f"{model.timestep_hours},{model.calculation_increments},1,1,1,-99",
         f"{model.start_increment},{len(model.percentages)}",
-        "Temporal pattern (% of depth)",
+        "Temporal weights" if model.pattern_basis == "relative_weights" else "Temporal pattern (% of depth)",
         ", ".join([*(str(item) for item in model.percentages), "-99"]),
         "C Sub-area rainfall depths",
         ", ".join([*(str(item) for item in model.depths_mm), "-99"]),
@@ -789,6 +870,9 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
+        raise ValueError(message)
+    if storm.pattern_basis != "percent_of_depth":
+        message = "S2 requires percentage patterns; native relative-weight/preburst semantics are not yet qualified"
         raise ValueError(message)
     if catchment.reach_mode != "implicit_natural" or any(step.code == 2 for step in catchment.controls):
         message = "S2 does not yet qualify explicit reach types and control code 2"
