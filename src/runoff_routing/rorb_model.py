@@ -285,6 +285,22 @@ class StormModel:
         validate_storm(self)
 
 
+def _validate_pattern_basis(model: StormModel) -> None:
+    """Separate the strict 100% convention from native relative weights."""
+    total = sum(model.percentages, Decimal(0))
+    if model.pattern_basis == "percent_of_depth":
+        if abs(total - Decimal(100)) > Decimal("0.05"):
+            message = "Temporal pattern percentages must total 100 within recorded precision"
+            raise ValueError(message)
+    elif model.pattern_basis == "relative_weights":
+        if total <= 0:
+            message = "Relative temporal weights require a positive denominator"
+            raise ValueError(message)
+    else:
+        message = "Unknown temporal pattern basis"
+        raise ValueError(message)
+
+
 def validate_storm(model: StormModel) -> None:
     if not model.title.strip():
         message = "Storm title is required"
@@ -310,18 +326,7 @@ def validate_storm(model: StormModel) -> None:
         _identity(name, "Storm subarea")
     for value in model.percentages:
         _finite(value, "temporal pattern percentage")
-    total = sum(model.percentages, Decimal(0))
-    if model.pattern_basis == "percent_of_depth":
-        if abs(total - Decimal(100)) > Decimal("0.05"):
-            message = "Temporal pattern percentages must total 100 within recorded precision"
-            raise ValueError(message)
-    elif model.pattern_basis == "relative_weights":
-        if total <= 0:
-            message = "Relative temporal weights require a positive denominator"
-            raise ValueError(message)
-    else:
-        message = "Unknown temporal pattern basis"
-        raise ValueError(message)
+    _validate_pattern_basis(model)
     for depth in model.depths_mm:
         _finite(depth, "storm rainfall depth")
 

@@ -12,6 +12,10 @@ from typing import Any
 
 import pytest
 
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
+from runoff_routing.integration import parse_run_bytes
+from runoff_routing.project_json import import_rorb_project, load_project, write_project
 from runoff_routing.rorb_codec import (
     FormatProblem,
     original_bytes,
@@ -26,10 +30,6 @@ from runoff_routing.rorb_codec import (
     to_s2_payload,
     write_new,
 )
-from runoff_routing.integration import parse_run_bytes
-from runoff_routing.project_json import import_rorb_project, load_project, write_project
-from runoff_routing.engine_execution import run_engine_project
-from runoff_routing.engine_types import EngineSelection
 from runoff_routing.rorb_model import (
     CatchmentModel,
     ControlStep,
