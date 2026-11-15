@@ -13,6 +13,7 @@ import json
 import math
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal, cast
 
@@ -197,7 +198,7 @@ def _checked_positive(value: float, field: str, role: InputRole) -> None:
         raise error
 
 
-def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses, float, float]:
+def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses, float, float]:  # noqa: C901 -- explicit source/semantic boundary validation
     """One normalization boundary: source Decimal -> S1 payload -> pure S2 classes."""
     try:
         payload = to_s2_payload(model)
@@ -208,7 +209,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
     for index, value in enumerate(payload.areas_km2, start=1):
         _checked_positive(value, f"Subarea {index} area", "catchment")
     for command in payload.controls:
-        if command[0] in (1, 5):
+        if command[0] in (1, 2, 5):
             _checked_positive(command[1], "Natural reach length", "catchment")
     _checked_positive(payload.timestep_hours, "Storm timestep", "storm")
     _checked_positive(payload.kc, "Routing kc", "parameters")
@@ -229,26 +230,54 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
             model.parameters.losses[0].continuing,
             payload.runoff_coefficient if payload.runoff_coefficient is not None else payload.continuing_loss_mm_h,
         ),
+        *zip(
+            (area.impervious_fraction for area in model.catchment.subareas),
+            payload.impervious_fractions,
+            strict=True,
+        ),
     )
     if any(source != 0 and converted == 0.0 for source, converted in source_values):
         message = "A nonzero source value underflows to zero at the S2 float boundary"
         error = RunInputError("unsupported", "float_boundary", message)
         raise error
-    if abs(math.fsum(payload.percentages) - 100.0) > 0.01:
+    try:
+        total_weights = math.fsum(payload.percentages)
+    except OverflowError as exc:
+        message = "S2 storm requires a finite positive source pattern denominator"
+        error = RunInputError("unsupported", "storm_precision", message, role="storm")
+        raise error from exc
+    if not math.isfinite(total_weights) or total_weights <= 0:
+        message = "S2 storm requires a finite positive source pattern denominator"
+        error = RunInputError("unsupported", "storm_precision", message, role="storm")
+        raise error
+    if payload.pattern_basis == "percent_of_depth" and abs(total_weights - 100.0) > 0.01:
         message = "S2 requires percentages to total 100 within its 0.01 numerical tolerance"
         error = RunInputError("unsupported", "storm_precision", message, role="storm")
         raise error
-    if any(code not in (1, 3, 4, 5, 7) for code, _ in payload.controls):
+    if payload.pattern_basis == "relative_weights":
+        # The original Decimal ratios, not the rounded absolute magnitudes,
+        # establish the source storm. Equal subnormal floats may conceal
+        # materially different source weights and fabricate a new event.
+        source_total = sum(model.storm.percentages, Decimal(0))
+        for source, converted in zip(model.storm.percentages, payload.percentages, strict=True):
+            source_share = source / source_total
+            converted_share = Decimal(converted / total_weights)
+            if source_share > 0 and abs(converted_share / source_share - 1) > Decimal("1e-12"):
+                message = "Relative storm weights lose their original proportions at the S2 float boundary"
+                error = RunInputError("unsupported", "storm_precision", message, role="storm")
+                raise error
+    if any(code not in (1, 2, 3, 4, 5, 7) for code, _ in payload.controls):
         message = "An uncharacterised control code reached the S2 input boundary"
         error = RunInputError("unsupported", "control_code", message, role="catchment")
         raise error
     controls = tuple(Control(cast("ControlCode", code), length) for code, length in payload.controls)
-    catchment = Catchment(controls, payload.areas_km2)
+    catchment = Catchment(controls, payload.areas_km2, payload.impervious_fractions)
     storm = Storm(
         payload.timestep_hours,
         payload.calculation_increments,
         payload.percentages,
         payload.depths_mm,
+        payload.pattern_basis,
     )
     losses = Losses(payload.initial_loss_mm, payload.continuing_loss_mm_h, payload.runoff_coefficient)
     return catchment, storm, losses, payload.kc, payload.m
