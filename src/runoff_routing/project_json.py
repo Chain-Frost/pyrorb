@@ -99,12 +99,14 @@ class LegacyRunFiles:
     storm: SourceFile
 
     def __post_init__(self) -> None:
-        for reference, suffix in (
-            (self.parameters, ".par"),
-            (self.catchment, ".catg"),
-            (self.storm, ".stm"),
+        for reference, suffixes in (
+            (self.parameters, (".par",)),
+            (self.catchment, (".catg", ".cat")),
+            (self.storm, (".stm",)),
         ):
-            if not reference.path.lower().endswith(suffix):
+            # Graphical CATG bytes may carry the legacy .cat suffix.
+            # _resolve_run still uses the one fail-closed CATG decoder.
+            if not reference.path.lower().endswith(suffixes):
                 message = f"Unsupported RORB source format: {reference.path}"
                 raise ProjectError(message)
 
@@ -298,7 +300,9 @@ def project_from_json(text: str) -> Project:
     fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
     data = _object(header, fields if version == 1 else fields | {"engine"}, "project")
     if version == 1:
-        engine = EngineSelection()
+        # Schema 1 had an implicit Python engineering engine. Preserve its
+        # historical meaning when the temporary schema-2 default changes.
+        engine = EngineSelection.for_engine("python")
     else:
         raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
         try:
