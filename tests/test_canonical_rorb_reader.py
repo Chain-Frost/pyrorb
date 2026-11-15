@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-from importlib.resources import files
 from decimal import Decimal
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
