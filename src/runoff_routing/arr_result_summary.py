@@ -52,7 +52,7 @@ def _array(value: object, label: str) -> list[Any]:
 def _int(value: object, label: str) -> int:
     if type(value) is not int:
         _fail(f"{label} must be a JSON integer")
-    return cast("int", value)
+    return value
 
 
 def _text(value: object, label: str) -> str:
@@ -491,6 +491,14 @@ def _critical_duration_records(
     return critical
 
 
+def _bound_outcome(
+    member: Mapping[str, Any], outcomes: Mapping[str, dict[str, Any]]
+) -> dict[str, Any] | None:
+    """An unprepared input candidate has no synthetic routing identity."""
+    identifier = member.get("event_id")
+    return outcomes.get(identifier) if isinstance(identifier, str) else None
+
+
 def summarize_deterministic_results(effective: Mapping[str, Any], routed: Mapping[str, Any]) -> DeterministicSummary:
     """Summarise existing #136/#119 persisted structures without re-execution or native claims."""
     _format_check(effective, routed)
@@ -507,7 +515,7 @@ def summarize_deterministic_results(effective: Mapping[str, Any], routed: Mappin
     for cell in cells:
         key = (cell["duration_min"], cell["aep_label"])
         for site in sites or (None,):
-            rows = [_member_row(member, site, outcomes.get(member.get("event_id")), volumes) for member in members[key]]
+            rows = [_member_row(member, site, _bound_outcome(member, outcomes), volumes) for member in members[key]]
             summaries.append(_site_summary(cell, site, rows, _int(cell["expected_count"], "expected count")))
     critical = _critical_duration_records(aeps, sites, summaries)
     complete = bool(sites) and all(row["complete_comparable_population"] for row in summaries)
