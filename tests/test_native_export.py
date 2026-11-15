@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess  # noqa: S404 -- Windows-only launcher test invokes fixed system utilities
+import subprocess
 import sys
 from dataclasses import replace
 from decimal import Decimal
@@ -265,7 +265,7 @@ def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp
     relocated = tmp_path / "recipient directory with spaces"
     shutil.move(str(package), str(relocated))
     shutil.rmtree(project_path.parent / "original files")
-    system_where = Path(os.environ["SystemRoot"]) / "System32" / "where.exe"
+    system_where = Path(os.environ["SYSTEMROOT"]) / "System32" / "where.exe"
     assert system_where.is_file()
     command = [str(relocated / "run.cmd"), str(system_where)]
     success = subprocess.run(  # noqa: S603 -- explicit package script and fixed Windows utility; no shell
