@@ -23,6 +23,7 @@ from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import canonical_run_bytes
 from runoff_routing.native_cmd import NativeConfiguration
+from runoff_routing.project_batch import ProjectEvent, iter_project_events
 from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, write_project
 from runoff_routing.rorb_model import (
     ControlStep,
@@ -208,6 +209,76 @@ def test_cmd_rejects_invalid_numeric_print_ordinates_before_exposing_any_site(
     assert outcome.requested_print_ids == ("interior", "print_1")
     assert outcome.hydrographs == ()
     assert outcome.physical_time_hours == ()
+
+
+@pytest.mark.parametrize(
+    ("damage", "error_code"),
+    [
+        ("missing", "cmd_print_sites"),
+        ("truncated", "cmd_print_sites"),
+        ("reversed", "cmd_print_order"),
+        ("duplicate_index", "cmd_print_order"),
+        ("wrong_final", "cmd_final_print"),
+        ("nan", "cmd_print_values"),
+        ("infinite", "cmd_print_values"),
+        ("negative", "cmd_print_values"),
+    ],
+)
+def test_prepared_geometry_keeps_fault_injection_and_later_batch_events(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, damage: str, error_code: str
+) -> None:
+    """Exercise every output guard through the real cached geometry dispatcher."""
+    path = _project(tmp_path, _multiple_prints())
+    captured_geometry: list[Geometry] = []
+
+    def injected_execute(event: Event, revision: str, *, geometry: Geometry | None = None) -> CandidateResult:
+        assert geometry is not None
+        captured_geometry.append(geometry)
+        original = execute_unmodified(event, revision, geometry=geometry)
+        if len(captured_geometry) != 2:
+            return original
+
+        recorded = original.network.prints
+        if damage == "missing":
+            changed = recorded[:-1]
+        elif damage == "truncated":
+            changed = (replace(recorded[0], q=recorded[0].q[:-1]), *recorded[1:])
+        elif damage == "reversed":
+            changed = recorded[::-1]
+        elif damage == "duplicate_index":
+            changed = (recorded[0], replace(recorded[1], control_index_one_based=recorded[0].control_index_one_based))
+        elif damage == "wrong_final":
+            final = recorded[-1]
+            changed = (*recorded[:-1], replace(final, q=(*final.q[:-1], final.q[-1] + 1.0)))
+        else:
+            invalid = {"nan": float("nan"), "infinite": float("inf"), "negative": -1.0}[damage]
+            first = recorded[0]
+            changed = (replace(first, q=(*first.q[:2], invalid, *first.q[3:])), *recorded[1:])
+        return replace(original, network=replace(original.network, prints=changed))
+
+    monkeypatch.setattr("runoff_routing.cmd_engine.execute", injected_execute)
+    outcomes = tuple(
+        iter_project_events(
+            path,
+            (ProjectEvent("before"), ProjectEvent("damaged"), ProjectEvent("after")),
+            selection=EngineSelection.for_engine("python-cmd"),
+        )
+    )
+    assert tuple(item.status for item in outcomes) == (
+        "computed_unvalidated",
+        "incomplete_output",
+        "computed_unvalidated",
+    )
+    assert tuple(item.event_id for item in outcomes) == ("before", "damaged", "after")
+    assert outcomes[1].diagnostics[0].code == error_code
+    assert outcomes[1].requested_print_ids == ("interior", "print_1")
+    assert outcomes[1].hydrographs == ()
+    assert outcomes[1].physical_time_hours == ()
+    assert outcomes[0].hydrographs == outcomes[2].hydrographs
+    assert len(outcomes[0].hydrographs) == 2
+    assert all(len(site.discharge_m3_s) == 6 for site in outcomes[2].hydrographs)
+    assert len(captured_geometry) == 3
+    assert captured_geometry[0] is captured_geometry[1] is captured_geometry[2]
 
 
 def _native_two_prints() -> RunModel:
