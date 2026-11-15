@@ -105,6 +105,18 @@ Strict `>` (not `>=`) is the v1 choice; tied values are nonexceedances *at their
 
 **RNG / replay choice (reconciled with #146's draft):** use a standard-library counter-derived `sha256-counter53-v1` stream with derivation ID `sha256-utf8-zero-separated-v1`. The root seed is an unsigned **128-bit** integer in `0..2^128-1`, rendered as base-10 ASCII. Derive immutable `population_id` as canonical SHA-256 of the sampling configuration **excluding per-stratum sample counts**. Define each sample ID as `mc:{population_id[:16]}:{stratum_id}:{index:08d}` with a zero-based local index. UTF-8 encode the NUL-separated fields `sha256-counter53-v1`, `sha256-utf8-zero-separated-v1`, decimal root seed, full `population_id`, sample ID and one distinct purpose (`rainfall_aep`, `conditional_temporal_pattern`, `storm_initial_loss`). Take the high 53 bits `k` from the first eight bytes of the SHA-256 digest and map to open `U=(2k+1)/2^54`. This matches the proposed #146 replay contract without asserting statistical independence as a physical fact or native RNG correspondence. Do **not** include sample allocation, worker order, chunk number, plan revision or time in these identifiers: extending a stratum preserves earlier draws/IDs and recomputes weights. Different source/policy/stratum bounds create a new population; persist all effective values so exact replay never calls the RNG. The solver does not draw random values.
 
+**Fixed RNG audit vector:** For a byte-level self-test (not a physically sampled catchment), use `root_seed=42`,
+`population_id=` followed by **64 ASCII zeroes**, `stratum_id=bin0`,
+`sample_id=mc:0000000000000000:bin0:00000000`, and the exact NUL-delimited encoding above.
+The SHA-256 counter outputs must be:
+
+| Draw purpose | 53-bit integer `k` | Exact interior uniform `U=(2k+1)/2^54` |
+| --- | ---: | --- |
+| `rainfall_aep` | `3520574123182672` | `7041148246365345/18014398509481984` |
+| `conditional_temporal_pattern` | `5980752148178982` | `11961504296357965/18014398509481984` |
+| `storm_initial_loss` | `7729683477208037` | `15459366954416075/18014398509481984` |
+
+This synthetic stream vector is independent of source hashes and external native RNGs; B must test a second vector with a **real canonical plan-derived** `population_id` before claiming implementation parity with this policy.
 **Plan extension:** expanding an unchanged stratum preserves prior draws and IDs, but creates a **new immutable plan revision**. Recompute **every** weight in that stratum as `w_h/n_h(new)`, including old results; reaggregate all relevant existing computed events. Reject mixed old/new weights and duplicate outcomes. Replay existing samples from recorded effective inputs, independent of worker count, traversal order, chunking and selected deterministic engine. The execution layer must never sample inside a numerical solver.
 
 **Testable controls:** source/gross-depth monotonicity and AEP/EY rejection, z-edge and p-uniform interval mass, empirical IL direction/median/endpoint/atom and out-of-support, TP category and conditional member identity, preburst excess rejection/one-ARF transformation, unchanged CL/`kc`/`m`, deterministic stream independence and extension reweighting, weighted/tied/zero/failure/tail analytical controls, incomplete duration envelope and representative replay. Independently review probability direction, total mass, dependence, tail policy and **estimand**. Use ordinary repository link/claim checks for this docs-only PR, not an unrelated numerical suite.
