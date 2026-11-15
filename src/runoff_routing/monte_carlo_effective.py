@@ -354,7 +354,9 @@ def read_header(path: Path) -> MCRequestHeader:
     )
     populations = tuple(
         MCPopulation(
-            _name(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"),
+            _name(
+                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"
+            ),
             _int(
                 _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["duration_min"], "duration"
             ),
