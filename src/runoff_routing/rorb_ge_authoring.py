@@ -286,9 +286,7 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
         for node in ordered_nodes
     )
     drawing_reaches = {reach.identifier: reach for reach in drawing.reaches}
-    control_reach_ids = tuple(
-        step.reach_id for step in model.controls if step.code in (1, 2, 5)
-    )
+    control_reach_ids = tuple(step.reach_id for step in model.controls if step.code in (1, 2, 5))
     if any(reach_id is None for reach_id in control_reach_ids):
         message = "Every graphical route control requires an explicit physical reach identity"
         raise ValueError(message)
