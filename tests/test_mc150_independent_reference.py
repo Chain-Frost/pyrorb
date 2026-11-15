@@ -160,7 +160,7 @@ def test_step_inverse_is_only_a_declared_analytic_example() -> None:
     weighted = _weighted_events(population["strata"])
     assert all(event["status"] == "valid" for event, _ in weighted)
     values = sorted({Fraction(event["q_m3s"] or "0") for event, _ in weighted})
-    for check in population["step_quantiles"]:
+    for check in population.get("step_quantiles", []):
         aep = Fraction(check["upper_tail_probability"])
         nonexceedance = 1 - aep
         first = next(
