@@ -527,9 +527,7 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     bom = read_bom_ifd_csv(config.bom_ifd)
     patterns = read_pattern_file(config.temporal_patterns, kind=config.pattern_kind)
     legacy = (
-        read_arr_file(config.legacy_arr_txt, legacy_profile="arr2016")
-        if config.legacy_arr_txt is not None
-        else None
+        read_arr_file(config.legacy_arr_txt, legacy_profile="arr2016") if config.legacy_arr_txt is not None else None
     )
     source_orders = {pattern: i for i, pattern in enumerate(patterns.patterns, start=1)}
     if len(source_orders) != len(patterns.patterns):
