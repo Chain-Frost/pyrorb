@@ -5,7 +5,7 @@ Date: 2026-11-15. Scope: #139 under #3/#7; coordination with #138/#140/#141.
 ## Source ownership and exact dependency
 
 - Reviewed basis: [upstream PR16](https://github.com/norman-tom/pyromb/pull/16), head `a323d5709f7ce14c6adf46f01e0224b60668340c` at inspection. The older fork PR2/historical 2,913-byte reference is not the current exporter.
-- Proposed public ordered-input API: [PyRomb writer branch](https://github.com/phantom-branch/pyromb/tree/feat/ordered-rorb-catg-139), based on PR16, current pinned revision `51cb3880d9017e389a87100e6025c1a5cc160233`. Keep this enhancement **in PyRomb**, never vendored into runoff-routing. The extra API accepts ordered control records plus explicit physical reach lengths, source area/FI and graphical metadata. It shares the existing upstream VectorBlock/GraphicsBlock rendering paths. The GIS Traveller entry point remains.
+- Proposed public ordered-input API: [PyRomb writer branch](https://github.com/phantom-branch/pyromb/tree/feat/ordered-rorb-catg-139), based on PR16, current pinned revision `910a805374d965291fb6fb9a20b6f399a7abb373`. Keep this enhancement **in PyRomb**, never vendored into runoff-routing. The extra API accepts ordered control records plus explicit physical reach lengths, source area/FI and graphical metadata. It shares the existing upstream VectorBlock/GraphicsBlock rendering paths. The GIS Traveller entry point remains.
 - Downstream dependency is optional `.[catg]` and is pinned to that exact Git commit; the development extra installs it for writer tests. Source-only parsing and numerical execution do not load PyRomb. Existing PyRomb MIT notice remains at `docs/third_party/PYROMB_LICENSE.txt`.
 
 ## Adapter/guard

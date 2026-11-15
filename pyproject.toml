@@ -11,9 +11,9 @@ requires-python = ">=3.13"
 dependencies = []
 
 [project.optional-dependencies]
-catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@51cb3880d9017e389a87100e6025c1a5cc160233"]
+catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@910a805374d965291fb6fb9a20b6f399a7abb373"]
 
-dev = ["build", "pytest", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@51cb3880d9017e389a87100e6025c1a5cc160233"]
+dev = ["build", "pytest", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@910a805374d965291fb6fb9a20b6f399a7abb373"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
