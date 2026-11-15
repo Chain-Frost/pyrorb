@@ -181,7 +181,7 @@ def test_independent_hmac_stream_and_immutable_extension() -> None:
     assert first[0].tp_uniform == tp_uniform
     assert first[0].loss_uniform == loss_uniform
 
-    extended = plan.extend({"rare": 4})
+    extended = plan.extend({"rare": 4, "ordinary": 4})
     later = list(api.iter_plan_samples(extended))
     by_id = {row.sample_id: row for row in later}
     assert plan.population_id == extended.population_id
