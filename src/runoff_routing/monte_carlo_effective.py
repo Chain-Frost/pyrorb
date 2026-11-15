@@ -152,15 +152,18 @@ class MCPopulation:
             _fail("modelled_mass must be in (0, 1]; unmodelled tails are never normalised away")
         if (self.rare_unmodelled_mass is None) != (self.frequent_unmodelled_mass is None):
             _fail("Rare and frequent unmodelled mass must be supplied together")
-        if self.rare_unmodelled_mass is not None and self.frequent_unmodelled_mass is not None:
-            if (
+        if (
+            self.rare_unmodelled_mass is not None
+            and self.frequent_unmodelled_mass is not None
+            and (
                 not self.rare_unmodelled_mass.is_finite()
                 or not self.frequent_unmodelled_mass.is_finite()
                 or self.rare_unmodelled_mass < 0
                 or self.frequent_unmodelled_mass < 0
                 or self.modelled_mass + self.rare_unmodelled_mass + self.frequent_unmodelled_mass != 1
-            ):
-                _fail("Modelled plus rare/frequent unmodelled probability mass must equal one")
+            )
+        ):
+            _fail("Modelled plus rare/frequent unmodelled probability mass must equal one")
 
     def to_dict(self) -> dict[str, object]:
         return {

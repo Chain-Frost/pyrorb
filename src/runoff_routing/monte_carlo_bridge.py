@@ -17,11 +17,11 @@ from typing import Never, Protocol, cast
 from .arr_patterns import PatternKind, read_pattern_file
 from .bom_ifd import BoMIFD, read_bom_ifd_csv
 from .monte_carlo_effective import (
+    EffectiveMCEvent,
     MCAllocation,
     MCInputError,
     MCPopulation,
     MCRequestHeader,
-    EffectiveMCEvent,
     materialise_arr_sample,
     sha256_file,
     write_effective_request,
@@ -143,7 +143,8 @@ def create_saved_sample_plan(spec_path: Path, prefix: Path) -> tuple[Path, Path]
             content.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_bad_constant
         )
     except (UnicodeError, TypeError, ValueError) as exc:
-        raise MCInputError("Malformed sample-plan JSON") from exc
+        message = "Malformed sample-plan JSON"
+        raise MCInputError(message) from exc
     plan = _sample_api().SamplePlan.create(_obj(raw, "sample-plan spec"))
     return _sample_api().write_sample_plan(prefix, plan)
 

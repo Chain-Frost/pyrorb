@@ -11,13 +11,16 @@ import json
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, cast
+from collections.abc import Iterator
 
 import pytest
 
 from runoff_routing import monte_carlo_bridge
+from runoff_routing.arr_patterns import read_pattern_file
+from runoff_routing.bom_ifd import BoMIFD
 from runoff_routing.monte_carlo_bridge import prepare_saved_sample_plan
 from runoff_routing.monte_carlo_effective import (
+    materialise_arr_sample,
     MCAllocation,
     MCPopulation,
     MCRequestHeader,
@@ -26,7 +29,7 @@ from runoff_routing.monte_carlo_effective import (
     write_effective_request,
 )
 from runoff_routing.monte_carlo_execution import execute_mc_request
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.project_json import EmbeddedRun, Project, SourceFile, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 ROOT = Path(__file__).parents[1]
@@ -43,9 +46,6 @@ def test_explicit_zero_count_stratum_is_preserved_in_header_and_verification(tmp
     pattern = tmp_path / "patterns.csv"
     pattern.write_bytes((EXAMPLES / "arr-design-synthetic-patterns.csv").read_bytes())
     model = _model()
-    from runoff_routing.arr_patterns import read_pattern_file
-    from runoff_routing.monte_carlo_effective import materialise_arr_sample
-    from runoff_routing.project_json import SourceFile
 
     event = materialise_arr_sample(
         model=model,
@@ -131,17 +131,17 @@ def test_stored_b_record_materialises_without_a_new_draw(tmp_path: Path, monkeyp
     }
 
     class FakeB:
-        def read_sample_plan(self, _path: Path) -> Any:
+        def read_sample_plan(self, _path: Path) -> SimpleNamespace:
             return SimpleNamespace(
                 plan_id=sample.plan_id,
                 spec=lambda: spec,
                 to_dict=lambda: {"domain": domain},
             )
 
-        def iter_saved_sample_records(self, _path: Path, _plan: Any) -> Any:
+        def iter_saved_sample_records(self, _path: Path, _plan: SimpleNamespace) -> Iterator[SimpleNamespace]:
             return iter((sample,))
 
-        def ifd_from_bom(self, _source: Any, _duration: int) -> dict[str, object]:
+        def ifd_from_bom(self, _source: BoMIFD | None, _duration: int) -> dict[str, object]:
             return {"interpolation": "z_linear_depth_v1", "points": [{"aep": "0.02", "depth_mm": "20"}]}
 
     spec["ifd"] = FakeB().ifd_from_bom(None, 60)

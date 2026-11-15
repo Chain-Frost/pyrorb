@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import cast
 
 from .engine_provenance import identify_implementation, verify_installed_wheel
-from .monte_carlo_bridge import create_saved_sample_plan, prepare_saved_sample_plan
 from .engine_types import EngineOutcome, EngineSelection
+from .monte_carlo_bridge import create_saved_sample_plan, prepare_saved_sample_plan
 from .monte_carlo_effective import (
     MAX_LINE_BYTES,
     EffectiveMCEvent,
@@ -34,6 +34,7 @@ from .monte_carlo_effective import (
     sha256_file,
     validate_effective_request,
 )
+from .monte_carlo_frequency_bridge import write_mc_frequency
 from .project_batch import ProjectBatchReport, iter_project_events, run_project_events, write_batch_results
 from .project_json import LoadedProject, load_project
 
@@ -501,6 +502,33 @@ def replay_mc_event(
     return report
 
 
+def _preparation_cli_action(options: argparse.Namespace) -> int | None:
+    """Text-mode B plan and E materialisation use exactly one sampler and source profile."""
+    if options.command == "plan":
+        paths = create_saved_sample_plan(options.spec, options.output_prefix)
+        print(f"Created immutable B sample-plan files: {paths[0]}, {paths[1]}")
+        return 0
+    if options.command == "prepare":
+        header = prepare_saved_sample_plan(
+            options.project,
+            options.plan,
+            options.samples,
+            options.request,
+            ifd_path=options.ifd,
+            patterns_path=options.patterns,
+            arf_region=options.arf_region,
+            dry_tail_min=options.dry_tail_min,
+            loss_source_path=options.loss_source,
+        )
+        print(f"Prepared {header.event_count} exact B samples without new randomness: {options.request}")
+        return 0
+    if options.command == "validate":
+        header, digest = validate_effective_request(options.request)
+        print(f"Valid effective request: {header.event_count} samples; SHA-256 {digest}")
+        return 0
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     """Explicit-event MC CLI: validate, stream, resume, inspect and deterministic replay."""
     parser = argparse.ArgumentParser(prog="python -m runoff_routing.monte_carlo_execution")
@@ -551,28 +579,9 @@ def main(argv: list[str] | None = None) -> int:
     except SystemExit as exc:
         return exc.code if isinstance(exc.code, int) else 2
     try:
-        if args.command == "plan":
-            paths = create_saved_sample_plan(args.spec, args.output_prefix)
-            print(f"Created immutable B sample-plan files: {paths[0]}, {paths[1]}")
-            return 0
-        if args.command == "prepare":
-            header = prepare_saved_sample_plan(
-                args.project,
-                args.plan,
-                args.samples,
-                args.request,
-                ifd_path=args.ifd,
-                patterns_path=args.patterns,
-                arf_region=args.arf_region,
-                dry_tail_min=args.dry_tail_min,
-                loss_source_path=args.loss_source,
-            )
-            print(f"Prepared {header.event_count} exact B samples without new randomness: {args.request}")
-            return 0
-        if args.command == "validate":
-            header, digest = validate_effective_request(args.request)
-            print(f"Valid effective request: {header.event_count} samples; SHA-256 {digest}")
-            return 0
+        early = _preparation_cli_action(args)
+        if early is not None:
+            return early
         if args.numerical_profile is not None and args.engine is None:
             message = "--numerical-profile requires --engine"
             raise MCRunError(message)
@@ -589,8 +598,6 @@ def main(argv: list[str] | None = None) -> int:
             print(report.to_text(), end="")
             return 0 if report.complete else 2
         if args.command == "frequency":
-            from .monte_carlo_frequency_bridge import write_mc_frequency
-
             result = write_mc_frequency(
                 args.project,
                 args.request,
@@ -599,6 +606,7 @@ def main(argv: list[str] | None = None) -> int:
                 target_aeps=tuple(args.aep),
                 selection=selected,
                 wheel_artifact=args.wheel_artifact,
+                read_rows=iter_verified_mc_results,
             )
             print(f"Weighted frequency: {result.scopes} physical populations; complete={result.point_results_complete}")
             return 0 if result.point_results_complete else 2

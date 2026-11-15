@@ -18,8 +18,19 @@ from typing import Any, Protocol, cast
 
 from .engine_types import EngineSelection
 from .monte_carlo_effective import MCAllocation, MCInputError, MCPopulation, read_header
-from .monte_carlo_execution import iter_verified_mc_results
 from .project_json import load_project
+
+
+class _VerifiedReader(Protocol):
+    def __call__(
+        self,
+        project: Path,
+        request: Path,
+        ledger: Path,
+        *,
+        selection: EngineSelection | None = None,
+        wheel_artifact: Path | None = None,
+    ) -> Iterator[dict[str, object]]: ...
 
 
 class _CSVWriter(Protocol):
@@ -106,7 +117,7 @@ def _sample_records(
             mapped, value = "valid", float(peak)
         elif status in {"unsupported_feature", "unavailable_engine"}:
             mapped, value = "unsupported", None
-        elif status in {"incomplete_output"} or status == "computed_unvalidated":
+        elif status in ("incomplete_output", "computed_unvalidated"):
             mapped, value = "missing", None
         else:
             mapped, value = "failed", None
@@ -162,6 +173,7 @@ def _report(
     selection: EngineSelection | None,
     wheel_artifact: Path | None,
     csv_writer: _CSVWriter,
+    read_rows: _VerifiedReader,
 ) -> tuple[dict[str, object], str, bool]:
     _validate_target_aeps(targets)
     header = read_header(request)
@@ -183,7 +195,7 @@ def _report(
             scope, planned = _curve_population(
                 api, header.plan_sha256, header.policy_id, population, site_id, header.strata
             )
-            rows = iter_verified_mc_results(project, request, ledger, selection=selection, wheel_artifact=wheel_artifact)
+            rows = read_rows(project, request, ledger, selection=selection, wheel_artifact=wheel_artifact)
             relevant = _sample_records(
                 rows, scenario_id=population.scenario_id, duration_min=population.duration_min,
                 site_id=site_id, scope=scope, api=api,
@@ -243,6 +255,7 @@ def write_mc_frequency(
     target_aeps: tuple[float, ...],
     selection: EngineSelection | None = None,
     wheel_artifact: Path | None = None,
+    read_rows: _VerifiedReader,
 ) -> MCWeightedResult:
     """Use #147 for exact weighted frequency, write reports without clobbering."""
     paths = (
@@ -264,6 +277,7 @@ def write_mc_frequency(
                 selection=selection,
                 wheel_artifact=wheel_artifact,
                 csv_writer=csv.writer(stream, lineterminator="\n"),
+                read_rows=read_rows,
             )
         with paths[0].open("x", encoding="utf-8", newline="\n") as stream:
             created.append(paths[0])
