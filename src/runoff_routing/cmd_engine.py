@@ -86,11 +86,13 @@ def _check_scope(loaded: LoadedProject) -> None:
         parameters.num_isa != 1
         or parameters.num_bursts != 1
         or not parameters.lumped_kc
-        or parameters.loss_model != 1
+        or parameters.loss_model not in (1, 2)
         or len(parameters.routing) != 1
         or len(parameters.losses) != 1
     ):
-        _unsupported("cmd_parameters", "Only lumped kc, one ISA/burst and pervious IL/CL are characterised")
+        _unsupported("cmd_parameters", "Only lumped kc, one ISA/burst and pervious IL/CL or IL/RoC are implemented")
+    if parameters.loss_model == 2 and parameters.losses[0].continuing > Decimal(1):
+        raise CmdBoundaryError(_INVALID_INPUT, "cmd_runoff_coefficient", "Runoff coefficient must not exceed 1")
     if (storm.pluviograph_count, storm.isa_count, storm.burst_count) != (1, 1, 1):
         _unsupported("cmd_storm", "Only one DESIGN pluviograph, ISA and burst is characterised")
     if catchment.storages:
@@ -140,6 +142,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
         _number(parameters.losses[0].initial_loss_mm),
         _number(parameters.losses[0].continuing),
         run.storm.calculation_increments,
+        parameters.loss_model,
     )
 
 
@@ -202,6 +205,9 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
     )
     diagnostics: dict[str, object] = {
         "cmd_profile": CMD_PROFILE,
+        "loss_model": event.loss_model,
+        "continuing_loss_mm_h_stored": event.cl.stored if event.loss_model == 1 else None,
+        "runoff_coefficient_stored": event.cl.stored if event.loss_model == 2 else None,
         "candidate_contract": CONTRACT_ID,
         "candidate_source": CANDIDATE_SOURCE,
         "native_target_diagnostic_profile": DIAGNOSTIC_PROFILE,

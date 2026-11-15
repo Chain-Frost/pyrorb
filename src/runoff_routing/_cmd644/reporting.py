@@ -114,7 +114,9 @@ def result_dict(result: CandidateResult) -> dict[str, Any]:
         "kc": event.kc.lexeme,
         "m": event.m.lexeme,
         "il": event.il.lexeme,
-        "cl": event.cl.lexeme,
+        "cl": event.cl.lexeme if event.loss_model == 1 else None,
+        "runoff_coefficient": event.cl.lexeme if event.loss_model == 2 else None,
+        "loss_model": event.loss_model,
         "n": event.n,
     }
     return {
@@ -155,7 +157,8 @@ def result_dict(result: CandidateResult) -> dict[str, Any]:
                 for c in prep.crossings
             ],
             "duration_seconds": _stored(prep.seconds),
-            "continuing_allowance_exact": _rational(prep.continuing_allowance),
+            "continuing_allowance_exact": _rational(prep.continuing_allowance) if event.loss_model == 1 else None,
+            "runoff_coefficient_stored": _stored(event.cl.stored) if event.loss_model == 2 else None,
         },
         "reaches": reach_results,
         "outlet": [_stored(x) for x in network.outlet],

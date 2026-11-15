@@ -1,6 +1,7 @@
 """Immutable typed computational event and domain errors."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 
 class InvalidInputError(ValueError):
@@ -46,6 +47,7 @@ class Event:
     il: NumberInput
     cl: NumberInput
     n: int
+    loss_model: Literal[1, 2] = 1
 
     @property
     def source_count(self) -> int:

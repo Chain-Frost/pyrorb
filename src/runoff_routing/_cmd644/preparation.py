@@ -1,4 +1,4 @@
-"""Per-source rainfall and IL/CL state transitions for the bounded start-zero event."""
+"""Per-source rainfall and distinct IL/CL or IL/RoC transitions."""
 
 from dataclasses import dataclass
 from fractions import Fraction
@@ -53,7 +53,10 @@ def prepare(event: Event) -> Preparation:
         message = "stored timestep duration nonpositive"
         raise UnsupportedNumericPath(message)
     reciprocal_duration = div53(Fraction(1), fraction(duration))
-    allowance = mul53(fraction(event.cl.stored), fraction(event.h.stored))
+    if event.loss_model == 2 and not 0.0 <= event.cl.stored <= 1.0:
+        message = "runoff coefficient must be a fraction in [0, 1]"
+        raise UnsupportedNumericPath(message)
+    allowance = mul53(fraction(event.cl.stored), fraction(event.h.stored)) if event.loss_model == 1 else Fraction()
     all_rain: list[tuple[float, ...]] = []
     all_post: list[tuple[float, ...]] = []
     all_excess: list[tuple[float, ...]] = []
@@ -92,7 +95,11 @@ def prepare(event: Event) -> Preparation:
                     if remaining == 0:
                         equality_bins.append(bin_index)
             post.append(after)
-            excess_amount = store_rational(max(Fraction(), sub53(fraction(after), effective_allowance)))
+            if event.loss_model == 2:
+                # IL/RoC is a proportion of post-initial-loss rainfall, not a continuing loss rate.
+                excess_amount = store_rational(mul53(fraction(after), fraction(event.cl.stored)))
+            else:
+                excess_amount = store_rational(max(Fraction(), sub53(fraction(after), effective_allowance)))
             excess.append(excess_amount)
             flow.append(store_rational(mul53(fraction(excess_amount), flow_scale)))
         flow.extend(0.0 for _ in range(event.n - len(event.weights)))
