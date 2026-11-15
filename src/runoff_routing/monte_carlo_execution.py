@@ -287,8 +287,7 @@ def summarise_ledger(path: Path, request_path: Path, expected: dict[str, object]
             status == _STATUS_OK
             and sites_list
             and all(
-                isinstance(site, dict) and cast("dict[str, object]", site).get("peak_m3_s") == 0
-                for site in sites_list
+                isinstance(site, dict) and cast("dict[str, object]", site).get("peak_m3_s") == 0 for site in sites_list
             )
         ):
             zeros += 1
