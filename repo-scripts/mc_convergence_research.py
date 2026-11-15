@@ -390,7 +390,7 @@ def sd_bootstrap_interval(values: list[float], seed_key: str, *, resamples: int 
     seed = int.from_bytes(hashlib.sha256(seed_key.encode("utf-8")).digest()[:16], "big")
     # Scientific bootstrap reuses seeded pseudorandom numbers, not cryptographic entropy.
     rng = random.Random(seed)  # noqa: S311
-    estimates = []
+    estimates: list[float] = []
     for _ in range(resamples):
         drawn = rng.choices(values, k=len(values))
         estimates.append(statistics.stdev(drawn))
