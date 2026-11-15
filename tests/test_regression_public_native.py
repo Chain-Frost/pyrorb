@@ -228,6 +228,7 @@ def test_curated_one_case_and_timestep_snapshot_diagnosis(tmp_path: Path) -> Non
     assert sum(item["reference_rows"] for item in timestep["cases"]) > 0
     assert timestep["run_kind"] == "cached_candidate_snapshot"
 
+
 @pytest.mark.parametrize(
     "case_id",
     [
