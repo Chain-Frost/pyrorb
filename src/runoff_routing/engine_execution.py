@@ -25,7 +25,9 @@ from .rorb_model import to_json
 SelectionSource = Literal["project", "api_override", "cli_override"]
 
 
-def create_engine_outcome_base(loaded: LoadedProject, selection: EngineSelection, source: SelectionSource) -> EngineOutcome:
+def create_engine_outcome_base(
+    loaded: LoadedProject, selection: EngineSelection, source: SelectionSource
+) -> EngineOutcome:
     """Report source and effective choices, even for unsuccessful execution."""
     model = loaded.run
     settings: dict[str, str | int] = {
