@@ -167,10 +167,7 @@ def _clock_matches_declared(times: list[Any], timestep: float) -> bool:
         return False
     if len(clock) < 2 or any(b <= a for a, b in pairwise(clock)):
         return False
-    return all(
-        math.isclose(time, index * timestep, rel_tol=1e-10, abs_tol=1e-9)
-        for index, time in enumerate(clock)
-    )
+    return all(math.isclose(time, index * timestep, rel_tol=1e-10, abs_tol=1e-9) for index, time in enumerate(clock))
 
 
 def _metric(outcome: Mapping[str, Any], graph: Mapping[str, Any], volume: float | None) -> dict[str, Any]:
