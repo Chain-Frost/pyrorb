@@ -5,17 +5,60 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import runpy
 import shutil
 from collections import Counter
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from runoff_routing import regression_dataset as rd
+from runoff_routing.rorb_codec import parse_catg
 
 DATA = Path(__file__).absolute().parent / "fixtures" / "regression-v1"
 REGISTER = DATA / "register.json"
+
+
+def test_recovered_pinned_pr16_export_matches_historical_crlf_source() -> None:
+    """Preserve both original identities while proving the complete serialization relationship."""
+    provenance = json.loads((DATA / "native-cmd" / "provenance.json").read_bytes())
+    export = provenance["independent_2026_11_15_closeout"]["upstream_pr16_export"]
+    assert export["exporter_revision"] == "a323d5709f7ce14c6adf46f01e0224b60668340c"
+    raw = (DATA / export["output"]["path"]).read_bytes()
+    assert len(raw) == 2818
+    assert hashlib.sha256(raw).hexdigest() == "67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815"
+    register = json.loads(REGISTER.read_bytes())
+    historical = next(case for case in register["cases"] if case["case_id"] == "pyromb-pr2-full")
+    source = next(item for item in historical["inputs"] if item["path"].endswith(".catg"))
+    original = (DATA / source["path"]).read_bytes()
+    assert len(original) == 2913
+    assert hashlib.sha256(original).hexdigest() == "2ad4663ddeaacdfd4bba4b199a29d3eed7bcb6d9f096ff62f6d9d107330bd247"
+    assert b"\r" not in raw
+    assert raw.replace(b"\n", b"\r\n") == original
+    model = parse_catg(raw).model
+    assert model == parse_catg(original).model
+    assert model.reach_mode == "explicit_reach_types"
+    assert tuple(step.code for step in model.controls) == (1, 3, 1, 4, 2, 3, 1, 2, 4, 5, 2, 7)
+    assert tuple(area.impervious_fraction for area in model.subareas) == tuple(
+        map(Decimal, ("0", "0.5", "0.2", "0", "0", "0"))
+    )
+
+
+def test_authenticated_feature_evidence_still_fails_closed_as_gap(tmp_path: Path) -> None:
+    """A complete retained native table does not silently promote feature qualification."""
+    result = _run(tmp_path, group="native-gaps")
+    assert result["counts"] == {"incomplete": 21}
+    register = json.loads(REGISTER.read_bytes())
+    cases = [case for case in register["cases"] if "evidence_review" in case]
+    assert len(cases) == 8
+    for case in cases:
+        assert case["coverage"] == "gap"
+        assert "cmd-eligible" not in case["sets"]
+        assert case["clock"]["row_count"] == 301
+        assert len(case["files"]) == 5
+        assert case["evidence_review"]["status"] == "authenticated_original_pending_admission"
 
 
 def _run(tmp_path: Path, *, group: str = "cmd-eligible", snapshot: bool = False) -> dict[str, Any]:
@@ -184,3 +227,76 @@ def test_curated_one_case_and_timestep_snapshot_diagnosis(tmp_path: Path) -> Non
     assert len(timestep["cases"]) == 25
     assert sum(item["reference_rows"] for item in timestep["cases"]) > 0
     assert timestep["run_kind"] == "cached_candidate_snapshot"
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "fig67-ilroc",
+        "fig67-kc5-m1",
+        "failure-m-above-one",
+        "failure-m-below-one",
+    ],
+)
+def test_original_feature_profile_q_study_retains_unadmitted_scalar_status(case_id: str) -> None:
+    """Run the *existing* native-input/public-CMD comparator without promoting an original gap."""
+    register = json.loads(REGISTER.read_bytes())
+    matches = [case for case in register["cases"] if case["case_id"] == case_id]
+    assert len(matches) == 1
+    case = matches[0]
+
+    assert case["coverage"] == "gap"
+    assert case["sets"] == ["all", "native-all", "native-gaps"]
+    assert "scalar_binding" not in case
+    assert case["engine_profile"]["native_profile"] == "CMD_6.44"
+    assert case["engine_profile"]["observed_version"] == "6.44"
+    assert case["clock"]["row_count"] == 301
+    assert Decimal(case["clock"]["timestep_hours"]) == Decimal("0.5")
+    assert case["sites"][0]["native_column_id"] == "Hyd001"
+    assert len(case["files"]) == 5
+    assert {Path(item["path"]).suffix for item in case["inputs"]} == {".catg", ".stm", ".par"}
+
+    # Load the maintained source-and-wheel probe, not a second parser, runner or Q comparator.
+    namespace = runpy.run_path(str(DATA.parents[2] / "repo-scripts" / "cmd_public_probe.py"))
+    observed = namespace["_one"](case)
+    assert observed["status"] == "printed_pass", observed
+    assert observed["rows"] == 301
+    assert observed["mismatch_count"] == 0
+    assert observed["first_mismatch"] is None
+    assert observed["model_print_id"] == case["sites"][0]["model_print_id"]
+    assert observed["original_native_column_id"] == "Hyd001"
+    assert observed["site_identity_evidence"] == case["observations"]["physical_site_identity"]
+    assert observed["computed_time_rows"] == 301
+    assert Decimal(str(observed["computed_time_start_hours"])) == 0
+    assert Decimal(str(observed["computed_time_end_hours"])) == 150
+    assert observed["original_input_sha256"] == {
+        Path(source["path"]).suffix: source["sha256"] for source in case["inputs"]
+    }
+    # A Q pass is not a report peak/clock/volume pass without independent scalar binding.
+    assert observed["fresh_reporting"] == {
+        "classification": "incomplete",
+        "reason": "Original native scalar binding is unavailable",
+    }
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "fig67-ilroc",
+        "fig67-kc5-m1",
+        "failure-m-above-one",
+        "failure-m-below-one",
+        "failure-zero-reach",
+        "failure-negative-reach",
+        "failure-negative-reach-repeat",
+        "fig67-code11",
+    ],
+)
+def test_eight_original_capture_dispositions_remain_explicit_gaps(case_id: str) -> None:
+    """Source preservation does not change membership in the 50-case numerical population."""
+    register = json.loads(REGISTER.read_bytes())
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    assert case["coverage"] == "gap"
+    assert case["sets"] == ["all", "native-all", "native-gaps"]
+    assert case["expectations"]["python-cmd"]["status"] == "not_assessed"
+    assert "cmd-eligible" not in case["sets"]

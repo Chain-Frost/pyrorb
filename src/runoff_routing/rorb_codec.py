@@ -852,6 +852,9 @@ class S2Payload:
     continuing_loss_mm_h: float
     kc: float
     m: float
+    runoff_coefficient: float | None = None
+    impervious_fractions: tuple[float, ...] = ()
+    pattern_basis: PatternBasis = "percent_of_depth"
 
 
 def _as_float(value: Decimal) -> float:
@@ -868,21 +871,24 @@ def _as_float(value: Decimal) -> float:
 def to_s2_payload(model: RunModel) -> S2Payload:
     """Convert only the explicitly supported S2 single-storm subset, without importing S2."""
     parameters, catchment, storm = model.parameters, model.catchment, model.storm
-    if parameters.num_isa != 1 or parameters.loss_model != 1 or not parameters.lumped_kc:
-        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL inputs"
+    if parameters.num_isa != 1 or parameters.loss_model not in (1, 2) or not parameters.lumped_kc:
+        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL or IL/RoC inputs"
+        raise ValueError(message)
+    if parameters.loss_model == 2 and not 0 <= parameters.losses[0].continuing <= 1:
+        message = "Runoff coefficient for IL/RoC must be a fraction in [0, 1]"
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
-    if storm.pattern_basis != "percent_of_depth":
-        message = "S2 requires percentage patterns; native relative-weight/preburst semantics are not yet qualified"
+    basis = storm.pattern_basis
+    if basis not in ("percent_of_depth", "relative_weights"):
+        message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
         raise ValueError(message)
-    if catchment.reach_mode != "implicit_natural" or any(step.code == 2 for step in catchment.controls):
-        message = "S2 does not yet qualify explicit reach types and control code 2"
+    if catchment.reach_mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "S2 accepts only characterised natural-reach computation modes"
         raise ValueError(message)
-    if any(area.impervious_fraction != 0 for area in catchment.subareas):
-        message = "S2 cannot silently discard nonzero source impervious fractions"
-        raise ValueError(message)
+    # S1 recognises the imported explicit graphical mode only for validated
+    # natural reach type 1. It rejects other reach modes before this boundary.
     lengths = {item.identifier: item.length_km for item in catchment.reaches}
     steps = tuple(
         (step.code, _as_float(lengths[step.reach_id]) if step.reach_id is not None else 0.0)
@@ -896,7 +902,10 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         tuple(_as_float(value) for value in storm.percentages),
         tuple(_as_float(value) for value in storm.depths_mm),
         _as_float(parameters.losses[0].initial_loss_mm),
-        _as_float(parameters.losses[0].continuing),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 1 else 0.0,
         _as_float(parameters.routing[0].kc),
         _as_float(parameters.routing[0].m),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 2 else None,
+        tuple(_as_float(area.impervious_fraction) for area in catchment.subareas),
+        basis,
     )
