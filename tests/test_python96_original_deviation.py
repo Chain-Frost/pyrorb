@@ -31,7 +31,8 @@ ENGINE = EngineSelection.for_engine("python")
 def _verified_object(item: dict[str, Any]) -> bytes:
     """Original exact bytes, not a second source/report parser."""
     target = ROOT / str(item["path"])
-    assert target.is_file() and not target.is_symlink()
+    assert target.is_file()
+    assert not target.is_symlink()
     assert target.resolve().is_relative_to(ROOT.resolve())
     raw = target.read_bytes()
     assert len(raw) == item["size_bytes"]
@@ -89,7 +90,7 @@ def test_original_cmd_comparison_reports_unaccepted_engineering_differences(
     assert len(outcome.physical_time_hours) == case["clock"]["row_count"]
     # Reuse the maintained original reference reader for original one-based
     # clock and HydNNN ordinates; never parse the report independently.
-    columns, rows = regression_dataset._reference(ROOT, case)
+    columns, rows = regression_dataset._reference(ROOT, case)  # noqa: SLF001 -- maintained reader
     original_column = columns.index(str(site["native_column_id"]))
     original_q = tuple(float(row[original_column]) for row in rows)
     computed_q = outcome.hydrographs[0].discharge_m3_s

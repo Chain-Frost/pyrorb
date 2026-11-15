@@ -192,7 +192,7 @@ def _checked_positive(value: float, field: str, role: InputRole) -> None:
         raise error
 
 
-def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses, float, float]:
+def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses, float, float]:  # noqa: C901 -- explicit source/semantic boundary validation
     """One normalization boundary: source Decimal -> S1 payload -> pure S2 classes."""
     try:
         payload = to_s2_payload(model)
