@@ -7,8 +7,10 @@ operate only on validated typed models and never promise native compatibility.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import math
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -648,14 +650,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
-    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
+    basis = PatternBasis.RELATIVE_WEIGHTS if relative_weights else PatternBasis.PERCENT_OF_DEPTH
     preburst_bins = 0
     preburst_spans: tuple[SourceSpan, ...] = ()
     if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
         # Source annotations must independently prove the split. A nonunit
         # pattern without its original pre-burst+burst identity is rejected.
         preburst_bins, preburst_spans = _original_combined_preburst(lines, dt, percentages, depths)
-        basis = "combined_preburst_percent"
+        basis = PatternBasis.COMBINED_PREBURST_PERCENT
     try:
         model = StormModel(
             lines[0].strip(),
@@ -754,73 +756,106 @@ def serialize_cmd_par(model: ParameterSet) -> bytes:
     return ("\n".join([*lines, "# END", ""])).encode("utf-8")
 
 
-def serialize_catg(model: CatchmentModel) -> bytes:
-    """Canonical computation vector with an *empty* drawing scaffold, not a native-verified redraw."""
+class CatgWriterLossError(ValueError):
+    """The PyRomb representation would not round-trip all typed CATG semantics."""
+
+
+# The writer's public ordered-record API is deliberately loaded only on export.
+# Ordinary source parsing and routing never import PyRomb or its GIS dependencies.
+_GraphNode = tuple[int, str, float, float, int, bool, bool, Decimal, Decimal]
+_GraphReach = tuple[int, str, int, int, float, float, Decimal]
+
+
+def render_catg_with_graphics(
+    model: CatchmentModel,
+    *,
+    node_records: tuple[_GraphNode, ...] = (),
+    reach_records: tuple[_GraphReach, ...] = (),
+) -> bytes:
+    """Adapt validated ordered model records to the pinned PyRomb renderer."""
     model.__post_init__()
     _canonical_ids(model)
-    if model.reach_mode != "implicit_natural" or any(area.impervious_fraction != 0 for area in model.subareas):
-        message = "No verified canonical CATG writer for explicit reach types and impervious tables"
-        raise ValueError(message)
-    lines = [
-        _safe_label(model.title),
-        "C RORB_GE 002",
-        "C #NODES",
-        "C 0",
-        "C #REACHES",
-        "C 0",
-        "C #STORAGES",
-        "C 0",
-        "C #INFLOW/OUTFLOW",
-        "C 0",
-        "C END RORB_GE",
-        "1",
-    ]
-    reaches = {reach.identifier: reach for reach in model.reaches}
-    print_locations = {point.identifier: point.label for point in model.print_locations}
-    for step in model.controls:
-        label = _safe_label(step.label)
-        if step.code in (1, 5):
-            if step.reach_id is None:
-                message = "Missing reach identity"
-                raise ValueError(message)
-            lines.append(f"{step.code}, {reaches[step.reach_id].length_km}, -99, {label}")
-        elif step.code == 7:
-            if step.print_id is None:
-                message = "Missing code 7 print location identity"
-                raise ValueError(message)
-            physical_location = _safe_label(print_locations[step.print_id])
-            if physical_location == "0":
-                message = "Native print location cannot be the zero control terminator"
-                raise ValueError(message)
-            # Preserve the optional inline annotation independently of the
-            # subsequent physical record interpreted as the native print site.
-            control_record = f"7, {label}" if label else "7"
-            lines.extend((control_record, physical_location))
-        else:
-            lines.append(f"{step.code}, {label}")
-    lines.extend(
-        [
-            "0",
-            "C Sub Area Data",
-            ", ".join([*(str(item.area_km2) for item in model.subareas), "-99"]),
-            "C Impervious Fraction Data",
-            "0, -99",
-            "",
-        ]
+    try:
+        writer = importlib.import_module("pyromb.models.rorb")
+    except ImportError as exc:
+        message = "PyRomb CATG writing requires the pinned optional dependency: install .[catg]"
+        raise ValueError(message) from exc
+    control_factory = cast("Callable[[int, Decimal | None, str, str], object]", writer.OrderedControl)
+    node_factory = cast("Callable[..., object]", writer.OrderedNode)
+    reach_factory = cast("Callable[..., object]", writer.OrderedReach)
+    render = cast("Callable[..., str]", writer.render_ordered_catg)
+    reaches = {reach.identifier: reach.length_km for reach in model.reaches}
+    locations = {point.identifier: point.label for point in model.print_locations}
+    ordered = tuple(
+        control_factory(
+            int(step.code),
+            reaches[step.reach_id] if step.reach_id is not None else None,
+            step.label,
+            locations[step.print_id] if step.print_id is not None else "",
+        )
+        for step in model.controls
     )
-    return "\n".join(lines).encode("utf-8")
+    nodes = tuple(node_factory(*record) for record in node_records)
+    graphics_reaches = tuple(reach_factory(*record) for record in reach_records)
+    output = render(
+        model.title,
+        ordered,
+        tuple(area.area_km2 for area in model.subareas),
+        tuple(area.impervious_fraction for area in model.subareas),
+        explicit_reach_types=model.reach_mode == "explicit_reach_types",
+        nodes=nodes,
+        reaches=graphics_reaches,
+    ).encode("utf-8")
+    try:
+        restored = parse_catg(output).model
+    except RorbFormatError as exc:
+        message = f"PyRomb CATG cannot be reparsed as a supported model ({exc.status}): {exc}"
+        raise ValueError(message) from exc
+    if restored != model:
+        message = "PyRomb CATG export would lose source order, labels, physical lengths or output intent"
+        raise CatgWriterLossError(message)
+    return output
+
+
+def serialize_catg(model: CatchmentModel) -> bytes:
+    """Emit a checked CATG through PyRomb; use original_bytes() for unchanged sources.
+
+    Explicit-reach RORB_GE 6.45 needs validated graphical data supplied through
+    serialize_catg_with_drawing(). No local CATG formatter or fallback exists.
+    """
+    return render_catg_with_graphics(model)
 
 
 def serialize_design_stm(model: StormModel) -> bytes:
-    """Explicit DESIGN pattern; percentages/depths remain Decimal tokens."""
+    """Export supported DESIGN records, keeping generator history distinct."""
     model.__post_init__()
     _canonical_ids(model)
+    annotations: list[str] = []
     if model.pattern_basis == "combined_preburst_percent":
-        message = "A combined pre-burst storm's original generator metadata has no verified canonical writer"
-        raise ValueError(message)
+        if len(set(model.depths_mm)) != 1:
+            message = "Combined pre-burst DESIGN export currently requires uniform source depths"
+            raise ValueError(message)
+        total = sum(model.percentages, Decimal(0))
+        prefix = sum(model.percentages[: model.preburst_bins], Decimal(0))
+        suffix = sum(model.percentages[model.preburst_bins :], Decimal(0))
+        duration = model.timestep_hours * (len(model.percentages) - model.preburst_bins)
+        depth = model.depths_mm[0]
+        preburst_depth, burst_depth = depth * prefix / total, depth * suffix / total
+        if duration <= 0 or preburst_depth <= 0 or burst_depth <= 0:
+            message = "Combined pre-burst annotation quantities must be positive"
+            raise ValueError(message)
+        # Required by the source reader for a nonunit 100%-burst-plus-preburst
+        # pattern. These are new calculations, not copied generator provenance.
+        annotations = [
+            "C Export annotation: derived from typed combined storm; not original generator metadata",
+            f"C Storm duration: {duration} hours",
+            f"C ARF*BurDepth(mm): {burst_depth}",
+            f"C Pre-burst depth(mm): {preburst_depth}",
+        ]
     lines = [
         _safe_label(model.title),
         "DESIGN",
+        *annotations,
         f"{model.timestep_hours},{model.calculation_increments},1,1,1,-99",
         f"{model.start_increment},{len(model.percentages)}",
         "Temporal weights" if model.pattern_basis == "relative_weights" else "Temporal pattern (% of depth)",
@@ -829,7 +864,11 @@ def serialize_design_stm(model: StormModel) -> bytes:
         ", ".join([*(str(item) for item in model.depths_mm), "-99"]),
         "",
     ]
-    return "\n".join(lines).encode("utf-8")
+    result = "\n".join(lines).encode("utf-8")
+    if parse_design_stm(result).model != model:
+        message = "DESIGN export would alter the typed storm model"
+        raise ValueError(message)
+    return result
 
 
 def write_new(path: Path, data: bytes) -> None:
@@ -852,6 +891,9 @@ class S2Payload:
     continuing_loss_mm_h: float
     kc: float
     m: float
+    runoff_coefficient: float | None = None
+    impervious_fractions: tuple[float, ...] = ()
+    pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
 
 
 def _as_float(value: Decimal) -> float:
@@ -868,21 +910,24 @@ def _as_float(value: Decimal) -> float:
 def to_s2_payload(model: RunModel) -> S2Payload:
     """Convert only the explicitly supported S2 single-storm subset, without importing S2."""
     parameters, catchment, storm = model.parameters, model.catchment, model.storm
-    if parameters.num_isa != 1 or parameters.loss_model != 1 or not parameters.lumped_kc:
-        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL inputs"
+    if parameters.num_isa != 1 or parameters.loss_model not in (1, 2) or not parameters.lumped_kc:
+        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL or IL/RoC inputs"
+        raise ValueError(message)
+    if parameters.loss_model == 2 and not 0 <= parameters.losses[0].continuing <= 1:
+        message = "Runoff coefficient for IL/RoC must be a fraction in [0, 1]"
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
-    if storm.pattern_basis != "percent_of_depth":
-        message = "S2 requires percentage patterns; native relative-weight/preburst semantics are not yet qualified"
+    basis = PatternBasis(storm.pattern_basis)
+    if basis not in ("percent_of_depth", "relative_weights"):
+        message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
         raise ValueError(message)
-    if catchment.reach_mode != "implicit_natural" or any(step.code == 2 for step in catchment.controls):
-        message = "S2 does not yet qualify explicit reach types and control code 2"
+    if catchment.reach_mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "S2 accepts only characterised natural-reach computation modes"
         raise ValueError(message)
-    if any(area.impervious_fraction != 0 for area in catchment.subareas):
-        message = "S2 cannot silently discard nonzero source impervious fractions"
-        raise ValueError(message)
+    # S1 recognises the imported explicit graphical mode only for validated
+    # natural reach type 1. It rejects other reach modes before this boundary.
     lengths = {item.identifier: item.length_km for item in catchment.reaches}
     steps = tuple(
         (step.code, _as_float(lengths[step.reach_id]) if step.reach_id is not None else 0.0)
@@ -896,7 +941,10 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         tuple(_as_float(value) for value in storm.percentages),
         tuple(_as_float(value) for value in storm.depths_mm),
         _as_float(parameters.losses[0].initial_loss_mm),
-        _as_float(parameters.losses[0].continuing),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 1 else 0.0,
         _as_float(parameters.routing[0].kc),
         _as_float(parameters.routing[0].m),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 2 else None,
+        tuple(_as_float(area.impervious_fraction) for area in catchment.subareas),
+        basis,
     )

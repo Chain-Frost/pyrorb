@@ -181,13 +181,23 @@ def test_reference_only_external_evidence_is_hash_verified(tmp_path: Path) -> No
         run_project(source)
 
 
-def test_unsupported_s2_loss_mode_rejected_before_producing_output(tmp_path: Path) -> None:
+def test_invalid_mode_two_coefficient_rejected_before_producing_output(tmp_path: Path) -> None:
     model = _model()
-    unsupported = replace(model, parameters=replace(model.parameters, loss_model=2))
+    bad_loss = replace(model.parameters.losses[0], continuing=Decimal("1.2"))
+    with pytest.raises(ValueError, match="Runoff coefficient"):
+        replace(model.parameters, loss_model=2, losses=(bad_loss,))
+
+    # Tampered persisted input still fails closed before numerical execution
+    # and cannot produce an apparently valid output report.
+    valid_loss = replace(model.parameters.losses[0], continuing=Decimal("0.5"))
+    mode_two = replace(model, parameters=replace(model.parameters, loss_model=2, losses=(valid_loss,)))
     source = tmp_path / "unsupported.json"
-    write_project(source, _python_project("unsupported", "explicit", EmbeddedRun(unsupported)))
+    write_project(source, _python_project("unsupported", "explicit", EmbeddedRun(mode_two)))
+    raw = json.loads(source.read_text(encoding="utf-8"))
+    raw["model_source"]["run"]["model"]["parameters"]["losses"][0]["continuing"] = "1.2"
+    source.write_text(json.dumps(raw), encoding="utf-8")
     target = tmp_path / "report.json"
-    with pytest.raises(ProjectError, match="Unsupported S1/S2"):
+    with pytest.raises(ProjectError, match="Invalid S1 embedded run"):
         write_execution_json(target, run_project(source))
     assert not target.exists()
 

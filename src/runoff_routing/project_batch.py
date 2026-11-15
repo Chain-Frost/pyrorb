@@ -38,7 +38,18 @@ from .project_json import (
     ProjectError,
     load_project,
 )
-from .rorb_model import CatchmentModel, ParameterSet, RoutingValue, RunModel, StormModel, from_dict, to_dict, to_json
+from .rorb_model import (
+    CatchmentModel,
+    LossMode,
+    ParameterSet,
+    RoutingValue,
+    RunModel,
+    StormModel,
+    edit_run_model,
+    from_dict,
+    to_dict,
+    to_json,
+)
 from .single_storm import PreparedCatchment
 
 REQUEST_FORMAT = "python-runoff-routing-explicit-events"
@@ -56,7 +67,7 @@ _STORM_FIELDS = {
     "percentages",
     "depths_mm",
 }
-_LOSS_FIELDS = {"initial_loss_mm", "continuing"}
+_LOSS_FIELDS = {"initial_loss_mm", "continuing", "continuing_loss_mm_h", "runoff_coefficient"}
 _ROUTING_FIELDS = {"kc", "m"}
 _CSV_HEADER = (
     "event_index",
@@ -112,6 +123,19 @@ class ProjectEvent:
     storm: Mapping[str, object] | None = None
     losses: Mapping[str, object] | None = None
     routing: Mapping[str, object] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EffectiveModel:
+    """Shared run/save/export event settings; source documents remain separate."""
+
+    run: RunModel
+    event_id: str | None
+    edited_fields: tuple[str, ...]
+
+    @property
+    def override_label(self) -> str:
+        return ",".join(self.edited_fields) if self.edited_fields else "none"
 
 
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -207,7 +231,9 @@ def _overlay(raw: object, allowed: set[str], label: str) -> dict[str, object]:
     data = cast("dict[str, object]", raw)
     if set(data) - allowed:
         raise EventConfigError(_UNSUPPORTED_FEATURE, f"{label}_fields", f"Unsupported {label} override fields")
-    return data
+    # Alias normalization may pop() a loss field. Never mutate the caller's
+    # raw event dictionary, including when replaying or exporting it twice.
+    return dict(data)
 
 
 def _derive_storm(original: StormModel, raw: object) -> StormModel:
@@ -228,6 +254,19 @@ def _derive_parameters(original: ParameterSet, raw: object) -> ParameterSet:
             _UNSUPPORTED_FEATURE, "loss_override_scope", "Only one-ISA explicit event losses can be overridden"
         )
     patch = _overlay(raw, _LOSS_FIELDS, "losses")
+    named = {"continuing_loss_mm_h", "runoff_coefficient"} & patch.keys()
+    if len(named) > 1 or ("continuing" in patch and named):
+        raise EventConfigError(
+            _INVALID_INPUT, "loss_fields", "Mutually exclusive continuing loss and runoff-coefficient fields"
+        )
+    if "continuing_loss_mm_h" in patch:
+        if original.loss_model != LossMode.INITIAL_CONTINUING:
+            raise EventConfigError(_INVALID_INPUT, "loss_mode", "continuing_loss_mm_h requires loss mode 1")
+        patch["continuing"] = patch.pop("continuing_loss_mm_h")
+    if "runoff_coefficient" in patch:
+        if original.loss_model != LossMode.INITIAL_RUNOFF_COEFFICIENT:
+            raise EventConfigError(_INVALID_INPUT, "loss_mode", "runoff_coefficient requires loss mode 2")
+        patch["continuing"] = patch.pop("runoff_coefficient")
     document = to_dict(original)
     body = cast("dict[str, Any]", document["model"])
     losses = cast("list[dict[str, Any]]", body["losses"])
@@ -271,8 +310,7 @@ def _validated_override[T](original: T, raw: object, converter: Callable[[T, obj
         raise EventConfigError(_INVALID_INPUT, code, str(exc)) from exc
 
 
-def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunModel, str]:
-    current = loaded.run
+def _event_run(current: RunModel, fields: dict[str, object]) -> tuple[RunModel, tuple[str, ...]]:
     storm = current.storm
     parameters = current.parameters
     changed: list[str] = []
@@ -286,9 +324,28 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
         parameters = _validated_override(parameters, fields["routing"], _derive_routing, "routing_model")
         changed.append("routing")
     try:
-        return RunModel(parameters, current.catchment, storm), ",".join(changed) if changed else "none"
+        return edit_run_model(current, parameters=parameters, storm=storm), tuple(changed)
     except (TypeError, ValueError, ArithmeticError) as exc:
         raise EventConfigError(_INVALID_INPUT, "event_model", str(exc)) from exc
+
+
+def resolve_effective_model(
+    base: RunModel,
+    event: ProjectEvent | dict[str, object] | None = None,
+) -> EffectiveModel:
+    """Resolve one explicitly selected event using exactly the same validation for all consumers.
+
+    The function does not read, write or mutate source files. Callers own source
+    bindings, project persistence, native expressibility and engine selection.
+    """
+    if event is None:
+        return EffectiveModel(base, None, ())
+    identifier = _identifier(event, 1)
+    if identifier.startswith("<request:"):
+        raise EventConfigError(_INVALID_INPUT, "event_id", "Event ID must be a stable, nonempty ASCII identifier")
+    fields = _request_fields(event)
+    run, changed = _event_run(base, fields)
+    return EffectiveModel(run, identifier, changed)
 
 
 def _event_failure(base: EngineOutcome, status: EngineStatus, code: str, message: str) -> EngineOutcome:
@@ -367,8 +424,8 @@ def iter_project_events(
             continue
         seen.add(identifier)
         try:
-            fields = _request_fields(item)
-            model, override = _event_run(loaded, fields)
+            resolved = resolve_effective_model(loaded.run, cast("ProjectEvent | dict[str, object]", item))
+            model, override = resolved.run, resolved.override_label
         except EventConfigError as exc:
             yield _event_failure(event_base, exc.status, exc.code, str(exc))
             continue

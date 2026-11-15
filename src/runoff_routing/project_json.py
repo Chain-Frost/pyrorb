@@ -10,7 +10,9 @@ import hashlib
 import json
 import re
 import sys
-from dataclasses import asdict, dataclass, field
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field, replace
+from importlib import import_module
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, cast
 
@@ -19,6 +21,7 @@ from .rorb_codec import FormatProblem, parse_catg, parse_cmd_par, parse_design_s
 from .rorb_model import RunModel, from_dict, to_dict, to_json
 
 PROJECT_VERSION = 2
+PROJECT_EDITED_VERSION = 3
 PROJECT_FORMAT = "python-runoff-routing-project"
 MAX_SOURCE_BYTES = 64 * 1024 * 1024
 _HASH = re.compile(r"[a-f0-9]{64}\Z")
@@ -84,6 +87,35 @@ class SourceFile:
 
 
 @dataclass(frozen=True, slots=True)
+class SourceBinding:
+    """Selected input role, original PAR token and relocatable staged source.
+
+    Resolved_source records import-time provenance, never a path used on reopen.
+    """
+
+    role: Literal["parameters", "catchment", "storm"]
+    declared_reference: str
+    selected_reference: str
+    origin: Literal["explicit", "embedded", "override"]
+    resolved_source: str
+    staged: SourceFile
+
+    def __post_init__(self) -> None:
+        if self.role not in {"parameters", "catchment", "storm"}:
+            message = f"Unsupported source binding role: {self.role}"
+            raise ProjectError(message)
+        if self.origin not in {"explicit", "embedded", "override"}:
+            message = f"Unsupported binding origin: {self.origin}"
+            raise ProjectError(message)
+        if not self.selected_reference or not self.resolved_source:
+            message = "Selected source reference and resolved provenance must be nonempty"
+            raise ProjectError(message)
+        if any(ord(char) < 32 for char in self.declared_reference + self.selected_reference + self.resolved_source):
+            message = "Source binding contains a control character"
+            raise ProjectError(message)
+
+
+@dataclass(frozen=True, slots=True)
 class EmbeddedRun:
     """Embed the existing versioned S1 model without redefining it."""
 
@@ -137,6 +169,8 @@ class Project:
     model_source: EmbeddedRun | LegacyRunFiles
     assets: tuple[ExternalAsset, ...] = ()
     engine: EngineSelection = field(default_factory=EngineSelection)
+    source_bindings: tuple[SourceBinding, ...] = ()
+    effective_run: RunModel | None = None
 
     def __post_init__(self) -> None:
         _identifier(self.identifier, "Project ID")
@@ -147,6 +181,23 @@ class Project:
         if len(set(ids)) != len(ids):
             message = "Duplicate external asset IDs"
             raise ProjectError(message)
+        if self.effective_run is not None and not isinstance(self.model_source, LegacyRunFiles):
+            message = "Use EmbeddedRun for an edited source-free project"
+            raise ProjectError(message)
+        if self.source_bindings:
+            if not isinstance(self.model_source, LegacyRunFiles):
+                message = "Source bindings require original RORB input files"
+                raise ProjectError(message)
+            if tuple(item.role for item in self.source_bindings) != ("parameters", "catchment", "storm"):
+                message = "Source bindings must contain parameters, catchment, storm in order"
+                raise ProjectError(message)
+            original = self.model_source
+            for binding, pinned in zip(
+                self.source_bindings, (original.parameters, original.catchment, original.storm), strict=True
+            ):
+                if binding.staged != pinned:
+                    message = f"{binding.role} binding does not match its hash-pinned source"
+                    raise ProjectError(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +209,15 @@ class LoadedProject:
     original_json_bytes: bytes
     file_hashes: tuple[tuple[str, str], ...]
     validation_status: Literal["structural_only"] = "structural_only"
+    original_run: RunModel | None = None
+
+    def original_inputs_match_effective(self) -> bool:
+        """Whether the current typed CATG/STM match hash-verified immutable source models."""
+        return (
+            self.original_run is not None
+            and self.run.catchment == self.original_run.catchment
+            and self.run.storm == self.original_run.storm
+        )
 
 
 def _object(raw: object, fields: set[str], label: str) -> dict[str, object]:
@@ -181,6 +241,22 @@ def _string(raw: object, label: str) -> str:
 def _source_file(raw: object) -> SourceFile:
     data = _object(raw, {"path", "sha256"}, "source file")
     return SourceFile(_string(data["path"], "Path"), _string(data["sha256"], "Hash"))
+
+
+def _binding(raw: object) -> SourceBinding:
+    data = _object(
+        raw,
+        {"role", "declared_reference", "selected_reference", "origin", "resolved_source", "staged"},
+        "source binding",
+    )
+    return SourceBinding(
+        cast("Literal['parameters', 'catchment', 'storm']", _string(data["role"], "Binding role")),
+        _string(data["declared_reference"], "Declared reference"),
+        _string(data["selected_reference"], "Selected reference"),
+        cast("Literal['explicit', 'embedded', 'override']", _string(data["origin"], "Binding origin")),
+        _string(data["resolved_source"], "Resolved source"),
+        _source_file(data["staged"]),
+    )
 
 
 def _asset(raw: object) -> ExternalAsset:
@@ -234,7 +310,7 @@ def _file_dict(source: SourceFile) -> dict[str, str]:
 
 
 def project_to_dict(project: Project) -> dict[str, Any]:
-    """Deterministic schema-1 representation, preserving S1's separate schema."""
+    """Versioned JSON; immutable source evidence is separate from editable settings."""
     if isinstance(project.model_source, EmbeddedRun):
         source: dict[str, Any] = {"kind": "embedded-run", "run": to_dict(project.model_source.run)}
     else:
@@ -245,9 +321,10 @@ def project_to_dict(project: Project) -> dict[str, Any]:
             "catchment": _file_dict(files.catchment),
             "storm": _file_dict(files.storm),
         }
-    return {
+    edited = bool(project.source_bindings) or project.effective_run is not None
+    result: dict[str, Any] = {
         "format": PROJECT_FORMAT,
-        "schema_version": PROJECT_VERSION,
+        "schema_version": PROJECT_EDITED_VERSION if edited else PROJECT_VERSION,
         "project_id": project.identifier,
         "rainfall_profile": project.rainfall_profile,
         "engine": {"id": project.engine.engine, "numerical_profile": project.engine.numerical_profile},
@@ -262,6 +339,20 @@ def project_to_dict(project: Project) -> dict[str, Any]:
             for asset in project.assets
         ],
     }
+    if edited:
+        result["source_bindings"] = [
+            {
+                "role": item.role,
+                "declared_reference": item.declared_reference,
+                "selected_reference": item.selected_reference,
+                "origin": item.origin,
+                "resolved_source": item.resolved_source,
+                "staged": _file_dict(item.staged),
+            }
+            for item in project.source_bindings
+        ]
+        result["effective_run"] = to_dict(project.effective_run) if project.effective_run is not None else None
+    return result
 
 
 def project_to_json(project: Project) -> str:
@@ -283,8 +374,46 @@ def _reject_nonfinite(value: str) -> None:
     raise ProjectError(message)
 
 
+def _decode_effective_run(raw: object) -> RunModel | None:
+    if raw is None:
+        return None
+    run_document = _object(raw, {"schema_version", "kind", "units", "model"}, "effective run")
+    try:
+        parsed = from_dict(cast("dict[str, Any]", run_document))
+    except (TypeError, ValueError) as exc:
+        message = f"Invalid effective run: {exc}"
+        raise ProjectError(message) from exc
+    if not isinstance(parsed, RunModel):
+        message = "Effective model must be a complete S1 RunModel"
+        raise ProjectError(message)
+    return parsed
+
+
+def _read_engine(data: dict[str, object], version: int) -> EngineSelection:
+    if version == 1:
+        return EngineSelection.for_engine("python")
+    raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
+    try:
+        return EngineSelection.for_engine(
+            _string(raw_engine["id"], "Engine ID"),
+            _string(raw_engine["numerical_profile"], "Numerical profile"),
+        )
+    except ValueError as exc:
+        raise ProjectError(str(exc)) from exc
+
+
+def _v3_bindings(data: dict[str, object], version: int) -> tuple[SourceBinding, ...]:
+    if version != 3:
+        return ()
+    raw_bindings = data["source_bindings"]
+    if not isinstance(raw_bindings, list):
+        message = "Source bindings must be a JSON array"
+        raise ProjectError(message)
+    return tuple(_binding(item) for item in cast("list[object]", raw_bindings))
+
+
 def project_from_json(text: str) -> Project:
-    """Fail closed for duplicate keys, unknown source formats and versions."""
+    """Fail closed for duplicate keys, unexpected fields and schema versions."""
     try:
         raw: object = json.loads(text, object_pairs_hook=_unique_pairs, parse_constant=_reject_nonfinite)
     except (TypeError, ValueError) as exc:
@@ -294,24 +423,15 @@ def project_from_json(text: str) -> Project:
         raise ProjectError(message)
     header = cast("dict[str, object]", raw)
     version = header.get("schema_version")
-    if header.get("format") != PROJECT_FORMAT or type(version) is not int or version not in (1, 2):
+    if header.get("format") != PROJECT_FORMAT or type(version) is not int or version not in (1, 2, 3):
         message = "Unsupported JSON project format or version"
         raise ProjectError(message)
     fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
-    data = _object(header, fields if version == 1 else fields | {"engine"}, "project")
-    if version == 1:
-        # Schema 1 had an implicit Python engineering engine. Preserve its
-        # historical meaning when the temporary schema-2 default changes.
-        engine = EngineSelection.for_engine("python")
-    else:
-        raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
-        try:
-            engine = EngineSelection.for_engine(
-                _string(raw_engine["id"], "Engine ID"),
-                _string(raw_engine["numerical_profile"], "Numerical profile"),
-            )
-        except ValueError as exc:
-            raise ProjectError(str(exc)) from exc
+    if version >= 2:
+        fields.add("engine")
+    if version == 3:
+        fields.update({"source_bindings", "effective_run"})
+    data = _object(header, fields, "project")
     profile = _string(data["rainfall_profile"], "Rainfall profile")
     if profile not in {"explicit", "legacy-rorb", "arr-2026v1"}:
         message = f"Unknown rainfall-method profile: {profile}"
@@ -325,7 +445,9 @@ def project_from_json(text: str) -> Project:
         cast("RainfallProfile", profile),
         _model_source(data["model_source"]),
         tuple(_asset(item) for item in cast("list[object]", items)),
-        engine,
+        _read_engine(data, version),
+        _v3_bindings(data, version),
+        _decode_effective_run(data["effective_run"]) if version == 3 else None,
     )
 
 
@@ -342,6 +464,16 @@ def _read_bounded(path: Path) -> bytes:
         message = f"Source changed or exceeds maximum size: {path}"
         raise ProjectError(message)
     return contents
+
+
+def read_bounded_source_bytes(path: Path) -> bytes:
+    """One shared bounded raw byte reader for PAR-led import; no parsing."""
+    return _read_bounded(path)
+
+
+def validate_portable_source_path(path: str) -> None:
+    """Reuse project portability and path rules at import/staging boundaries."""
+    _safe_relative(path)
 
 
 def _source_bytes(directory: Path, reference: SourceFile) -> bytes:
@@ -387,11 +519,14 @@ def load_project(path: Path) -> LoadedProject:
         message = "Project JSON must be valid UTF-8"
         raise ProjectError(message) from exc
     directory = path.absolute().parent
-    run, references = _resolve_run(directory, project.model_source)
+    original_run, references = _resolve_run(directory, project.model_source)
+    run = project.effective_run if project.effective_run is not None else original_run
     all_files = (*references, *(asset.source for asset in project.assets))
     for asset in project.assets:
         _source_bytes(directory, asset.source)
-    return LoadedProject(project, run, source, tuple((item.path, item.sha256) for item in all_files))
+    return LoadedProject(
+        project, run, source, tuple((item.path, item.sha256) for item in all_files), original_run=original_run
+    )
 
 
 def write_project(path: Path, project: Project) -> None:
@@ -406,26 +541,111 @@ def import_rorb_project(
     identifier: str,
     rainfall_profile: RainfallProfile,
     parameters: Path,
-    catchment: Path,
-    storm: Path,
+    catchment: Path | None = None,
+    storm: Path | None = None,
+    base_directory: Path | None = None,
 ) -> Project:
-    """Create a manifest from three existing, unmodified RORB source files."""
-    base = target.absolute().parent.resolve(strict=True)
+    """Stage verified original PAR/CATG/STM bytes, resolving PAR references by role.
 
-    def pinned(path: Path) -> SourceFile:
-        source = path.absolute()
-        try:
-            relative = source.relative_to(target.absolute().parent).as_posix()
-        except ValueError as exc:
-            message = "RORB files must be physically inside the project directory"
-            raise ProjectError(message) from exc
-        reference = SourceFile(relative, hashlib.sha256(_read_bounded(source)).hexdigest())
-        _source_bytes(base, reference)
-        return reference
+    Default relative references and relative override paths use the PAR directory;
+    callers may supply base_directory explicitly. No process-CWD search occurs.
+    """
+    from .par_project_import import import_from_par  # noqa: PLC0415 -- narrow filesystem adapter avoids cycle
 
-    source = LegacyRunFiles(pinned(parameters), pinned(catchment), pinned(storm))
-    project = Project(identifier, rainfall_profile, source)
-    _resolve_run(base, source)
+    return import_from_par(
+        target,
+        identifier=identifier,
+        rainfall_profile=rainfall_profile,
+        parameters=parameters,
+        catchment=catchment,
+        storm=storm,
+        base_directory=base_directory,
+    )
+
+
+def _relocated_source_files(source: Path, target: Path, project: Project) -> None:
+    """Copy verified immutable asset closure, rolling back only files we created."""
+    refs: list[SourceFile] = []
+    if isinstance(project.model_source, LegacyRunFiles):
+        original = project.model_source
+        refs.extend((original.parameters, original.catchment, original.storm))
+    refs.extend(asset.source for asset in project.assets)
+    unique: dict[str, SourceFile] = {}
+    for reference in refs:
+        if reference.path in unique and unique[reference.path].sha256 != reference.sha256:
+            message = f"Conflicting immutable source path: {reference.path}"
+            raise ProjectError(message)
+        unique[reference.path] = reference
+    planned: list[tuple[Path, bytes]] = []
+    for reference in unique.values():
+        output = target / reference.path
+        if output.exists() or output.is_symlink():
+            message = f"Relocated source already exists: {reference.path}"
+            raise ProjectError(message)
+        planned.append((output, _source_bytes(source, reference)))
+    written: list[Path] = []
+    try:
+        for output, raw in planned:
+            _ensure_relocation_directory(output.parent, target)
+            with output.open("xb") as stream:
+                written.append(output)
+                stream.write(raw)
+    except (OSError, ProjectError):
+        for output in written:
+            output.unlink(missing_ok=True)
+        raise
+
+
+def _ensure_relocation_directory(directory: Path, target: Path) -> None:
+    """Never mkdir through an existing symlink before checking containment."""
+    root = target.resolve(strict=True)
+    current = target
+    try:
+        components = directory.relative_to(target).parts
+    except ValueError as exc:
+        message = f"Relocated source directory is not under project root: {directory}"
+        raise ProjectError(message) from exc
+    for component in components:
+        current = current / component
+        if current.is_symlink():
+            message = f"Relocated source directory contains a symlink: {current}"
+            raise ProjectError(message)
+        if current.exists():
+            if not current.is_dir():
+                message = f"Relocated source parent is not a directory: {current}"
+                raise ProjectError(message)
+        else:
+            current.mkdir()
+        if not current.resolve(strict=True).is_relative_to(root):
+            message = f"Relocated source directory escapes destination: {current}"
+            raise ProjectError(message)
+
+
+def save_project_as(source: Path, destination: Path, *, effective_run: RunModel | None = None) -> Project:
+    """Save typed edits into a new project, copying exact pinned assets when relocated.
+
+    Never overwrites destination files. Original PAR/CATG/STM bytes and bindings
+    are retained; reopened calculations use the explicit effective_run overlay.
+    """
+    loaded = load_project(source)
+    project = loaded.project
+    if effective_run is not None:
+        if isinstance(project.model_source, EmbeddedRun):
+            project = replace(project, model_source=EmbeddedRun(effective_run))
+        else:
+            project = replace(project, effective_run=effective_run)
+    if destination.exists():
+        raise FileExistsError(destination)
+    origin = source.absolute().parent
+    target = destination.absolute().parent
+    if not target.is_dir():
+        message = f"Destination directory does not exist: {target}"
+        raise ProjectError(message)
+    if origin == target:
+        write_project(destination, project)
+        return project
+    _relocated_source_files(origin, target, project)
+    write_project(destination, project)
     return project
 
 
@@ -553,13 +773,72 @@ def _validated_profile(value: str) -> RainfallProfile:
     return cast("RainfallProfile", value)
 
 
-def main(argv: list[str] | None = None) -> int:
+def _cli_save_run(source: str, edited: str, destination: str) -> None:
+    edited_bytes = _read_bounded(Path(edited))
+    parsed = from_dict(cast("dict[str, Any]", json.loads(edited_bytes.decode("utf-8-sig"))))
+    if not isinstance(parsed, RunModel):
+        message = "save-run requires an S1 complete run document"
+        raise ProjectError(message)
+    saved = save_project_as(Path(source), Path(destination), effective_run=parsed)
+    print(json.dumps({"status": "written", "project_id": saved.identifier, "path": destination}, sort_keys=True))
+
+
+def _cli_import_rorb(args: list[str]) -> None:
+    _, identifier, profile, par, *remaining = args
+    selected_profile = _validated_profile(profile)
+    overrides: dict[str, Path] = {}
+    if len(remaining) == 3 and not any(item.startswith("--") for item in remaining):
+        catg, stm, destination = remaining
+        # The legacy positional interface used CWD-relative paths. Preserve
+        # that real caller behaviour; flag-based overrides use the PAR base.
+        overrides = {"catchment": Path(catg).absolute(), "storm": Path(stm).absolute()}
+    else:
+        destination, *options = remaining
+        if len(options) % 2:
+            message = "Import flags require value pairs"
+            raise ProjectError(message)
+        for flag, path_value in zip(options[::2], options[1::2], strict=True):
+            key = {"--catchment": "catchment", "--storm": "storm", "--base": "base_directory"}.get(flag)
+            if key is None or key in overrides:
+                message = f"Unknown or repeated PAR import flag: {flag}"
+                raise ProjectError(message)
+            overrides[key] = Path(path_value)
+    target = Path(destination)
+    project = import_rorb_project(
+        target,
+        identifier=identifier,
+        rainfall_profile=selected_profile,
+        parameters=Path(par),
+        **overrides,
+    )
+    write_project(target, project)
+    print(
+        json.dumps(
+            {"status": "written", "path": str(target), "source_bindings": len(project.source_bindings)},
+            sort_keys=True,
+        )
+    )
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command dispatcher, no CLI framework
     """Small Windows-friendly CLI without argparse, native calls or side effects."""
     args = sys.argv[1:] if argv is None else argv
     if args and args[0] == "run":
         from .engine_execution import run_cli  # noqa: PLC0415 -- avoids a JSON/dispatch import cycle
 
         return run_cli(args[1:])
+    if args and args[0] == "export-native":
+        # #141 owns this leaf module on a separate PR; load at the command
+        # boundary without a static import that breaks independent #140 checks.
+        try:
+            module = import_module(".native_export", package=__package__)
+        except ModuleNotFoundError as exc:
+            if exc.name != "runoff_routing.native_export":
+                raise
+            print("Native CMD package export requires integration of #141 native_export", file=sys.stderr)
+            return 2
+        export_native_cli = cast("Callable[[list[str]], int]", module.__dict__["main"])
+        return export_native_cli(args[1:])
     try:
         if len(args) == 8 and args[0] == "review-native":
             from .project_native_review import (  # noqa: PLC0415 -- CLI-only, depends on S5 source validation
@@ -612,6 +891,37 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             return 0
+        if len(args) == 2 and args[0] == "inspect-par":
+            from .rorb_par import inspect_par_bytes  # noqa: PLC0415 -- CLI-only reader
+
+            source_path = Path(args[1])
+            inspection = inspect_par_bytes(_read_bounded(source_path), source_path=source_path.absolute())
+            print(
+                json.dumps(
+                    {
+                        "kind": inspection.kind,
+                        "status": inspection.status,
+                        "supported": inspection.status == "parsed",
+                        "sha256": inspection.source.sha256,
+                        "references": (
+                            {
+                                "catchment": inspection.parameters.catchment_reference,
+                                "storm": inspection.parameters.storm_reference,
+                            }
+                            if inspection.parameters is not None
+                            else None
+                        ),
+                        "parameters": asdict(inspection.parameters) if inspection.parameters is not None else None,
+                        "diagnostics": [asdict(item) for item in inspection.diagnostics],
+                    },
+                    sort_keys=True,
+                    default=str,
+                )
+            )
+            return 0 if inspection.status == "parsed" else 1
+        if len(args) == 4 and args[0] == "save-run":
+            _cli_save_run(args[1], args[2], args[3])
+            return 0
         if len(args) == 2 and args[0] in {"validate", "inspect"}:
             loaded = load_project(Path(args[1]))
             print(
@@ -623,6 +933,17 @@ def main(argv: list[str] | None = None) -> int:
                         "engine": loaded.project.engine.engine,
                         "numerical_profile": loaded.project.engine.numerical_profile,
                         "source_files": len(loaded.file_hashes),
+                        "source_bindings": [
+                            {
+                                "role": binding.role,
+                                "declared_reference": binding.declared_reference,
+                                "selected_reference": binding.selected_reference,
+                                "origin": binding.origin,
+                                "staged_path": binding.staged.path,
+                            }
+                            for binding in loaded.project.source_bindings
+                        ],
+                        "effective_run_edited": loaded.project.effective_run is not None,
                         "subareas": len(loaded.run.catchment.subareas),
                         "print_locations": len(loaded.run.catchment.print_locations),
                         "numerical_parity": "not_assessed",
@@ -631,28 +952,21 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
             return 0
-        if len(args) == 7 and args[0] == "import-rorb":
-            _, identifier, profile, par, catg, stm, destination = args
-            selected_profile = _validated_profile(profile)
-            target = Path(destination)
-            project = import_rorb_project(
-                target,
-                identifier=identifier,
-                rainfall_profile=selected_profile,
-                parameters=Path(par),
-                catchment=Path(catg),
-                storm=Path(stm),
-            )
-            write_project(target, project)
-            print(json.dumps({"status": "written", "path": str(target)}, sort_keys=True))
+        if len(args) >= 5 and args[0] == "import-rorb":
+            _cli_import_rorb(args)
             return 0
-    except (ProjectError, OSError) as exc:
+    except (ProjectError, OSError, TypeError, ValueError, UnicodeError) as exc:
         print(f"Project validation failed: {exc}", file=sys.stderr)
         return 2
     print(
         "Usage: python -m runoff_routing.project_json (validate|inspect) <project.json> "
-        "| import-rorb <id> <rainfall-profile> <par> <catg> <stm> <project.json> "
-        "| export-run <project.json> <run.json> | compare <left.json> <right.json> "
+        "| inspect-par <source.par> "
+        "| import-rorb <id> <rainfall-profile> <par> <project.json> "
+        "[--catchment FILE] [--storm FILE] [--base DIR] "
+        "| save-run <project.json> <edited-run.json> <new-project.json> "
+        "| export-run <project.json> <run.json> "
+        "| export-native <project.json> <new-package-dir> --target cmd-6.44 [--events request.json] "
+        "| compare <left.json> <right.json> "
         "| run <project.json> <result.json> [--engine ID --numerical-profile PROFILE] "
         "[--native-config LOCAL.json] | compare-runs <left.json> <right.json> "
         "| review-native <project.json> <manifest.json> <manifest-sha256> "

@@ -31,6 +31,8 @@ jobs:
         run: python repo-scripts/check_local.py
       - name: Verify fresh source CMD 36-case regression (fail-closed)
         run: python repo-scripts/cmd_public_probe.py
+      - name: Independent Python/original CMD deviation (diagnostic, not acceptance)
+        run: python -m pytest -q -s tests/test_python96_original_deviation.py
       - name: Build wheel
         run: python -m build --wheel
       - name: Verify installed wheel outside checkout
@@ -45,6 +47,7 @@ jobs:
           $publicScalarTests = (Resolve-Path 'tests/test_regression_scalars.py').Path
           $publicBatchTests = (Resolve-Path 'tests/test_project_batch.py').Path
           $publicDesignTests = (Resolve-Path 'tests/test_arr_design_batch.py').Path
+          $publicSummaryTests = (Resolve-Path 'tests/test_arr_result_summary.py').Path
           $env:RUNOFF_ENGINE_EXAMPLE = (Resolve-Path 'examples/synthetic-run.json').Path
           $env:RUNOFF_ENGINE_WHEEL = $wheel
           Write-Host ("Wheel SHA-256: " + (Get-FileHash $wheel -Algorithm SHA256).Hash.ToLowerInvariant())
@@ -73,7 +76,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             python -m runoff_routing.regression_dataset preflight "$publicRegister" --set cmd-eligible --full-index
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            python -m pytest "$publicNativeTests" "$publicDatasetTests" "$publicScalarTests" "$publicBatchTests" "$publicDesignTests" -q
+            python -m pytest "$publicNativeTests" "$publicDatasetTests" "$publicScalarTests" "$publicBatchTests" "$publicDesignTests" "$publicSummaryTests" -q
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             python -c "from decimal import Decimal; from runoff_routing.rorbwin_losses import calculate_rorbwin_652_excess; r=calculate_rorbwin_652_excess((Decimal(10),), timestep_min=60, initial_loss_mm=Decimal(0), continuing_loss_mm_per_hour=Decimal(0)); assert r.excess_increments_mm == (Decimal(10),); print('S6 experimental installed-wheel smoke OK')"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
