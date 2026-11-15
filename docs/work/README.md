@@ -28,6 +28,7 @@
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
 - [Typed S1 domain and effective event editing](2026-11-15-issue138-types-and-editing.md) — #138 / PR #157; validated enum/loss/effective-model contract and source/wheel checks, distinct from #143 acceptance.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+- [Deterministic ARR results reporting, population accounting and unverified selection evidence](2026-11-15-s6-results-reporting.md) — #152 / PR #155; reviewed read-only CLI/API summaries and complete source/wheel checks; native representative and critical-duration rules remain unverified pending #137/#142.
 - [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, archived source/print audit; **at the time of that preflight**, merged-#136 software execution had not run. Later actual execution and remaining native parity limits are recorded above.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; distinguish historical concern from later merged #135 comparator review.
