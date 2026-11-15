@@ -7,9 +7,10 @@ No random draws, routing, source-file I/O, hydrograph invention or native claim.
 from __future__ import annotations
 
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
+from fractions import Fraction
 from typing import Literal, Never
 
 PeakStatus = Literal["valid", "failed", "missing", "unsupported"]
@@ -307,15 +308,23 @@ class FrequencyCurve:
         _probability(aep, "AEP")
         if not 0 < aep < 1:
             _fail("AEP must be strictly inside (0, 1)")
-        nonexceedance = 1.0 - aep
+        # Convert the public decimal probability values into exact rationals.
+        # Binary float 1.0 - aep and cumulatively summed w_h/n_h can disagree
+        # at the very same step boundary, selecting an adjacent WRONG peak.
+        nonexceedance = Fraction(1) - Fraction(str(aep))
+        steps = _exact_cumulative_steps(self)
         if not self.coverage.complete:
-            lower, upper = _incomplete_bounds(self.groups, nonexceedance, self.coverage.unresolved_mass)
+            unresolved = _exact_unresolved_mass(self.accounting, self.coverage.tails)
+            lower, upper = _incomplete_bounds(steps, nonexceedance, unresolved)
             return QuantileEstimate(aep, "incomplete", None, lower, upper, None, None, None, False)
         if not self.groups:
             _fail("Complete populations must contain positive-weight observed peaks")
-        peak = _inverse_step(self.groups, nonexceedance)
+        peak = _inverse_step(steps, nonexceedance)
         if peak is None:
-            _fail("Probability mass and empirical curve are inconsistent")
+            # A complete plan can sum to one only within the documented
+            # 1e-12 float-input mass tolerance. Return its last *attained*
+            # peak rather than inventing any higher flow or missing tail.
+            peak = self.groups[-1].peak_m3_s
         at_edge = peak in (self.groups[0].peak_m3_s, self.groups[-1].peak_m3_s)
         return self._result(aep, peak, "zero_atom" if peak == 0 else "estimated", at_edge)
 
@@ -353,21 +362,66 @@ class FrequencyCurve:
         )
 
 
-def _inverse_step(groups: tuple[PeakGroup, ...], probability: float) -> float | None:
+def _exact_cumulative_steps(curve: FrequencyCurve) -> tuple[tuple[float, Fraction], ...]:
+    """Recreate exact planned w_h/n_h masses; group counts before inversion.
+
+    The float API's shortest-roundtrip decimal strings represent plan inputs.
+    Group probabilities in public output may remain rounded for display.
+    """
+    units = {
+        row.stratum_id: Fraction(str(row.probability_mass)) / row.planned_samples
+        for row in curve.accounting
+        if row.planned_samples > 0 and row.probability_mass > 0
+    }
+    counts: dict[float, Counter[str]] = defaultdict(Counter)
+    for item in curve.positive_weight_observations:
+        peak = item.record.peak_m3_s
+        if peak is None:
+            _fail("Valid weighted observation has no peak")
+        counts[peak][item.record.stratum_id] += 1
+
+    cumulative = Fraction(0)
+    steps: list[tuple[float, Fraction]] = []
+    for group in curve.groups:
+        cumulative += sum(
+            (units[stratum] * count for stratum, count in counts[group.peak_m3_s].items()),
+            Fraction(0),
+        )
+        steps.append((group.peak_m3_s, cumulative))
+    return tuple(steps)
+
+
+def _exact_unresolved_mass(accounting: tuple[StratumAccounting, ...], tails: UnmodelledTails) -> Fraction:
+    """Keep all failed/missing/unsupported/unallocated/tail probability on its original scale."""
+    unresolved = sum(
+        (Fraction(str(value)) for value in (tails.lower_rainfall_mass, tails.upper_rainfall_mass, tails.other_mass)),
+        Fraction(0),
+    )
+    for row in accounting:
+        mass = Fraction(str(row.probability_mass))
+        if row.planned_samples == 0:
+            unresolved += mass
+        else:
+            missing = row.failed_samples + row.explicit_missing_samples + row.absent_samples + row.unsupported_samples
+            unresolved += mass * missing / row.planned_samples
+    return unresolved
+
+
+def _inverse_step(steps: tuple[tuple[float, Fraction], ...], probability: Fraction) -> float | None:
     if probability <= 0:
         return 0.0
-    for group in groups:
-        if group.cumulative_mass >= probability:
-            return group.peak_m3_s
+    for peak, cumulative in steps:
+        if cumulative >= probability:
+            return peak
     return None
 
 
 def _incomplete_bounds(
-    groups: tuple[PeakGroup, ...], nonexceedance: float, unresolved: float
+    steps: tuple[tuple[float, Fraction], ...], nonexceedance: Fraction, unresolved: Fraction
 ) -> tuple[float | None, float | None]:
-    """All unknown nonnegative peaks at zero versus all at +infinity."""
-    lower = 0.0 if nonexceedance <= unresolved else _inverse_step(groups, nonexceedance - unresolved)
-    upper = _inverse_step(groups, nonexceedance)
+    """All unknown nonnegative peaks at zero versus infinity; exact step selection."""
+    lower = 0.0 if nonexceedance <= unresolved else _inverse_step(steps, nonexceedance - unresolved)
+    upper = _inverse_step(steps, nonexceedance)
     return lower, upper
 
 

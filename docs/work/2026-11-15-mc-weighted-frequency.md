@@ -11,3 +11,19 @@
 **Installed-wheel software API gate:** The existing approved Windows quality workflow now executes `tests/test_monte_carlo_frequency.py` from the isolated wheel installation destination and outside the source checkout, alongside the existing source/installed checks; the destination import path is verified in that same workflow step. This does not add a new workflow or imply native acceptance. Exact-head CI outcome must be recorded separately when complete.
 
 **Review and remaining gates (16 November 2026):** #150 PR #163 supplied a scientific-source review with no method findings, but reported strict Pyright failing at the prior C test line 357. The test now stores the optional representative once and asserts it is non-null before access; no estimator arithmetic or production signatures changed. The independent #150 literal-rational adapter checks require the C API in the same staging checkout; the B/E→C production event-ledger adapter, persisted report/CLI, independent-seed convergence and actual RORBwin comparisons remain owned by #149/#148/#150. Preserve `monte-carlo-statistics/1:weighted-step-inverse-v1` and do not claim midpoint interpolation. **Next action:** verify GitHub quality CI and exact-head isolated wheel on this staging-targeted branch; then merge #167 into #151 only. Keep parent #9 open.
+
+## Follow-up correction — 16 November 2026
+
+The previously staged PR #167 was found to have a **material quantile rank
+defect**, despite passing its original tests: at exact CDF steps binary
+accumulation can choose an adjacent higher realised flow. Hand-checked
+10-sample AEP 0.1 should give 8, not 9 m³/s. An analogous 20-sample
+AEP 0.95 case and incomplete-tail bounds are independently specified.
+The focused correction uses exact rational planned stratum masses for
+decision comparisons while retaining the original reporting API,
+provenance, unmodelled tails and unchanged project method.
+
+**Disposition:** correction PR against draft #151 staging (not main).
+Exact source/wheel CI and a new independent #150 acceptance review
+remain required on the corrected head. No native or engineering claims.
+
