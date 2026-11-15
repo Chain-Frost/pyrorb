@@ -24,8 +24,13 @@
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
 
+## Planning receipts
+
+- [Monte Carlo #9 decomposition and statistical research plan](2026-11-15-issue9-scoping.md) — #145–#150 and the initial method note; no MC code, simulation results or native qualification claimed.
+
+- [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.
+
 ## Retained diagnostic/reference evidence
-- [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) — original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.
 
 - [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
