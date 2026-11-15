@@ -1,5 +1,31 @@
 # #143 — independent S5 import/edit/export/report qualification
 
+## Updated 16 November 2026 disposition — supersedes dated preflight limitations
+
+[Five actual native CMD 6.44 executions](2026-11-16-issue143-native-acceptance.md)
+passed using emitted relocated PAR files: all exits zero, no timeouts,
+15/15 input file hashes unchanged and original source/project paths
+unavailable during execution. All 1,005 original Q ordinates were
+read by the canonical installed reader; native verbosity 1/2/3
+output differences were observed. Exact implementation is reviewed
+#142 candidate `fe0006687d0a698be9a7cc278170be6dac6a60a2`,
+including merged #138–#141 and the pinned external PyRomb/ryan-tools
+distributions. Its [Windows quality #43749720170](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43749720170)
+passed and local installed-wheel reader/exporter tests passed 22/22.
+
+The public record is a receipt; the 85-file original evidence archive
+is held locally and was not independently rehashed by this
+GitHub-only agent. All five canonical reader statuses are `partial`;
+baseline physical output-site attribution remains unverified and
+edited events have no exact native reference. The comparator was
+correctly not used to claim equivalence; numerical gate #5 remains
+open. #142's broader reader-population gate is separate, and its PR
+is still unmerged. The historical native-`not_run`, P1-guard-pending
+and #138–#141-unmerged statements below describe earlier tested heads,
+not this updated disposition. The #140 native fail-closed guard has
+since merged into main.
+
+
 **Later executed evidence:** [16 November Windows-native receipt](2026-11-16-issue143-native-acceptance.md)
 records five genuine relocated emitted-PAR CMD 6.44 runs at reviewed integrated
 candidate `fe00066`. Its bounded portability pass, partial reader statuses and

@@ -20,6 +20,22 @@ def test_initial_loss_crossing_and_dry_bins() -> None:
     assert rainfall_excess((2.0, 2.0, 10.0, 0.0), losses=Losses(3.0, 2.0), timestep_hours=1) == (0.0, 0.0, 8.0, 0.0)
 
 
+def test_runoff_coefficient_applies_after_initial_loss_and_not_as_continuing_rate() -> None:
+    rain = (2.0, 1.0, 7.0, 0.0, 5.0)
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 0.6), timestep_hours=0.5) == (0.0, 0.0, 4.2, 0.0, 3.0)
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.6), timestep_hours=0.5) != rainfall_excess(
+        rain, losses=Losses(3.0, 0.0, 0.6), timestep_hours=0.5
+    )
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 0.0), timestep_hours=0.5) == (0.0,) * 5
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 1.0), timestep_hours=0.5) == (0.0, 0.0, 7.0, 0.0, 5.0)
+
+
+@pytest.mark.parametrize("coefficient", [-0.1, 1.01, math.inf, math.nan])
+def test_runoff_coefficient_requires_dimensionless_fraction(coefficient: float) -> None:
+    with pytest.raises(RoutingDomainError, match="runoff coefficient"):
+        rainfall_excess((3.0, 4.0), losses=Losses(1.0, 0.0, coefficient), timestep_hours=1)
+
+
 def test_no_loss_when_zero() -> None:
     assert rainfall_excess((1.0, 0.0, 3.0), losses=Losses(0, 0), timestep_hours=0.25) == (1, 0, 3)
 

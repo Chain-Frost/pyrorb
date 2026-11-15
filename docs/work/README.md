@@ -6,7 +6,14 @@
 
 ## Current implementation / regression receipts
 
-- [Issue #143 Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — five direct relocated emitted-PAR runs; bounded portability passed, canonical reader partial states and physical-site/numerical limitations retained.
+- [Five genuine native CMD 6.44 acceptance cases (#143)](2026-11-16-issue143-native-acceptance.md) — relocated emitted-PAR execution 5/5 passed; 15 unchanged input hashes, 1,005 original reader ordinates, partial/numerical limits retained.
+- [Independent source-exact, edited and reporting qualification (#143)](2026-11-15-issue143-s5-acceptance.md) — original fixtures, exact source/wheel evidence, reviewed software and remaining #142/#5 gates.
+
+- [Explicit written-depth rainfall preparation and native event materialization (#175)](2026-11-16-issue175-written-rainfall.md) — opt-in policy, published/prepared rainfall audit, source/wheel checks and bounded native CMD integration; RORBwin routed acceptance remains open.
+
+- [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — merged #139 / PR #166; optional pinned writer used for edited CATG, pending upstream admission.
+- [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — merged PR #159; selected staged inputs, schema-3 effective editing and shared native-export CLI delegation.
+- [Portable standalone RORB CMD export and native acceptance limitations (#141)](2026-11-15-issue141-native-export.md) — merged PR #162; source-exact input packaging, actual PyRomb edited-CATG integration, 1,198 source and 177 wheel tests; real native emitted-PAR execution remains not run.
 
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
@@ -25,7 +32,9 @@
 - [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
+- [Typed S1 domain and effective event editing](2026-11-15-issue138-types-and-editing.md) — #138 / PR #157; validated enum/loss/effective-model contract and source/wheel checks, distinct from #143 acceptance.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+- [Deterministic ARR results reporting, population accounting and unverified selection evidence](2026-11-15-s6-results-reporting.md) — #152 / PR #155; reviewed read-only CLI/API summaries and complete source/wheel checks; native representative and critical-duration rules remain unverified pending #137/#142.
 - [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, archived source/print audit; **at the time of that preflight**, merged-#136 software execution had not run. Later actual execution and remaining native parity limits are recorded above.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; distinguish historical concern from later merged #135 comparator review.
@@ -41,7 +50,3 @@
 - [Source-level primary decision record](2026-11-11-computational-reference-guidance.md) and [historical parser/source verification](2026-11-11-s1-code7-serialization.md).
 
 Other retained dated records describe the exact historical source, experiment and constraints they were written for. They **do not** reopen obsolete PRs, replace the single CMD feature matrix or require the private workspace for product use. Unneeded first-agent handoffs, obsolete status snapshots and the former ten-PR backlog matrix were removed from the active tree and remain in ordinary Git history.
-
-## Current S5 integration acceptance receipt
-
-- [Source-exact, edited, portable-input and native-report software qualification (#143)](2026-11-15-issue143-s5-acceptance.md) — source/wheel tested against original CMD/GUI reports; independently assembled owner branches, genuine Windows native launch still open.

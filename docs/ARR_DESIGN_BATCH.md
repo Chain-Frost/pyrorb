@@ -48,7 +48,58 @@ The required `loss.mode` has three explicit options:
 
 Both legacy methods require exactly matching BoM/ARR requested WGS84 coordinates and original source hashes. The default `excess_policy=reject` must be explicit; `clamp_burst_il_to_zero` is a separately labelled, potentially physically incomplete opt-in. Neither method invents a GSAM/Jordan preburst temporal profile, nor applies the experimental excess kernel as a second loss. For this slice, full explicit preburst temporal distribution is **not supported**; it requires a separately evidenced pattern/profile contract.
 
-`engine` and `numerical_profile` are required, normally `python-cmd` / `cmd-6.44`. Explicit `python` / `engineering-v1` is allowed but must be independently qualified. The optional native `rorb-cmd` adapter is intentionally rejected: generated in-memory storm overrides cannot be represented as verified unchanged native input files. Source and routing work remain independent of a Windows RORB executable.
+`engine` and `numerical_profile` are required, normally `python-cmd` / `cmd-6.44`.
+Explicit `python` / `engineering-v1` is allowed but must be independently qualified.
+Native `rorb-cmd` execution additionally requires the explicit written-depth profile below,
+a hash-pinned file-backed `legacy-rorb` project and a local native configuration.
+Each effective event is materialized and reparsed through the portable native exporter;
+its original CATG is copied byte-exact, and its new PAR/STM and package manifest persist
+under the configured native output root. Original project assets are never overwritten.
+
+## Explicit written-depth preparation
+
+The optional `rainfall_preparation` field defaults to `published_decimal`, preserving
+existing saved requests and the full published-ARF calculation. To prepare the
+two-decimal storm-depth contract used for the bounded RORBwin comparison, select:
+
+```json
+"rainfall_preparation": "published_arf_stm_2dp"
+```
+
+This profile first calculates the existing published ARF-adjusted depth, then rounds
+that total to 0.01 mm with explicit decimal HALF_EVEN rounding. It disaggregates the
+prepared total using the original percentages and supplies that same prepared total
+to the selected engine. The engine continues to own its numerical storage,
+normalization and loss application; rainfall preparation never applies losses twice.
+Source temporal percentages must already have 0.01% resolution. Higher-precision
+patterns fail explicitly rather than being silently rounded or renormalized.
+Only `loss.mode=project_il_cl`, with no preburst adjustment, is admitted for this profile.
+
+The effective manifest retains `published_areal_total_mm`, the complete published and
+prepared increment vectors, `prepared_depth_minus_published_mm`, the selected policy
+and actual event input. Existing `areal_total_mm` and `areal_increments_mm` describe
+the prepared input passed to execution. The method ID is
+`arr2019-bom-published-arf-stm-2dp-burst-only-v1`.
+
+This is a **published-ARF plus written-depth policy**, not an implementation of
+RORBwin's internal ARF/transcendental helpers. HALF_EVEN is this policy's specified
+tie rule, not a claim that every native formatter tie has been qualified. Agreement
+of prepared depths with original native storm files must be assessed for the selected
+sources; `native_arf_arithmetic_parity` remains `not_assessed`. Original native
+rainfall files remain authoritative when strict input identity is required.
+Matching input preparation does not establish RORBwin/CMD solver equivalence.
+
+For a native run, use `engine=rorb-cmd`, `numerical_profile=cmd-6.44` and:
+
+```powershell
+py -3.13 -m runoff_routing.arr_design_batch design.json results/design --native-config native.json
+```
+
+The native configuration must explicitly bind the installed executable, SHA-256,
+version, output root and print mapping. Missing configuration or an unsupported source
+fails without selecting a Python engine. Reports bind the prepared package manifest
+and native capture separately. Preparing a native package is not a native execution;
+only genuine inspected native results populate a successful native outcome.
 
 ## Acceptance and limitations
 
