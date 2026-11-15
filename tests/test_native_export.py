@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
+import subprocess  # noqa: S404 -- Windows-only launcher test invokes fixed system utilities
+import sys
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
@@ -246,3 +249,50 @@ def test_hash_mismatch_refuses_export(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="SHA-256"):
         export_cmd_package(project_path, destination, target=NativeCmdExportTarget("cmd-6.44"))
     assert not destination.exists()
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows cmd.exe / where.exe")
+def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp_path: Path) -> None:
+    """A system where.exe stub proves cwd/argv; it is not native RORB execution."""
+    project_path = _original_project(tmp_path)
+    model = load_project(project_path).run
+    package = tmp_path / "native package with spaces"
+    export_cmd_package(
+        project_path,
+        package,
+        target=NativeCmdExportTarget("cmd-6.44"),
+        events=(NativeExportEvent("first", model), NativeExportEvent("second", model)),
+    )
+    relocated = tmp_path / "recipient directory with spaces"
+    shutil.move(str(package), str(relocated))
+    shutil.rmtree(project_path.parent / "original files")
+    system_where = Path(os.environ["SystemRoot"]) / "System32" / "where.exe"
+    assert system_where.is_file()
+    command = [str(relocated / "run.cmd"), str(system_where)]
+    success = subprocess.run(  # noqa: S603 -- explicit package script and fixed Windows utility; no shell
+        command,
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert success.returncode == 0
+    stdout = success.stdout.casefold()
+    assert r"events\001\model.par" in stdout
+    assert r"events\002\model.par" in stdout
+
+    # Simulate a broken second event *after* export to verify failure propagation,
+    # not to claim that this modified package remains a valid native input set.
+    (relocated / "events" / "002" / "model.par").unlink()
+    failure = subprocess.run(  # noqa: S603 -- same fixed executable, deliberate negative acceptance
+        command,
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert failure.returncode != 0
+    assert r"events\001\model.par" in failure.stdout.casefold()
+    assert r"events\002\model.par" not in failure.stdout.casefold()
+
