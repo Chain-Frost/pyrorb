@@ -1,5 +1,9 @@
 # Issue #137: independent archived RORBwin design-ensemble qualification
 
+**Later execution receipt:** [actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md)
+completes the software runs previously marked not run below. This earlier receipt
+retains its original audit scope; strict native numerical acceptance remains open.
+
 **Scope:** #137 under #8, following merged [#136](https://github.com/Chain-Frost/python-runoff-routing/pull/136) (`0675d75b05dba7728b389fdd8af743060b4469b2`) and merged CLI/text-file MVP #119. **Date:** 15 November 2026. **Public source at audit:** `main@0675d75b05dba7728b389fdd8af743060b4469b2`. **Verdict:** archived reference authenticity and native printed-storm preflight **passed**; direct merged-#136 effective-input qualification and routed numerical comparison **not run / incomplete**. This is a bounded reference audit, **not** a generator, comparator, solver, new source parser or claim of RORBwin numerical parity.
 
 The original files have **local-only redistribution** status. Detailed per-event/private SHA-256 and original-source receipts are reviewable by authorised collaborators in [private investigations PR #80](https://github.com/Chain-Frost/runoff-routing-investigations/pull/80), including its [60-event record](https://github.com/Chain-Frost/runoff-routing-investigations/blob/audit/issue137-retained-60-rorbwin-20261115/evidence/issue137/multiduration-60-native-preflight.json) and [auxiliary ten-event record](https://github.com/Chain-Frost/runoff-routing-investigations/blob/audit/issue137-retained-60-rorbwin-20261115/evidence/issue137/repeated-24h-ten-native-preflight.json). **They are not public fixtures, a runtime dependency, or a second CMD regression catalogue.** No private original source bytes, native reports, original manifests, executable or new generated golden was copied into this repository.
