@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -14,12 +15,37 @@ from test_regression_dataset import dataset_fixture
 from runoff_routing import regression_dataset as rd
 from runoff_routing import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
 from runoff_routing.regression_metrics import bind_report_metrics
-from runoff_routing.regression_scalar_adapter import stored_float
+from runoff_routing.regression_scalar_adapter import stored_cmd_reporting_clock, stored_float
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
 
 REVISION = "a" * 40
 REPO = Path(__file__).absolute().parents[1]
+
+
+@pytest.mark.parametrize(
+    ("source_hours", "expected_h", "expected_dt"),
+    [
+        ("0.3", "0x1.3333340000000p-2", "0x1.0e00000000000p+10"),
+        ("0.2", "0x1.99999a0000000p-3", "0x1.6800000000000p+9"),
+        ("0.5", "0x1.0000000000000p-1", "0x1.c200000000000p+10"),
+    ],
+)
+def test_cmd_scalar_reporting_clock_matches_independently_retained_binary32_convention(
+    source_hours: str, expected_h: str, expected_dt: str
+) -> None:
+    """The reference clock is two binary32 stores, not the raw decimal hours."""
+    h, dt = stored_cmd_reporting_clock(Decimal(source_hours))
+    assert h.hex() == expected_h
+    assert dt.hex() == expected_dt
+    if source_hours in {"0.2", "0.3"}:
+        assert h != float(Decimal(source_hours))
+
+
+@pytest.mark.parametrize("source_hours", ["0", "-0.2", "NaN", "Infinity", "1e-9999", "1e9999"])
+def test_cmd_scalar_reporting_clock_rejects_unrepresentable_timesteps(source_hours: str) -> None:
+    with pytest.raises(ValueError):
+        stored_cmd_reporting_clock(Decimal(source_hours))
 
 
 def _write(path: Path, item: object) -> None:

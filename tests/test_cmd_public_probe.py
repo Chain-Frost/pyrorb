@@ -303,3 +303,45 @@ def test_required_case_selection_rejects_unknown_or_duplicate_without_computing(
     assert main(("unknown-original-id",)) == 2
     assert main(("H1-three-source-asymmetric", "H1-three-source-asymmetric")) == 2
     assert "--require-case must name distinct registered CMD-eligible" in capsys.readouterr().err
+
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    ["H2-four-source-nested-odd-rain", "N4-six-source-serial-nested", "pyromb-novel-storm"],
+)
+def test_original_new_cmd_cases_use_reviewed_stored_time_for_each_scalar(case_id: str) -> None:
+    """Genuine original sources, current engine and native reports; never a candidate snapshot."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    compute = cast("Callable[[dict[str, Any]], dict[str, Any]]", namespace["_one"])
+    register = json.loads((ROOT / "tests" / "fixtures" / "regression-v1" / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+
+    result = compute(case)
+    assert result["status"] == "printed_pass"
+    assert result["rows"] == case["clock"]["row_count"]
+    assert result["first_mismatch"] is None
+    reporting = result["fresh_reporting"]
+    assert reporting["stored_h_hex"] == case["scalar_binding"]["stored_h_hex"]
+    assert reporting["stored_dt_hex"] == case["scalar_binding"]["stored_dt_hex"]
+    assert reporting["classification"] == "pass"
+    assert all(field["verdict"] == "pass" for field in reporting["metrics"].values())
+
+
+@pytest.mark.parametrize("case_id", ["fig67-zero", "wheel-zero"])
+def test_original_zero_runoff_keeps_undefined_peak_time(case_id: str) -> None:
+    """An all-zero Q series has no uniquely measurable physical peak time."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    compute = cast("Callable[[dict[str, Any]], dict[str, Any]]", namespace["_one"])
+    register = json.loads((ROOT / "tests" / "fixtures" / "regression-v1" / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    result = compute(case)
+
+    assert result["status"] == "printed_pass"
+    assert result["rows"] == 301
+    metrics = result["fresh_reporting"]["metrics"]
+    assert result["fresh_reporting"]["classification"] == "incomplete"
+    assert metrics["peak_magnitude"]["verdict"] == "pass"
+    assert metrics["peak_time"]["verdict"] == "incomplete"
+    assert metrics["peak_time"]["reason"] == "zero_flow_time_undefined"
+    assert metrics["native_reported_volume"]["verdict"] == "pass"
