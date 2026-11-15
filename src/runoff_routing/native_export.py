@@ -319,7 +319,7 @@ def _launcher(number_of_events: int) -> bytes:
         '  echo Usage: run.cmd "C:\\full\\path\\to\\RORB_CMD.exe" 1>&2',
         "  exit /b 2",
         ")",
-        'set "NATIVE_EXE=%~1"',
+        'set "NATIVE_EXE=%~f1"',
         'if not exist "%NATIVE_EXE%" (',
         "  echo RORB CMD executable not found 1>&2",
         "  exit /b 2",

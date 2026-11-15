@@ -284,6 +284,22 @@ def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp
     assert r"events\001\model.par" in stdout
     assert r"events\002\model.par" in stdout
 
+    # A supplied native executable may also be relative to the launch CWD.
+    # Resolve it before changing into independently numbered event folders.
+    relative_executable = tmp_path / "stub utility with spaces.exe"
+    shutil.copyfile(system_where, relative_executable)
+    relative_run = subprocess.run(  # noqa: S603 -- fixed system utility copied to tested working directory
+        [str(relocated / "run.cmd"), relative_executable.name],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert relative_run.returncode == 0
+    assert r"events\001\model.par" in relative_run.stdout.casefold()
+    assert r"events\002\model.par" in relative_run.stdout.casefold()
+
     # Simulate a broken second event *after* export to verify failure propagation,
     # not to claim that this modified package remains a valid native input set.
     (relocated / "events" / "002" / "model.par").unlink()
