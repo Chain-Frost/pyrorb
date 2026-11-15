@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -200,3 +201,50 @@ def test_stable_population_positive_result_is_non_degenerate() -> None:
     assert all(row["exact"] > 0 for row in rows)
     assert mc.lower_confidence_bound(100, 100) > 0.95
     assert mc.lower_confidence_bound(96, 100) < 0.95
+
+def test_large_replication_confidence_limits_do_not_underflow() -> None:
+    """Independent binomial reference values for a million trial replications."""
+    mc = _research()
+    assert mc.binomial_upper_tail(500000, 1_000_000, 0.5) == pytest.approx(
+        0.5003989421806654, abs=2e-9
+    )
+    assert mc.binomial_upper_tail(500100, 1_000_000, 0.5) == pytest.approx(
+        0.4211313785258083, abs=2e-9
+    )
+    assert mc.binomial_upper_tail(950000, 1_000_000, 0.95) == pytest.approx(
+        0.5011898042280432, abs=2e-9
+    )
+    lower = mc.lower_confidence_bound(500000, 1_000_000)
+    upper = mc.upper_confidence_bound(500000, 1_000_000)
+    assert lower == pytest.approx(0.4991770739498, abs=1e-9)
+    assert upper == pytest.approx(0.5008229260504, abs=1e-9)
+    assert mc.binomial_upper_tail(500000, 1_000_000, lower) == pytest.approx(0.05, abs=2e-8)
+    assert mc.binomial_upper_tail(500001, 1_000_000, upper) == pytest.approx(0.95, abs=2e-8)
+    assert mc.lower_confidence_bound(1_000_000, 1_000_000) == pytest.approx(
+        math.exp(math.log(0.05) / 1_000_000), abs=1e-14
+    )
+    assert mc.upper_confidence_bound(0, 1_000_000) == pytest.approx(
+        -math.expm1(math.log(0.05) / 1_000_000), abs=1e-14
+    )
+    assert mc.lower_confidence_bound(1, 1_000_000) == pytest.approx(
+        -math.expm1(math.log1p(-0.05) / 1_000_000), abs=1e-11
+    )
+    for count in (1_000, 100_000, 1_000_000):
+        assert mc.lower_confidence_bound(count, count) <= 1.0
+        assert mc.upper_confidence_bound(0, count) >= 0.0
+
+
+def test_binomial_tail_extreme_values_are_finite() -> None:
+    mc = _research()
+    assert mc.binomial_upper_tail(0, 1_000_000, 0.5) == 1.0
+    assert mc.binomial_upper_tail(1, 1_000_000, 0.0) == 0.0
+    assert mc.binomial_upper_tail(1_000_000, 1_000_000, 1.0) == 1.0
+    assert mc.binomial_upper_tail(1, 1_000_000, 1e-6) == pytest.approx(
+        0.632120742768355, abs=1e-11
+    )
+    with pytest.raises(ValueError, match="invalid binomial"):
+        mc.binomial_upper_tail(5, 4, 0.3)
+    with pytest.raises(ValueError, match="invalid binomial"):
+        mc.binomial_upper_tail(1, 4, float("nan"))
+    with pytest.raises(ValueError, match="invalid confidence"):
+        mc.upper_confidence_bound(2, 1)

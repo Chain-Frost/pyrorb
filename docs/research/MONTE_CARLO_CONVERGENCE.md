@@ -101,3 +101,32 @@ Scope D should consume the **adopted A/B/C/E policy and event ledger**, not inve
 4. Clopper & Pearson (1934), [*The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial*](https://doi.org/10.1093/biomet/26.4.404) — exact binomial confidence limits for independent whole-run success/failure outcomes.
 
 Related: [parent #9](https://github.com/Chain-Frost/python-runoff-routing/issues/9); [policy #145](https://github.com/Chain-Frost/python-runoff-routing/issues/145); [sampling #146](https://github.com/Chain-Frost/python-runoff-routing/issues/146); [aggregation #147](https://github.com/Chain-Frost/python-runoff-routing/issues/147); [execution #149](https://github.com/Chain-Frost/python-runoff-routing/issues/149); [qualification #150](https://github.com/Chain-Frost/python-runoff-routing/issues/150).
+
+
+## Large-replication numerical correction (16 November 2026)
+
+The original research used a valid Clopper–Pearson inversion but an unstable binomial-tail summation
+that began at \`p**n\` or \`(1-p)**n\`. At sufficiently large numbers of independent replications,
+those powers underflowed even near the distribution's mode, causing false tail probabilities
+and incorrect confidence limits. The corrected standard-library algorithm evaluates the starting
+probability in log space (\`math.lgamma\`, \`math.log1p\`) and sums outwards from the relevant
+tail boundary towards lower-probability masses. Exact all-success and no-success endpoints
+use direct stable formulas (\`exp(log(alpha)/n)\` and \`-expm1(log(alpha)/n)\`).
+
+Focused checks include one million independent Bernoulli trials with success fractions
+0.50, 0.95, 0, 1 and rare events. For 500,000 successes / 1,000,000 trials, one-sided 95%
+Clopper–Pearson bounds are approximately 0.49917707395 and 0.50082292605,
+cross-checked with an independent SciPy beta-quantile calculation **locally for research
+verification only**. No SciPy or other scientific dependency is added to the product.
+
+The prior 30/100-replication archived raw results, study decisions and reported limits
+remain attributable to their original execution revisions and are **not regenerated** by
+this correction. This is a confidence-limit *numerics* repair, not a new hydrological study.
+
+**Actual catchment status:** #146 and #147 are staged, but the #149 B→E→C execution adapter
+remains a separately reviewed PR. A qualified real-catchment study cannot be claimed from
+the existing synthetic controls or a draft E adapter. Its preflight must identify a
+named authorised original-source catchment, qualified \`python-cmd/cmd-6.44\` profile,
+physical site IDs, adopted supported IFD/TP/loss inputs and nonzero tail coverage,
+and must first pass a small B→E→C replay and completeness check before expensive
+independent-seed reference and confirmation runs. Do not run unbounded work in CI.
