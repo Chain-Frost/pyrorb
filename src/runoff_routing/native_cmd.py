@@ -171,6 +171,7 @@ def _guard_native_effective_sources(loaded: LoadedProject) -> None:
         message = "Native capture forces verbosity 3; use native package export for the requested verbosity"
         raise NativeBoundaryError(message, status="unsupported_feature", code="native_verbosity_unsupported")
 
+
 def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunFiles:
     model = loaded.run
     source = loaded.project.model_source
