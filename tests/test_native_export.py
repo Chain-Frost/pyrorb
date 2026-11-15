@@ -21,9 +21,9 @@ from runoff_routing.native_export import (
     export_cmd_package,
     main,
 )
-from runoff_routing.project_json import LegacyRunFiles, import_rorb_project, load_project, write_project
+from runoff_routing.project_json import LegacyRunFiles, Project, import_rorb_project, load_project, write_project
 from runoff_routing.rorb_codec import parse_catg, parse_cmd_par, parse_design_stm
-from runoff_routing.rorb_model import RunModel
+from runoff_routing.rorb_model import RunModel, from_json
 
 
 def _sha(data: bytes) -> str:
@@ -243,7 +243,9 @@ def test_json_event_request_cli_reuses_existing_override_derivation(
 
 def test_hash_mismatch_refuses_export(tmp_path: Path) -> None:
     project_path = _original_project(tmp_path)
-    original = project_path.parent / "original files" / "native original .catg"
+    source = load_project(project_path).project.model_source
+    assert isinstance(source, LegacyRunFiles)
+    original = project_path.parent / source.catchment.path
     original.write_bytes(original.read_bytes() + b"\n")
     destination = tmp_path / "not published"
     with pytest.raises(ValueError, match="SHA-256"):
@@ -310,3 +312,126 @@ def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp
         timeout=30,
     )
     assert negative.returncode != 0
+
+
+def test_changed_catg_delegates_only_to_reviewed_pyromb(tmp_path: Path) -> None:
+    """A positive edited-CATG case runs only after the real #139 adapter exists."""
+    from runoff_routing import rorb_codec  # noqa: PLC0415 -- optional writer integration test
+
+    if not hasattr(rorb_codec, "CatgWriterLossError"):
+        pytest.skip("#139 PyRomb-backed CATG adapter has not integrated yet")
+    from runoff_routing.rorb_codec import (  # noqa: PLC0415 -- import optional renderer only after guard
+        serialize_catg,
+        serialize_cmd_par,
+        serialize_design_stm,
+    )
+    from runoff_routing.rorb_ge_authoring import (  # noqa: PLC0415 -- explicit graphical writer test
+        GeDrawing,
+        GeNode,
+        GeReach,
+    )
+
+    source = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
+    original = from_json(source.read_text(encoding="utf-8"))
+    assert isinstance(original, RunModel)
+    original_dir = tmp_path / "authored sources"
+    original_dir.mkdir()
+    par, catg, stm = (original_dir / n for n in ("original.par", "model.catg", "storm.stm"))
+    par.write_bytes(serialize_cmd_par(original.parameters))
+    catg.write_bytes(serialize_catg(original.catchment))
+    stm.write_bytes(serialize_design_stm(original.storm))
+    project_path = tmp_path / "authored.json"
+    write_project(
+        project_path,
+        import_rorb_project(
+            project_path,
+            identifier="edited_catg",
+            rainfall_profile="legacy-rorb",
+            parameters=par,
+            catchment=catg,
+            storm=stm,
+        ),
+    )
+    model = load_project(project_path).run
+    drawing = GeDrawing(
+        (
+            GeNode("START", 0, 0, "area_1"),
+            GeNode("OUT", 3000, 0, outlet=True),
+        ),
+        (GeReach("reach_1", ((0, 0), (3000, 0))),),
+        "EPSG:28350",
+        "m",
+    )
+    changed = replace(model, catchment=replace(model.catchment, title="Edited graphical title"))
+    package = tmp_path / "edited graphical package"
+    export_cmd_package(
+        project_path,
+        package,
+        target=NativeCmdExportTarget("cmd-6.44"),
+        events=(NativeExportEvent("edited", changed, drawing),),
+    )
+    native = _model_from_emitted(package / "events" / "001")
+    assert native.catchment == changed.catchment
+    report = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
+    assert report["events"][0]["inputs"]["catchment"]["mode"] == "semantic_edit"
+    assert not report["events"][0]["inputs"]["catchment"]["source_bytes_equal"]
+    assert report["native_execution"] == "not_run"
+
+
+def test_unedited_catchment_rejects_unused_drawing(tmp_path: Path) -> None:
+    """A supplied drawing must not be silently ignored for a source-exact export."""
+    from runoff_routing.rorb_ge_authoring import GeDrawing, GeNode, GeReach  # noqa: PLC0415 -- case-local model
+
+    project_path = _original_project(tmp_path)
+    base = load_project(project_path).run
+    drawing = GeDrawing(
+        (GeNode("SOURCE", 0, 0, "area_1"), GeNode("OUT", 3000, 0, outlet=True)),
+        (GeReach("reach_1", ((0, 0), (3000, 0))),),
+        "EPSG:28350",
+        "m",
+    )
+    with pytest.raises(NativeExportError, match="without a CATG edit"):
+        export_cmd_package(
+            project_path,
+            tmp_path / "unused drawing",
+            target=NativeCmdExportTarget("cmd-6.44"),
+            events=(NativeExportEvent("drawing", base, drawing),),
+        )
+
+
+def test_export_manifest_selects_serialized_source_bindings_without_resolved_host_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Integrate #140's official wire shape without leaking local resolved paths."""
+    from runoff_routing import native_export  # noqa: PLC0415 -- narrow test patch
+
+    project_path = _original_project(tmp_path)
+    real_serialize = native_export.project_to_dict
+
+    def with_binding(project: Project) -> dict[str, object]:
+        source = real_serialize(project)
+        source["source_bindings"] = [
+            {
+                "role": "catchment",
+                "origin": "override",
+                "declared_reference": r"Q:\foreign\original.catg",
+                "selected_reference": "picked/graphical.catg",
+                "resolved_source": r"C:\private\checkout\original.catg",
+            }
+        ]
+        return source
+
+    monkeypatch.setattr(native_export, "project_to_dict", with_binding)
+    package = tmp_path / "portable"
+    export_cmd_package(project_path, package, target=NativeCmdExportTarget("cmd-6.44"))
+    manifest_data = (package / "manifest.json").read_text(encoding="utf-8")
+    manifest = json.loads(manifest_data)
+    assert manifest["selected_input_bindings"] == [
+        {
+            "role": "catchment",
+            "origin": "override",
+            "declared_reference": r"Q:\foreign\original.catg",
+            "selected_reference": "picked/graphical.catg",
+        }
+    ]
+    assert r"C:\private\checkout" not in manifest_data
