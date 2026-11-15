@@ -232,6 +232,83 @@ def test_truncated_checkpoint_rejected_and_unfinished_not_complete(tmp_path: Pat
         execute_mc_request(project, request, ledger, resume=True)
 
 
+
+def test_ledger_numerical_corruption_fails_hash_chain_and_external_receipt(tmp_path: Path) -> None:
+    project, request, events = _input(tmp_path)
+    ledger = tmp_path / "tamper.jsonl"
+    receipt = execute_mc_request(project, request, ledger)
+    assert receipt.complete
+    assert receipt.ledger_sha256 == hashlib.sha256(ledger.read_bytes()).hexdigest()
+    assert summarise_ledger(
+        ledger, request, _rows(ledger)[0], expected_ledger_sha256=receipt.ledger_sha256
+    ).complete
+
+    rows = _rows(ledger)
+    sites = cast("list[dict[str, object]]", rows[1]["sites"])
+    sites[0]["peak_m3_s"] = 999999.0
+    ledger.write_text(
+        "".join(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    with pytest.raises(MCRunError, match="checksum/chain mismatch"):
+        execute_mc_request(project, request, ledger, resume=True)
+    with pytest.raises(MCRunError, match="checksum/chain mismatch"):
+        replay_mc_event(project, request, ledger, events[0].sample_id, tmp_path / "no-false-replay")
+    assert not (tmp_path / "no-false-replay.json").exists()
+
+    # A checksum chain is not a signature; a separately pinned complete-file
+    # SHA-256 still detects a malicious rehash of the modified numerical row.
+    previous = hashlib.sha256(
+        (json.dumps(rows[0], sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    ).hexdigest()
+    for row in rows[1:]:
+        row["previous_record_sha256"] = previous
+        row.pop("record_sha256")
+        previous = hashlib.sha256(
+            (json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        ).hexdigest()
+        row["record_sha256"] = previous
+    ledger.write_text(
+        "".join(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    with pytest.raises(MCRunError, match="independently pinned"):
+        summarise_ledger(ledger, request, _rows(ledger)[0], expected_ledger_sha256=receipt.ledger_sha256)
+
+
+def test_zero_rainfall_is_valid_zero_peak_not_missing(tmp_path: Path) -> None:
+    project, request, events = _input(tmp_path)
+    rainless = events[0]
+    assert rainless.event.storm is not None
+    assert rainless.event.losses is not None
+    zero = replace(
+        rainless,
+        gross_depth_mm=Decimal(0),
+        event=ProjectEvent(
+            rainless.event.event_id,
+            storm={**rainless.event.storm, "depths_mm": ["0"]},
+            losses=rainless.event.losses,
+        ),
+    )
+    header = MCRequestHeader(
+        plan_sha256=hashlib.sha256(b"zero").hexdigest(),
+        policy_id="authored_control_v1",
+        source_files=(SourceFile("patterns.csv", hashlib.sha256((tmp_path / "patterns.csv").read_bytes()).hexdigest()),),
+        populations=(MCPopulation("base", 60, Decimal(1)),),
+        event_count=1,
+    )
+    zero_request = tmp_path / "zero-effective.jsonl"
+    # Preserve complete allocation after removing the second sample.
+    zero = replace(zero, stratum_size=1, probability_weight=Decimal(1))
+    write_effective_request(zero_request, header, (zero,))
+    ledger = tmp_path / "zero-ledger.jsonl"
+    summary = execute_mc_request(project, zero_request, ledger)
+    assert summary.complete
+    assert summary.zero_peak_events == 1
+    sites = cast("list[dict[str, object]]", _rows(ledger)[1]["sites"])
+    assert sites[0]["peak_m3_s"] == 0
+
+
 def test_engine_selection_and_simple_cli(tmp_path: Path) -> None:
     project, request, _ = _input(tmp_path, count=1)
     ledger = tmp_path / "cli.jsonl"

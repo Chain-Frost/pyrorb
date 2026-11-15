@@ -25,7 +25,7 @@ from .project_json import SourceFile
 from .rorb_model import RunModel
 
 EFFECTIVE_FORMAT = "python-runoff-routing-mc-effective-events"
-EFFECTIVE_VERSION = 1
+EFFECTIVE_VERSION = 2
 MAX_LINE_BYTES = 64 * 1024
 MAX_EVENTS = 2_000_000
 _ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
@@ -212,6 +212,11 @@ class EffectiveMCEvent:
     preburst_depth_mm: Decimal
     loss_policy: LossPolicy
     event: ProjectEvent
+    tp_source_kind: str | None = None
+    tp_aep_band: str | None = None
+    tp_area_bin: str | None = None
+    tp_region: str | None = None
+    tp_bin_id: str | None = None
 
     def __post_init__(self) -> None:
         self._validate_identity()
@@ -231,8 +236,19 @@ class EffectiveMCEvent:
         _int(self.original_tp_order, "original_tp_order")
         if not self.original_tp_id or any(ord(char) < 32 for char in self.original_tp_id):
             _fail("An original TP source identifier is mandatory")
+        for field, name in (
+            (self.tp_source_kind, "tp_source_kind"),
+            (self.tp_aep_band, "tp_aep_band"),
+            (self.tp_area_bin, "tp_area_bin"),
+            (self.tp_region, "tp_region"),
+            (self.tp_bin_id, "tp_bin_id"),
+        ):
+            if field is not None:
+                _name(field, name)
+        if self.tp_source_kind is not None and self.tp_source_kind not in {"point", "areal"}:
+            _fail("The recorded temporal-pattern source kind must be point or areal")
         if self.event.event_id != event_id_for_sample(self.sample_id) or self.event.routing is not None:
-            _fail("MC event ID must equal its sample ID; routing coefficients remain fixed")
+            _fail("MC event ID must be the stable mapping of its sample ID; routing must remain fixed")
 
     def _validate_probabilities(self) -> None:
         if (
@@ -307,6 +323,11 @@ class EffectiveMCEvent:
             "probability_weight": str(self.probability_weight),
             "original_tp_id": self.original_tp_id,
             "original_tp_order": self.original_tp_order,
+            "tp_source_kind": self.tp_source_kind,
+            "tp_aep_band": self.tp_aep_band,
+            "tp_area_bin": self.tp_area_bin,
+            "tp_region": self.tp_region,
+            "tp_bin_id": self.tp_bin_id,
             "rainfall_aep_percent": str(self.rainfall_aep_percent),
             "gross_depth_mm": str(self.gross_depth_mm),
             "arf_factor": str(self.arf_factor),
@@ -386,6 +407,11 @@ def _event_from_dict(raw: object) -> EffectiveMCEvent:
         "probability_weight",
         "original_tp_id",
         "original_tp_order",
+        "tp_source_kind",
+        "tp_aep_band",
+        "tp_area_bin",
+        "tp_region",
+        "tp_bin_id",
         "rainfall_aep_percent",
         "gross_depth_mm",
         "arf_factor",
@@ -415,6 +441,11 @@ def _event_from_dict(raw: object) -> EffectiveMCEvent:
         probability_weight=_decimal(item["probability_weight"], "sample weight", positive=True),
         original_tp_id=item["original_tp_id"],
         original_tp_order=_int(item["original_tp_order"], "TP source order"),
+        tp_source_kind=cast("str | None", item["tp_source_kind"]),
+        tp_aep_band=cast("str | None", item["tp_aep_band"]),
+        tp_area_bin=cast("str | None", item["tp_area_bin"]),
+        tp_region=cast("str | None", item["tp_region"]),
+        tp_bin_id=cast("str | None", item["tp_bin_id"]),
         rainfall_aep_percent=_decimal(item["rainfall_aep_percent"], "AEP", positive=True),
         gross_depth_mm=_decimal(item["gross_depth_mm"], "gross depth"),
         arf_factor=_decimal(item["arf_factor"], "ARF"),
@@ -462,6 +493,8 @@ def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     for record in iter_effective_events(path):
         count += 1
         key = (record.scenario_id, record.duration_min, record.stratum_id)
+        if header.policy_id == "monte-carlo-statistics/1" and record.loss_policy == "subtract_clamp":
+            _fail("Experimental preburst clamp requires a different explicit statistical policy ID")
         if record.sample_id in seen or (record.scenario_id, record.duration_min) not in target:
             _fail("Duplicate sample ID or an undeclared scenario/duration")
         seen.add(record.sample_id)
@@ -524,6 +557,8 @@ def materialise_arr_sample(
     preburst_depth_mm: Decimal,
     preburst_policy: LossPolicy,
     dry_tail_min: int,
+    expected_original_tp_id: str | None = None,
+    tp_bin_id: str | None = None,
 ) -> EffectiveMCEvent:
     """Materialise B's sampled depth/TP/IL using established ARR ARF exactly once.
 
@@ -547,8 +582,10 @@ def materialise_arr_sample(
     if pattern_source_order <= 0 or pattern_source_order > len(pattern_set.patterns):
         _fail("TP source ordinal is missing from the original pattern file")
     pattern = pattern_set.patterns[pattern_source_order - 1]
+    if expected_original_tp_id is not None and pattern.event_id != expected_original_tp_id:
+        _fail("B's selected temporal-pattern EventID differs from its original source ordinal")
     if pattern_set.kind != ("point" if sum(a.area_km2 for a in model.catchment.subareas) < 75 else "areal"):
-        _fail("Point/areal TP source selection disagrees with the catchment area")
+        _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
         _fail("Storm duration and dry tail must divide exactly by the source TP timestep")
     if sum(pattern.increments_percent, Decimal(0)) != 100:
@@ -609,6 +646,11 @@ def materialise_arr_sample(
         storm_initial_loss_mm=storm_initial_loss_mm,
         preburst_depth_mm=preburst_depth_mm,
         loss_policy=preburst_policy,
+        tp_source_kind=pattern_set.kind,
+        tp_aep_band=pattern.aep_band,
+        tp_area_bin=pattern.area_bin,
+        tp_region=pattern.region,
+        tp_bin_id=tp_bin_id,
         event=ProjectEvent(
             event_id_for_sample(sample_id),
             storm=override,

@@ -37,11 +37,23 @@ from .project_batch import ProjectBatchReport, iter_project_events, run_project_
 from .project_json import LoadedProject, load_project
 
 LEDGER_FORMAT = "python-runoff-routing-mc-event-ledger"
-LEDGER_VERSION = 1
+LEDGER_VERSION = 2
 _STATUS_OK = "computed_unvalidated"
 _LEDGER_ROW_KEYS = {
     "sample_id",
     "event_id",
+    "original_tp_id",
+    "original_tp_order",
+    "tp_source_kind",
+    "tp_aep_band",
+    "tp_area_bin",
+    "tp_region",
+    "tp_bin_id",
+    "loss_policy",
+    "rainfall_aep_percent",
+    "arf_factor",
+    "previous_record_sha256",
+    "record_sha256",
     "scenario_id",
     "duration_min",
     "stratum_id",
@@ -65,6 +77,7 @@ class MCRunSummary:
     recorded: int
     status_counts: dict[str, int]
     zero_peak_events: int
+    ledger_sha256: str
 
     @property
     def complete(self) -> bool:
@@ -75,8 +88,9 @@ class MCRunSummary:
             f"MC events: {self.recorded}/{self.expected} checkpointed\n"
             f"Statuses: {json.dumps(self.status_counts, sort_keys=True)}\n"
             f"All-site zero-peak successful events: {self.zero_peak_events}\n"
+            f"Ledger SHA-256 (pin externally for authenticity): {self.ledger_sha256}\n"
             f"Software execution complete: {str(self.complete).lower()}\n"
-            "Flood-frequency estimate: not calculated here (#147). Native/statistical parity: not assessed.\n"
+            "Flood-frequency estimate: requires #147 full-plan adapter. Native/statistical parity: not assessed.\n"
         )
 
 
@@ -149,14 +163,18 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
     status = result.status
     diagnostics = [{"code": item.code, "message": item.message} for item in result.diagnostics]
     if status == _STATUS_OK:
-        if len(result.hydrographs) != len(result.requested_print_ids) or {
+        if not result.requested_print_ids or len(result.hydrographs) != len(result.requested_print_ids) or {
             item.print_id for item in result.hydrographs
         } != set(result.requested_print_ids):
             status = "incomplete_output"
             diagnostics.append({"code": "mc_missing_site", "message": "Missing or duplicate requested output site"})
         for graph in result.hydrographs:
             ordinates = graph.discharge_m3_s
-            if not ordinates or not all(math.isfinite(value) for value in ordinates):
+            if (
+                not ordinates
+                or len(ordinates) != len(result.physical_time_hours)
+                or not all(math.isfinite(value) and value >= 0 for value in ordinates)
+            ):
                 status = "incomplete_output"
                 diagnostics.append({"code": "mc_nonfinite_peak", "message": "Unusable discharge series"})
                 break
@@ -178,6 +196,16 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
     return {
         "sample_id": event.sample_id,
         "event_id": event.event.event_id,
+        "original_tp_id": event.original_tp_id,
+        "original_tp_order": event.original_tp_order,
+        "tp_source_kind": event.tp_source_kind,
+        "tp_aep_band": event.tp_aep_band,
+        "tp_area_bin": event.tp_area_bin,
+        "tp_region": event.tp_region,
+        "tp_bin_id": event.tp_bin_id,
+        "loss_policy": event.loss_policy,
+        "rainfall_aep_percent": str(event.rainfall_aep_percent),
+        "arf_factor": str(event.arf_factor),
         "scenario_id": event.scenario_id,
         "duration_min": event.duration_min,
         "stratum_id": event.stratum_id,
@@ -189,6 +217,24 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
         "requested_print_ids": list(result.requested_print_ids),
         "sites": sites,
     }
+
+
+
+def _seal_record(record: dict[str, object], previous: str) -> dict[str, object]:
+    """Hash all result fields and the previous row; not a digital signature."""
+    payload = {**record, "previous_record_sha256": previous}
+    checksum = hashlib.sha256(encode_jsonl_line(payload)).hexdigest()
+    return {**payload, "record_sha256": checksum}
+
+
+def _verify_record_checksum(record: dict[str, object], previous: str, ordinal: int) -> str:
+    claimed = record.get("record_sha256")
+    payload = {key: value for key, value in record.items() if key != "record_sha256"}
+    calculated = hashlib.sha256(encode_jsonl_line(payload)).hexdigest()
+    if record.get("previous_record_sha256") != previous or claimed != calculated:
+        message = f"MC ledger checksum/chain mismatch at record {ordinal}"
+        raise MCRunError(message)
+    return calculated
 
 
 def _read_ledger(path: Path) -> Iterator[dict[str, object]]:
@@ -214,7 +260,7 @@ def _read_ledger(path: Path) -> Iterator[dict[str, object]]:
             yield row
 
 
-def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path) -> int:
+def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path) -> tuple[int, str]:
     """Only an unchanged complete-prefix checkpoint may be resumed.
 
     A new extended plan revision changes the request SHA and weights. It must
@@ -226,8 +272,10 @@ def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path
         message = "MC checkpoint belongs to a different plan/policy/source/engine/code revision"
         raise MCRunError(message)
     count = 0
+    previous = hashlib.sha256(encode_jsonl_line(expected)).hexdigest()
     effective = iter_effective_events(request_path)
     for row in recorded:
+        previous = _verify_record_checksum(row, previous, count + 1)
         candidate = next(effective, None)
         if candidate is None:
             message = "Ledger contains more events than the request"
@@ -235,6 +283,16 @@ def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path
         if (
             row["sample_id"] != candidate.sample_id
             or row["event_id"] != candidate.event.event_id
+            or row["original_tp_id"] != candidate.original_tp_id
+            or row["original_tp_order"] != candidate.original_tp_order
+            or row["tp_source_kind"] != candidate.tp_source_kind
+            or row["tp_aep_band"] != candidate.tp_aep_band
+            or row["tp_area_bin"] != candidate.tp_area_bin
+            or row["tp_region"] != candidate.tp_region
+            or row["tp_bin_id"] != candidate.tp_bin_id
+            or row["loss_policy"] != candidate.loss_policy
+            or row["rainfall_aep_percent"] != str(candidate.rainfall_aep_percent)
+            or row["arf_factor"] != str(candidate.arf_factor)
             or row["scenario_id"] != candidate.scenario_id
             or row["duration_min"] != candidate.duration_min
             or row["stratum_id"] != candidate.stratum_id
@@ -244,10 +302,10 @@ def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path
             message = f"Mixed or reordered checkpoint at event {count + 1}"
             raise MCRunError(message)
         count += 1
-    return count
+    return count, previous
 
 
-def _new_ledger(path: Path, header: dict[str, object]) -> None:
+def _new_ledger(path: Path, header: dict[str, object]) -> str:
     if path.exists() or path.is_symlink():
         message = "MC ledger already exists; specify --resume for an unchanged plan"
         raise MCRunError(message)
@@ -255,10 +313,12 @@ def _new_ledger(path: Path, header: dict[str, object]) -> None:
         stream.write(encode_jsonl_line(header))
         stream.flush()
         os.fsync(stream.fileno())
+    return hashlib.sha256(encode_jsonl_line(header)).hexdigest()
 
 
-def _append_ledger(path: Path, record: dict[str, object]) -> None:
-    encoded = encode_jsonl_line(record)
+def _append_ledger(path: Path, record: dict[str, object], previous: str) -> str:
+    sealed = _seal_record(record, previous)
+    encoded = encode_jsonl_line(sealed)
     if len(encoded) > MAX_LINE_BYTES:
         message = "Compact MC ledger record exceeds bounded line length"
         raise MCRunError(message)
@@ -266,11 +326,22 @@ def _append_ledger(path: Path, record: dict[str, object]) -> None:
         stream.write(encoded)
         stream.flush()
         os.fsync(stream.fileno())
+    return cast("str", sealed["record_sha256"])
 
 
-def summarise_ledger(path: Path, request_path: Path, expected: dict[str, object]) -> MCRunSummary:
+def summarise_ledger(
+    path: Path,
+    request_path: Path,
+    expected: dict[str, object],
+    *,
+    expected_ledger_sha256: str | None = None,
+) -> MCRunSummary:
     """Count all planned success/zero/failure states; never call partial a curve."""
-    completed = _existing_prefix(path, expected, request_path)
+    completed, _ = _existing_prefix(path, expected, request_path)
+    ledger_digest = sha256_file(path)
+    if expected_ledger_sha256 is not None and ledger_digest != expected_ledger_sha256:
+        message = "MC ledger differs from the independently pinned original SHA-256"
+        raise MCRunError(message)
     counts: Counter[str] = Counter()
     zeros = 0
     rows = _read_ledger(path)
@@ -295,7 +366,7 @@ def summarise_ledger(path: Path, request_path: Path, expected: dict[str, object]
         ):
             zeros += 1
     return MCRunSummary(
-        int(cast("int", expected["expected_event_count"])), completed, dict(sorted(counts.items())), zeros
+        int(cast("int", expected["expected_event_count"])), completed, dict(sorted(counts.items())), zeros, ledger_digest
     )
 
 
@@ -324,9 +395,9 @@ def execute_mc_request(
         message = "MC ledger symlinks are not accepted"
         raise MCRunError(message)
     if resume:
-        completed = _existing_prefix(ledger_path, header, request_path)
+        completed, previous = _existing_prefix(ledger_path, header, request_path)
     else:
-        _new_ledger(ledger_path, header)
+        previous = _new_ledger(ledger_path, header)
         completed = 0
     remaining = islice(iter_effective_events(request_path), completed, None)
     # Two bounded iterators over the same immutable request are intentional:
@@ -346,7 +417,7 @@ def execute_mc_request(
         if outcome.event_id != record.event.event_id:
             message = "Existing runner returned an outcome with a different event ID"
             raise MCRunError(message)
-        _append_ledger(ledger_path, _event_row(record, outcome))
+        previous = _append_ledger(ledger_path, _event_row(record, outcome), previous)
     if sha256_file(request_path) != request_hash:
         message = "MC request changed during execution; checkpoint is not reusable"
         raise MCRunError(message)
@@ -419,6 +490,7 @@ def main(argv: list[str] | None = None) -> int:
     inspect.add_argument("project", type=Path)
     inspect.add_argument("request", type=Path)
     inspect.add_argument("ledger", type=Path)
+    inspect.add_argument("--expected-ledger-sha256", help="independently stored ledger file SHA-256")
     for sub in (run, replay, inspect):
         sub.add_argument("--engine", choices=("python", "python-cmd", "rorb-cmd"))
         sub.add_argument("--numerical-profile")
@@ -466,7 +538,9 @@ def main(argv: list[str] | None = None) -> int:
         expected = _header(
             loaded, digest, selection=selected, wheel_artifact=args.wheel_artifact, request_path=args.request
         )
-        result = summarise_ledger(args.ledger, args.request, expected)
+        result = summarise_ledger(
+            args.ledger, args.request, expected, expected_ledger_sha256=args.expected_ledger_sha256
+        )
         print(result.to_text(), end="")
     except (OSError, ValueError, TypeError, ArithmeticError) as exc:
         print(f"MC execution failed: {exc}", file=sys.stderr)

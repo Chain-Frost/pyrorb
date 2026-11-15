@@ -62,7 +62,7 @@ probability_weight, original_tp_id, original_tp_order,
 rainfall_aep_percent, gross_depth_mm, arf_factor, storm_initial_loss_mm,
 preburst_depth_mm, loss_policy and event. All noninteger numbers are
 exact decimal strings. The event is the existing explicit project event
-with event_id equal to sample_id, storm with complete percentages/horizon/
+with the separate deterministic legal engine-event ID, storm with complete percentages/horizon/
 once-ARF-adjusted subarea depths, and losses with explicit burst IL
 and fixed continuing loss. No second project JSON schema is introduced.
 
@@ -73,9 +73,9 @@ Separate populations preserve probability mass for each duration/scenario;
 unmodelled tails (modelled_mass < 1) remain explicit and are not
 renormalised. All originally sampled TP IDs and source-order ordinals
 are retained; physical print-site identities come from the verified
-existing project. The exact sampled depth and loss are retained for replay.
+existing project. The exact sampled depth and loss are retained for replay. The source TP kind, region,\nsource AEP category and area bin are retained separately from the #146 TP conditional-bin ID.
 
-The validator checks original source hashes, all population masses,
+**Deliberate narrower project restriction:** for this first supported MC profile,\npoint TP is accepted only below 75 km2 and areal TP at or above 75 km2.\nRORBwin v6.52 describes this threshold as a recommendation which a user\nmay override, not a mandatory native rule. This software restriction is\nnot a RORBwin compatibility assertion. The sampled source IDs and TP\nfrequency categories are never replaced with an area-only category.\nThe explicitly optional `subtract_clamp` preburst policy is an\n**experimental separate statistical choice**, not `monte-carlo-statistics/1`;\nunder that policy ID it is rejected rather than silently adopted.\n\nThe validator checks original source hashes, all population masses,
 per-stratum allocations and weights, duplicate samples, exact 100% TP
 percentages, original source IDs, duration/timestep consistency, one-time
 ARF application, and exact burst initial-loss reduction. The execution
@@ -96,7 +96,7 @@ site IDs and, on success, the peak, index and physical time for each site.
 A successful zero remains numeric zero; a failed/unsupported sample
 retains its probability weight but has no fabricated peak or hydrograph.
 
-Every appended row is flushed/fsynced. Resume accepts **only a verified
+**Ledger schema v2** includes a SHA-256 hash chain over *every* result\nrecord, starting from the versioned header digest and continuing through\nall site peaks, physical times, status, diagnostics, plan weights and\nTP/loss/ARF provenance. Resume, inspection and selected replay verify the\nchain, so accidental modification of an existing numerical result fails\neven if the sample/plan identities still match. This is a **checksum, not\na digital signature**: someone who can replace all records can recompute\nthe chain. The CLI prints the complete-ledger SHA-256 for **independent\nexternal retention**. `inspect --expected-ledger-sha256 HASH` verifies such\na separately retained SHA-256; independent scientific authenticity still\nrequires actual input/output custody and selected deterministic replays.\nEarlier v1 ledgers cannot be silently read as v2 checkpoints.\n\nEvery appended row is flushed/fsynced. Resume accepts **only a verified
 unchanged prefix** of the same request and engine implementation. It
 rejects changed plan/policy/source/engine code, mixed samples/weights,
 truncated JSONL and duplicate events. A changed/extended #146 plan needs
