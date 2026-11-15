@@ -6,6 +6,7 @@ import math
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -48,7 +49,7 @@ def test_default_engine_mode_two_full_horizon_and_physical_source_volume(tmp_pat
     assert len(result.hydrographs) == 1
     assert len(result.hydrographs[0].discharge_m3_s) == 6
     assert result.physical_time_hours == ("0.0", "0.5", "1.0", "1.5", "2.0", "2.5")
-    sources = result.python_diagnostics["source_hydrographs_m3_s"]
+    sources = cast("tuple[tuple[float, ...], ...]", result.python_diagnostics["source_hydrographs_m3_s"])
     assert isinstance(sources, tuple)
     expected_volume = float(model.catchment.subareas[0].area_km2) * 7.5 * 1000
     assert math.fsum(sources[0]) * 1800 == pytest.approx(expected_volume, abs=1e-8)
