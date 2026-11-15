@@ -304,7 +304,10 @@ def _graphic_entity_rows(
     header: tuple[str, ...], section: str, *, columns: int
 ) -> tuple[tuple[int, tuple[str, ...]], ...]:
     """Read only the original 6.45 node/reach *header* records, not a topology."""
-    marker = header.index(f"C {section}")
+    marker = next((i for i, line in enumerate(header) if line.strip() == f"C {section}"), None)
+    if marker is None:
+        message = f"Missing graphical {section} section"
+        raise _problem(message)
     count = _integer(header[marker + 1].strip()[2:].strip(), marker + 2)
     end = next(
         (i for i in range(marker + 2, len(header)) if header[i].strip().startswith("C #")),
