@@ -165,11 +165,12 @@ def distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
 
 
 def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float) -> tuple[float, ...]:
-    """Apply pervious initial then continuing loss at uniform within-bin intensity.
+    """Apply CMD's discrete-bin pervious initial/continuing loss convention.
 
-    CL acts only during the fraction of a bin after IL is exhausted. At exact
-    equality this fraction is zero. IL persists over dry bins; unused CL does
-    not carry to later bins. This is the engineering-v1 method, not CMD parity.
+    After a bin strictly exhausts IL, charge the complete CL*dt allowance
+    against its remaining rainfall, even if IL was exhausted mid-bin.
+    At exact IL equality no runoff occurs, and CL is charged on the next
+    wet bin. IL persists over dry bins; unused CL does not carry forward.
     """
     _check_finite_nonnegative(losses.initial_mm, "Initial loss")
     _check_finite_nonnegative(losses.continuing_mm_h, "Continuing loss")
@@ -190,9 +191,9 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
         if post_initial_rain <= 0.0:
             excess.append(0.0)
         else:
-            # Uniform rainfall rate: CL operates only after the IL crossing.
-            post_initial_fraction = post_initial_rain / rainfall
-            excess.append(max(0.0, post_initial_rain - continuing_per_bin * post_initial_fraction))
+            # CMD charges a full-bin CL allowance after initial loss is
+            # exceeded, including the first crossing bin. No carry-forward.
+            excess.append(max(0.0, post_initial_rain - continuing_per_bin))
     return tuple(excess)
 
 
@@ -245,12 +246,13 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
         _check_finite_nonnegative(depth, "Rainfall depth")
     for percent in storm.percentages:
         _check_finite_nonnegative(percent, "Temporal percentage")
-    if not math.isclose(math.fsum(storm.percentages), 100, rel_tol=0, abs_tol=0.01):
+    total_percent = math.fsum(storm.percentages)
+    if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
         message = "Temporal pattern percentages must total 100 within printed precision."
         raise RoutingDomainError(message)
     excesses = tuple(
         rainfall_excess(
-            tuple(percent * depth / 100 for percent in storm.percentages),
+            tuple(percent * depth / total_percent for percent in storm.percentages),
             losses=losses,
             timestep_hours=storm.timestep_hours,
         )

@@ -1,9 +1,12 @@
 # Issue #6 — default Python engineering method, batches and acceptance evidence
 
-**Status (15 November 2026):** Method/correctness and explicit batches merged;
-independent analytic/manufactured scope tested. **Broader CMD/physical accuracy
-is unassessed**; issue #6 remains open for causal attribution of material
-differences, not performance work.
+**Status (15 November 2026):** Method/correctness and explicit batches merged.
+The owner subsequently selected **original RORB CMD as the numerical accuracy
+reference**, with independently evidenced CMD defects as the only accepted
+departure. The default loss calculation is corrected in PR #102 and the
+post-correction CMD percentage discrepancies are measured below.
+**Broader physical/native numerical acceptance remains open** pending
+independent defect attribution and time/site review; performance is closed.
 
 ## Source and software evidence
 
@@ -110,10 +113,102 @@ Resolve/quantify source runoff/loss differences separately from routed
 numerics for the existing 36 cases, beginning with `review-ensemble-tp3`
 and the zero-loss `zero-loss-ensemble-tp9-f4` control. Confirm
 native physical-site/time mapping before treating original CMD output as
-a physical-time observation. Apply independent, prospective engineering
-criteria from the method document; do not tune acceptance to CMD printed
-tokens or convert cached candidate snapshots into new executions.
+a physical-time observation. Apply the **owner-selected RORB CMD reference**,
+including peak/ordinate/volume percentage differences; independent
+mathematical and conservation controls are safeguards, not another
+overall benchmark. Retain separate native exact-printed qualification;
+do not convert cached candidate snapshots into new executions.
 
 B owns regression schema/case policy/fixture selection and independent
 qualification; C owns CMD capability matrix. This work retains no
 performance optimisation or additional research engine task.
+
+## Current CMD reference policy and post-fix receipt
+
+Owner direction (public [issue #6](https://github.com/Chain-Frost/python-runoff-routing/issues/6)):
+**RORB CMD defines acceptable numerical accuracy** for the default
+Python engine wherever the reference is supported and attributable.
+Prefer close agreement without requiring bitwise matching. A deliberate
+departure is acceptable **only** for a named, independently substantiated
+CMD defect; synthetic/mathematical controls are necessary safeguards,
+not a proposed substitute for native comparison. Report both signed
+percentage and absolute discharge/volume errors and peak-index/timing;
+near-zero original discharges are not suitable individual percentage
+denominators.
+
+### Corrected method
+
+[PR #102](https://github.com/Chain-Frost/python-runoff-routing/pull/102)
+changes only the default method's **initial/continuing-loss crossing**
+to full-bin CL once IL is strictly exceeded, plus divides near-100%
+temporal weights by their actual total. Separate `python-cmd`
+arithmetic, B's dataset/comparator and C's matrix are untouched.
+The prior fractional-CL candidate produced **+8.50%** extra source
+runoff in `review-ensemble-tp3` and **+9.30%** in
+`review-ensemble-tp9`, relative to CMD-style source runoff.
+Both discrepancies are now eliminated to at most **0.0000383%**
+across all 36 computed cases.
+
+### Fresh full-model regression and percentage comparison
+
+- Public source branch `c9553efe96ac2ed924856beef70c5415b0798ea7`,
+  [Windows/Python 3.13.17 workflow run 43675053165](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43675053165).
+- Normal quality checks **918 tests passed**, Ruff 0.16.6, strict
+  Pyright, wheel build and outside-checkout smoke. Exact wheel SHA-256
+  `aae429968172e0be62622c178ca60c3f4403c6f9f6f088c7e8fd9360d8c7838a`.
+  The existing fresh source and installed-wheel CMD baseline gates passed.
+- A one-time diagnostic compared **the same 50 retained original
+  public sources** through the current default `python`, compatible
+  `python-cmd` and original CMD 6.44 printed observations, on
+  identified full model/print/horizon and separate native clocks.
+  It was **removed** from the normal workflow after collecting
+  [the exact receipt](../ENGINEERING_METHOD.md#fresh-cmd-alignment--current-evidence-15-november-2026).
+  No additional runner, private files, native executable,
+  reference changes, or new comparison tolerance are retained.
+- **36 supported / 16,836 complete indexed samples**; separate
+  compatible CMD pass **36/36** native printed-policy case comparisons.
+  **14 S1 source-unsupported** remain indexed, not silently excluded.
+- **Worst** absolute peak difference relative CMD: **0.185986%**.
+  Worst full-ordinate absolute error: **0.334365% of CMD peak**.
+  Worst model-grid trapezoidal volume difference: **0.804717%**.
+  All 36 peak indices match. These are actual measured errors,
+  not approved pass thresholds. Original native printed-reference
+  errors are of the same scale.
+- Original ordered model/source/native-result plus complete source and
+  outlet binary64 comparison digest:
+  `e0f2acda323269648fe22aafd2a98ef73e097b6c81e50fd3065d4d97cd1fa362`.
+  Native original raw 1-based time labels were never shifted onto
+  the model's elapsed-from-zero clock.
+
+| Case | Default peak vs CMD before → after | Default volume vs CMD before → after |
+| --- | --- | --- |
+| `review-ensemble-tp3` | +4.1164% → **+0.00531%** | +8.3088% → **−0.17333%** |
+| `review-ensemble-tp9` | +10.4715% → **+0.05278%** | +8.8243% → **−0.43742%** |
+| `review-design-baseline` | +0.3851% → **−0.01097%** | +0.5761% → **−0.26546%** |
+| `zero-loss-ensemble-tp9-f4` | −0.05418% → **−0.05418%** | −0.21192% → **−0.21192%** |
+
+### Bounded source-to-outlet continuity candidate
+
+All 36 CMD-compatible source-volumes minus outlet trapezoidal
+integrals are **negative**, while the default's difference remains
+nonnegative in those same cases. In the public zero-loss
+`zero-loss-ensemble-tp9-f4`, model/source rainfall volume
+is approximately **14,825,140 m³** and the CMD-compatible terminal
+outlet integral is **14,856,543 m³**, an excess of approximately
+**31,402 m³ (+0.212%)**. Original CMD discharge print tokens
+corroborate the excess to their published precision. This is a
+**candidate native CMD continuity defect**, not yet a reviewed
+exception: check native printed site/time attribution and
+endpoint-storage conventions independently with B before authorising
+a departure. Native reported inclusive volume is **not** equated
+to model-grid trapezoidal volume.
+
+### Remaining work in issue #6
+
+Numerical acceptance is **still unassessed** pending a causal and
+independently reviewed explanation for the residual routing errors
+and any approved named CMD defect exception. CMD's print-site/time
+review and exact native-profile qualification remain B/C scopes.
+Do not lower numerical precision or imitate a suspected continuity
+error without that evidence. No further acceleration; the
+1,000-event owner target remains achieved on its prior synthetic model.
