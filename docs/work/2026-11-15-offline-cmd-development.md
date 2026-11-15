@@ -6,7 +6,7 @@
 
 - **Ultimate product:** `python` is the default improved, independent pure-Python engine. Keep its API/CLI default and separate hydrological engineering method.
 - **Current development:** explicitly use `python-cmd` as the test implementation for source admission, CMD-compatible numerics, synthetic controls and the finite MVP. Frozen, authenticated original RORB-CMD 6.44 full-horizon outputs are the numerical references; no native Windows launch is needed for routine regression.
-- **Synthetic controls:** locally manufactured events are analytical/software checks only unless a separate authentic CMD computation for that event was captured and admitted; no circular golden generation.
+- **Synthetic controls:** locally manufactured events are analytical/software checks, and may compare the future default `python` engine with a **pinned, independently native-qualified `python-cmd` profile** as an offline CMD-behaviour proxy without new native launches. Such a synthetic result is **not** itself an original RORB-CMD observation; direct native-equivalence labels still require a captured authentic CMD result. Do not create circular goldens from the implementation under test.
 - **Execution:** one Windows **or** Linux Python 3.13/3.14 quality run, original source input hash/preflight, fresh actual `python-cmd` source and independently installed-wheel comparison. The private investigation workspace is never a dependency. Keep exact unknown/unsupported/incomplete states.
 
 ## Grounded scope and latest evidence
