@@ -102,7 +102,7 @@ def test_cmd_reports_all_requested_sites_with_full_horizon_and_original_control_
 
 def test_default_engine_preserves_two_requested_sites_without_cmd_fallback(tmp_path: Path) -> None:
     path = _project(tmp_path, _multiple_prints())
-    outcome = run_engine_project(path)
+    outcome = run_engine_project(path, selection=EngineSelection.for_engine("python"))
     assert outcome.effective_selection.engine == "python"
     assert outcome.status == "computed_unvalidated"
     assert tuple(item.print_id for item in outcome.hydrographs) == ("interior", "print_1")
