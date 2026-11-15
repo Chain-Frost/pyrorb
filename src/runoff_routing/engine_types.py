@@ -31,8 +31,8 @@ _DEFAULT_PROFILES: dict[EngineId, str] = {
 class EngineSelection:
     """Engine identity and versioned arithmetic profile; independent of rainfall preparation."""
 
-    engine: EngineId = "python"
-    numerical_profile: str = "engineering-v1"
+    engine: EngineId = "python-cmd"
+    numerical_profile: str = "cmd-6.44"
 
     def __post_init__(self) -> None:
         if self.engine not in _DEFAULT_PROFILES:

@@ -14,6 +14,10 @@
 - [Explicit-event batches and verification](2026-11-15-issue6-batches.md) with [bounded measured performance](2026-11-15-issue6-batch-performance.md) — merged #99, not full Monte Carlo or physical acceptance.
 - [Issue #76 completed cleanup inventory, PR/issue closures and validation](2026-11-15-issue76-cleanup.md) — former duplicate runners retired without changing the maintained numerical engines or canonical references.
 
+- [Portable independent wheel verification and CI evidence equivalence](2026-11-15-verifier-install-equivalence.md) — source/wheel exact-artifact control, Linux/Windows 3.13/3.14; no extra site-packages-only requirement or claimed local VM execution.
+
+- [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
+
 ## Retained diagnostic/reference evidence
 
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.

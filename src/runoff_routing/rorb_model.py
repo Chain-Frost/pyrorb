@@ -13,7 +13,9 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Literal, cast
 
 SCHEMA_VERSION = 1
-ControlCode = Literal[1, 3, 4, 5, 7]
+ControlCode = Literal[1, 2, 3, 4, 5, 7]
+ReachMode = Literal["implicit_natural", "explicit_reach_types"]
+PatternBasis = Literal["percent_of_depth", "relative_weights", "combined_preburst_percent"]
 
 
 def _finite(value: Decimal, label: str, *, positive: bool = False) -> None:
@@ -108,10 +110,15 @@ class SubArea:
     identifier: str
     area_km2: Decimal
     label: str = ""
+    impervious_fraction: Decimal = Decimal(0)
 
     def __post_init__(self) -> None:
         _identity(self.identifier, "Subarea")
         _finite(self.area_km2, "subarea area", positive=True)
+        _finite(self.impervious_fraction, "impervious fraction")
+        if self.impervious_fraction > 1:
+            message = "Impervious fraction cannot exceed unity"
+            raise ValueError(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,6 +172,7 @@ class CatchmentModel:
     controls: tuple[ControlStep, ...]
     print_locations: tuple[PrintLocation, ...]
     storages: tuple[Storage, ...] = ()
+    reach_mode: ReachMode = "implicit_natural"
 
     def __post_init__(self) -> None:
         validate_catchment(self)
@@ -178,6 +186,12 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     if model.storages:
         message = "Special storages are not supported by the characterised catchment subset"
         raise ValueError(message)
+    if model.reach_mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "Unknown reach encoding mode"
+        raise ValueError(message)
+    if any(step.code == 2 for step in model.controls) and model.reach_mode != "explicit_reach_types":
+        message = "Source control code 2 requires an explicitly characterised reach encoding"
+        raise ValueError(message)
     _distinct(tuple(area.identifier for area in model.subareas), "subarea")
     _distinct(tuple(reach.identifier for reach in model.reaches), "reach")
     _distinct(tuple(point.identifier for point in model.print_locations), "print")
@@ -188,7 +202,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     running: set[str] | None = None
     stack: list[set[str]] = []
     for step in model.controls:
-        if step.code == 1:
+        if step.code in (1, 2):
             if (
                 area_cursor >= len(areas)
                 or reach_cursor >= len(reaches)
@@ -196,12 +210,21 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
                 or step.reach_id != reaches[reach_cursor]
                 or step.print_id is not None
             ):
-                message = "Code 1 must consume the next subarea and reach exactly once"
+                message = f"Code {step.code} must consume the next subarea and reach exactly once"
                 raise ValueError(message)
-            if running is not None and not stack:
-                message = "New subarea would overwrite an unstored running hydrograph"
+            if step.code == 2 and running is None:
+                message = "Code 2 needs a running hydrograph before adding another source"
                 raise ValueError(message)
-            running = {areas[area_cursor]}
+            # Adjacent code-1 sources in legacy cases also accumulate. Code 3
+            # saves *and clears* the current branch; code 4 restores via addition.
+            next_area = areas[area_cursor]
+            if running is None:
+                running = {next_area}
+            else:
+                if next_area in running:
+                    message = "A subarea cannot be added twice to the running hydrograph"
+                    raise ValueError(message)
+                running.add(next_area)
             area_cursor += 1
             reach_cursor += 1
         elif step.code == 5:
@@ -220,6 +243,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
                 message = "Code 3 requires a running hydrograph without additional operands"
                 raise ValueError(message)
             stack.append(set(running))
+            running = None
         elif step.code == 4:
             if (
                 running is None
@@ -262,7 +286,11 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
 
 @dataclass(frozen=True, slots=True)
 class StormModel:
-    """Explicit DESIGN pattern: source-order depth mapping is not a spatial join."""
+    """DESIGN raw temporal tokens; basis distinguishes percentages from weights.
+
+    Source-order depth mapping is not a spatial join. The legacy weights are
+    never overwritten by normalised percentages in the source/domain model.
+    """
 
     title: str
     timestep_hours: Decimal
@@ -274,9 +302,39 @@ class StormModel:
     pluviograph_count: int = 1
     isa_count: int = 1
     burst_count: int = 1
+    pattern_basis: PatternBasis = "percent_of_depth"
+    preburst_bins: int = 0
 
     def __post_init__(self) -> None:
         validate_storm(self)
+
+
+def _validate_pattern_basis(model: StormModel) -> None:
+    """Separate the strict 100% convention from native relative weights."""
+    total = sum(model.percentages, Decimal(0))
+    if model.pattern_basis == "percent_of_depth":
+        if abs(total - Decimal(100)) > Decimal("0.05"):
+            message = "Temporal pattern percentages must total 100 within recorded precision"
+            raise ValueError(message)
+    elif model.pattern_basis == "relative_weights":
+        if total <= 0:
+            message = "Relative temporal weights require a positive denominator"
+            raise ValueError(message)
+    elif model.pattern_basis == "combined_preburst_percent":
+        if type(model.preburst_bins) is not int or not 0 < model.preburst_bins < len(model.percentages):
+            message = "Combined pre-burst storm requires a validated positive prefix and separate burst"
+            raise ValueError(message)
+        prefix = sum(model.percentages[: model.preburst_bins], Decimal(0))
+        burst = sum(model.percentages[model.preburst_bins :], Decimal(0))
+        if prefix <= 0 or abs(burst - Decimal(100)) > Decimal("0.05"):
+            message = "Combined pre-burst requires positive preceding weights and a full 100% burst segment"
+            raise ValueError(message)
+    else:
+        message = "Unknown temporal pattern basis"
+        raise ValueError(message)
+    if model.pattern_basis != "combined_preburst_percent" and model.preburst_bins != 0:
+        message = "Only an authenticated combined pre-burst storm may store a pre-burst split"
+        raise ValueError(message)
 
 
 def validate_storm(model: StormModel) -> None:
@@ -304,9 +362,7 @@ def validate_storm(model: StormModel) -> None:
         _identity(name, "Storm subarea")
     for value in model.percentages:
         _finite(value, "temporal pattern percentage")
-    if abs(sum(model.percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
-        message = "Temporal pattern percentages must total 100 within recorded precision"
-        raise ValueError(message)
+    _validate_pattern_basis(model)
     for depth in model.depths_mm:
         _finite(depth, "storm rainfall depth")
 
@@ -373,7 +429,12 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
     return {
         "title": model.title,
         "subareas": [
-            {"identifier": item.identifier, "area_km2": str(item.area_km2), "label": item.label}
+            {
+                "identifier": item.identifier,
+                "area_km2": str(item.area_km2),
+                "label": item.label,
+                **({"impervious_fraction": str(item.impervious_fraction)} if item.impervious_fraction != 0 else {}),
+            }
             for item in model.subareas
         ],
         "reaches": [
@@ -392,11 +453,12 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
         ],
         "print_locations": [{"identifier": item.identifier, "label": item.label} for item in model.print_locations],
         "storages": [{"identifier": item.identifier, "kind": item.kind} for item in model.storages],
+        **({"reach_mode": model.reach_mode} if model.reach_mode != "implicit_natural" else {}),
     }
 
 
 def _storm_data(model: StormModel) -> dict[str, Any]:
-    return {
+    data: dict[str, Any] = {
         "title": model.title,
         "timestep_hours": str(model.timestep_hours),
         "calculation_increments": model.calculation_increments,
@@ -408,6 +470,13 @@ def _storm_data(model: StormModel) -> dict[str, Any]:
         "isa_count": model.isa_count,
         "burst_count": model.burst_count,
     }
+    # Omit the default in schema-1 JSON to preserve existing 36-case
+    # model hashes and source/installed-wheel identity contracts.
+    if model.pattern_basis != "percent_of_depth":
+        data["pattern_basis"] = model.pattern_basis
+    if model.preburst_bins != 0:
+        data["preburst_bins"] = model.preburst_bins
+    return data
 
 
 def to_dict(model: RorbModel) -> dict[str, Any]:
@@ -550,8 +619,16 @@ def _params(raw: object) -> ParameterSet:
 
 
 def _subarea(raw: object) -> SubArea:
-    record = _object(raw, {"identifier", "area_km2", "label"})
-    return SubArea(_field_str(record, "identifier"), _decimal(record["area_km2"]), _field_str(record, "label"))
+    fields = {"identifier", "area_km2", "label"}
+    if isinstance(raw, dict) and "impervious_fraction" in raw:
+        fields.add("impervious_fraction")
+    record = _object(cast("object", raw), fields)
+    return SubArea(
+        _field_str(record, "identifier"),
+        _decimal(record["area_km2"]),
+        _field_str(record, "label"),
+        _decimal(record["impervious_fraction"]) if "impervious_fraction" in record else Decimal(0),
+    )
 
 
 def _reach(raw: object) -> Reach:
@@ -562,7 +639,7 @@ def _reach(raw: object) -> Reach:
 def _control(raw: object) -> ControlStep:
     record = _object(raw, {"code", "subarea_id", "reach_id", "print_id", "label"})
     code = _integer_field(record, "code")
-    if code not in (1, 3, 4, 5, 7):
+    if code not in (1, 2, 3, 4, 5, 7):
         message = "Unrecognised RORB computational control code"
         raise ValueError(message)
     return ControlStep(
@@ -585,7 +662,14 @@ def _storage(raw: object) -> Storage:
 
 
 def _catchment(raw: object) -> CatchmentModel:
-    record = _object(raw, {"title", "subareas", "reaches", "controls", "print_locations", "storages"})
+    fields = {"title", "subareas", "reaches", "controls", "print_locations", "storages"}
+    if isinstance(raw, dict) and "reach_mode" in raw:
+        fields.add("reach_mode")
+    record = _object(cast("object", raw), fields)
+    mode = _string(record.get("reach_mode", "implicit_natural"))
+    if mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "Unknown reach encoding mode"
+        raise ValueError(message)
     return CatchmentModel(
         _field_str(record, "title"),
         tuple(_subarea(item) for item in _items(record["subareas"])),
@@ -593,25 +677,33 @@ def _catchment(raw: object) -> CatchmentModel:
         tuple(_control(item) for item in _items(record["controls"])),
         tuple(_print_location(item) for item in _items(record["print_locations"])),
         tuple(_storage(item) for item in _items(record["storages"])),
+        mode,
     )
 
 
 def _storm(raw: object) -> StormModel:
-    record = _object(
-        raw,
-        {
-            "title",
-            "timestep_hours",
-            "calculation_increments",
-            "start_increment",
-            "percentages",
-            "depths_mm",
-            "subarea_ids",
-            "pluviograph_count",
-            "isa_count",
-            "burst_count",
-        },
-    )
+    fields = {
+        "title",
+        "timestep_hours",
+        "calculation_increments",
+        "start_increment",
+        "percentages",
+        "depths_mm",
+        "subarea_ids",
+        "pluviograph_count",
+        "isa_count",
+        "burst_count",
+    }
+    if isinstance(raw, dict):
+        if "pattern_basis" in raw:
+            fields.add("pattern_basis")
+        if "preburst_bins" in raw:
+            fields.add("preburst_bins")
+    record = _object(cast("object", raw), fields)
+    basis = _string(record.get("pattern_basis", "percent_of_depth"))
+    if basis not in ("percent_of_depth", "relative_weights", "combined_preburst_percent"):
+        message = "Unknown temporal pattern basis"
+        raise ValueError(message)
     return StormModel(
         _field_str(record, "title"),
         _decimal(record["timestep_hours"]),
@@ -623,6 +715,8 @@ def _storm(raw: object) -> StormModel:
         _integer_field(record, "pluviograph_count"),
         _integer_field(record, "isa_count"),
         _integer_field(record, "burst_count"),
+        basis,
+        _integer_field(record, "preburst_bins") if "preburst_bins" in record else 0,
     )
 
 

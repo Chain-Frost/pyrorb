@@ -86,16 +86,37 @@ def _native_config(root: Path) -> NativeConfiguration:
     )
 
 
-def test_v1_engine_less_migrates_to_default_python_and_v2_round_trip() -> None:
+def test_v1_engine_less_preserves_python_and_new_schema2_defaults_to_python_cmd() -> None:
     new = json.loads(project_to_json(Project("example", "explicit", EmbeddedRun(_model()))))
     assert new["schema_version"] == 2
-    assert new["engine"] == {"id": "python", "numerical_profile": "engineering-v1"}
+    assert new["engine"] == {"id": "python-cmd", "numerical_profile": "cmd-6.44"}
     legacy = dict(new)
     legacy["schema_version"] = 1
     del legacy["engine"]
     migrated = project_from_json(json.dumps(legacy))
-    assert migrated.engine == EngineSelection()
+    assert migrated.engine == EngineSelection.for_engine("python")
     assert project_from_json(project_to_json(migrated)) == migrated
+
+
+def test_temporary_cmd_default_runs_offline_and_explicit_python_remains_selectable(tmp_path: Path) -> None:
+    selected = EngineSelection()
+    assert selected == EngineSelection.for_engine("python-cmd", "cmd-6.44")
+    source = _project(tmp_path)
+    stored = project_from_json(source.read_text(encoding="utf-8"))
+    assert stored.engine == selected
+    compatible = run_engine_project(source)
+    assert compatible.status == "computed_unvalidated"
+    assert compatible.effective_selection == compatible.stored_selection == selected
+    assert compatible.selection_source == "project"
+    assert compatible.python_diagnostics is not None
+    assert compatible.python_diagnostics["cmd_profile"] == "cmd-6.44"
+    engineering = run_engine_project(source, selection=EngineSelection.for_engine("python"))
+    assert engineering.status == "computed_unvalidated"
+    assert engineering.stored_selection == selected
+    assert engineering.effective_selection == EngineSelection.for_engine("python")
+    assert engineering.selection_source == "api_override"
+    assert engineering.python_diagnostics is not None
+    assert len(engineering.hydrographs[0].discharge_m3_s) == len(compatible.hydrographs[0].discharge_m3_s)
 
 
 def test_explicit_persisted_engine_and_override_precedence(tmp_path: Path) -> None:
@@ -110,7 +131,7 @@ def test_explicit_persisted_engine_and_override_precedence(tmp_path: Path) -> No
     assert cmd_result.python_diagnostics["cmd_profile"] == "cmd-6.44"
     with pytest.raises(ProjectError, match="Python-only"):
         run_project(source)
-    computed = run_engine_project(source, selection=EngineSelection())
+    computed = run_engine_project(source, selection=EngineSelection.for_engine("python"))
     assert computed.status == "computed_unvalidated"
     assert computed.stored_selection == persisted
     assert computed.effective_selection.engine == "python"
@@ -290,7 +311,7 @@ def _manufactured_wheel(root: Path, *, altered: bool = False) -> Path:
 
 
 def test_implementation_identity_is_exact_code_content_not_package_version(tmp_path: Path) -> None:
-    project = _project(tmp_path)
+    project = _project(tmp_path, EngineSelection.for_engine("python"))
     python_result = run_engine_project(project)
     unavailable = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
     expected = identify_implementation()
@@ -444,7 +465,7 @@ def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_pat
     numerical_event = replace(original, parameters=parameters, storm=storm)
     source = tmp_path / "numerical-failure.json"
     write_project(source, Project("numerical_failure", "explicit", EmbeddedRun(numerical_event)))
-    result = run_engine_project(source)
+    result = run_engine_project(source, selection=EngineSelection.for_engine("python"))
     assert result.status == "numerical_error"
     assert result.hydrographs == ()
     assert result.diagnostics[0].code == "solver_numerical"
