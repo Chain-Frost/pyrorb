@@ -1,6 +1,9 @@
 # S5-P0 — JSON-only project files
 
-**Status:** initial source/model import and validation, not solver equivalence. [S5 issue #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7), [JSON-only slice #35](https://github.com/Chain-Frost/python-runoff-routing/issues/35).
+**Status:** initial source/model import and validation, not solver equivalence.
+Current versus deferred RORB CMD interchange is recorded in the
+[S5 interoperability guide](S5_INTEROPERABILITY.md) and
+[independent #143 acceptance record](work/2026-11-15-issue143-s5-acceptance.md). [S5 issue #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7), [JSON-only slice #35](https://github.com/Chain-Frost/python-runoff-routing/issues/35).
 
 **Owner decision (11 November 2026): Ignore every TOML requirement for now.** TOML parsing, output, migrations and JSON/TOML equivalence are explicitly deferred until the rest of the project is working.
 

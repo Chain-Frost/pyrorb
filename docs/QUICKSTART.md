@@ -30,6 +30,9 @@ This checks that an already-supplied supported DESIGN event can execute. It does
 
 ## 3. JSON project and engine selection
 
+For current three-file CMD import and the pending PAR-led import/edit/native export/report gates, see
+[S5 interoperability](S5_INTEROPERABILITY.md) and the [#143 acceptance record](work/2026-11-15-issue143-s5-acceptance.md).
+
 For an existing supported [JSON project](PROJECT_JSON.md) (`project.json` below), use a *new* output filename:
 
 ```sh
