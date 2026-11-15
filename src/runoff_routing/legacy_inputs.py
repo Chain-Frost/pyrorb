@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 from decimal import Decimal
+
 from .rorb_codec import FormatProblem, parse_catg, parse_design_stm
 from .single_storm import Catchment, Control, Storm
 
