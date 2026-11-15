@@ -17,8 +17,8 @@ should be committed to the public product repository.
 
 > Complete the outstanding **native executable acceptance only** for
 > Chain-Frost/python-runoff-routing issue #143, under workflow parent #7 and
-> numerical gate #5. First read current main/AGENTS.md, DEVELOPMENT.md,
-> COMPATIBILITY.md, this handoff, the current #143 acceptance receipt,
+> numerical gate #5. First read current main AGENTS.md, docs/DEVELOPMENT.md,
+> docs/COMPATIBILITY.md, this handoff, the current #143 acceptance receipt,
 > NATIVE_CMD_EXPORT.md from the actual #141 integration revision and the
 > existing regression/evidence policies. Refresh all relevant source heads.
 >
@@ -111,6 +111,7 @@ emitted** event PAR without rewriting or reconstructing it.
 
 ~~~powershell
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 $exe   = 'C:\path\to\reviewed\RORB_CMD.exe'
 $event = 'D:\s5-native-relocated\events\001'
 $log   = 'D:\s5-native-receipts\event-001'

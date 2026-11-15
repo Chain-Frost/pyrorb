@@ -66,16 +66,19 @@ numeric proof. The demonstrated source/wheel evidence is linked in the
 | Inspect reports | Read-only bounded CMD .out parsing | Installed canonical ryan-tools .out/batch.out reader and consumer migration (#142) |
 | Execute | Explicit engine selection; optional local verified native CMD adapter | Direct execution of actual **emitted relocated PAR**, separately from numerical acceptance |
 
-**Native edited-source safety limit:** the provisional combined-code review
-found that selecting `rorb-cmd` directly on a file-backed project with
-edited effective storm depths or catchment geometry can still pass the
-**original staged source assets** to the native adapter. Until the
-#140/native-adapter owner fixes and tests this mismatch, such execution is
-**not qualified**: reject before launch or use a separately verified
-effective native package. A resulting native report must never be
+**Native edited-source safety limit:** the provisional earlier
+combined-code review exposed a stale-input attribution fault: an optional
+`rorb-cmd` run could receive original staged CATG/STM while the selected
+effective model contained edited storm or catchment data. **#140 PR #159 now
+implements a fail-closed guard**, including negative storm/catchment tests
+and successful exact-head [Windows quality run #43733144711](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43733144711).
+That reviewed fix is **still unmerged** and does not establish an actual
+RORB CMD execution. Until the final integrated source is checked, the
+native adapter's original-asset-to-effective-input correspondence remains
+an explicit acceptance condition. No resulting native report can be
 attributed to edits the executable did not actually receive.
-Independent [#143 review evidence](work/2026-11-15-issue143-s5-acceptance.md)
-records the P1 boundary.
+See the [#143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md)
+and the [Windows-local execution handoff](work/2026-11-16-issue143-windows-rorbcmd-handoff.md).
 
 Unknown PAR dialects must be rejected rather than guessed from the suffix.
 RORBwin saved-PAR editing is deferred to #144; RORBwin-produced report reading
