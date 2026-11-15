@@ -10,6 +10,8 @@ or launched for normal Python use, inspection, installation or CI.
 | `python-cmd` | Explicit; `cmd-6.44` | Merged bounded #79; independently verified #100 source/installed-wheel 36-case printed and scalar CMD comparison with 14 source exclusions; full feature/physical qualification #5 open | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
 
+The next supported common-model delivery is [CLI/text-file MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119), with the finite selected five-case original CMD reference seed in [the public backlog](BACKLOG.md). The current table states **implemented boundaries**, not a promise that batch-compatible `python-cmd`, full CSV/JSON/text CLI or PR16 code-2/impervious import is already qualified. Advanced #114–#118 are post-MVP; #96 is the current ordinary PyRomb target. No GUI or general native investigation is in scope.
+
 ## JSON schema and selection
 
 Project **schema 2** adds a required top-level field independent of

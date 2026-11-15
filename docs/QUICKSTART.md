@@ -2,6 +2,8 @@
 
 These commands apply to the public repository and need no private workspace. Python 3.13 **or** 3.14 on Linux **or** Windows is sufficient for pure-Python checks; use the interpreter's actual `python`, `py -3.13` or `py -3.14` command as appropriate. Only native RORB/Windows-specific integration needs a Windows host.
 
+**Development priority:** [MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) is **CLI/text-file only**. The exact five-case original CMD seed (1,805 printed rows), four authored safeguards and planned batch/negative tests are defined in the [single backlog](BACKLOG.md). They are acceptance requirements for the *next* combined implementation, not claims that the complete CLI/batch path already exists. Advanced #114–#118 are post-MVP; ordinary PR16 code-2/per-source impervious remains active #96. The [single CMD matrix](CMD_FEATURE_MATRIX.md) separately retains full feature evidence and unknowns. There is no GUI requirement.
+
 ## 1. Installation and quality
 
 ```sh
