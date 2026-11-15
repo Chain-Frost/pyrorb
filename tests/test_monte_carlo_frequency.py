@@ -8,10 +8,10 @@ import pytest
 
 from runoff_routing.monte_carlo_frequency import (
     CurvePopulation,
-    PeakStatus,
     FrequencyInputError,
     FrequencyScope,
     PeakRecord,
+    PeakStatus,
     StratumWeight,
     UnmodelledTails,
     build_frequency_curve,

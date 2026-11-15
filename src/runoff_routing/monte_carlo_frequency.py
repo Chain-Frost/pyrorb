@@ -295,7 +295,7 @@ class FrequencyCurve:
             return self._result(aep, 0.0, "zero_atom", (0.0, 0.0), False, None)
 
         anchors = _plotting_anchors(self.groups)
-        first_p, first_q = anchors[0]
+        first_p, _ = anchors[0]
         last_p, _ = anchors[-1]
         if nonexceedance < first_p or nonexceedance > last_p:
             return QuantileEstimate(aep, "boundary_limited", None, None, None, None, None, True, 0.0)
@@ -339,9 +339,7 @@ def _plotting_anchors(groups: tuple[PeakGroup, ...]) -> tuple[tuple[float, float
     anchors: list[tuple[float, float]] = []
     if groups[0].peak_m3_s == 0:
         anchors.append((groups[0].cumulative_mass, 0.0))
-    for group in groups:
-        if group.peak_m3_s > 0:
-            anchors.append((group.midpoint_cdf, group.peak_m3_s))
+    anchors.extend((group.midpoint_cdf, group.peak_m3_s) for group in groups if group.peak_m3_s > 0)
     return tuple(anchors)
 
 
@@ -363,8 +361,8 @@ def _incomplete_bounds(
     return lower, upper
 
 
-def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRecord]) -> FrequencyCurve:
-    """Aggregate exactly the planned samples for ONE scope, ignoring input ordering."""
+def _planned_records(population: CurvePopulation, records: Iterable[PeakRecord]) -> dict[str, list[PeakRecord]]:
+    """Validate the complete current plan revision before calculating weights."""
     strata = {entry.stratum_id: entry for entry in population.strata}
     by_stratum: dict[str, list[PeakRecord]] = defaultdict(list)
     seen_samples: set[str] = set()
@@ -388,7 +386,13 @@ def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRec
         ):
             _fail("Stale or mixed plan-revision event weights; reaggregate using the complete current plan")
         by_stratum[record.stratum_id].append(record)
+    return by_stratum
 
+
+def _account_observations(
+    population: CurvePopulation, by_stratum: dict[str, list[PeakRecord]]
+) -> tuple[tuple[StratumAccounting, ...], list[WeightedPeak], ProbabilityCoverage]:
+    """Retain planned denominators, zero outcomes and every unresolved mass."""
     accounting: list[StratumAccounting] = []
     weighted: list[WeightedPeak] = []
     failed: list[float] = []
@@ -397,25 +401,20 @@ def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRec
     unallocated: list[float] = []
     for stratum in population.strata:
         entries = by_stratum[stratum.stratum_id]
-        if len(entries) > stratum.planned_samples:
-            _fail("More observed samples than the planned stratum allocation")
         n = stratum.planned_samples
+        if len(entries) > n:
+            _fail("More observed samples than the planned stratum allocation")
         unit = stratum.probability_mass / n if n else None
         if unit is None:
             unallocated.append(stratum.probability_mass)
-        counts = {status: sum(item.status == status for item in entries) for status in ("valid", "failed", "missing", "unsupported")}
+        counts = {status: sum(item.status == status for item in entries)
+                  for status in ("valid", "failed", "missing", "unsupported")}
         absent = n - len(entries)
-        valid_zeros = 0
-        valid_positive = 0
-        for record in entries:
-            if record.status == "valid":
-                if record.peak_m3_s == 0:
-                    valid_zeros += 1
-                else:
-                    valid_positive += 1
-                if unit is not None and unit > 0:
-                    weighted.append(WeightedPeak(record, unit))
+        valid = tuple(item for item in entries if item.status == "valid")
+        valid_zeros = sum(item.peak_m3_s == 0 for item in valid)
+        valid_positive = len(valid) - valid_zeros
         if unit is not None:
+            weighted.extend(WeightedPeak(item, unit) for item in valid if unit > 0)
             failed.append(counts["failed"] * unit)
             missing.append((counts["missing"] + absent) * unit)
             unsupported.append(counts["unsupported"] * unit)
@@ -423,7 +422,17 @@ def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRec
             StratumAccounting(stratum.stratum_id, stratum.probability_mass, n, len(entries), valid_zeros,
                               valid_positive, counts["failed"], counts["missing"], absent, counts["unsupported"], unit)
         )
+    zero_mass = math.fsum(item.weight for item in weighted if item.record.peak_m3_s == 0)
+    coverage = ProbabilityCoverage(
+        math.fsum(item.weight for item in weighted), zero_mass,
+        math.fsum(item.weight for item in weighted if item.record.peak_m3_s != 0),
+        math.fsum(failed), math.fsum(missing), math.fsum(unsupported), math.fsum(unallocated), population.tails,
+    )
+    return tuple(accounting), weighted, coverage
 
+
+def _group_peaks(weighted: list[WeightedPeak]) -> tuple[PeakGroup, ...]:
+    """Merge exact numeric ties while retaining the original individual samples."""
     weighted.sort(key=lambda item: (float(item.record.peak_m3_s or 0), item.record.sample_id))
     groups: list[PeakGroup] = []
     total = 0.0
@@ -438,14 +447,14 @@ def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRec
         groups.append(PeakGroup(peak, mass, new_total, math.fsum((total, mass / 2))))
         total = new_total
         position = end
+    return tuple(groups)
 
-    zero_mass = math.fsum(item.weight for item in weighted if item.record.peak_m3_s == 0)
-    coverage = ProbabilityCoverage(
-        math.fsum(item.weight for item in weighted), zero_mass,
-        math.fsum(item.weight for item in weighted if item.record.peak_m3_s != 0),
-        math.fsum(failed), math.fsum(missing), math.fsum(unsupported), math.fsum(unallocated), population.tails,
-    )
-    return FrequencyCurve(population.scope, tuple(accounting), coverage, tuple(groups), tuple(weighted))
+
+def build_frequency_curve(population: CurvePopulation, records: Iterable[PeakRecord]) -> FrequencyCurve:
+    """Aggregate exactly the planned samples for ONE scope, ignoring input ordering."""
+    by_stratum = _planned_records(population, records)
+    accounting, weighted, coverage = _account_observations(population, by_stratum)
+    return FrequencyCurve(population.scope, accounting, coverage, _group_peaks(weighted), tuple(weighted))
 
 
 def build_frequency_curves(
