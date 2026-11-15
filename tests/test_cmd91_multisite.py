@@ -250,12 +250,7 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
             for index in range(1, 7)
         ]
         (root / "native.out").write_text(
-            "Time increment (hours)= 0.5\n"
-            "Duration of calculations: 5\n"
-            + head
-            + "\n"
-            + "\n".join(records)
-            + "\nEnd\n",
+            "Time increment (hours)= 0.5\nDuration of calculations: 5\n" + head + "\n" + "\n".join(records) + "\nEnd\n",
             encoding="utf-8",
         )
         return subprocess.CompletedProcess([executable.name], 0, b"", b"")
