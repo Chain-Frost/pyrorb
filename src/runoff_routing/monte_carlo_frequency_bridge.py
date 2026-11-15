@@ -14,7 +14,7 @@ import math
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Never, Protocol, cast
 
 from .engine_types import EngineSelection
 from .monte_carlo_effective import MCAllocation, MCInputError, MCPopulation, read_header
@@ -24,9 +24,9 @@ from .project_json import load_project
 class _VerifiedReader(Protocol):
     def __call__(
         self,
-        project: Path,
-        request: Path,
-        ledger: Path,
+        project_path: Path,
+        request_path: Path,
+        ledger_path: Path,
         *,
         selection: EngineSelection | None = None,
         wheel_artifact: Path | None = None,
@@ -34,7 +34,7 @@ class _VerifiedReader(Protocol):
 
 
 class _CSVWriter(Protocol):
-    def writerow(self, row: Iterable[object]) -> object: ...
+    def writerow(self, row: Iterable[object], /) -> object: ...
 
 
 class _CurveView(Protocol):
@@ -63,7 +63,7 @@ class MCWeightedResult:
     point_results_complete: bool
 
 
-def _fail(message: str) -> None:
+def _fail(message: str) -> Never:
     raise MCInputError(message)
 
 
@@ -211,7 +211,7 @@ def _report(
             )
             curve = api.build_frequency_curve(planned, relevant)
             for group in curve.groups:
-                body = cast("dict[str, Any]", asdict(cast("Any", group)))
+                body = asdict(cast("Any", group))
                 csv_writer.writerow(
                     (
                         header.plan_sha256,
@@ -246,7 +246,7 @@ def _report(
                 f"{population.scenario_id} {population.duration_min} min {site_id}: "
                 f"{'complete' if good else 'incomplete'}"
             )
-    report = {
+    report: dict[str, object] = {
         "format": "python-runoff-routing-mc-frequency-summary",
         "schema_version": 1,
         "plan_sha256": header.plan_sha256,

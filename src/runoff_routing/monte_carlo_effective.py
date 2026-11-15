@@ -440,7 +440,7 @@ def _read_allocation(raw: object) -> MCAllocation:
         duration_min=_int(data["duration_min"], "stratum duration", max_value=10080),
         stratum_id=_name(data["stratum_id"], "stratum ID"),
         probability_mass=_decimal(data["probability_mass"], "stratum mass", positive=True),
-        planned_samples=cast("int", count),
+        planned_samples=count,
     )
 
 
