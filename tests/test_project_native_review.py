@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import canonical_run_bytes, read_run_json, run_model
 from runoff_routing.project_json import LegacyRunFiles, Project, ProjectError, SourceFile, main, write_project
 from runoff_routing.project_native_review import review_project_native_capture, write_native_review_json
@@ -39,6 +40,7 @@ def _synthetic_case(tmp_path: Path) -> tuple[Path, Path, str]:
             "historic-synthetic",
             "legacy-rorb",
             LegacyRunFiles(sources[0], sources[1], sources[2]),
+            engine=EngineSelection.for_engine("python"),
         ),
     )
 
