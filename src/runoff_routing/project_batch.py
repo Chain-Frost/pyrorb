@@ -16,7 +16,7 @@ import math
 import re
 import sys
 from collections import Counter
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import asdict, dataclass, replace
 from itertools import pairwise
 from pathlib import Path
@@ -259,43 +259,68 @@ def _derive_routing(original: ParameterSet, raw: object) -> ParameterSet:
     return restored
 
 
+def _validated_override[T](
+    original: T, raw: object, converter: Callable[[T, object], T], code: str
+) -> T:
+    """Retain typed per-event failure codes without obscuring unsupported fields."""
+    try:
+        return converter(original, raw)
+    except EventConfigError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise EventConfigError(_INVALID_INPUT, code, str(exc)) from exc
+
+
 def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunModel, str]:
     current = loaded.run
     storm = current.storm
     parameters = current.parameters
     changed: list[str] = []
     if "storm" in fields:
-        try:
-            storm = _derive_storm(current.storm, fields["storm"])
-        except (TypeError, ValueError) as exc:
-            if isinstance(exc, EventConfigError):
-                raise
-            raise EventConfigError(_INVALID_INPUT, "storm_model", str(exc)) from exc
+        storm = _validated_override(storm, fields["storm"], _derive_storm, "storm_model")
         changed.append("storm")
     if "losses" in fields:
-        try:
-            parameters = _derive_parameters(parameters, fields["losses"])
-        except (TypeError, ValueError) as exc:
-            if isinstance(exc, EventConfigError):
-                raise
-            raise EventConfigError(_INVALID_INPUT, "loss_model", str(exc)) from exc
+        parameters = _validated_override(parameters, fields["losses"], _derive_parameters, "loss_model")
         changed.append("losses")
     if "routing" in fields:
-        try:
-            parameters = _derive_routing(parameters, fields["routing"])
-        except (TypeError, ValueError) as exc:
-            if isinstance(exc, EventConfigError):
-                raise
-            raise EventConfigError(_INVALID_INPUT, "routing_model", str(exc)) from exc
+        parameters = _validated_override(parameters, fields["routing"], _derive_routing, "routing_model")
         changed.append("routing")
     try:
         return RunModel(parameters, current.catchment, storm), ",".join(changed) if changed else "none"
     except (TypeError, ValueError) as exc:
         raise EventConfigError(_INVALID_INPUT, "event_model", str(exc)) from exc
 
-
 def _event_failure(base: EngineOutcome, status: EngineStatus, code: str, message: str) -> EngineOutcome:
     return replace(base, status=status, diagnostics=(EngineDiagnostic(code, message),))
+
+
+def _event_preparation(
+    loaded: LoadedProject,
+    selection: EngineSelection,
+    python_cache: dict[tuple[CatchmentModel, tuple[RoutingValue, ...]], PreparedCatchment],
+    cmd_cache: dict[tuple[CatchmentModel, tuple[RoutingValue, ...]], PreparedCmdModel],
+) -> tuple[PreparedCatchment | None, PreparedCmdModel | None]:
+    """Reuse only fixed geometry/coefficients; never event state or hydrographs."""
+    key = (loaded.run.catchment, loaded.run.parameters.routing)
+    if selection.engine == "python":
+        prepared = python_cache.get(key)
+        if prepared is None:
+            try:
+                prepared = prepare_run_model(loaded.run)
+            except RunInputError:
+                return None, None  # The normal dispatcher retains its original typed rejection.
+            python_cache[key] = prepared
+        return prepared, None
+    if selection.engine == "python-cmd":
+        prepared_cmd = cmd_cache.get(key)
+        if prepared_cmd is None:
+            try:
+                prepared_cmd = prepare_cmd_model(loaded)
+            except CmdBoundaryError:
+                return None, None  # An unsupported event does not poison the next input.
+            cmd_cache[key] = prepared_cmd
+        return None, prepared_cmd
+    return None, None
 
 
 def iter_project_events(
@@ -371,29 +396,7 @@ def iter_project_events(
             )
             continue
         event_loaded = replace(loaded, run=model)
-        prepared_python: PreparedCatchment | None = None
-        prepared_cmd: PreparedCmdModel | None = None
-        preparation_key = (model.catchment, model.parameters.routing)
-        if effective.engine == "python":
-            prepared_python = python_cache.get(preparation_key)
-            if prepared_python is None:
-                try:
-                    prepared_python = prepare_run_model(model)
-                except RunInputError:
-                    # Dispatch normally to retain the existing typed per-event failure.
-                    pass
-                else:
-                    python_cache[preparation_key] = prepared_python
-        elif effective.engine == "python-cmd":
-            prepared_cmd = cmd_cache.get(preparation_key)
-            if prepared_cmd is None:
-                try:
-                    prepared_cmd = prepare_cmd_model(event_loaded)
-                except CmdBoundaryError:
-                    # Unsupported events must not invalidate another event's cached geometry.
-                    pass
-                else:
-                    cmd_cache[preparation_key] = prepared_cmd
+        prepared_python, prepared_cmd = _event_preparation(event_loaded, effective, python_cache, cmd_cache)
         yield execute_loaded_engine(
             event_loaded,
             event_base,

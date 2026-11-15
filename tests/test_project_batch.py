@@ -24,8 +24,8 @@ from runoff_routing.project_batch import (
 )
 from runoff_routing.project_json import (
     EmbeddedRun,
-    Project,
     LoadedProject,
+    Project,
     import_rorb_project,
     load_project,
     write_project,
@@ -447,7 +447,8 @@ def test_five_authentic_cmd_seed_cases_and_four_event_isolation_with_cli(tmp_pat
         "computed_unvalidated", "computed_unvalidated", "invalid_input", "computed_unvalidated",
     ]
     first, second, invalid, repeated = report.outcomes
-    assert invalid.hydrographs == () and invalid.diagnostics[0].code == "event_fields"
+    assert invalid.hydrographs == ()
+    assert invalid.diagnostics[0].code == "event_fields"
     assert first.hydrographs == repeated.hydrographs
     assert first.python_diagnostics == repeated.python_diagnostics
     assert first.model_sha256 == repeated.model_sha256
