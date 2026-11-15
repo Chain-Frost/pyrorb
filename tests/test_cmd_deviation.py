@@ -68,5 +68,5 @@ def test_tiny_but_nonzero_reference_does_not_use_an_arbitrary_ordinate_floor() -
 def test_rejects_incomplete_invalid_or_misaligned_inputs(
     python: tuple[float, ...], cmd: tuple[float, ...], hours: float
 ) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="CMD comparison|CMD timestep"):
         assess_cmd_deviation(python, cmd, timestep_hours=hours)
