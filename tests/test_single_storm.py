@@ -22,16 +22,12 @@ def test_initial_loss_crossing_and_dry_bins() -> None:
 
 def test_runoff_coefficient_applies_after_initial_loss_and_not_as_continuing_rate() -> None:
     rain = (2.0, 1.0, 7.0, 0.0, 5.0)
-    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 0.6), timestep_hours=0.5) == (
-        0.0, 0.0, 4.2, 0.0, 3.0
-    )
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 0.6), timestep_hours=0.5) == (0.0, 0.0, 4.2, 0.0, 3.0)
     assert rainfall_excess(rain, losses=Losses(3.0, 0.6), timestep_hours=0.5) != rainfall_excess(
         rain, losses=Losses(3.0, 0.0, 0.6), timestep_hours=0.5
     )
     assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 0.0), timestep_hours=0.5) == (0.0,) * 5
-    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 1.0), timestep_hours=0.5) == (
-        0.0, 0.0, 7.0, 0.0, 5.0
-    )
+    assert rainfall_excess(rain, losses=Losses(3.0, 0.0, 1.0), timestep_hours=0.5) == (0.0, 0.0, 7.0, 0.0, 5.0)
 
 
 @pytest.mark.parametrize("coefficient", [-0.1, 1.01, math.inf, math.nan])

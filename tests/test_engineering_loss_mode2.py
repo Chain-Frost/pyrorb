@@ -50,7 +50,8 @@ def test_default_engine_mode_two_full_horizon_and_physical_source_volume(tmp_pat
     assert result.physical_time_hours == ("0.0", "0.5", "1.0", "1.5", "2.0", "2.5")
     sources = result.python_diagnostics["source_hydrographs_m3_s"]
     assert isinstance(sources, tuple)
-    assert math.fsum(sources[0]) * 1800 == pytest.approx(7500, abs=1e-8)
+    expected_volume = float(model.catchment.subareas[0].area_km2) * 7.5 * 1000
+    assert math.fsum(sources[0]) * 1800 == pytest.approx(expected_volume, abs=1e-8)
     assert result.hydrographs[0].discharge_m3_s == run_model(model).prints[0].discharge_m3_s
 
 
