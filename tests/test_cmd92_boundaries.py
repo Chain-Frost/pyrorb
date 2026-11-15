@@ -16,6 +16,8 @@ from runoff_routing._cmd644.geometry import ReachGeometry
 from runoff_routing._cmd644.precision import store
 from runoff_routing._cmd644.routing import route_reach as route_cmd_reach
 from runoff_routing.cmd_engine import adapt_event
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
 from runoff_routing.reach_routing import route_reach as route_default_reach
 from runoff_routing.rorb_model import Reach, RoutingValue, RunModel, from_json
@@ -60,6 +62,39 @@ def test_positive_nonunit_m_is_preserved_at_typed_cmd_boundary(tmp_path: Path, e
     assert event.m.lexeme == exponent
     assert event.m.stored == store(float(exponent))
     # Typed source admission is distinct from executing and qualifying native CMD m>1.
+
+
+@pytest.mark.parametrize("exponent", ["0.999", "1", "1.001"])
+def test_positive_exponents_execute_complete_events_on_both_selected_engines(
+    tmp_path: Path, exponent: str
+) -> None:
+    """Synthetic event software check only; no original CMD boundary golden is inferred."""
+    original = _model()
+    routing = replace(original.parameters.routing[0], m=Decimal(exponent))
+    model = replace(original, parameters=replace(original.parameters, routing=(routing,)))
+    source = tmp_path / "positive-exponent.json"
+    write_project(source, Project("m_positive_event", "explicit", EmbeddedRun(model)))
+
+    for engine in ("python-cmd", "python"):
+        result = run_engine_project(source, selection=EngineSelection.for_engine(engine))
+        assert result.effective_selection.engine == engine
+        assert result.status == "computed_unvalidated", result.diagnostics
+        assert result.native_parity_status == "not_assessed"
+        assert result.requested_print_ids == ("print_1",)
+        assert len(result.hydrographs) == 1
+        q = result.hydrographs[0].discharge_m3_s
+        assert len(q) == model.storm.calculation_increments + 1
+        assert len(result.physical_time_hours) == len(q)
+        assert all(math.isfinite(value) and value >= 0 for value in q)
+        assert result.native_raw_time_tokens == ()
+        assert result.native_raw_increment_tokens == ()
+
+        if engine == "python-cmd":
+            assert result.python_diagnostics is not None
+            reaches = result.python_diagnostics["reaches"]
+            assert isinstance(reaches, list)
+            assert len(reaches) == 1
+            assert reaches[0]["linear_routing"] is (exponent == "1")
 
 
 @pytest.mark.parametrize("length", [Decimal(0), Decimal(-1)])
