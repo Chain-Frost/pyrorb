@@ -198,10 +198,16 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
             ):
                 message = "Code 1 must consume the next subarea and reach exactly once"
                 raise ValueError(message)
-            if running is not None and not stack:
-                message = "New subarea would overwrite an unstored running hydrograph"
-                raise ValueError(message)
-            running = {areas[area_cursor]}
+            # Consecutive code-1 controls accumulate sources in the active
+            # branch. Only code 3 saves the branch; code 1 never overwrites it.
+            next_area = areas[area_cursor]
+            if running is None:
+                running = {next_area}
+            else:
+                if next_area in running:
+                    message = "A subarea cannot be added twice to the running hydrograph"
+                    raise ValueError(message)
+                running.add(next_area)
             area_cursor += 1
             reach_cursor += 1
         elif step.code == 5:
@@ -220,6 +226,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
                 message = "Code 3 requires a running hydrograph without additional operands"
                 raise ValueError(message)
             stack.append(set(running))
+            running = None
         elif step.code == 4:
             if (
                 running is None

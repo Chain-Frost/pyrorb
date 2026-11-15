@@ -314,3 +314,51 @@ def test_code7_blank_physical_location_is_not_the_inline_annotation() -> None:
     assert parsed.model.controls[-1].label == "metadata only"
     assert b"7, metadata only\n\n0\n" in serialize_catg(parsed.model)
     assert parse_catg(serialize_catg(parsed.model)).model == parsed.model
+
+
+def _n4_original_catchment() -> bytes:
+    """Read the registered original object, not an altered test re-creation."""
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == "N4-six-source-serial-nested")
+    record = next(item for item in case["files"] if item["path"].endswith(".catg"))
+    raw = (root / record["path"]).read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == record["sha256"]
+    assert len(raw) == record["size_bytes"]
+    return raw
+
+
+def test_n4_original_serial_and_nested_control_stack_roundtrip() -> None:
+    original = _n4_original_catchment()
+    parsed = parse_catg(original)
+    model = parsed.model
+    assert original_bytes(parsed) == original
+    assert len(model.subareas) == 6
+    assert len(model.reaches) == 9
+    assert tuple(step.code for step in model.controls) == (
+        1, 1, 3, 1, 3, 1, 4, 5, 4, 5, 3, 1, 1, 4, 5, 7,
+    )
+    assert tuple(step.subarea_id for step in model.controls if step.code == 1) == tuple(
+        f"area_{index}" for index in range(1, 7)
+    )
+    assert model.print_locations[0].label == "Novel outlet"
+    assert from_json(to_json(model)) == model
+    assert parse_catg(serialize_catg(model)).model == model
+
+
+def test_n4_rejects_duplicate_subarea_and_invalid_stack_transitions() -> None:
+    model = parse_catg(_n4_original_catchment()).model
+    controls = list(model.controls)
+    controls[1] = replace(controls[1], subarea_id="area_1")
+    with pytest.raises(ValueError, match="Code 1"):
+        replace(model, controls=tuple(controls))
+
+    controls = list(model.controls)
+    controls[3] = ControlStep(3)
+    with pytest.raises(ValueError, match="Code 3"):
+        replace(model, controls=tuple(controls))
+
+    controls = list(model.controls)
+    controls[2] = ControlStep(4)
+    with pytest.raises(ValueError, match="Code 4"):
+        replace(model, controls=tuple(controls))
