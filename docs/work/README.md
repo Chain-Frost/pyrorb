@@ -6,6 +6,9 @@
 
 ## Current implementation / regression receipts
 
+- [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — #139 implementation complete, owner-accepted pinned dependency, independently reviewed and quality-checked; PR #166 unmerged.
+- [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — distinct source bindings and effective settings; portable native package exporter belongs to #141.
+
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
@@ -23,7 +26,7 @@
 - [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
-- [Typed S1 domain and effective event editing](2026-11-15-issue138-types-and-editing.md) — #138 / PR #157; reviewed closed-choice and immutable effective-run contracts with source/wheel checks. Joined native workflow acceptance is separate.
+- [Typed S1 domain and effective event editing](2026-11-15-issue138-types-and-editing.md) — #138 / PR #157; validated enum/loss/effective-model contract and source/wheel checks, distinct from #143 acceptance.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
 - [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, archived source/print audit; **at the time of that preflight**, merged-#136 software execution had not run. Later actual execution and remaining native parity limits are recorded above.
 
