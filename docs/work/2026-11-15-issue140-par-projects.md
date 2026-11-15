@@ -19,3 +19,12 @@ The private evidence repository contains four independently inspected native ROR
 Tests for content classification, paths, override precedence, collisions, missing/invalid references, staging, edited/reopened model identity, relocation, no-clobber and CLI are supplied. Final CI outcomes must be attached to the PR at its final head. Strict isolated-wheel and original CMD regression receipts are required before full software closeout. Windows-native run/GUI saved-PAR import and independently runnable CMD export are explicitly **not claimed** here. RORBwin execution remains unsupported. No original golden was updated.
 
 **Next:** complete quality checks and review at exact head, reconcile #138 effective-model interface and #141 CLI/export handoff, leave #140 open until accepted by reviewer.
+
+## Independent review findings addressed on the active PR
+
+Codex reviewed `4dcad73e39` and identified two issues:
+
+1. **P1 native attribution:** the opt-in S0 native capture could silently use original immutable CATG/STM bytes for an effective edited `RunModel`. The native preflight now checks `LoadedProject.original_run` against the requested effective catchment and storm (including per-event changes) and rejects mismatches before invoking any executable. It also refuses verbosity that S0 capture would silently force to 3. Focused tests patch native capture to prove it is never invoked for changed models.
+2. **P2 legacy positional CLI:** three-file positional CATG/STM arguments previously belonged to the command working directory. They are now absolutised immediately at the CLI boundary. New explicit `--catchment`, `--storm`, `--base` still resolve relative to the documented PAR/base directory.
+
+The shared project dispatcher now delegates `export-native` to #141's `native_export.main` when available; #141 owns the exporter and #138 owns event edit resolution. Main branch integration preserves newer evidence receipts; tests and exact-head validation will be reported separately. Review findings are not treated as resolved until tested.

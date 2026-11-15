@@ -6,12 +6,17 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
+from runoff_routing.native_cmd import NativeConfiguration
 from runoff_routing.project_json import (
     LegacyRunFiles,
     ProjectError,
@@ -288,6 +293,7 @@ def test_import_fails_without_partial_sources_for_invalid_cat_and_occupied_targe
     with pytest.raises(FileExistsError):
         _import(target, par)
 
+
 def test_legacy_positional_cli_preserves_cwd_relative_input_bindings(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -318,19 +324,13 @@ def test_legacy_positional_cli_preserves_cwd_relative_input_bindings(
 def test_native_adapter_rejects_overlay_without_executing_stale_original_inputs(
     tmp_path: Path, changed_role: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from runoff_routing.engine_execution import run_engine_project
-    from runoff_routing.engine_types import EngineSelection
-    from runoff_routing.native_cmd import NativeConfiguration
-
     par, _, _, run = _inputs(tmp_path / "original")
     project_dir = tmp_path / "source-project"
     project_dir.mkdir()
     original_project = project_dir / "source.json"
     _import(original_project, par)
     if changed_role == "storm":
-        effective = replace(
-            run, storm=replace(run.storm, depths_mm=(Decimal(80),))
-        )
+        effective = replace(run, storm=replace(run.storm, depths_mm=(Decimal(80),)))
     else:
         original_area = run.catchment.subareas[0]
         effective = replace(
@@ -367,12 +367,7 @@ def test_native_adapter_rejects_overlay_without_executing_stale_original_inputs(
     assert not list(tmp_path.glob("native-spec*"))
 
 
-def test_shared_native_package_command_is_delegated(
-    monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import sys
-    from types import ModuleType
-
+def test_shared_native_package_command_is_delegated(monkeypatch: pytest.MonkeyPatch) -> None:
     sample = ["example.json", "new-package", "--target", "cmd-6.44"]
     forwarded: list[str] = []
 

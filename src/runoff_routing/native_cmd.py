@@ -151,15 +151,9 @@ class NativeObservation:
     manifest_path: str
 
 
-def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunFiles:
+def _guard_native_effective_sources(loaded: LoadedProject) -> None:
+    """Reject native capture runs that would misattribute edited source assets."""
     model = loaded.run
-    source = loaded.project.model_source
-    if not isinstance(source, LegacyRunFiles) or loaded.project.rainfall_profile != "legacy-rorb":
-        message = "Native CMD requires verified original .par/.catg/.stm file-backed legacy-rorb inputs"
-        raise NativeBoundaryError(message, status="unsupported_feature", code="native_source_boundary")
-    if any(asset.role != "reference" for asset in loaded.project.assets):
-        message = "Native adapter cannot silently prepare external rainfall/curve data"
-        raise NativeBoundaryError(message, status="unsupported_feature", code="unprepared_rainfall")
     # The S0 native capture regenerates only the effective parameter scalars;
     # it reads original immutable CATG/STM byte streams directly. A persisted
     # edit or selected event must never be attributed to stale original inputs.
@@ -176,6 +170,17 @@ def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunF
     if model.parameters.verbosity != 3:
         message = "Native capture forces verbosity 3; use native package export for the requested verbosity"
         raise NativeBoundaryError(message, status="unsupported_feature", code="native_verbosity_unsupported")
+
+def _preflight(loaded: LoadedProject, config: NativeConfiguration) -> LegacyRunFiles:
+    model = loaded.run
+    source = loaded.project.model_source
+    if not isinstance(source, LegacyRunFiles) or loaded.project.rainfall_profile != "legacy-rorb":
+        message = "Native CMD requires verified original .par/.catg/.stm file-backed legacy-rorb inputs"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_source_boundary")
+    if any(asset.role != "reference" for asset in loaded.project.assets):
+        message = "Native adapter cannot silently prepare external rainfall/curve data"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="unprepared_rainfall")
+    _guard_native_effective_sources(loaded)
     params = model.parameters
     storm = model.storm
     if (
