@@ -237,9 +237,7 @@ def test_independent_staged_sampler_to_two_site_frequency_population() -> None:
         ("site-upstream", (5.0, 15.0, 0.0, 10.0, 20.0, 30.0)),
         ("site-downstream", (7.0, 17.0, 0.0, 12.0, 22.0, 32.0)),
     )
-    strata = tuple(
-        StratumWeight(row["id"], float(row["probability_mass"]), row["count"]) for row in spec["strata"]
-    )
+    strata = tuple(StratumWeight(row["id"], float(row["probability_mass"]), row["count"]) for row in spec["strata"])
     # B's lower AEP tail is rarer/high-rainfall; its upper AEP tail is
     # more frequent/low-rainfall. C identifies them by *rainfall* magnitude.
     tails = UnmodelledTails(lower_rainfall_mass=0.5, upper_rainfall_mass=0.1)
