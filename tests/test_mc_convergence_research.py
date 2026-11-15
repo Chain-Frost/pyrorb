@@ -202,6 +202,7 @@ def test_stable_population_positive_result_is_non_degenerate() -> None:
     assert mc.lower_confidence_bound(100, 100) > 0.95
     assert mc.lower_confidence_bound(96, 100) < 0.95
 
+
 def test_large_replication_confidence_limits_do_not_underflow() -> None:
     """Independent binomial reference values for a million trial replications."""
     mc = _research()
