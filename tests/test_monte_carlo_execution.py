@@ -185,9 +185,7 @@ def test_probability_mass_accounting_ignores_callers_decimal_context() -> None:
     with localcontext() as ctx:
         ctx.prec = 8
         with pytest.raises(MCInputError, match="probability mass must equal one"):
-            MCPopulation(
-                "base", 60, Decimal("0.5"), Decimal("0.25"), Decimal("0.250000000000000000000000000001")
-            )
+            MCPopulation("base", 60, Decimal("0.5"), Decimal("0.25"), Decimal("0.250000000000000000000000000001"))
         header = MCRequestHeader(
             plan_sha256=hashlib.sha256(b"high-precision-plan").hexdigest(),
             policy_id="authored_control_v1",
