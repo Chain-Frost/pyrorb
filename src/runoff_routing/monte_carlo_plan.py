@@ -12,7 +12,7 @@ import hmac
 import json
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from decimal import Context, Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, InvalidOperation, localcontext
 from itertools import pairwise
 from math import isfinite
 from pathlib import Path

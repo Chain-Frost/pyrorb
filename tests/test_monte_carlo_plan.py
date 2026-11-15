@@ -8,7 +8,7 @@ import hmac
 import json
 from collections.abc import Callable
 from dataclasses import replace
-from decimal import Decimal, Inexact, ROUND_DOWN, localcontext
+from decimal import ROUND_DOWN, Decimal, Inexact, localcontext
 from pathlib import Path
 from typing import Any, cast
 
