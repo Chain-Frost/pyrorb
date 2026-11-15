@@ -376,7 +376,7 @@ def test_shared_native_package_command_is_delegated(monkeypatch: pytest.MonkeyPa
         return 0
 
     module = ModuleType("runoff_routing.native_export")
-    setattr(module, "main", fake_cli)
+    module.__dict__["main"] = fake_cli
     monkeypatch.setitem(sys.modules, "runoff_routing.native_export", module)
     assert main(["export-native", *sample]) == 0
     assert forwarded == sample
