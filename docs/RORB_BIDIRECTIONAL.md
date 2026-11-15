@@ -1,6 +1,6 @@
 # S1 bidirectional RORB input boundary
 
-**Status:** limited executable parser/serializer contract, not native or numerical acceptance. See [issue #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3), [inspection](S1-INSPECTION.md), [compatibility](COMPATIBILITY.md) and [regression](REGRESSION.md).
+**Status:** limited executable parser/serializer contract, not native or numerical acceptance. **Next explicit interoperability target:** [PyRomb upstream PR #16](https://github.com/norman-tom/pyromb/pull/16) (unmerged exporter head `a323d5709f7ce14c6adf46f01e0224b60668340c`) under #96/#3/#7. Graphical `RORB_GE 6.45`, leading computation header `0`, reach type/length records, code 2, nonzero impervious source fractions and original controls are **not yet fully admitted by main**. The older two PR #2 original CMD cases share one 2,913-byte CATG; PR16's recorded 2,818-byte export remains a separate, unmaterialised source target. See [the single CMD matrix](CMD_FEATURE_MATRIX.md) for exact ownership and qualification. See [issue #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3), [inspection](S1-INSPECTION.md), [compatibility](COMPATIBILITY.md) and [regression](REGRESSION.md).
 
 ## Pure API and identity
 

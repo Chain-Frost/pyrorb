@@ -22,6 +22,12 @@ The [single maintained matrix](CMD_FEATURE_MATRIX.md) now records a pinned CMD 6
 
 No **new** CMD capability was confirmed by the eight broader conditional rows, so no new speculative child is created. #5 owns exact unresolved pinned-build applicability questions; #90–#96 own already identified implementation requirements. #2 is a completed reference-capture harness and must not be reopened as an applicability workstream. Feature slices with already established CMD reference semantics can proceed while the broader questions remain visible.
 
+## Pinned primary PyRomb import requirement under existing #96
+
+Upstream [norman-tom/pyromb PR #16](https://github.com/norman-tom/pyromb/pull/16) is the **primary** interoperability target: fork `phantom-branch/pyromb:Shapely-catchment-matching`, exporter commit `a323d5709f7ce14c6adf46f01e0224b60668340c`, tree `1d9604ce8d415719e04510167d79646f2ca65d43`. Its reported **2,818-byte** RORB writer artifact SHA-256 `67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815` must be recovered or independently exported from the four-layer shapefile fixture and kept **separate** from the historical **2,913-byte** PR #2 CATG used by two CMD cases. This is not evidence of complete PR16 import or hydraulic equivalence. Details and R/X/O/Q are in the [single CMD matrix](CMD_FEATURE_MATRIX.md).
+
+C/#96 owns the complete graphical/source-domain import and `.catg`/`.cat` payload handling, with #3/#7; A owns negotiated CMD code-2/per-source-impervious typed-adapter integration; D owns a separate default-python feature counterpart and B/#100 verifies exact native source/wheel Q, clocks and scalar results. #93/#94 own storm dialects and weights. Current PR16 exporter requests just one terminal code-7 print, with graphical node 70 at the outlet and zeros for other print/excess fields. Additional print and code-11 classes remain under #91. **No new umbrella, feature matrix or issue is created**; existing ownership remains intact. The 15-basin two-layer GeoPackages are not complete four-layer exporter inputs.
+
 ## Bounded CMD feature work under #5
 
 These are **real open child issues**, not a new capability matrix or a claim that all CMD behaviour is implemented. C/#5 owns the merged [single CMD feature inventory](CMD_FEATURE_MATRIX.md), and B owns original reference/case binding.
@@ -34,7 +40,7 @@ These are **real open child issues**, not a new capability matrix or a claim tha
 | [#93](https://github.com/Chain-Frost/python-runoff-routing/issues/93) | **C:** original 102.10%-total DESIGN patterns — determine CMD positive-total semantics before changing only the maintained S1 admission contract |
 | [#94](https://github.com/Chain-Frost/python-runoff-routing/issues/94) | **C:** markerless DESIGN storm dialect in H1/H2/H3; one source-preserving parser and independently checked wheel results |
 | [#95](https://github.com/Chain-Frost/python-runoff-routing/issues/95) | **C, with A's agreed engine surface:** N4 running-hydrograph control-stack semantics; do not discard/reorder original controls |
-| [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96) | **C:** characterise PyRomb graphical-header variants from original source bytes, then verify eligible computed source/wheel cases |
+| [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96) | **C:** primary pinned [PyRomb exporter PR #16](https://github.com/norman-tom/pyromb/pull/16), full RORB_GE 6.45 graphical computation header/code-2/reach records/per-source impervious and original source order; historical 2,913-byte PR #2 cases **separate** from the unmaterialised PR16 2,818-byte output. Coordinate #3/#7, #93/#94 and A's CMD adapter; independent source/installed-wheel native Q/scalar result required; preserve the ordinary single terminal code-7 output, leave additional flags under #91 |
 
 ## Merged and retired PR dispositions
 
