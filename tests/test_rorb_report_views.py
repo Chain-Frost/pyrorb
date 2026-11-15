@@ -104,3 +104,25 @@ def test_report_view_never_activates_saved_settings(tmp_path: Path) -> None:
     path.write_text("Not a RORB report", encoding="utf-8")
     with pytest.raises(ValueError, match="characterised RORB result"):
         inspect_report(path)
+
+
+def test_signed_hydrograph_csv_preserves_source_clock_and_fortran_values(tmp_path: Path) -> None:
+    source = (
+        "RORBWin CSV Output File\n"
+        "Refer output file for complete listing of inputs and outputs: event.out\n"
+        "Inc,Time (hrs),Calculated hydrograph: Outlet\n"
+        "0,0.000,0\n1,0.333,5.53D1\n2,0.667,0\n"
+    )
+    path = tmp_path / "event.csv"
+    path.write_bytes(source.encode("utf-8"))
+    document = inspect_report(path)
+    assert document.kind == "hydrograph_csv"
+    assert document.status == "partial"
+    rows = list(csv.DictReader(io.StringIO(report_csv(document, "hydrographs"))))
+    assert len(rows) == 3
+    assert [row["Inc"] for row in rows] == ["0", "1", "2"]
+    assert rows[1]["source_token__Time (hrs)"] == "0.333"
+    assert rows[1]["source_token__Calculated hydrograph: Outlet"] == "5.53D1"
+    shown = json.loads(report_json(document, section="hydrographs", offset=1, limit=1))
+    assert shown["selection"]["rows"][0]["original_tokens"]["Time (hrs)"] == "0.333"
+    assert path.read_text(encoding="utf-8") == source

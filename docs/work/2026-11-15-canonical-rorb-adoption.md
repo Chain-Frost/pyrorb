@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `9b136bcdc449e65a17c87a80650df314ca2b1eb1`, pinned
+The chosen upstream candidate revision is `b246e8c7bd9ddf97d2d286402202b14e9e48e595`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -63,7 +63,7 @@ in parser tests. Pip recursively fetched the unrelated ryan-tools test-data
 submodule during a `git+https` dependency checkout and hit Windows
 `Filename too long`. The dependency is now an **exact-commit GitHub source
 archive**, without submodule payload or Git checkout, pinned to upstream
-`9b136bcdc449e65a17c87a80650df314ca2b1eb1`. This is a packaging correction, not a numerical result. Re-run
+`b246e8c7bd9ddf97d2d286402202b14e9e48e595`. This is a packaging correction, not a numerical result. Re-run
 installed-wheel and regression checks for the new head.
 
 The frozen scalar binding now gets only generic original scalar and site
@@ -77,7 +77,7 @@ The first archive-based Windows 3.13 source install succeeded; Ruff and
 formatter checks passed after fixes. Strict Pyright then reported missing
 type stubs because the minimal wheel had omitted `ryan_library/py.typed`.
 Upstream revised focused setuptools packaging (reviewed candidate
-`9b136bcdc449e65a17c87a80650df314ca2b1eb1`) to carry the **existing** root PEP 561 marker with its six
+`b246e8c7bd9ddf97d2d286402202b14e9e48e595`) to carry the **existing** root PEP 561 marker with its six
 canonical reader modules, without broadening dependencies. A clean local
 package-layout wheel test verified the marker was included; hosted strict
 type checking and installed-wheel regressions must now rerun.
@@ -115,7 +115,7 @@ for malformed independent scalar records, but overall report status stays
 invalid and scalar qualification rejects it. The comparator's existing
 half-last-digit interval policy remains unchanged while D exponents are
 converted for exact Decimal evaluation. The amended pinned upstream is
-`9b136bcdc449e65a17c87a80650df314ca2b1eb1`; these findings require fresh current-head validation.
+`b246e8c7bd9ddf97d2d286402202b14e9e48e595`; these findings require fresh current-head validation.
 
 ## Canonical native capture scan replacement
 
@@ -131,7 +131,7 @@ scientific validity or a native executable. All local report lexical parsing
 has been removed from `reference._check_report`, `regression_metrics` and
 `rorb_out`. Existing capture-specific synthetic tests plus a new two-site
 bare-table/negative admission test are the acceptance gate. Current reviewed
-dependency revision: `9b136bcdc449e65a17c87a80650df314ca2b1eb1`.
+dependency revision: `b246e8c7bd9ddf97d2d286402202b14e9e48e595`.
 
 ## Read-only canonical report views
 
@@ -148,3 +148,35 @@ non-success exits, with retained diagnostics; saved-PAR remains inactive.
 The existing non-report inspection mode retains its historical API and CLI
 output. Synthetic CLI/API tests cover same-source bytes, distinct event/TP
 rows, Fortran D tokens, non-success invalid reports and selection guards.
+
+
+## 2026-11-15 original-case and exact-head integration receipt
+
+Independent **source-level inspection**, not executed reader tests, of
+[ryan-tools-test-data at f3c49e867cd8a165e031217a148293a8968c2d88](https://github.com/Chain-Frost/ryan-tools-test-data/tree/f3c49e867cd8a165e031217a148293a8968c2d88/RORB/12hr-areal-example):
+`Fig6_7_batch.out` (Git blob `08ae1d94ef74d666836c8d3fab842e6421851030`)
+contains 80 original run/TP rows and eight distinct reported representative paths
+across 50%, 0.5EY, 20%, 0.2EY, 10%, 5%, 2%, 1%; the ordinary
+`Fig6_7_ aep0p2EY_du12hourtp1.out` (blob
+`95826bccdbe1f2410ef372ef6b6c2c161d847b99`) contains original 301
+increments 0..300, times 0.00..150.00 hours at 0.50 hours. Those sources
+establish expected acceptance; they do not prove the new parser passed.
+
+**Last fully green downstream exact-head receipt before the report-view
+addition:** Windows Python 3.13 CI
+[run 43730017092](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43730017092)
+at `a0e41a9077fa42d960a35199f832f40cede54fa1`: repository hygiene,
+Ruff lint/format, strict Pyright 0 findings, **1,103 source tests**,
+original CMD source regression, a wheel with SHA-256
+`1916144baeadb5847cc9c3e5169cf6d26f7e3f352aa83cd0a9cfde771d86a141`,
+**153 installed-wheel tests**, native-negative-control propagation and fresh
+installed-wheel original CMD regression. These observations are pinned to that
+head, **not** to the later report-view/override commits. No native executable
+was run. Additional canonical view tests and upstream exact-revision override
+tests await their own execution.
+
+Upstream #233 now supports explicit companion CSV overrides under the five-part
+source event key (Run, duration token/unit, raw frequency label, TP); it still
+rejects unknown event keys and unverified/missing companions. This repo pins
+the upstream override revision `b246e8c7bd9ddf97d2d286402202b14e9e48e595`; it does not copy or maintain an
+association parser.
