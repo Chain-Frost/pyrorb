@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `dd9080b0ef189873aa084b5c4fe9c92a4443cde6`, pinned
+The chosen upstream candidate revision is `a00f41cfe2fa5b20491698eb5c8af5e265dcd086`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -63,10 +63,25 @@ in parser tests. Pip recursively fetched the unrelated ryan-tools test-data
 submodule during a `git+https` dependency checkout and hit Windows
 `Filename too long`. The dependency is now an **exact-commit GitHub source
 archive**, without submodule payload or Git checkout, pinned to upstream
-`dd9080b0ef189873aa084b5c4fe9c92a4443cde6`. This is a packaging correction, not a numerical result. Re-run
+`a00f41cfe2fa5b20491698eb5c8af5e265dcd086`. This is a packaging correction, not a numerical result. Re-run
 installed-wheel and regression checks for the new head.
 
 The frozen scalar binding now gets only generic original scalar and site
 records from the canonical reader. Downstream enforces exact native unit,
 site order, report summary count and scalar population, without rescanning
 native source text. No new scalar convention is accepted.
+
+## Source and wheel PEP 561 typing gate
+
+The first archive-based Windows 3.13 source install succeeded; Ruff and
+formatter checks passed after fixes. Strict Pyright then reported missing
+type stubs because the minimal wheel had omitted `ryan_library/py.typed`.
+Upstream revised focused setuptools packaging (reviewed candidate
+`a00f41cfe2fa5b20491698eb5c8af5e265dcd086`) to carry the **existing** root PEP 561 marker with its six
+canonical reader modules, without broadening dependencies. A clean local
+package-layout wheel test verified the marker was included; hosted strict
+type checking and installed-wheel regressions must now rerun.
+
+Upstream added conditional original RORBWin 6.52 fixtures for the 301-row
+ordinary report and 80-row/eight-reference batch. These require the pinned
+fixture submodule; no CI pass is claimed where that submodule is absent.
