@@ -12,10 +12,12 @@
 > `python/engineering-v1` choice without changing source content or execution semantics. The `rainfall_profile` is independent of the numerical
 > engine. See [the three-engine execution contract](ENGINES.md).
 
+**Current note (15 November 2026):** merged [#119 CLI/text-file MVP](PROJECT_BATCH_MVP.md) delivers selected-engine original/JSON event batches. Upcoming #138–#143 typed edits/PAR-led import/native export/report reading extend the **same** project; source/manifest schema-1 paragraphs below are dated S5-P0 background. Current files are modern graphical CATG/STM and CMD PAR including characterised graphical `.cat`; old plain computational CAT and combined DAT excluded; saved RORBwin PAR deferred #144.
+
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
-- S5 adds a separate version-1 JSON *project manifest*. Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
+- S5 adds a separate versioned JSON *project manifest*; new writes are schema 2, historical schema 1 remains readable. Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
 - Both source modes validate into the same S1 RunModel. The explicit project paths are used, but embedded filenames inside the original `.par` are preserved and **never followed**. No graphical-to-computational reordering or source rewriting.
 - The project selects an explicit `rainfall_profile`: `explicit`, `legacy-rorb`, or `arr-2026v1`. This records a method boundary, **not** proof of a historical/modern calculation or a default selection of rainfall guidance.
 - External rainfall, temporal patterns, curves and reference evidence can be catalogued with an independent data-profile ID, relative path and hash. Original assets are read only for verification and are otherwise opaque to S5; the S6 rainfall workpack performs semantic processing. A single project may catalogue modern and legacy data for comparison, but does not silently combine them.

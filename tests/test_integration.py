@@ -158,13 +158,18 @@ def test_print_order_for_multiple_print_locations_is_not_guessed() -> None:
     assert results.prints[0].discharge_m3_s != results.prints[1].discharge_m3_s
 
 
-def test_loss_flag_two_rejected_at_execution_not_at_model_layer() -> None:
+def test_loss_flag_two_executes_only_with_valid_runoff_coefficient() -> None:
     run = _run()
-    recognised = replace(run, parameters=replace(run.parameters, loss_model=2))
+    bad_loss = replace(run.parameters.losses[0], continuing=Decimal("1.2"))
+    invalid = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(bad_loss,)))
     with pytest.raises(RunInputError) as caught:
-        run_model(recognised)
-    assert caught.value.status == "unsupported"
+        run_model(invalid)
     assert caught.value.code == "unsupported_s2_profile"
+    valid_loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
+    valid = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(valid_loss,)))
+    result = run_model(valid)
+    assert result.parity_status == "unassessed"
+    assert len(result.prints) == len(valid.catchment.print_locations)
 
 
 def test_start_increment_rejected_at_execution_not_at_model_layer() -> None:
