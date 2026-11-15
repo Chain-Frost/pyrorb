@@ -63,7 +63,13 @@ def test_canonical_report_cli_exports_raw_csv_and_preserves_bytes(tmp_path: Path
     original = _batch()
     path.write_bytes(original)
     command = [sys.executable, str(_CLI), str(path), "--report", "--section", "runs", "--format", "csv"]
-    result = subprocess.run(  # noqa: S603 -- call fixed Python interpreter on repository-owned inspection scriptcommand, cwd=_ROOT, capture_output=True, text=True, check=False)
+    result = subprocess.run(  # noqa: S603 -- fixed interpreter and repository-owned script
+        command,
+        cwd=_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     assert result.returncode == 0, result.stderr
     entries = list(csv.DictReader(io.StringIO(result.stdout)))
     assert len(entries) == 2
@@ -79,7 +85,7 @@ def test_invalid_canonical_report_never_returns_success(tmp_path: Path) -> None:
     report = json.loads(report_json(doc, section="runs"))
     assert report["status"] == "invalid"
     assert report["diagnostics"]
-    result = subprocess.run(  # noqa: S603 -- call fixed Python interpreter on repository-owned inspection script
+    result = subprocess.run(  # noqa: S603 -- fixed interpreter and repository-owned script
         [sys.executable, str(_CLI), str(path), "--report", "--section", "runs"],
         cwd=_ROOT,
         capture_output=True,

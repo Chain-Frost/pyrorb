@@ -13,7 +13,9 @@ from runoff_routing.rorb_report_views import inspect_report, report_csv, report_
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", type=Path)
-    parser.add_argument("--report", action="store_true", help="Inspect canonical .out, batch.out or RORB hydrograph CSV")
+    parser.add_argument(
+        "--report", action="store_true", help="Inspect canonical .out, batch.out or RORB hydrograph CSV"
+    )
     parser.add_argument("--section", help="Show one canonical report section (preserving source row order)")
     parser.add_argument("--format", choices=("json", "csv"), default="json", help="Canonical report view; default json")
     parser.add_argument("--offset", type=int, default=0, help="First zero-based section row, default 0")
