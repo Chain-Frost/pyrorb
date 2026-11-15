@@ -333,14 +333,34 @@ def _registered_pyromb_originals() -> tuple[bytes, dict[str, Any]]:
     return original, register
 
 
-def test_original_pyromb_graphical_header_is_recognised_but_code2_is_not_silently_admitted() -> None:
+def test_original_pyromb_645_mode_zero_preserves_code2_impervious_and_graphical_ids() -> None:
     original, _register = _registered_pyromb_originals()
-    with pytest.raises(FormatProblem, match="natural reach-type header 1") as caught:
-        parse_catg(original)
-    # The original RORB_GE 6.45 header is recognised, but its *computational*
-    # reach-type 0, code-2 controls and nonzero impervious data still need
-    # typed-domain and numerical ownership review. Do not mark as computed.
-    assert caught.value.status == "unsupported"
+    parsed = parse_catg(original)
+    model = parsed.model
+    assert parsed.dialect == "rorb_ge_645"
+    assert model.reach_mode == "explicit_reach_types"
+    assert original_bytes(parsed) == original
+    assert len(model.subareas) == 6
+    assert len(model.reaches) == 7
+    assert [step.code for step in model.controls] == [1, 3, 1, 4, 2, 3, 1, 2, 4, 5, 2, 7]
+    assert [step.subarea_id for step in model.controls if step.code in (1, 2)] == [
+        f"area_{index}" for index in range(1, 7)
+    ]
+    assert tuple(area.impervious_fraction for area in model.subareas) == (
+        Decimal(0), Decimal("0.50000"), Decimal("0.20000"), Decimal(0), Decimal(0), Decimal(0)
+    )
+    assert [s.source_text for s in parsed.source_map if s.field == "graphical_node_id"] == [
+        str(index) for index in range(1, 9)
+    ]
+    assert [s.source_text for s in parsed.source_map if s.field == "graphical_reach_id"] == [
+        str(index) for index in range(1, 8)
+    ]
+    assert model.print_locations[0].label == ""
+    assert from_json(to_json(model)) == model
+    assert parse_bytes(original, ".cat").model == model
+    assert parse_bytes(original, ".catg").model == model
+    with pytest.raises(ValueError, match="No verified canonical CATG writer"):
+        serialize_catg(model)
 
 
 @pytest.mark.parametrize(
@@ -366,3 +386,106 @@ def test_pyromb_graphical_rejects_unrecognised_sections_without_source_mutation(
     with pytest.raises(FormatProblem) as caught:
         parse_catg(edited.encode("utf-8"))
     assert caught.value.status == status
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "status"),
+    [
+        ("\\n0\\n1,1,0.112,-99", "\\n1\\n1,1,0.112,-99", "unsupported"),
+        ("1,1,0.112,-99", "1,2,0.112,0.001,-99", "unsupported"),
+        ("1,1,0.112,-99", "1,1,0,-99", "invalid"),
+        ("1,1,0.112,-99", "1,1,-0.112,-99", "invalid"),
+        ("1,1,0.112,-99", "1,1,0.112,NOT_TERMINATED", "invalid"),
+        ("C Impervious Fraction Data\\n 1 ,", "C Impervious Fraction Data\\n 2 ,", "invalid"),
+        ("C Impervious Fraction Data\\n 1 ,", "C Impervious Fraction Data\\n 1, 0.0", "invalid"),
+        ("      0.00000,      0.50000,", "      0.00000,      1.50000,", "invalid"),
+        ("      0.00000,      0.50000,", "      0.00000,      -0.50000,", "invalid"),
+        ("C      8         92.500", "C      9         92.500", "invalid"),
+    ],
+)
+def test_pyromb_pr16_source_rejects_invalid_control_and_fraction_records(
+    before: str, after: str, status: str
+) -> None:
+    original, _register = _registered_pyromb_originals()
+    text = original.decode("utf-8")
+    edited = text.replace(before.replace("\\n", "\n"), after.replace("\\n", "\n"))
+    assert edited != text
+    with pytest.raises(FormatProblem) as caught:
+        parse_catg(edited.encode())
+    assert caught.value.status == status
+
+
+def test_pyromb_pr16_original_source_rejects_unqualified_reach_type_and_unsafe_flags() -> None:
+    source, _register = _registered_pyromb_originals()
+    text = source.decode("utf-8")
+    cases = (
+        ("C #STORAGES\\nC      0", "C #STORAGES\\nC      1"),
+        ("C #INFLOW/OUTFLOW\\nC      0", "C #INFLOW/OUTFLOW\\nC      1"),
+        ("C      8         92.500", "C      8         92.500"),  # unchanged control checked below
+    )
+    for before, after in cases[:2]:
+        edited = text.replace(before.replace("\\n", "\n"), after.replace("\\n", "\n"))
+        assert edited != text
+        with pytest.raises(FormatProblem):
+            parse_catg(edited.encode())
+    # An unknown per-node extra output is a source *capability rejection*,
+    # never a new printed-hydrograph column accepted from raw graphics alone.
+    graph_node = next(line for line in text.splitlines() if line.strip().startswith("C      8 "))
+    assert graph_node.split()[-3:] == ["70", "0", "0"]
+    modified = graph_node.replace("70  0  0", "71  0  0")
+    assert modified != graph_node
+    with pytest.raises(FormatProblem) as caught:
+        parse_catg(text.replace(graph_node, modified).encode())
+    assert caught.value.status == "unsupported"
+
+
+def test_pyromb_pr16_typed_stack_rejects_genuine_invalid_running_state() -> None:
+    source, _register = _registered_pyromb_originals()
+    model = parse_catg(source).model
+    controls = list(model.controls)
+    code2_index = next(index for index, step in enumerate(controls) if step.code == 2)
+    controls[code2_index] = replace(controls[code2_index], subarea_id="area_1")
+    with pytest.raises(ValueError, match="Code 2"):
+        replace(model, controls=tuple(controls))
+    controls = list(model.controls)
+    controls[0] = replace(controls[0], code=2)
+    with pytest.raises(ValueError, match="needs a running hydrograph"):
+        replace(model, controls=tuple(controls))
+    with pytest.raises(ValueError, match="unity"):
+        replace(model, subareas=(replace(model.subareas[0], impervious_fraction=Decimal("1.01")), *model.subareas[1:]))
+
+
+def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_path: Path) -> None:
+    original, register = _registered_pyromb_originals()
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    historical = next(item for item in register["cases"] if item["case_id"] == "pyromb-pr2-full")
+    record = next(item for item in historical["files"] if item["path"].endswith(".par"))
+    params = (root / record["path"]).read_bytes()
+    assert hashlib.sha256(params).hexdigest() == record["sha256"]
+    # Synthetic percent-based storm used solely to exercise the current
+    # legacy project entry point independently of #94's temporal-weight work.
+    storm = (
+        b"synthetic six-source storm\nDESIGN\n0.25,48,1,1,1,-99\n0,2\n"
+        b"Temporal pattern (% of depth)\n40,60,-99\nC Sub-area rainfall depths\n40,40,40,40,40,40,-99\n"
+    )
+    source_cat = tmp_path / "original.cat"
+    source_cat.write_bytes(original)
+    p = tmp_path / "original.par"
+    p.write_bytes(params)
+    s = tmp_path / "synthetic.stm"
+    s.write_bytes(storm)
+    parsed = parse_run_bytes(params, original, storm).model
+    assert parsed.catchment.reach_mode == "explicit_reach_types"
+    assert from_json(to_json(parsed)) == parsed
+    project_file = tmp_path / "pr16-cat-project.json"
+    project = import_rorb_project(
+        project_file, identifier="pr16-cat-source-test", rainfall_profile="legacy-rorb",
+        parameters=p, catchment=source_cat, storm=s
+    )
+    write_project(project_file, project)
+    loaded = load_project(project_file)
+    assert loaded.run == parsed
+    assert loaded.file_hashes[1][1] == hashlib.sha256(original).hexdigest()
+    # S2 must not silently map nonzero fractions/code 2 to a pervious run.
+    with pytest.raises(ValueError, match="control code 2"):
+        to_s2_payload(parsed)

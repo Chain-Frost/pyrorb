@@ -603,7 +603,7 @@ def _reach(raw: object) -> Reach:
 def _control(raw: object) -> ControlStep:
     record = _object(raw, {"code", "subarea_id", "reach_id", "print_id", "label"})
     code = _integer_field(record, "code")
-    if code not in (1, 3, 4, 5, 7):
+    if code not in (1, 2, 3, 4, 5, 7):
         message = "Unrecognised RORB computational control code"
         raise ValueError(message)
     return ControlStep(

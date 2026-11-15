@@ -410,7 +410,7 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
         if code not in ((1, 2, 3, 4, 5, 7) if explicit_types else (1, 3, 4, 5, 7)):
             message = f"Uncharacterised numerical control code {code}"
             raise _problem(message, line_no, unsupported=True)
-        parts = [part.strip() for part in raw.split(",", maxsplit=4)]
+        parts = [part.strip() for part in raw.split(",", maxsplit=4 if explicit_types else 3)]
         label = ""
         if code in (1, 2, 5):
             if explicit_types:
