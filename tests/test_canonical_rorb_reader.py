@@ -85,3 +85,44 @@ def test_source_replacement_is_rejected_between_inspection_reads(tmp_path: Path)
     assert check.status == "invalid"
     assert check.hydrographs is None
     assert any(d.code == "source_changed" for d in check.diagnostics)
+
+
+def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) -> None:
+    """Native scalar policy still requires exact units, ordinals and Hyd order."""
+    from runoff_routing.regression_metrics import bind_report_metrics
+
+    source = (
+        "Time increment (hours)= 0.50\nDuration of calculations: 1\n"
+        "Peak discharge,m³/s 1.000\nTime to peak,h 0.50\nVolume,m³ 1.800D+3\n"
+        "Hydrograph summary\nSite Description\n01 Synthetic outlet\n"
+        "Inc Time Hyd001\n1 0.50 0.000\n2 1.00 1.000\n"
+    )
+    path = tmp_path / "scalar.out"
+    path.write_bytes(source.encode("utf-8"))
+    document = read_rorb_file(path)
+    assert document.status == "partial"
+    section = document.section("reported_scalars")
+    assert [(r["family"], r["unit"], r["token"]) for r in section.rows] == [
+        ("Peak discharge", "m³/s", "1.000"),
+        ("Time to peak", "h", "0.50"),
+        ("Volume", "m³", "1.800D+3"),
+    ]
+    original = RorbSource.read(path)
+    converted = inspect_output(original)
+    assert converted.hydrographs is not None
+    sites = bind_report_metrics(original, converted.hydrographs)
+    assert len(sites) == 1 and sites[0].label == "Synthetic outlet"
+    assert sites[0].column == "Hyd001"
+    assert sites[0].peak is not None and sites[0].peak.token == "1.000"
+    assert sites[0].peak.line == 3
+    assert sites[0].peak.character == source.splitlines()[2].index("1.000") + 1
+    assert sites[0].volume is not None and sites[0].volume.token == "1.800D+3"
+
+    path.write_bytes(source.replace("Peak discharge,m³/s", "Peak discharge,L/s").encode("utf-8"))
+    invalid = RorbSource.read(path)
+    changed = inspect_output(invalid)
+    assert changed.hydrographs is not None
+    from pytest import raises
+
+    with raises(ValueError, match="unit/scale"):
+        bind_report_metrics(invalid, changed.hydrographs)

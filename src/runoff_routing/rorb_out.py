@@ -21,7 +21,7 @@ def _diagnostics(document: RorbDocument) -> list[Diagnostic]:
     return [Diagnostic(item.code, item.message, item.severity, item.line) for item in document.diagnostics]
 
 
-def _report(source: RorbSource, document: RorbDocument, table: Section) -> HydrographReport:
+def _report(document: RorbDocument, table: Section) -> HydrographReport:
     """Project view over validated canonical tokens; no source lines are reparsed."""
     if not table.valid or not table.rows or len(table.source_tokens) != len(table.rows):
         msg = "Canonical report table is incomplete or lacks exact source tokens"
@@ -50,29 +50,31 @@ def _report(source: RorbSource, document: RorbDocument, table: Section) -> Hydro
     return HydrographReport(columns, rows, timestep, duration)
 
 
-def inspect_output(source: RorbSource) -> Inspection:
-    """Inspect exactly the already-selected report source through ryan-tools.
+class SourceChangedError(ValueError):
+    """The selected report differs from the previously fingerprinted bytes."""
 
-    File and byte fingerprints must match the original RorbSource. A change
-    between reads is an error, never a reason to use a different snapshot.
-    Inspection never launches RORB or establishes physical site identities.
-    """
-    try:
-        canonical = read_rorb_file(source.path)
-    except (OSError, UnicodeError, ValueError) as exc:
-        return Inspection("output_report", "invalid", source, (Diagnostic("reader_error", str(exc), "error"),))
+
+def checked_canonical_report(source: RorbSource) -> RorbDocument:
+    """Read and authenticate a canonical report without a second local grammar."""
+    canonical = read_rorb_file(source.path)
     if (
         canonical.original_bytes is None
         or canonical.size_bytes != source.size_bytes
         or canonical.sha256 != source.sha256
         or canonical.lines != source.lines
     ):
-        return Inspection(
-            "output_report",
-            "invalid",
-            source,
-            (Diagnostic("source_changed", "Native report bytes changed between source and canonical reads", "error"),),
-        )
+        raise SourceChangedError("Native report bytes changed between source and canonical reads")
+    return canonical
+
+
+def inspect_output(source: RorbSource) -> Inspection:
+    """Inspect a selected source via ryan-tools; never infer HydNNN physical sites."""
+    try:
+        canonical = checked_canonical_report(source)
+    except SourceChangedError as exc:
+        return Inspection("output_report", "invalid", source, (Diagnostic("source_changed", str(exc), "error"),))
+    except (OSError, UnicodeError, ValueError) as exc:
+        return Inspection("output_report", "invalid", source, (Diagnostic("reader_error", str(exc), "error"),))
     if canonical.kind != "standard_output":
         return Inspection(
             "output_report",
@@ -102,7 +104,7 @@ def inspect_output(source: RorbSource) -> Inspection:
     if canonical.status == "invalid" or not tables[0].valid:
         return Inspection("output_report", "invalid", source, tuple(diagnostics))
     try:
-        report = _report(source, canonical, tables[0])
+        report = _report(canonical, tables[0])
     except (ValueError, IndexError, KeyError) as exc:
         return Inspection(
             "output_report", "invalid", source, (*diagnostics, Diagnostic("canonical_binding", str(exc), "error"))
