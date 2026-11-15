@@ -25,7 +25,7 @@ from .rorb_model import to_json
 SelectionSource = Literal["project", "api_override", "cli_override"]
 
 
-def _base(loaded: LoadedProject, selection: EngineSelection, source: SelectionSource) -> EngineOutcome:
+def create_engine_outcome_base(loaded: LoadedProject, selection: EngineSelection, source: SelectionSource) -> EngineOutcome:
     """Report source and effective choices, even for unsuccessful execution."""
     model = loaded.run
     settings: dict[str, str | int] = {
@@ -68,7 +68,7 @@ def _failure(
     )
 
 
-def _with_implementation_identity(base: EngineOutcome, wheel_artifact: Path | None) -> EngineOutcome:
+def attribute_engine_outcome(base: EngineOutcome, wheel_artifact: Path | None) -> EngineOutcome:
     """Bind exact package bytes and, when supplied, a source-matched wheel before dispatch."""
     try:
         identity = identify_implementation()
@@ -220,7 +220,7 @@ def run_engine_project(
     loaded = load_project(project_path)
     effective = loaded.project.engine if selection is None else selection
     provenance: SelectionSource = "project" if selection is None else selection_source
-    base = _with_implementation_identity(_base(loaded, effective, provenance), wheel_artifact)
+    base = attribute_engine_outcome(create_engine_outcome_base(loaded, effective, provenance), wheel_artifact)
     return execute_loaded_engine(loaded, base, project_path=project_path, native_config=native_config)
 
 

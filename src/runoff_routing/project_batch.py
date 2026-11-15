@@ -24,8 +24,8 @@ from typing import Any, cast
 
 from .engine_execution import (
     SelectionSource,
-    _base,
-    _with_implementation_identity,
+    attribute_engine_outcome,
+    create_engine_outcome_base,
     execute_loaded_engine,
 )
 from .engine_types import EngineDiagnostic, EngineOutcome, EngineSelection, EngineStatus
@@ -34,8 +34,6 @@ from .project_json import (
     EmbeddedRun,
     LoadedProject,
     ProjectError,
-    _reject_nonfinite,
-    _unique_pairs,
     load_project,
 )
 from .rorb_model import ParameterSet, RunModel, StormModel, from_dict, to_dict, to_json
@@ -98,7 +96,7 @@ class EventConfigError(ValueError):
 
     def __init__(self, status: EngineStatus, code: str, message: str) -> None:
         super().__init__(message)
-        self.status = status
+        self.status: EngineStatus = status
         self.code = code
 
 
@@ -109,6 +107,22 @@ class ProjectEvent:
     event_id: str
     storm: Mapping[str, object] | None = None
     losses: Mapping[str, object] | None = None
+
+
+def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject duplicate keys in the request, including nested event objects."""
+    entries: dict[str, object] = {}
+    for key, value in pairs:
+        if key in entries:
+            message = f"Duplicate JSON object key: {key}"
+            raise BatchConfigError(message)
+        entries[key] = value
+    return entries
+
+
+def _reject_nonfinite(value: str) -> None:
+    message = f"Nonstandard JSON constant: {value}"
+    raise BatchConfigError(message)
 
 
 def load_event_request(path: Path) -> tuple[object, ...]:
@@ -268,7 +282,7 @@ def iter_project_events(
         message = "selection_source must be api_override or cli_override"
         raise BatchConfigError(message)
     source: SelectionSource = "project" if selection is None else selection_source
-    attributed = _with_implementation_identity(_base(loaded, effective, source), wheel_artifact)
+    attributed = attribute_engine_outcome(create_engine_outcome_base(loaded, effective, source), wheel_artifact)
     source_kind = "embedded-run" if isinstance(loaded.project.model_source, EmbeddedRun) else "rorb-files"
     seen: set[str] = set()
     for ordinal, item in enumerate(events, start=1):
@@ -460,7 +474,7 @@ def run_project_events(
     events: Iterable[object],
     *,
     selection: EngineSelection | None = None,
-    selection_source: str = "api_override",
+    selection_source: SelectionSource = "api_override",
     native_config: NativeConfiguration | None = None,
     wheel_artifact: Path | None = None,
 ) -> ProjectBatchReport:
