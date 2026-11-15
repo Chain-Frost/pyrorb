@@ -492,7 +492,7 @@ def test_combined_preburst_typed_boundary_rejects_false_split() -> None:
     payload["model"]["preburst_bins"] = True
     with pytest.raises(TypeError, match="integer"):
         from_dict(payload)
-    with pytest.raises(ValueError, match="only"):
+    with pytest.raises(ValueError, match="total 100"):
         replace(original, pattern_basis="percent_of_depth")
 
 

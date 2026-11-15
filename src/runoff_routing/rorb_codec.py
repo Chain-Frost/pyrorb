@@ -21,6 +21,7 @@ from .rorb_model import (
     ControlStep,
     LossValue,
     ParameterSet,
+    PatternBasis,
     PrintLocation,
     Reach,
     RoutingValue,
@@ -396,14 +397,14 @@ def _original_combined_preburst(
         matches = [
             (line_number, raw.split(":", 1)[1].strip())
             for line_number, raw in enumerate(lines, 1)
-            if re.fullmatch(r"C\\s+" + re.escape(label) + r"\\s*:.*", raw.strip(), re.IGNORECASE)
+            if re.fullmatch(r"C\s+" + re.escape(label) + r"\s*:.*", raw.strip(), re.IGNORECASE)
         ]
         if len(matches) != 1:
             message = f"Nonunit percent pattern lacks unique {label} source evidence"
             raise _problem(message, unsupported=True)
         line_number, lexeme = matches[0]
         if label == "Storm duration":
-            duration = re.fullmatch(r"([^ ]+)\\s+hour(?:s)?", lexeme, re.IGNORECASE)
+            duration = re.fullmatch(r"([^ ]+)\s+hour(?:s)?", lexeme, re.IGNORECASE)
             if duration is None:
                 message = "Only original hour-based design-burst duration is characterised"
                 raise _problem(message, line_number, unsupported=True)
@@ -486,7 +487,7 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
-    basis = "relative_weights" if relative_weights else "percent_of_depth"
+    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
     preburst_bins = 0
     preburst_spans: tuple[SourceSpan, ...] = ()
     if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
@@ -503,7 +504,7 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
             percentages,
             depths,
             tuple(f"area_{index + 1}" for index in range(len(depths))),
-            pattern_basis=cast("PatternBasis", basis),
+            pattern_basis=basis,
             preburst_bins=preburst_bins,
         )
     except ValueError as exc:
