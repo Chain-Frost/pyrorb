@@ -386,6 +386,7 @@ def test_boundary_stratum_exceedance_contribution_without_native_warning() -> No
     assert curve.estimate(0.3).peak_m3_s == 20
     assert curve.estimate(0.3).boundary_strata_known_exceedance_probability == pytest.approx(0.2)
 
+
 @pytest.mark.parametrize(
     ("count", "aep", "expected"),
     [(10, 0.1, 8.0), (20, 0.95, 0.0), (20, 0.05, 18.0)],
@@ -393,9 +394,7 @@ def test_boundary_stratum_exceedance_contribution_without_native_warning() -> No
 def test_exact_step_boundary_quantiles_from_hand_computed_ranks(count: int, aep: float, expected: float) -> None:
     scope = _scope()
     population = CurvePopulation(scope, (StratumWeight("h", 1, count),))
-    records = tuple(
-        _record(scope, "h", f"draw-{index}", float(index), weight=1 / count) for index in range(count)
-    )
+    records = tuple(_record(scope, "h", f"draw-{index}", float(index), weight=1 / count) for index in range(count))
     curve = build_frequency_curve(population, records)
     estimate = curve.estimate(aep)
     assert estimate.peak_m3_s == expected
@@ -417,8 +416,7 @@ def test_unequal_probability_strata_use_original_rational_allocations_for_invers
     scope = _scope()
     population = CurvePopulation(scope, (StratumWeight("a", 0.3, 3), StratumWeight("b", 0.7, 7)))
     rows = tuple(
-        _record(scope, "a" if index < 3 else "b", f"draw-{index}", float(index), weight=0.1)
-        for index in range(10)
+        _record(scope, "a" if index < 3 else "b", f"draw-{index}", float(index), weight=0.1) for index in range(10)
     )
     curve = build_frequency_curve(population, reversed(rows))
     assert curve.estimate(0.1).peak_m3_s == 8
@@ -427,9 +425,7 @@ def test_unequal_probability_strata_use_original_rational_allocations_for_invers
 
 def test_incomplete_quantile_bounds_at_exact_rational_step_boundaries() -> None:
     scope = _scope()
-    population = CurvePopulation(
-        scope, (StratumWeight("modelled", 0.9, 9),), UnmodelledTails(lower_rainfall_mass=0.1)
-    )
+    population = CurvePopulation(scope, (StratumWeight("modelled", 0.9, 9),), UnmodelledTails(lower_rainfall_mass=0.1))
     rows = tuple(_record(scope, "modelled", f"draw-{i}", float(i), weight=0.1) for i in range(9))
     curve = build_frequency_curve(population, rows)
     estimate = curve.estimate(0.2)
@@ -438,4 +434,3 @@ def test_incomplete_quantile_bounds_at_exact_rational_step_boundaries() -> None:
     assert estimate.lower_bound_m3_s == 6  # F_known reaches 7/10 at Q=6.
     assert estimate.upper_bound_m3_s == 7  # F_known reaches 8/10 at Q=7.
     assert estimate.representative is None
-
