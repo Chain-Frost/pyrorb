@@ -87,7 +87,9 @@ class Reference(TypedDict):
     duration_envelope: DurationEnvelope
 
 
-REFERENCE_FILE = Path(__file__).absolute().parent / "fixtures" / "monte-carlo-qualification-v1" / "analytic-controls.json"
+REFERENCE_FILE = (
+    Path(__file__).absolute().parent / "fixtures" / "monte-carlo-qualification-v1" / "analytic-controls.json"
+)
 REFERENCE = cast("Reference", json.loads(REFERENCE_FILE.read_text(encoding="utf-8")))
 
 
@@ -117,12 +119,20 @@ def _strict_exceedance_bounds(
     weighted: list[tuple[Event, Fraction]], threshold: Fraction, unmodelled: Fraction
 ) -> tuple[Fraction, Fraction, Fraction]:
     definite = sum(
-        (weight for event, weight in weighted if event["status"] == "valid" and Fraction(event["q_m3s"] or "0") > threshold),
+        (
+            weight
+            for event, weight in weighted
+            if event["status"] == "valid" and Fraction(event["q_m3s"] or "0") > threshold
+        ),
         Fraction(),
     )
     unknown = sum((weight for event, weight in weighted if event["status"] != "valid"), unmodelled)
     equals = sum(
-        (weight for event, weight in weighted if event["status"] == "valid" and Fraction(event["q_m3s"] or "0") == threshold),
+        (
+            weight
+            for event, weight in weighted
+            if event["status"] == "valid" and Fraction(event["q_m3s"] or "0") == threshold
+        ),
         Fraction(),
     )
     return definite, definite + unknown, equals
@@ -156,9 +166,7 @@ def test_step_inverse_is_only_a_declared_analytic_example() -> None:
         first = next(
             q
             for q in values
-            if sum(
-                (weight for event, weight in weighted if Fraction(event["q_m3s"] or "0") <= q), Fraction()
-            )
+            if sum((weight for event, weight in weighted if Fraction(event["q_m3s"] or "0") <= q), Fraction())
             >= nonexceedance
         )
         assert first == Fraction(check["quantile_m3s"])
