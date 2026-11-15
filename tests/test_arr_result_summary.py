@@ -60,6 +60,16 @@ def _copy(sample: tuple[dict[str, Any], dict[str, Any]]) -> tuple[dict[str, Any]
     return copy.deepcopy(sample)
 
 
+@pytest.mark.parametrize("profile", ["assumed-native-parity", None, ["unknown"]])
+def test_unknown_method_profile_remains_rejected(
+    sample: tuple[dict[str, Any], dict[str, Any]], profile: object
+) -> None:
+    effective, routed = _copy(sample)
+    effective["method_profile"] = profile
+    with pytest.raises(ResultSummaryError, match="method profile"):
+        summarize_deterministic_results(effective, routed)
+
+
 def test_complete_population_and_distinct_source_native_internal_identities(
     sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:

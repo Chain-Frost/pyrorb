@@ -103,7 +103,10 @@ def _format_check(effective: Mapping[str, Any], routed: Mapping[str, Any]) -> No
             _fail(f"Unrecognised {name} results contract")
         if payload["schema_version"] != REPORT_VERSION:
             _fail(f"Unsupported {name} results version")
-    if effective.get("method_profile") != "arr2019-bom-published-arf-burst-only-v1":
+    if effective.get("method_profile") not in (
+        "arr2019-bom-published-arf-burst-only-v1",
+        "arr2019-bom-published-arf-stm-2dp-burst-only-v1",
+    ):
         _fail("Unrecognised generated-rainfall method profile")
 
 

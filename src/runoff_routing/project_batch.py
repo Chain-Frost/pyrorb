@@ -445,14 +445,6 @@ def iter_project_events(
         if attributed.diagnostics:
             yield replace(event_base, status=attributed.status)
             continue
-        if effective.engine == "rorb-cmd" and override != "none":
-            yield _event_failure(
-                event_base,
-                "unsupported_feature",
-                "native_event_override",
-                "The native adapter requires unmodified original .par/.catg/.stm bytes for every event",
-            )
-            continue
         event_loaded = replace(loaded, run=model)
         prepared_python, prepared_cmd = _event_preparation(event_loaded, effective, python_cache, cmd_cache)
         yield execute_loaded_engine(
@@ -462,6 +454,7 @@ def iter_project_events(
             native_config=native_config,
             prepared_python=prepared_python,
             prepared_cmd=prepared_cmd,
+            materialize_native_event=effective.engine == "rorb-cmd" and override != "none",
         )
 
 

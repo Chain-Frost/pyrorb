@@ -211,3 +211,44 @@ This downstream PR now pins the exact successfully tested reader commit
 `598e5edea093df426cda64c3a528fd1c5784c612` via the archive-based small distribution. Review and source/installed
 wheel CI on the downstream commit containing this new pin are a separate
 acceptance and cannot be inherited from the earlier head.
+
+## 2026-11-16 owner-authorised public 6.45 corpus and current evidence
+
+The owner authorised input/output fixture publication and allowed an authentic
+alternative to the unlocated historical 420-event source. Public
+[ryan-tools-test-data PR #4](https://github.com/Chain-Frost/ryan-tools-test-data/pull/4)
+at exact commit `af0d24b7640c6a40ed4384b8f04710a91b0e3a26`
+provides a RORBWin-**reported** 6.45 batch of **490 event/CSV pairs**,
+490 individual reports, 491 STM inputs, a 1,472-file original/distributed
+SHA-256 manifest and per-event association receipts. Only absolute
+Windows directory prefixes were changed in distributed copies. The version
+banner does not authenticate the executable, and the model CATG is absent:
+this is a reader source corpus, not a numerical-model replay.
+
+The data custodian verified **490 corroborated, zero missing/ambiguous/
+mismatched**, against exact canonical reader code
+`598e5edea093df426cda64c3a528fd1c5784c612`, under Windows
+Python 3.14.6. The receiving agent then added an *independent hosted*
+public reader check to upstream PR #233 at commit `a037461d`:
+[CI run 43753671346](https://github.com/Chain-Frost/ryan-tools/actions/runs/43753671346)
+passed on **Windows Python 3.13 and 3.14**. It verified all 1,472
+distributed file hashes, all 490 composite event-key/CSV corroborations,
+and preserved 501 ordinary report/CSV rows with matching flows and the
+unmodified **+0.5-hour CSV minus report offset**. Full upstream CI at
+`a037461d` was still running when this record was written; the parser
+modules are unchanged since earlier reviewed 6/6-green commit `598e5ede`.
+
+This consumer still pins the same reviewed reader *code* `598e5ede` in
+its minimal installed distribution: the later upstream commit changes tests,
+CI and docs only. The previous downstream Windows source/installed-wheel
+check [run 43749720170](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43749720170)
+passed at `fe000668`. This consumer branch also integrates the separate
+main-branch #175 written-rainfall change as a merge parent, preserving its
+source files and requiring fresh current-branch CI.
+
+**The historical 420-event data was not found or revalidated.** The 490
+population is the owner-authorised alternate real-file *reader* acceptance,
+not a 420/420 verification, native numerical equality, physical-site
+identification, representative-event or critical-duration selection proof.
+No numerical solver, GUI, native RORB execution, external package repin,
+fixture gitlink, main-branch PR merge or release was introduced.

@@ -313,10 +313,10 @@ def test_selected_native_fails_explicitly_without_using_python(tmp_path: Path) -
         (ProjectEvent("original"), ProjectEvent("modified", storm={"depths_mm": ["99"]})),
         selection=native,
     )
-    assert [item.status for item in report.outcomes] == ["unavailable_engine", "unsupported_feature"]
+    assert [item.status for item in report.outcomes] == ["unavailable_engine", "unavailable_engine"]
     assert [item.diagnostics[0].code for item in report.outcomes] == [
         "native_config_required",
-        "native_event_override",
+        "native_config_required",
     ]
     assert all(item.effective_selection.engine == "rorb-cmd" and not item.hydrographs for item in report.outcomes)
 
