@@ -517,6 +517,15 @@ def _validate_population(
     return members, outcomes, sites
 
 
+def _all_durations_comparable(population: list[dict[str, Any]]) -> bool:
+    """Require every duration to have a complete eligible ensemble and a known common grid."""
+    if not population:
+        return False
+    if any(not row["complete_comparable_population"] or row["time_grid_sha256"] is None for row in population):
+        return False
+    return len({row["time_grid_sha256"] for row in population}) == 1
+
+
 def _critical_duration_records(
     aeps: list[Any], sites: tuple[str, ...], summaries: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -533,11 +542,7 @@ def _critical_duration_records(
                     "complete_comparable_within_each_duration": all(
                         row["complete_comparable_population"] for row in population
                     ),
-                    "comparable_across_durations": len(
-                        {row["time_grid_sha256"] for row in population if row["time_grid_sha256"] is not None}
-                    )
-                    == 1
-                    and bool(population),
+                    "comparable_across_durations": _all_durations_comparable(population),
                     "duration_aggregation_rule": None,
                     "selected_duration_min": None,
                     "selection_status": "unverified",

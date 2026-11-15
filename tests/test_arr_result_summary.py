@@ -326,6 +326,42 @@ def test_complete_length_requires_declared_physical_clock(
     assert len(first["diagnostic_peak_ranking"]) == 9
 
 
+
+def test_critical_duration_comparison_rejects_missing_grid_in_one_duration(
+    sample: tuple[dict[str, Any], dict[str, Any]],
+) -> None:
+    effective, routed = _copy(sample)
+    incomplete_ids = {member["event_id"] for member in effective["members"][:10]}
+    for outcome in routed["outcomes"]:
+        if outcome["event_id"] in incomplete_ids:
+            outcome["physical_time_hours"] = outcome["physical_time_hours"][:2]
+            for graph in outcome["hydrographs"]:
+                graph["discharge_m3_s"] = graph["discharge_m3_s"][:2]
+    report = summarize_deterministic_results(effective, routed)
+    relevant = [cell for cell in report.data["cell_sites"] if cell["aep_label"] == effective["cells"][0]["aep_label"]]
+    assert len(relevant) == 2
+    assert relevant[0]["time_grid_sha256"] is None
+    assert not relevant[0]["complete_comparable_population"]
+    assert relevant[1]["complete_comparable_population"]
+    assert relevant[1]["time_grid_sha256"] is not None
+    duration = next(row for row in report.data["critical_durations"] if row["aep_label"] == relevant[0]["aep_label"])
+    assert not duration["complete_comparable_within_each_duration"]
+    assert not duration["comparable_across_durations"]
+    assert duration["selected_duration_min"] is None
+
+
+def test_critical_duration_comparison_rejects_empty_observed_population(
+    sample: tuple[dict[str, Any], dict[str, Any]],
+) -> None:
+    effective, routed = _copy(sample)
+    for outcome in routed["outcomes"]:
+        outcome["physical_time_hours"] = outcome["physical_time_hours"][:2]
+        for graph in outcome["hydrographs"]:
+            graph["discharge_m3_s"] = graph["discharge_m3_s"][:2]
+    report = summarize_deterministic_results(effective, routed)
+    assert all(row["time_grid_sha256"] is None for row in report.data["cell_sites"])
+    assert all(not record["comparable_across_durations"] for record in report.data["critical_durations"])
+
 def test_empty_routed_population_cannot_claim_software_success(
     sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
