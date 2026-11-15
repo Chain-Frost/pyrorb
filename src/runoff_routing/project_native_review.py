@@ -261,6 +261,12 @@ def review_project_native_capture(
     if loaded.project.rainfall_profile != "legacy-rorb" or not isinstance(loaded.project.model_source, LegacyRunFiles):
         message = "Native S0 review requires a legacy-rorb project backed by original RORB source files"
         raise ProjectError(message)
+    if not loaded.original_inputs_match_effective():
+        message = (
+            "Recorded native CATG/STM source evidence does not represent the edited effective "
+            "catchment or storm; review the original unedited model or recapture the selected inputs"
+        )
+        raise ProjectError(message)
     manifest, manifest_hash = _verified_manifest(manifest_path, manifest_sha256)
     profile = _validated_capture_profile(manifest, engine_executable_sha256)
     _check_capture_settings(manifest, loaded.project.model_source, loaded.run)
