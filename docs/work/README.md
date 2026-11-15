@@ -4,6 +4,8 @@
 
 ## Current implementation / regression receipts
 
+- [Canonical cross-repository RORB report-reader handoff](2026-11-15-canonical-rorb-adoption.md) — issue #142, staged reader-only upstream import, existing evidence/clock/Decimal policies; installed-wheel/old grammar retirement gates remain explicit.
+
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
 - [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
 - [Public reference dataset transfer and limits](2026-11-15-public-cmd-data.md) — merged #78/#82, approved source objects, authenticated historical snapshot and full index.

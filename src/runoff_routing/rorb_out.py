@@ -1,140 +1,120 @@
-"""Read retained Inc/Time hydrograph reports without inventing location or timing mappings."""
+"""Bind the canonical ryan-tools RORB report to runoff's existing evidence contract.
+
+All native report grammar, numeric token parsing, source preservation, increment
+validation and scalar recognition live in ryan-tools. This adapter supplies only
+the project-facing immutable inspection shape consumed by the CMD/regression
+contracts. It does not infer physical Hyd identities or shift printed clocks.
+"""
 
 from __future__ import annotations
 
-import re
 from decimal import Decimal
-from itertools import pairwise
 
-from .rorb_documents import Diagnostic, HydrographReport, HydrographRow, Inspection, RorbSource, decimal_number
+from ryan_library.functions.RORB.reader_types import RorbDocument, Section, exact_number
+from ryan_library.functions.RORB.readers import read_rorb_file
 
-STEP = re.compile(r"\s*Time increment \(hours\)\s*=\s*(\S+)\s*", re.IGNORECASE)
-DURATION = re.compile(r"\s*Duration of calculations:\s*(\d+)\s*", re.IGNORECASE)
-HYDRO = re.compile(r"Hyd\d+", re.IGNORECASE)
-NUMERIC_START = re.compile(r"^[+-]?(?:\d|\.\d|\*|nan|inf)", re.IGNORECASE)
+from .rorb_documents import Diagnostic, HydrographReport, HydrographRow, Inspection, RorbSource
 
 
-def _extract_metadata(source: RorbSource) -> tuple[Decimal | None, int | None]:
-    timestep: Decimal | None = None
-    duration: int | None = None
-    for line in source.lines:
-        if match := STEP.fullmatch(line):
-            value = decimal_number(match[1])
-            if value <= 0 or (timestep is not None and value != timestep):
-                message = "Conflicting or nonpositive reported time increments"
-                raise ValueError(message)
-            timestep = value
-        if match := DURATION.fullmatch(line):
-            value = int(match[1])
-            if duration is not None and value != duration:
-                message = "Conflicting reported calculation durations"
-                raise ValueError(message)
-            duration = value
-    return timestep, duration
+def _diagnostics(document: RorbDocument) -> list[Diagnostic]:
+    """Carry canonical diagnostics and their original source line provenance."""
+    return [Diagnostic(item.code, item.message, item.severity, item.line) for item in document.diagnostics]
 
 
-def _read_rows(source: RorbSource, line_index: int, count: int) -> tuple[HydrographRow, ...]:
-    rows: list[HydrographRow] = []
-    for number, line in enumerate(source.lines[line_index + 1 :], start=line_index + 2):
-        fields = line.split()
-        if not fields:
-            if rows:
-                break
-            continue
-        if not NUMERIC_START.match(fields[0]):
-            if rows:
-                break
-            continue
-        if len(fields) != count or not fields[0].isascii() or not fields[0].isdecimal():
-            message = f"Malformed hydrograph data record at line {number}"
-            raise ValueError(message)
-        increment = int(fields[0])
-        time = decimal_number(fields[1])
-        values = tuple(decimal_number(value) for value in fields[2:])
-        if rows and (increment != rows[-1].increment + 1 or time <= rows[-1].time_hours):
-            message = f"Noncontiguous increment or nonincreasing time at line {number}"
-            raise ValueError(message)
-        rows.append(HydrographRow(number, increment, time, values, fields[1]))
-    if not rows:
-        message = f"Empty hydrograph table following line {line_index + 1}"
-        raise ValueError(message)
-    return tuple(rows)
-
-
-def _printed_resolution(value: Decimal) -> Decimal:
-    return Decimal(1).scaleb(int(value.as_tuple().exponent))
-
-
-def _validate_time(rows: tuple[HydrographRow, ...], timestep: Decimal | None) -> None:
-    if timestep is None:
-        return
-    for previous, current in pairwise(rows):
-        precision = (
-            _printed_resolution(previous.time_hours)
-            + _printed_resolution(current.time_hours)
-            + _printed_resolution(timestep)
-        ) / 2
-        tolerance = min(timestep / 2, precision)
-        if abs(current.time_hours - previous.time_hours - timestep) > tolerance:
-            message = f"Reported time increment differs from values at line {current.line}"
-            raise ValueError(message)
-
-
-def _validate_duration(rows: tuple[HydrographRow, ...], duration: int | None) -> None:
-    if duration is None:
-        return
-    # Retained RORB_CMD 6.44 reports number N+1 output rows as increments
-    # 1..N+1 (their first raw time is h); other characterised reports use
-    # 0..N. Never shift the source increments or time tokens to reconcile.
-    first_last = (rows[0].increment, rows[-1].increment)
-    if len(rows) != duration + 1 or first_last not in ((0, duration), (1, duration + 1)):
-        message = "Report hydrograph rows do not cover the full calculation duration"
-        raise ValueError(message)
+def _report(source: RorbSource, document: RorbDocument, table: Section) -> HydrographReport:
+    """Project view over validated canonical tokens; no source lines are reparsed."""
+    if not table.valid or not table.rows or len(table.source_tokens) != len(table.rows):
+        msg = "Canonical report table is incomplete or lacks exact source tokens"
+        raise ValueError(msg)
+    if table.columns[:3] != ["line", "Inc", "Time"]:
+        msg = "Canonical report columns do not identify Inc and Time"
+        raise ValueError(msg)
+    columns = tuple(table.columns[3:])
+    if not columns:
+        msg = "Native report has no hydrograph ordinate columns"
+        raise ValueError(msg)
+    rows = tuple(
+        HydrographRow(
+            int(str(row["line"])),
+            int(str(row["Inc"])),
+            table.source_decimal(index, "Time"),
+            tuple(table.source_decimal(index, column) for column in columns),
+            table.source_tokens[index]["Time"],
+        )
+        for index, row in enumerate(table.rows)
+    )
+    timestep_raw = document.metadata.get("time_increment_raw")
+    timestep: Decimal | None = exact_number(timestep_raw) if isinstance(timestep_raw, str) else None
+    duration_raw = document.metadata.get("reported_duration_increments")
+    duration = duration_raw if isinstance(duration_raw, int) and not isinstance(duration_raw, bool) else None
+    return HydrographReport(columns, rows, timestep, duration)
 
 
 def inspect_output(source: RorbSource) -> Inspection:
-    headers = [(index, line.split()) for index, line in enumerate(source.lines) if line.split()[:2] == ["Inc", "Time"]]
-    if not headers:
+    """Inspect exactly the already-selected report source through ryan-tools.
+
+    File and byte fingerprints must match the original RorbSource. A change
+    between reads is an error, never a reason to use a different snapshot.
+    Inspection never launches RORB or establishes physical site identities.
+    """
+    try:
+        canonical = read_rorb_file(source.path)
+    except (OSError, UnicodeError, ValueError) as exc:
+        return Inspection("output_report", "invalid", source, (Diagnostic("reader_error", str(exc), "error"),))
+    if (
+        canonical.original_bytes is None
+        or canonical.size_bytes != source.size_bytes
+        or canonical.sha256 != source.sha256
+        or canonical.lines != source.lines
+    ):
+        return Inspection(
+            "output_report",
+            "invalid",
+            source,
+            (Diagnostic("source_changed", "Native report bytes changed between source and canonical reads", "error"),),
+        )
+    if canonical.kind != "standard_output":
         return Inspection(
             "output_report",
             "unsupported",
             source,
-            (Diagnostic("no_supported_table", "No Inc Time HydNNN table", "unsupported"),),
+            (Diagnostic("no_supported_table", "No characterised native Inc/Time report structure", "unsupported"),),
         )
-    if len(headers) != 1:
+
+    diagnostics = _diagnostics(canonical)
+    tables = [section for section in canonical.sections if section.name.startswith("hydrographs_")]
+    if not tables:
+        status = "invalid" if canonical.status == "invalid" else "unsupported"
+        severity = "error" if status == "invalid" else "unsupported"
+        return Inspection(
+            "output_report",
+            status,
+            source,
+            (*diagnostics, Diagnostic("no_supported_table", "No valid Inc/Time HydNNN summary", severity)),
+        )
+    if len(tables) != 1:
         return Inspection(
             "output_report",
             "invalid",
             source,
-            (Diagnostic("ambiguous_tables", "Multiple hydrograph tables need separate identities", "error"),),
+            (*diagnostics, Diagnostic("ambiguous_tables", "Multiple hydrograph tables need separate identities", "error")),
         )
-    index, fields = headers[0]
-    if len(fields) < 3 or len(set(fields)) != len(fields) or any(HYDRO.fullmatch(name) is None for name in fields[2:]):
-        return Inspection(
-            "output_report",
-            "invalid",
-            source,
-            (Diagnostic("bad_table_header", "Duplicate or unrecognised hydrograph columns", "error", index + 1),),
-        )
+    if canonical.status == "invalid" or not tables[0].valid:
+        return Inspection("output_report", "invalid", source, tuple(diagnostics))
     try:
-        timestep, duration = _extract_metadata(source)
-        rows = _read_rows(source, index, len(fields))
-        _validate_time(rows, timestep)
-        _validate_duration(rows, duration)
-    except ValueError as exc:
+        report = _report(source, canonical, tables[0])
+    except (ValueError, IndexError, KeyError) as exc:
         return Inspection(
-            "output_report", "invalid", source, (Diagnostic("output_record", str(exc), "error", index + 1),)
+            "output_report", "invalid", source, (*diagnostics, Diagnostic("canonical_binding", str(exc), "error"))
         )
-    report = HydrographReport(tuple(fields[2:]), rows, timestep, duration)
-    notes = [
+
+    diagnostics.append(
         Diagnostic("print_identity_unverified", "HydNNN labels do not establish native print locations", "warning")
-    ]
-    if duration is None:
-        notes.append(
-            Diagnostic(
-                "completion_unverified", "No reported calculation duration; cannot verify completeness", "warning"
-            )
+    )
+    if report.reported_duration_increments is None and not any(d.code == "completion_unverified" for d in diagnostics):
+        diagnostics.append(
+            Diagnostic("completion_unverified", "Cannot verify completion without a reported duration", "warning")
         )
-    if timestep is None:
-        notes.append(Diagnostic("timestep_unverified", "No reported timestep; raw labels preserved", "warning"))
-    return Inspection("output_report", "partial", source, tuple(notes), hydrographs=report)
+    if report.time_increment_hours is None:
+        diagnostics.append(Diagnostic("timestep_unverified", "No reported timestep; raw labels preserved", "warning"))
+    return Inspection("output_report", "partial", source, tuple(diagnostics), hydrographs=report)

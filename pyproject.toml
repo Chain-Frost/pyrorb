@@ -7,8 +7,12 @@ name = "python-runoff-routing"
 version = "0.0.0.dev0"
 description = "Public in-development Python rainfall-runoff routing implementation"
 readme = "README.md"
+license = "LicenseRef-SUL-1.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+  "ryan-rorb-readers @ git+https://github.com/Chain-Frost/ryan-tools.git@20f0d9c9ab49f9759877c8cd98b515f57150154f#subdirectory=packaging/rorb-readers",
+]
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "pyright", "ruff==0.16.6"]
