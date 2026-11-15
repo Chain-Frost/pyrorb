@@ -606,6 +606,7 @@ class S2Payload:
     continuing_loss_mm_h: float
     kc: float
     m: float
+    runoff_coefficient: float | None = None
 
 
 def _as_float(value: Decimal) -> float:
@@ -622,8 +623,11 @@ def _as_float(value: Decimal) -> float:
 def to_s2_payload(model: RunModel) -> S2Payload:
     """Convert only the explicitly supported S2 single-storm subset, without importing S2."""
     parameters, catchment, storm = model.parameters, model.catchment, model.storm
-    if parameters.num_isa != 1 or parameters.loss_model != 1 or not parameters.lumped_kc:
-        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL inputs"
+    if parameters.num_isa != 1 or parameters.loss_model not in (1, 2) or not parameters.lumped_kc:
+        message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL or IL/RoC inputs"
+        raise ValueError(message)
+    if parameters.loss_model == 2 and not 0 <= parameters.losses[0].continuing <= 1:
+        message = "Runoff coefficient for IL/RoC must be a fraction in [0, 1]"
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
@@ -641,7 +645,8 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         tuple(_as_float(value) for value in storm.percentages),
         tuple(_as_float(value) for value in storm.depths_mm),
         _as_float(parameters.losses[0].initial_loss_mm),
-        _as_float(parameters.losses[0].continuing),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 1 else 0.0,
         _as_float(parameters.routing[0].kc),
         _as_float(parameters.routing[0].m),
+        _as_float(parameters.losses[0].continuing) if parameters.loss_model == 2 else None,
     )

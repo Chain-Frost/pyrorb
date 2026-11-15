@@ -209,7 +209,10 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         *zip(model.storm.percentages, payload.percentages, strict=True),
         *zip(model.storm.depths_mm, payload.depths_mm, strict=True),
         (model.parameters.losses[0].initial_loss_mm, payload.initial_loss_mm),
-        (model.parameters.losses[0].continuing, payload.continuing_loss_mm_h),
+        (
+            model.parameters.losses[0].continuing,
+            payload.runoff_coefficient if payload.runoff_coefficient is not None else payload.continuing_loss_mm_h,
+        ),
     )
     if any(source != 0 and converted == 0.0 for source, converted in source_values):
         message = "A nonzero source value underflows to zero at the S2 float boundary"
@@ -231,7 +234,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         payload.percentages,
         payload.depths_mm,
     )
-    losses = Losses(payload.initial_loss_mm, payload.continuing_loss_mm_h)
+    losses = Losses(payload.initial_loss_mm, payload.continuing_loss_mm_h, payload.runoff_coefficient)
     return catchment, storm, losses, payload.kc, payload.m
 
 
