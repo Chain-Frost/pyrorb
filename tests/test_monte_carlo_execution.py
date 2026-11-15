@@ -19,6 +19,7 @@ from runoff_routing.monte_carlo_effective import (
     MCPopulation,
     MCRequestHeader,
     materialise_arr_sample,
+    read_header,
     validate_effective_request,
     write_effective_request,
 )
@@ -125,6 +126,9 @@ def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Pat
     assert report.complete
     site_records = cast("list[dict[str, object]]", _rows(ledger)[1]["sites"])
     assert site_records[0]["peak_m3_s"] == max(direct.hydrographs[0].discharge_m3_s)
+    assert _rows(ledger)[1]["tp_source_kind"] == "point"
+    assert _rows(ledger)[1]["tp_aep_band"] == "rare"
+    assert _rows(ledger)[1]["original_tp_id"] == "0001"
     prefix = tmp_path / "selected"
     replayed = replay_mc_event(project, request, ledger, sample.sample_id, prefix, selection=CMD)
     assert replayed.outcomes[0].model_sha256 == direct.model_sha256
@@ -220,6 +224,16 @@ def test_duplicate_samples_missing_strata_and_double_transform_rejected(tmp_path
         validate_effective_request(request)
 
 
+def test_adopted_v1_does_not_silently_accept_experimental_preburst_clamp(tmp_path: Path) -> None:
+    _, request, events = _input(tmp_path, count=1, b_ids=True)
+    header = read_header(request)
+    experimental = replace(events[0], loss_policy="subtract_clamp")
+    output = tmp_path / "unreviewed-clamp.jsonl"
+    with pytest.raises(MCInputError, match="Experimental preburst clamp"):
+        write_effective_request(output, header, (experimental,))
+    assert not output.exists()
+
+
 def test_truncated_checkpoint_rejected_and_unfinished_not_complete(tmp_path: Path) -> None:
     project, request, _ = _input(tmp_path)
     ledger = tmp_path / "ledger.jsonl"
@@ -277,7 +291,7 @@ def test_ledger_numerical_corruption_fails_hash_chain_and_external_receipt(tmp_p
 
 
 def test_zero_rainfall_is_valid_zero_peak_not_missing(tmp_path: Path) -> None:
-    project, request, events = _input(tmp_path)
+    project, _request, events = _input(tmp_path)
     rainless = events[0]
     assert rainless.event.storm is not None
     assert rainless.event.losses is not None

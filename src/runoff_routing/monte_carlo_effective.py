@@ -479,6 +479,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _validate_effective_policy(header: MCRequestHeader, record: EffectiveMCEvent) -> None:
+    """Prevent an unreviewed clamp from masquerading as the adopted v1 policy."""
+    if header.policy_id == "monte-carlo-statistics/1" and record.loss_policy == "subtract_clamp":
+        _fail("Experimental preburst clamp requires a different explicit statistical policy ID")
+
+
 def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     """Validate full population mass/counts and source hashes without loading routed Q."""
     header = read_header(path)
@@ -493,8 +499,7 @@ def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     for record in iter_effective_events(path):
         count += 1
         key = (record.scenario_id, record.duration_min, record.stratum_id)
-        if header.policy_id == "monte-carlo-statistics/1" and record.loss_policy == "subtract_clamp":
-            _fail("Experimental preburst clamp requires a different explicit statistical policy ID")
+        _validate_effective_policy(header, record)
         if record.sample_id in seen or (record.scenario_id, record.duration_min) not in target:
             _fail("Duplicate sample ID or an undeclared scenario/duration")
         seen.add(record.sample_id)
@@ -537,6 +542,11 @@ def write_effective_request(path: Path, header: MCRequestHeader, records: Iterab
         if created:
             path.unlink(missing_ok=True)
         raise
+
+
+def _validate_tp_source_id(actual_id: str, expected_id: str | None) -> None:
+    if expected_id is not None and actual_id != expected_id:
+        _fail("Selected temporal-pattern EventID differs from its source ordinal")
 
 
 def materialise_arr_sample(
@@ -582,8 +592,7 @@ def materialise_arr_sample(
     if pattern_source_order <= 0 or pattern_source_order > len(pattern_set.patterns):
         _fail("TP source ordinal is missing from the original pattern file")
     pattern = pattern_set.patterns[pattern_source_order - 1]
-    if expected_original_tp_id is not None and pattern.event_id != expected_original_tp_id:
-        _fail("B's selected temporal-pattern EventID differs from its original source ordinal")
+    _validate_tp_source_id(pattern.event_id, expected_original_tp_id)
     if pattern_set.kind != ("point" if sum(a.area_km2 for a in model.catchment.subareas) < 75 else "areal"):
         _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
