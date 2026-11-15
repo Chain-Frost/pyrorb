@@ -28,12 +28,12 @@ class CandidateResult:
     revision: str
 
 
-def execute(event: Event, revision: str) -> CandidateResult:
-    """Execute one event without touching the filesystem or process state."""
-    geometry = compute_geometry(event)
+def execute(event: Event, revision: str, *, geometry: Geometry | None = None) -> CandidateResult:
+    """Execute with optional precomputed immutable geometry and fresh event state."""
+    resolved_geometry = compute_geometry(event) if geometry is None else geometry
     preparation = prepare(event)
-    network = route_network(event, geometry, preparation)
-    return CandidateResult(event, geometry, preparation, network, revision)
+    network = route_network(event, resolved_geometry, preparation)
+    return CandidateResult(event, resolved_geometry, preparation, network, revision)
 
 
 def _rational(value: Fraction) -> str:
