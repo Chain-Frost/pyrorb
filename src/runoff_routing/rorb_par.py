@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from decimal import Decimal
 from typing import Literal
 
@@ -109,15 +111,90 @@ def _parse(cursor: _Cursor) -> ParameterModel:
     )
 
 
+
+def _recognised_rorbwin_saved_par(lines: tuple[str, ...]) -> bool:
+    """Narrow 6.52-family saved-PAR signature from four retained native GUI captures.
+
+    Original saved files have a directory, run-mode integer, blank separator,
+    CATG/STM paths, four control lines, ARR mode header and long numeric tables.
+    This is deliberately *not* a broad RORBwin grammar or guessed version.
+    """
+    if len(lines) < 700 or len(lines) < 20 or lines[2].strip():
+        return False
+    if not re.fullmatch(r"[123]", lines[1].strip()):
+        return False
+    if not lines[3].strip().lower().endswith((".catg", ".cat")):
+        return False
+    if not lines[4].strip().lower().endswith(".stm"):
+        return False
+    if any(lines[index].strip() for index in (5, 6, 7)):
+        return False
+    if lines[8].strip() not in {"1", "2", "3"} or lines[9].strip() not in {"T", "F"}:
+        return False
+    if not all(re.fullmatch(r"[0-9]+", lines[index].strip()) for index in (10, 11, 12)):
+        return False
+    if len(lines[13].split()) < 8:
+        return False
+    if not lines[14].strip().startswith(("ARR ", "ARR2016 ")):
+        return False
+    if lines[15].split() != ["T", "F"]:
+        return False
+    return sum("-999.00" in line for line in lines[-60:]) >= 5
+
+
+def inspect_par_bytes(data: bytes, *, source_path: Path | None = None) -> Inspection:
+    """Classify PAR bytes without touching the filesystem or following references."""
+    try:
+        text = data.decode("utf-8-sig")
+        encoding = "utf-8-sig"
+    except UnicodeDecodeError:
+        text = data.decode("cp1252")
+        encoding = "cp1252"
+    source = RorbSource(
+        source_path if source_path is not None else Path("<memory.par>"),
+        hashlib.sha256(data).hexdigest(),
+        len(data),
+        encoding,
+        tuple(text.splitlines()),
+    )
+    return inspect_cmd_parameters(source)
+
+
+def read_par_file(path: Path) -> Inspection:
+    """One explicit filesystem adapter; inspect-only, no reference traversal."""
+    return inspect_par_bytes(path.read_bytes(), source_path=path.absolute())
+
+
 def inspect_cmd_parameters(source: RorbSource) -> Inspection:
     """Only the documented CMD V2 signature is accepted; GUI .par is not CMD."""
     lines = source.lines
     if not lines or lines[0] != "# BEGIN":
+        if _recognised_rorbwin_saved_par(lines):
+            return Inspection(
+                "rorbwin_saved_par",
+                "unsupported",
+                source,
+                (
+                    Diagnostic(
+                        "rorbwin_saved_par_deferred",
+                        "Recognised RORBwin 6.52-family saved PAR; settings import is deferred. "
+                        "Use a supported RORB_CMD PAR; do not treat these settings as CMD.",
+                        "unsupported",
+                    ),
+                ),
+            )
         return Inspection(
-            "gui_or_unknown_par",
+            "unknown_par",
             "unsupported",
             source,
-            (Diagnostic("unknown_par_dialect", "Not a documented RORB_CMD # BEGIN file", "unsupported"),),
+            (
+                Diagnostic(
+                    "unknown_par_dialect",
+                    "Unrecognised PAR content (not a documented CMD # BEGIN file or a "
+                    "characterised RORBwin saved-PAR signature)",
+                    "unsupported",
+                ),
+            ),
         )
     if lines[-1] != "# END" or lines.count("# BEGIN") != 1 or lines.count("# END") != 1:
         return Inspection(

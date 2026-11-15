@@ -177,7 +177,7 @@ def test_unsafe_relative_references_rejected(path: str) -> None:
 def test_json_schema_rejects_malformed_or_unsupported_values(alteration: str) -> None:
     data = json.loads(project_to_json(_inline()))
     if alteration == "version":
-        data["schema_version"] = 3
+        data["schema_version"] = 4
     elif alteration == "format":
         data["format"] = "unrelated"
     elif alteration == "missing":
@@ -229,7 +229,9 @@ def test_file_corruption_rejected_without_changing_evidence(tmp_path: Path) -> N
         storm=paths[2],
     )
     write_project(tmp_path / "project.json", project)
-    paths[1].write_bytes(paths[1].read_bytes() + b"bad")
+    assert isinstance(project.model_source, LegacyRunFiles)
+    staged = tmp_path / project.model_source.catchment.path
+    staged.write_bytes(staged.read_bytes() + b"bad")
     with pytest.raises(ProjectError, match="SHA-256"):
         load_project(tmp_path / "project.json")
 
@@ -265,19 +267,22 @@ def test_unicode_paths_and_exclusive_create(tmp_path: Path) -> None:
     assert load_project(target).project.identifier == "case-one"
 
 
-def test_import_cannot_reach_outside_project_root(tmp_path: Path) -> None:
+def test_import_stages_exact_sources_from_outside_project_root(tmp_path: Path) -> None:
     project_root = tmp_path / "case"
     project_root.mkdir()
     par, catg, stm = _legacy_sources(tmp_path)
-    with pytest.raises(ProjectError, match="inside the project"):
-        import_rorb_project(
-            project_root / "project.json",
-            identifier="case-one",
-            rainfall_profile="legacy-rorb",
-            parameters=par,
-            catchment=catg,
-            storm=stm,
-        )
+    project = import_rorb_project(
+        project_root / "project.json",
+        identifier="case-one",
+        rainfall_profile="legacy-rorb",
+        parameters=par,
+        catchment=catg,
+        storm=stm,
+    )
+    assert isinstance(project.model_source, LegacyRunFiles)
+    assert (project_root / project.model_source.parameters.path).read_bytes() == par.read_bytes()
+    assert (project_root / project.model_source.catchment.path).read_bytes() == catg.read_bytes()
+    assert (project_root / project.model_source.storm.path).read_bytes() == stm.read_bytes()
 
 
 def test_cli_validate_inspect_and_bad_usage(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -434,7 +439,10 @@ def test_compare_and_export_fail_closed_on_bad_input_hash(tmp_path: Path) -> Non
             storm=stm,
         ),
     )
-    catg.write_bytes(catg.read_bytes() + b"invalid source changed")
+    loaded = load_project(source)
+    assert isinstance(loaded.project.model_source, LegacyRunFiles)
+    staged = tmp_path / loaded.project.model_source.catchment.path
+    staged.write_bytes(staged.read_bytes() + b"invalid staged source changed")
     with pytest.raises(ProjectError, match="SHA-256"):
         compare_project_files(source, source)
     with pytest.raises(ProjectError, match="SHA-256"):
