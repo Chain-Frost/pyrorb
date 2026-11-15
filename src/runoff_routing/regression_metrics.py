@@ -79,16 +79,19 @@ def _scalars(document: RorbDocument, prefix: str, unit: str) -> tuple[ScalarFiel
     """Bind the exact canonical scalar records to the frozen CMD unit profile."""
     family, separator, expected_unit = prefix.partition(",")
     if not separator:
-        raise ValueError("Scalar binding requires an explicit source unit")
+        message = "Scalar binding requires an explicit source unit"
+        raise ValueError(message)
     section = document.section("reported_scalars")
     if not section.valid:
-        raise ValueError("Reported scalar section contains invalid source records")
+        message = "Reported scalar section contains invalid source records"
+        raise ValueError(message)
     fields: list[ScalarField] = []
     for row in section.rows:
         if row["family"] != family:
             continue
         if row["unit"] != expected_unit:
-            raise ValueError("Native scalar unit/scale differs from the selected reporting profile")
+            message = "Native scalar unit/scale differs from the selected reporting profile"
+            raise ValueError(message)
         token = str(row["token"])
         token_interval(token)
         fields.append(
@@ -116,27 +119,33 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
     """Bind source-scoped canonical scalar/legend records without parsing lines."""
     document = checked_canonical_report(source)
     if document.kind != "standard_output" or document.status == "invalid":
-        raise ValueError("Canonical report is not a supported valid native output")
+        message = "Canonical report is not a supported valid native output"
+        raise ValueError(message)
     if document.metadata.get("hydrograph_summary_count") != 1:
-        raise ValueError("Exactly one native hydrograph-summary legend is required")
+        message = "Exactly one native hydrograph-summary legend is required"
+        raise ValueError(message)
     hydrographs = [s for s in document.sections if s.name.startswith("hydrographs_")]
     if len(hydrographs) != 1 or not hydrographs[0].valid or tuple(hydrographs[0].columns[3:]) != report.columns:
-        raise ValueError("Canonical hydrograph scope differs from the selected report")
+        message = "Canonical hydrograph scope differs from the selected report"
+        raise ValueError(message)
     if len(hydrographs[0].rows) != len(report.rows) or any(
         hydrographs[0].source_tokens[i]["Time"] != item.raw_time
         for i, item in enumerate(report.rows)
     ):
-        raise ValueError("Canonical report tokens differ from the selected hydrograph")
+        message = "Canonical report tokens differ from the selected hydrograph"
+        raise ValueError(message)
     site_section = document.section("sites")
     if not site_section.valid:
-        raise ValueError("Original site descriptions are invalid")
+        message = "Original site descriptions are invalid"
+        raise ValueError(message)
     labels = tuple(
         (f"Hyd{int(str(row['id'])[3:]):03d}", str(row["description"]))
         for row in site_section.rows
     )
     columns = tuple(f"Hyd{int(column[3:]):03d}" for column in report.columns)
     if tuple(name for name, _ in labels) != columns:
-        raise ValueError("Native legend identity/order does not match actual table columns")
+        message = "Native legend identity/order does not match actual table columns"
+        raise ValueError(message)
 
     count = len(report.columns)
     peaks = _site_scalars(_scalars(document, "Peak discharge,m³/s", "m3/s"), count)

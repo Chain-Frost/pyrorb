@@ -6,8 +6,11 @@ import hashlib
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 from ryan_library.functions.RORB.reader_types import RorbDocument
 from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file
+
+from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
 
@@ -89,8 +92,6 @@ def test_source_replacement_is_rejected_between_inspection_reads(tmp_path: Path)
 
 def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) -> None:
     """Native scalar policy still requires exact units, ordinals and Hyd order."""
-    from runoff_routing.regression_metrics import bind_report_metrics
-
     source = (
         "Time increment (hours)= 0.50\nDuration of calculations: 1\n"
         "Peak discharge,m³/s 1.000\nTime to peak,h 0.50\nVolume,m³ 1.800D+3\n"
@@ -111,18 +112,19 @@ def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) ->
     converted = inspect_output(original)
     assert converted.hydrographs is not None
     sites = bind_report_metrics(original, converted.hydrographs)
-    assert len(sites) == 1 and sites[0].label == "Synthetic outlet"
+    assert len(sites) == 1
+    assert sites[0].label == "Synthetic outlet"
     assert sites[0].column == "Hyd001"
-    assert sites[0].peak is not None and sites[0].peak.token == "1.000"
+    assert sites[0].peak is not None
+    assert sites[0].peak.token == source.splitlines()[2].split()[-1]
     assert sites[0].peak.line == 3
     assert sites[0].peak.character == source.splitlines()[2].index("1.000") + 1
-    assert sites[0].volume is not None and sites[0].volume.token == "1.800D+3"
+    assert sites[0].volume is not None
+    assert sites[0].volume.token == source.splitlines()[4].split()[-1]
 
     path.write_bytes(source.replace("Peak discharge,m³/s", "Peak discharge,L/s").encode("utf-8"))
     invalid = RorbSource.read(path)
     changed = inspect_output(invalid)
     assert changed.hydrographs is not None
-    from pytest import raises
-
-    with raises(ValueError, match="unit/scale"):
+    with pytest.raises(ValueError, match="unit/scale"):
         bind_report_metrics(invalid, changed.hydrographs)

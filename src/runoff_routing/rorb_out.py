@@ -63,7 +63,8 @@ def checked_canonical_report(source: RorbSource) -> RorbDocument:
         or canonical.sha256 != source.sha256
         or canonical.lines != source.lines
     ):
-        raise SourceChangedError("Native report bytes changed between source and canonical reads")
+        message = "Native report bytes changed between source and canonical reads"
+        raise SourceChangedError(message)
     return canonical
 
 
