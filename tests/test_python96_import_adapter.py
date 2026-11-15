@@ -105,7 +105,7 @@ def test_fileback_catg_import_matches_explicit_embedded_python(tmp_path: Path) -
     embedded = _project(tmp_path / "embedded.json", model)
     names = ("model.par", "model.catg", "model.stm")
     objects = (serialize_cmd_par(model.parameters), ORIGINAL_CATG.read_bytes(), serialize_design_stm(model.storm))
-    sources = []
+    sources: list[SourceFile] = []
     for name, raw in zip(names, objects, strict=True):
         (tmp_path / name).write_bytes(raw)
         sources.append(SourceFile(name, hashlib.sha256(raw).hexdigest()))

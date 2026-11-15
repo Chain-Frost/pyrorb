@@ -9,11 +9,8 @@ from __future__ import annotations
 
 import math
 from decimal import Decimal
-from typing import cast
-
 from .rorb_codec import FormatProblem, parse_catg, parse_design_stm
 from .single_storm import Catchment, Control, Storm
-from .single_storm import ControlCode as S2ControlCode
 
 
 class LegacyInputError(ValueError):
@@ -35,8 +32,8 @@ def parse_control_bytes(data: bytes) -> Catchment:
     except FormatProblem as exc:
         message = f"S1 {exc.status} catchment: {exc}"
         raise LegacyInputError(message) from exc
-    # The old S2 fixture API has no code-2 or per-source imperviousness
-    # contract. Refuse those qualified S1 imports rather than dropping them.
+    # This legacy fixture adapter deliberately retains its older restricted
+    # contract; the project/API adapter supports code 2 and source fractions.
     if (
         model.reach_mode != "implicit_natural"
         or any(step.code == 2 for step in model.controls)
@@ -46,7 +43,7 @@ def parse_control_bytes(data: bytes) -> Catchment:
         raise LegacyInputError(message)
     lengths = {reach.identifier: _float(reach.length_km) for reach in model.reaches}
     controls = tuple(
-        Control(cast("S2ControlCode", step.code), lengths[step.reach_id] if step.reach_id is not None else 0.0)
+        Control(step.code, lengths[step.reach_id] if step.reach_id is not None else 0.0)
         for step in model.controls
     )
     return Catchment(controls, tuple(_float(area.area_km2) for area in model.subareas))
