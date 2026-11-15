@@ -226,7 +226,7 @@ def test_ratio_excess_policy_checks_applied_depth_not_source_depth(
         for record in _audit(result)["members"]:
             loss = record["loss"]
             assert loss["preburst_source_depth_mm"] == "30.00"
-            assert Decimal(loss["preburst_applied_depth_mm"]) < Decimal("21")
+            assert Decimal(loss["preburst_applied_depth_mm"]) < Decimal(21)
             assert loss["preburst_depth_basis"] == "ratio_x_areal_reduced_design_depth"
             assert "BURST_IL_FROM_SELECTED_RATIO_DEPTH_ONCE" in loss["operations"]
             assert "PREBURST_EXCEEDS_IL_CLAMPED_EXPLICITLY_NO_EXCESS_STORM_RAINFALL" not in loss["operations"]
