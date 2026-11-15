@@ -160,7 +160,8 @@ def test_print_order_for_multiple_print_locations_is_not_guessed() -> None:
 
 def test_loss_flag_two_executes_only_with_valid_runoff_coefficient() -> None:
     run = _run()
-    invalid = replace(run, parameters=replace(run.parameters, loss_model=2))
+    bad_loss = replace(run.parameters.losses[0], continuing=Decimal("1.2"))
+    invalid = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(bad_loss,)))
     with pytest.raises(RunInputError) as caught:
         run_model(invalid)
     assert caught.value.code == "unsupported_s2_profile"

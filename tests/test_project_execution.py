@@ -171,7 +171,8 @@ def test_reference_only_external_evidence_is_hash_verified(tmp_path: Path) -> No
 
 def test_invalid_mode_two_coefficient_rejected_before_producing_output(tmp_path: Path) -> None:
     model = _model()
-    unsupported = replace(model, parameters=replace(model.parameters, loss_model=2))
+    bad_loss = replace(model.parameters.losses[0], continuing=Decimal("1.2"))
+    unsupported = replace(model, parameters=replace(model.parameters, loss_model=2, losses=(bad_loss,)))
     source = tmp_path / "unsupported.json"
     write_project(source, Project("unsupported", "explicit", EmbeddedRun(unsupported)))
     target = tmp_path / "report.json"
