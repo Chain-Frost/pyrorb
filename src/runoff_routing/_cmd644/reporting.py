@@ -114,7 +114,9 @@ def result_dict(result: CandidateResult) -> dict[str, Any]:
         "kc": event.kc.lexeme,
         "m": event.m.lexeme,
         "il": event.il.lexeme,
-        "cl": event.cl.lexeme,
+        "cl": event.cl.lexeme if event.loss_model == 1 else None,
+        "runoff_coefficient": event.cl.lexeme if event.loss_model == 2 else None,
+        "loss_model": event.loss_model,
         "n": event.n,
     }
     return {
