@@ -118,8 +118,4 @@ The eventual independently authored Python code should derive from public mathem
 
 ## Dependencies and delivery
 
-- S0 PR #12 owns native execution/capture and reference manifests: **reuse, do not fork a competing runner**.
-- S1 PR #13 owns parser/typed model: deliver concrete syntax/round-trip contracts to it; do not overwrite its code.
-- S2 PR #14 owns the mathematical reference kernel: send documented numerical hypotheses/fixtures; do not replace the solver from this audit workpack.
-- Documentation PR #15 inventories historical manual inputs and source/version mismatches. Do not equate PDF printed values with unverified distributed samples.
-- [Local-agent start prompt](work/2026-11-11-rorb-forensics-handoff.md) defines immediate execution and acceptance gates; [work record](work/2026-11-11-rorb-forensics.md) is the authoritative audit status.
+These responsibilities were originally assigned to historical S0/S1/S2 drafts; they are not current live handoffs. The [current backlog](BACKLOG.md) now allocates public engine, parser and regression ownership, and the [S0 reference-capture contract](REFERENCE_CAPTURE.md) remains the supported native-evidence interface. For further specific GUI/CMD observations, track the bounded, deferred [behavior audit #16](https://github.com/Chain-Frost/python-runoff-routing/issues/16) without adding another public runner or expanding RORBwin before the CMD gate. The [original investigation prompt](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-11-rorb-forensics-handoff.md) remains only in immutable Git history, not as an instruction to start a new native campaign.

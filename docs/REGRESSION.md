@@ -16,7 +16,7 @@ Per the owner decision of 2026-11-15, **Linux and Windows with Python 3.13 or 3.
 
 This platform equivalence does **not** conflate evidence layers: historical `--snapshot` replay is not a fresh engine run; comparing Python outputs with captured native results does not re-execute RORB. Actual RORB_CMD/RORBwin reference execution, Windows-specific path/process/GUI behaviour and native Windows-only integration still require an appropriate Windows host. Keep independent numerical, hydrological and profile-specific acceptance gates unchanged.
 
-## Capture contract for the friend's ensembles
+## Capture contract for controlled native reference evidence
 
 Retain each catchment (.cat/.catg or combined .dat), storm (.stm), CMD .par, raw .out/.log and any available hydrograph CSV. Include the generator configuration/revision and event-to-file mapping, not just batch peak summaries. Original source bytes must remain unchanged. Runtime capture is explicit opt-in and uses isolated local directories; do not run reference binaries in ordinary tests.
 

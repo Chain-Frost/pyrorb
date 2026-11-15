@@ -12,7 +12,7 @@ The unrun R2–R7 statements below describe this record's earlier stopping point
 **Branch:** `feat/s6-rorbwin-native-rainfall`. **Stage:** [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8), open.
 
 Follow-up to the [R0 record](2026-11-13-s6-rorbwin-local-preflight.md) and
-[local handoff](2026-11-12-s6-rorbwin-local-validation-handoff.md). The owner reviewed R0 and selected
+[original historical protocol](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-12-s6-rorbwin-local-validation-handoff.md). The owner reviewed R0 and selected
 a separate R1 ARF-only experiment while keeping R0 timing acceptance open. No Python numerical
 implementation, golden, existing tolerance, workflow or PR draft state changed.
 

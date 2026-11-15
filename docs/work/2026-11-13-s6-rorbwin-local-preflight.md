@@ -10,7 +10,7 @@ The R1–R7 statements below describe the original R0-only stopping point; see t
 **Branch:** `feat/s6-rorbwin-native-rainfall`. **Stage:** [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8), open.
 
 This executes the preflight and source-side preparation in the
-[handoff](2026-11-12-s6-rorbwin-local-validation-handoff.md). It does not establish native equivalence.
+[historical experimental protocol](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-12-s6-rorbwin-local-validation-handoff.md). It does not establish native equivalence.
 The PR #50 head was checked live and still matched the source revision. No solver code, baseline,
 tolerance or hosted workflow changed.
 
