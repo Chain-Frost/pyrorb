@@ -1,6 +1,6 @@
 # Independent original CMD evidence and local closeout — 15 November 2026
 
-Status: independent evidence review prepared on `evidence/independent-native-closeout` from
+Status: historical independent evidence receipt prepared on `evidence/independent-native-closeout` from
 `11c3adcdb004245d0622d2f30722089923f1c35a` (tree `421b1a000590cdd463545727d4891bac2509e1eb`).
 Tracks [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5),
 [#90](https://github.com/Chain-Frost/python-runoff-routing/issues/90),
@@ -217,3 +217,29 @@ Next action: independently review this evidence curation and the four bounded di
 admit only the approved exact cases through the existing register; coordinate C/A/#119 code-11
 semantics separately. Keep #90–#92, #96 and full #5 open. No numerical PR merge, issue closure,
 release, visibility change, GUI work or broad native campaign is part of this closeout.
+
+## Current-main reconciliation and finite evidence disposition — 15 November 2026
+
+**Current disposition supersedes the forward-looking integration blockers in the pinned historical sections above.** The calculations and CI observations above remain attributed to the revisions on which they occurred; they are **not** a replay on current main.
+
+- Refreshed public main at `0675d75b05dba7728b389fdd8af743060b4469b2` (merged #136). Merged #108, #111, #113 and #120 now supply bounded compatible mode-2, m=1/exponent controls, output/fault-injection guards and code-2/FI controls; the CLI/text-file MVP #119 and #128 are merged. **The eight `geometry=` fault-wrapper failures in the historical diagnostic tree `18c5e29` were fixed before #113 merged. They are not a current integration blocker.**
+- Merged #135 `298d8a48f169bc44089cd3deacb92251843a926d` independently corrected the comparator-local authenticated binary32 stored h/dt binding. At its exact reviewed head `0d4d6f5f696074b73ac23fe0c4f93412ee56977c`, CI [43699982642](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43699982642) recorded **50 full-horizon printed-Q passes / 19,550 ordinates, 48 scalar passes and two explicitly incomplete zero-flow peak times**, identical source and external-wheel case objects; H2, N4 and `pyromb-novel-storm` are no longer scalar-clock incompletes. This is an independently audited hosted execution, not a new native CMD run. Main `0675d75` [quality CI 43717183197](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43717183197) completed successfully; no per-case numerical recount on that newer main head is claimed here until the new reconciled PR probe is inspected.
+- Original eight-case evidence authentication remains a separate finite deliverable: **72 originally indexed capture members**, 27 newly deposited deduplicated content-addressed objects, **254** published native-index entries, original 1,026-member private source custody unchanged, original 85-case/50-CMD-eligible/21-native-gap membership unchanged. No original Q, tolerances, scalar policy, expected reference, comparator or engine selection was regenerated. The 20 pinned four-layer upstream PyRomb PR16 GIS components and `a323d5709f7ce14c6adf46f01e0224b60668340c` producer remain separate from the 2,818-byte LF output, its 2,913-byte historical CRLF counterpart and the old native report. Exactly 95 line-ending conversions establish byte equivalence, **not** a new native execution or a newly verified physical node.
+- **Independent review of previous #133 head `28d4bc35d7e0b74e56697f01e661ea83b4775210` is completed with no Codex findings**, as recorded in the PR conversation on 15 November. The reconciliation commit adds current-main lineage and factual status; its exact-head CI and proportionate review still require inspection before integration.
+
+### Eight-case adjudication and separate four-profile admission
+
+| Original case | Current evidence decision | Boundary / next owner |
+| --- | --- | --- |
+| `fig67-ilroc` | Native 301-row CMD 6.44 report authenticated, IL/RoC flag 2; #113-era source/wheel 301 Q and three scalar diagnostics pass, **not yet admitted** | Exact-current-main source/wheel and ordinary registered scalar binding, plus independent physical Hyd001 mapping; B admission / #90 science |
+| `fig67-kc5-m1` | Native 301-row report, kc=5 and m=1; #113-era Q/scalar diagnostics pass, **not yet admitted** | Same current-head and site/scalar binding acceptance; B / #92 |
+| `failure-m-above-one` | Native CMD returned success with full 301-row hydrograph for m=1.001; #113-era bounded diagnostics pass, **not native rejection** | Same current-head/site/scalar checks and domain qualification; B / #92 |
+| `failure-m-below-one` | Native CMD returned success with full 301-row hydrograph for m=0.999; #113-era bounded diagnostics pass, **not native rejection** | Same current-head/site/scalar checks and domain qualification; B / #92 |
+| `failure-zero-reach` | Original native result complete, public typed positive-length contract rejects zero reach; not admitted | Numerical/physical zero-length semantics remain with #92 |
+| `failure-negative-reach` | Original native result complete, public typed negative reach unsupported; not admitted | Native-validity and physical semantics remain with #92 |
+| `failure-negative-reach-repeat` | Second independent native capture with same Q/clock as negative reach; different original parameter identity preserved; not admitted | Same #92 limits; no manufactured equivalence |
+| `fig67-code11` | Five original columns / 301 rows each authenticated, distinct diagnostic site/units/time; source and execution remain unsupported; not admitted | Typed diagnostic/print contract #91; original adapter/source #96 as applicable |
+
+The four profiles above are **candidates for a separately reviewable admission**, not additional members of the frozen 50-case diagnosed population yet. The four original native reports were not rejected merely because of their archive filenames. The existing register lacks full independently qualified physical-site and scalar bindings for these eight: their `coverage: gap` classification deliberately remains fail-closed. Source/legend association, original raw `Inc 1..301` and `Time 0.50..150.50 h` are retained separately from generated elapsed clocks and reported/hydrograph physical volumes. Each profile must meet the existing comparator/source and external-wheel checks before promotion.
+
+**Owner handoffs:** B/#100 owns the single maintained reference register/comparator and these four bounded decisions; A/#90/#92 owns numerical/domain changes only when a genuine discrepancy is demonstrated; C/#96 retains the PyRomb/native adapter and source-identity limits; #91 retains code-11 and nonpositive-reach output questions as allocated; programme/#5 owns the sole matrix and eventual CMD completeness gate. No code-11, zero/negative-reach, PyRomb-generic, GUI, improved-default #103 or advanced #114–#118 claim follows from this evidence-only closeout.

@@ -38,6 +38,9 @@ def _source_distances(event: Event) -> tuple[list[float], list[float]]:
     source = 0
     for control in event.controls:
         code = control.code
+        if code == 2 and active is None:
+            message = "code-2 source needs an existing running hydrograph"
+            raise UnsupportedNumericPath(message)
         if code in (1, 2):
             if active is None:
                 active = set()

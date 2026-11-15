@@ -2,6 +2,10 @@
 
 The existing [register](../tests/fixtures/regression-v1/register.json) and `runoff_routing.regression_dataset` CLI now serve **50 CMD cases** (44 archived and all six supplemental), **21 native gaps**, ten unchanged independent analytical controls and four authored gaps. Stable IDs, source/order/physical-site mappings, full horizons, units, original one-based increment/time tokens, scalar selectors and executable hashes are retained. No private checkout or RORB installation is needed. Tracks [#81](https://github.com/Chain-Frost/python-runoff-routing/issues/81).
 
+## Current CMD evidence status (15 November 2026)
+
+Merged #135 has an independently audited exact-head fresh 50-case source/isolated-wheel probe: **50/50 printed-Q passes across 19,550 ordinates, 48 scalar passes, and two incomplete undefined zero-flow peak times** (`fig67-zero`, `wheel-zero`). H2, N4 and `pyromb-novel-storm` stored h/dt now pass under the original source-hex contract; the older **45-pass/five-incomplete** results elsewhere in this document belong to their separately cited historical revisions. Current main `0675d75` has green [quality CI 43717183197](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43717183197); no new native launch is implied. [Evidence PR #133](https://github.com/Chain-Frost/python-runoff-routing/pull/133) preserves eight authenticated captures plus exact upstream PR16 producer bytes separately, **without promoting four studied original profiles** into the 50-case accepted scope. The corresponding [dated current disposition](work/2026-11-15-independent-native-closeout.md) records the four admission limits and the remaining four explicit unsupported/gap states.
+
 ## Evidence and limits
 
 Native references are original CMD 6.44 printed observations. The ten authored cases remain mathematical oracles. All 21 native gaps preserve individual reasons and CMD/RORBwin identities under `native-gaps`; their experimental files are excluded. `all` contains 85 records and intentionally returns non-success.

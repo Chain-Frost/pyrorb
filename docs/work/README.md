@@ -18,10 +18,14 @@
 
 - [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
 
+- [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
+- [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+
+- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
+
 ## Retained diagnostic/reference evidence
 
-- [Independent original CMD evidence and local closeout](2026-11-15-independent-native-closeout.md) — eight authenticated retained captures, recovered exact PR16 export, separate source/wheel diagnostics and pending admission/output contracts.
-
+- [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
 - [S2 reporting-convention audit](2026-11-11-s2-reporting-conventions.md), [integrated print review](2026-11-12-integrated-print-review.md) and [nonlinear onset audit](2026-11-12-s2-onset-audit.md) — do not infer a numerical routing fix.
 - [S6 reconciliation](2026-11-14-s6-reconciliation.md), [RORBwin N4 completion review](2026-11-14-s6-n4-completion-review.md), [N4 native result](2026-11-14-s6-n4-native-result.md) and [controlled loss experiment](2026-11-14-s6-controlled-loss-kernel.md) — preserve failed and incomplete native precision/physical claims. CMD-first rules defer new RORBwin campaigns.

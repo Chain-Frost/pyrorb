@@ -11,13 +11,14 @@ import math
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 
+from ._cmd644.geometry import Geometry, compute_geometry
 from ._cmd644.models import Control, Event, NumberInput
 from ._cmd644.native_diagnostics import DIAGNOSTIC_PROFILE, TargetOperands, target_diagnostic
 from ._cmd644.precision import UnsupportedNumericPath, store
 from ._cmd644.reporting import CONTRACT_ID, execute
 from .engine_types import EngineHydrograph, EngineStatus
 from .project_json import LoadedProject
-from .rorb_model import to_json
+from .rorb_model import CatchmentModel, RoutingValue, to_json
 
 CMD_PROFILE = "cmd-6.44"
 CANDIDATE_SOURCE = "fea9c80c521127325b779ea0ea87ddf77795b290"
@@ -44,6 +45,25 @@ class CmdComputed:
     hydrographs: tuple[EngineHydrograph, ...]
     physical_time_hours: tuple[str, ...]
     diagnostics: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCmdModel:
+    """One source/control/area/coefficient interpretation, not event hydraulic state."""
+
+    catchment: CatchmentModel
+    routing: tuple[RoutingValue, ...]
+    geometry: Geometry
+
+
+def prepare_cmd_model(loaded: LoadedProject) -> PreparedCmdModel:
+    """Precompute existing CMD geometry once for invariant CATG and kc/m."""
+    event = adapt_event(loaded)
+    try:
+        geometry = compute_geometry(event)
+    except UnsupportedNumericPath as exc:
+        raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
+    return PreparedCmdModel(loaded.run.catchment, loaded.run.parameters.routing, geometry)
 
 
 def _unsupported(code: str, description: str) -> None:
@@ -86,17 +106,21 @@ def _check_scope(loaded: LoadedProject) -> None:
         parameters.num_isa != 1
         or parameters.num_bursts != 1
         or not parameters.lumped_kc
-        or parameters.loss_model != 1
+        or parameters.loss_model not in (1, 2)
         or len(parameters.routing) != 1
         or len(parameters.losses) != 1
     ):
-        _unsupported("cmd_parameters", "Only lumped kc, one ISA/burst and pervious IL/CL are characterised")
+        _unsupported("cmd_parameters", "Only lumped kc, one ISA/burst and pervious IL/CL or IL/RoC are implemented")
+    if parameters.loss_model == 2 and parameters.losses[0].continuing > Decimal(1):
+        raise CmdBoundaryError(_INVALID_INPUT, "cmd_runoff_coefficient", "Runoff coefficient must not exceed 1")
     if (storm.pluviograph_count, storm.isa_count, storm.burst_count) != (1, 1, 1):
         _unsupported("cmd_storm", "Only one DESIGN pluviograph, ISA and burst is characterised")
     if catchment.storages:
         _unsupported("cmd_storages", "Special storages are not characterised")
-    if len(catchment.print_locations) != 1 or sum(step.code == 7 for step in catchment.controls) != 1:
-        _unsupported("cmd_print_sites", "Only a single final physical print location is characterised")
+    if not catchment.print_locations or sum(step.code == 7 for step in catchment.controls) != len(
+        catchment.print_locations
+    ):
+        _unsupported("cmd_print_sites", "Every code-7 print needs a distinct explicit physical site")
     if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7) for step in catchment.controls):
         _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
     if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
@@ -140,22 +164,48 @@ def adapt_event(loaded: LoadedProject) -> Event:
         _number(parameters.losses[0].initial_loss_mm),
         _number(parameters.losses[0].continuing),
         run.storm.calculation_increments,
+        parameters.loss_model,
     )
 
 
-def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdComputed:
-    """Calculate rainfall/losses, geometry and every reach with frozen CMD rules."""
+def run_cmd_model(
+    loaded: LoadedProject, implementation_revision: str, *, prepared: PreparedCmdModel | None = None
+) -> CmdComputed:
+    """Calculate each fresh CMD event with optional invariant prepared geometry."""
 
     event = adapt_event(loaded)
+    if prepared is not None and (
+        prepared.catchment != loaded.run.catchment or prepared.routing != loaded.run.parameters.routing
+    ):
+        raise CmdBoundaryError(_INVALID_INPUT, "prepared_mismatch", "Prepared CATG/routing parameters differ")
     try:
-        result = execute(event, implementation_revision)
+        result = execute(event, implementation_revision, geometry=prepared.geometry if prepared is not None else None)
     except UnsupportedNumericPath as exc:
         raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
     if len(result.network.outlet) != event.n + 1:
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_horizon", "CMD backend returned a truncated horizon")
     if len(result.network.reaches) != event.reach_count:
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_reach_count", "CMD backend omitted a physical reach")
-    print_location = loaded.run.catchment.print_locations[0]
+    print_locations = loaded.run.catchment.print_locations
+    if len(result.network.prints) != len(print_locations) or any(
+        len(record.q) != event.n + 1 for record in result.network.prints
+    ):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated"
+        )
+    if any(not math.isfinite(value) or value < 0 for record in result.network.prints for value in record.q):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_values", "Computed physical print contains non-finite or negative discharge"
+        )
+    expected_print_positions = tuple(
+        index for index, step in enumerate(loaded.run.catchment.controls, start=1) if step.code == 7
+    )
+    if tuple(record.control_index_one_based for record in result.network.prints) != expected_print_positions:
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_order", "Computed prints no longer follow original code-7 control order"
+        )
+    if result.network.prints[-1].q != result.network.outlet:
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_final_print", "Final print does not match connected outlet")
     reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
     per_reach: list[dict[str, object]] = []
     for reach, reach_id in zip(result.network.reaches, reach_ids, strict=True):
@@ -202,6 +252,9 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
     )
     diagnostics: dict[str, object] = {
         "cmd_profile": CMD_PROFILE,
+        "loss_model": event.loss_model,
+        "continuing_loss_mm_h_stored": event.cl.stored if event.loss_model == 1 else None,
+        "runoff_coefficient_stored": event.cl.stored if event.loss_model == 2 else None,
         "candidate_contract": CONTRACT_ID,
         "candidate_source": CANDIDATE_SOURCE,
         "native_target_diagnostic_profile": DIAGNOSTIC_PROFILE,
@@ -209,6 +262,17 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
         "model_input_sha256": event.input_sha256,
         "ordered_source_ids": source_ids,
         "ordered_reach_ids": reach_ids,
+        "print_sites": tuple(
+            {
+                "print_id": location.identifier,
+                "label": location.label,
+                "control_index_one_based": record.control_index_one_based,
+                "source_membership_one_based": record.membership,
+                "source_membership_ids": tuple(source_ids[index - 1] for index in record.membership),
+                "Q_m3_s_stored": record.q,
+            }
+            for location, record in zip(print_locations, result.network.prints, strict=True)
+        ),
         "source_rainfall_mm_stored": result.preparation.rain,
         "source_rainfall_excess_mm_stored": result.preparation.excess,
         "source_inflow_m3_s_stored": result.preparation.hydrographs,
@@ -219,7 +283,10 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
         "native_reporting_and_physical_conservation": "not_assessed_for_this_public_source_or_wheel",
     }
     return CmdComputed(
-        (EngineHydrograph(print_location.identifier, print_location.label, result.network.outlet),),
+        tuple(
+            EngineHydrograph(location.identifier, location.label, record.q)
+            for location, record in zip(print_locations, result.network.prints, strict=True)
+        ),
         tuple(str(index * loaded.run.storm.timestep_hours) for index in range(event.n + 1)),
         diagnostics,
     )

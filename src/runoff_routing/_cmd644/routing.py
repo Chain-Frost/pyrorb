@@ -74,11 +74,21 @@ class ReachResult:
 
 
 @dataclass(frozen=True, slots=True)
+class PrintResult:
+    """One code-7 print in the immutable original control order."""
+
+    control_index_one_based: int
+    membership: tuple[int, ...]
+    q: tuple[float, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class NetworkResult:
-    """All routed states and the single connected outlet."""
+    """All routed states, every code-7 print and the final outlet."""
 
     reaches: tuple[ReachResult, ...]
     outlet: tuple[float, ...]
+    prints: tuple[PrintResult, ...]
 
 
 def _residual(q: float, s: float, target: float, dt: float) -> float:
@@ -252,15 +262,26 @@ def _add_stored(left: tuple[float, ...], right: tuple[float, ...]) -> tuple[floa
     return tuple(internal_store(safe64(a + b)) for a, b in zip(left, right, strict=True))
 
 
-def route_network(event: Event, geometry: Geometry, preparation: Preparation) -> NetworkResult:
+def _require_code_two_running_branch(code: int, active: tuple[float, ...] | None) -> None:
+    """Code 2 adds to an existing running branch; it cannot initialise one."""
+    if code == 2 and active is None:
+        message = "code-2 source needs an existing running hydrograph"
+        raise UnsupportedNumericPath(message)
+
+
+def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/print control cases
+    event: Event, geometry: Geometry, preparation: Preparation
+) -> NetworkResult:
     """Execute the ordered code-1/2/3/4/5/7 machine, preserving independent branches."""
     active: tuple[float, ...] | None = None
     members: tuple[int, ...] = ()
     stack: list[tuple[tuple[float, ...], tuple[int, ...]]] = []
     reaches: list[ReachResult] = []
+    prints: list[PrintResult] = []
     next_source = 0
     next_reach = 0
-    for control in event.controls:
+    for control_index, control in enumerate(event.controls, start=1):
+        _require_code_two_running_branch(control.code, active)
         if control.code in (1, 2):
             source = preparation.hydrographs[next_source]
             next_source += 1
@@ -279,6 +300,11 @@ def route_network(event: Event, geometry: Geometry, preparation: Preparation) ->
             members = ()
         elif control.code == 4:
             active, members = _join_branch(active, members, stack)
+        elif control.code == 7:
+            if active is None:
+                message = "code-7 print has no active hydrograph"
+                raise UnsupportedNumericPath(message)
+            prints.append(PrintResult(control_index, members, active))
         if control.code in (1, 2, 5):
             if active is None:
                 message = "reach has no active source"
@@ -293,7 +319,7 @@ def route_network(event: Event, geometry: Geometry, preparation: Preparation) ->
     if active is None or stack or next_source != event.source_count:
         message = "event not complete"
         raise UnsupportedNumericPath(message)
-    return NetworkResult(tuple(reaches), active)
+    return NetworkResult(tuple(reaches), active, tuple(prints))
 
 
 def _validate_reach_input(incoming: tuple[float, ...], limit: int) -> None:
