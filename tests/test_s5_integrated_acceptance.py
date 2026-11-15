@@ -169,9 +169,7 @@ def test_invalid_override_and_unrepresentable_catchment_fail_closed(tmp_path: Pa
             losses=(replace(loaded.run.parameters.losses[0], continuing=Decimal("0.7")),),
         ),
     )
-    selected = resolve_effective_model(
-        mode_two, ProjectEvent("roc", losses={"runoff_coefficient": "0.65"})
-    )
+    selected = resolve_effective_model(mode_two, ProjectEvent("roc", losses={"runoff_coefficient": "0.65"}))
     assert selected.run.parameters.loss_model == LossMode.INITIAL_RUNOFF_COEFFICIENT
     assert selected.run.parameters.losses[0].continuing == Decimal("0.65")
     with pytest.raises(EventConfigError, match="loss mode"):
