@@ -66,7 +66,8 @@ def test_explicit_python_dispatch_does_not_invoke_compatible_kernel(
     """Guard against tests accidentally exercising the temporary default engine."""
 
     def reject_cmd_dispatch(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("Explicit python must not dispatch into python-cmd")
+        message = "Explicit python must not dispatch into python-cmd"
+        raise AssertionError(message)
 
     monkeypatch.setattr("runoff_routing.engine_execution.run_cmd_model", reject_cmd_dispatch)
     model = _mode_two_model()
