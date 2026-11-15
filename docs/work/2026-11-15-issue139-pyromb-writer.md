@@ -1,27 +1,32 @@
-# Issue #139 — single PyRomb CATG writer, staged integration
+# Issue #139 — PyRomb CATG/STM writer, implementation closeout
 
-Date: 2026-11-15. Scope: #139 under #3/#7; coordination with #138/#140/#141.
+**Status:** implementation complete; independently reviewed and validated for the bounded supported population. PR [#166](https://github.com/Chain-Frost/python-runoff-routing/pull/166) remains **unmerged**. Reviewed 15 November 2026, after owner approval of the pinned dependency. Owners #138 (types), #140 (PAR/path), #141 (native package export), #96 (source admission) and #5 (numerics) remain independent.
 
-## Source ownership and exact dependency
+## Accepted writer dependency
 
-- Reviewed basis: [upstream PR16](https://github.com/norman-tom/pyromb/pull/16), head `a323d5709f7ce14c6adf46f01e0224b60668340c` at inspection. The older fork PR2/historical 2,913-byte reference is not the current exporter.
-- Proposed public ordered-input API: [PyRomb writer branch](https://github.com/phantom-branch/pyromb/tree/feat/ordered-rorb-catg-139), based on PR16, current pinned revision `8653babdb544d400775d754b409c1571e773f7bb`. Keep this enhancement **in PyRomb**, never vendored into runoff-routing. The extra API accepts ordered control records plus explicit physical reach lengths, source area/FI and graphical metadata. It shares the existing upstream VectorBlock/GraphicsBlock rendering paths. The GIS Traveller entry point remains.
-- Downstream dependency is optional `.[catg]` and is pinned to that exact Git commit; the development extra installs it for writer tests. Source-only parsing and numerical execution do not load PyRomb. Existing PyRomb MIT notice remains at `docs/third_party/PYROMB_LICENSE.txt`.
+The owner **accepts the exact Git-commit-pinned PyRomb revision now**. Neither [upstream PyRomb PR #16](https://github.com/norman-tom/pyromb/pull/16) remaining open nor absence of a released package blocks this bounded writer scope; further upstream review/version maintenance is deferred until the maintainer acts. This is acceptance of the development dependency, not blanket acceptance of native RORB/CMD numerical behaviour.
 
-## Adapter/guard
+- Upstream reviewed PR16 base: `a323d5709f7ce14c6adf46f01e0224b60668340c`.
+- Ordered-record extension: [phantom-branch/pyromb PR #3](https://github.com/phantom-branch/pyromb/pull/3). Pinned **writer-code** revision: `8653babdb544d400775d754b409c1571e773f7bb`. The later PR head `e48afab9bdeca08af76c9ac840296008650417ef` differs by a test-only correction.
+- `pyproject.toml` exposes optional `.[catg]` and writer-enabled `.[dev]` extras pinned to that exact commit. Parsing and numerical routing do not import PyRomb. Its MIT notice remains in `docs/third_party/PYROMB_LICENSE.txt`. Nothing is vendored.
+- Historical PR16 2,818-byte LF exporter output and separate 2,913-byte CRLF original remain separately authenticated under #96/#133; no originals or native goldens are regenerated.
 
-- Existing `serialize_catg(CatchmentModel)` and `serialize_catg_with_drawing(CatchmentModel, GeDrawing)` are preserved as direct **PyRomb adapter** entry points, not parallel formatters.
-- Original `ParsedDocument.source.data` is re-emitted by `original_bytes(parsed)` when the model is unchanged. This preserves exact original byte content, encodings, CRLF and metadata. This is the preferred path for importing unchanged CATG in a parameter-only native export.
-- For new/edited CATG, type validation and the existing full-model reparse check enforce matching source order/consumption, controls, physical lengths, areas/FI, native print labels and unsupported flags. A drawing variant verifies identity, endpoint topology, CRS/metre units and physical lengths before invoking PyRomb. **Normalized GE drawing XY is never a length input.**
-- Plain model-only modern 6.45 export cannot invent graphical node/reach records: it fails and requests explicit validated drawing. Modern imported CATG need not be redrawn when unchanged.
-- The supported modern population is natural reaches, 1/2/3/4/5/7 controls, one terminal print, ordinary fractional FI and print 70/zero excess. Distinct 6.45 code-1/2/5 labels, 3-decimal graphical km length or 6-decimal graphical area/FI precision overflow, additional output flags/types are rejected rather than silently stripped.
-- Legacy 002 no-drawing canonical output still goes through **PyRomb**, with its explicitly supported empty scaffold. STM and CMD PAR remain local. Newly serialized combined-preburst DESIGN files carry an explicit **derived export annotation**, not fictional original generator metadata; original source bytes remain untouched.
+## Implemented behaviour
 
-## Actual checks and limitations
+1. `serialize_catg(model)` (legacy graphical 002 no-drawing subset) and `serialize_catg_with_drawing(model, drawing)` (bounded 6.45) call **the same public ordered PyRomb writer**. Both old local vector layout and graphical CATG format rendering were removed. Existing callers and regression tests use the adapter.
+2. Existing parsed source documents use `original_bytes(parsed)` for exact unchanged CATG/STM, including comments, encodings, line endings, graphical metadata and source order. Parameter-only native export can copy exact assets without PyRomb.
+3. New/edited 6.45 needs an explicitly validated projected-metre drawing. Physical reach lengths, source identity, order and membership come from the typed controls and explicit physical model, **not normalized drawing XY**. The bounded population includes natural reach, code 2, ordinary per-source impervious fractions and characterised single-outlet print 70/zero-excess. Legacy 002 multiple code-7 prints are preserved.
+4. Reject unsupported independent labels, three-decimal kilometre or six-decimal graphical area/FI precision overflow, extra graphical output flags, unsupported reach types, mismatched area/FI/physical graphical values, incorrect source ordering and overwidth graphical labels instead of fabricating data. Reparse the complete exported model and require typed-model equality. `canonical_run_bytes` distinguishes semantic loss from other unsupported cases.
+5. STM and CMD PAR writers remain local. `serialize_design_stm` supports characterised combined-preburst storms and clearly labels newly **derived export annotations** rather than representing them as original generator metadata.
 
-- Focused upstream ordered-writer checks and downstream adapter/reparse, source-identity, modern code-2/FI, physical-geometry and combined-preburst tests were added.
-- This record is **implementation pending GitHub Actions exact-head verification and independent review**. No locally executed source/wheel test, native Windows RORB invocation or scientific CMD equivalence is claimed here. The original native CMD reference index and regression goldens are unchanged.
-- Before acceptance: review/test the **upstream PyRomb PR first**, update the downstream pin for any upstream fixes, confirm exact-head source checks, wheel import and all relevant retained cases, and obtain independent review. #141 may continue parameter-only exact-source project export in parallel; no GUI or new numerical engine is part of #139.
+## Exact-source QA and independent review
 
+[Windows quality run 43728316566](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43728316566) passed against exact prior implementation head `9df11fc9d0a42955b50d378530321cb0eef81ea2`, on Windows Python 3.13.17: repository hygiene (504 files, 0 errors), Ruff 0.16.6 lint/format, strict Pyright (zero errors/warnings), **1,100 source tests**, authenticated source CMD regression, wheel build and isolated installation, **153 installed-wheel tests**, indexed fixture preflight, CLI/batch negative gates and installed-wheel CMD regression. The isolated wheel SHA-256 was `90a1965291bee8034a829214134d7aa07b63630af119b43e2b808cefc0b00ffa`.
 
-Additional fail-closed graphical checks: the pinned PyRomb writer rejects visual node names longer than two ASCII characters (plus its native separator), visual reach names longer than eight ASCII characters, and disagreement between duplicate graphical area/FI/physical-length data and the ordered computation. Empty user-supplied node display labels are assigned deterministic numeric graphical aliases rather than truncating GIS identifiers. Explicit graphical display labels are never truncated. Graphical node source rows and graphical reach rows are emitted in the typed source/control order; the original GIS layer order does not change computational control order.
+[Independent Codex review of #166](https://github.com/Chain-Frost/python-runoff-routing/pull/166) on `9df11fc` reported **no major issues**. Upstream PyRomb Codex raised graphical field-width and graph/computation mismatches, fixed in `8653bab`; later test-only assertion correction reached `e48afab`. Final upstream Codex review found **no major issues**, and three inline threads were resolved with dispositions.
+
+These are audited hosted checks, **not** personal native execution or proof of scientific CMD/RORBwin parity. Original source/Q/print-site/clock acceptance remains with #5/#96/#137, and wider 6.45 output modes remain outside #139. Historically incomplete native scalar-time cases are not relabelled as passes.
+
+## Completion boundary
+
+The pinned dependency is owner-accepted. #139 has no remaining implementation or upstream-release dependency gate. This final documentation/main-branch reconciliation is reviewable independently of numerical changes. **Do not merge or release without an explicit merge instruction**; upstream maintainer follow-up, parent #3/#7 and parallel #138/#140/#141 work remain separately tracked.
