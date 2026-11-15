@@ -132,3 +132,19 @@ has been removed from `reference._check_report`, `regression_metrics` and
 `rorb_out`. Existing capture-specific synthetic tests plus a new two-site
 bare-table/negative admission test are the acceptance gate. Current reviewed
 dependency revision: `9b136bcdc449e65a17c87a80650df314ca2b1eb1`.
+
+## Read-only canonical report views
+
+The maintained `repo-scripts/rorb_inspect.py` entry point now has an opt-in
+`--report` mode for standard `.out`, `batch.out` and signed hydrograph CSV.
+`--section runs --format csv --limit 1000` writes an ordered typed view to
+stdout, with separate `source_token__` columns retaining every original
+printed token. Default `--report` emits bounded JSON section inventories,
+status, diagnostics, SHA-256 and source size. `--section` pages exact token
+records; neither view reparses lines, infers print identities, selects events,
+launches RORB nor modifies the source. Invalid canonical reports remain
+non-success exits, with retained diagnostics; saved-PAR remains inactive.
+
+The existing non-report inspection mode retains its historical API and CLI
+output. Synthetic CLI/API tests cover same-source bytes, distinct event/TP
+rows, Fortran D tokens, non-success invalid reports and selection guards.
