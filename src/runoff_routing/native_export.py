@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import sys
 from dataclasses import dataclass, replace
@@ -19,7 +18,14 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from .project_json import MAX_SOURCE_BYTES, LegacyRunFiles, LoadedProject, SourceFile, load_project
-from .rorb_codec import FormatProblem, parse_catg, parse_cmd_par, parse_design_stm, serialize_cmd_par, serialize_design_stm
+from .rorb_codec import (
+    FormatProblem,
+    parse_catg,
+    parse_cmd_par,
+    parse_design_stm,
+    serialize_cmd_par,
+    serialize_design_stm,
+)
 from .rorb_model import RunModel, to_json
 
 _EVENT_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
@@ -403,7 +409,7 @@ def export_cmd_package(
         # A same-filesystem rename publishes only complete, already-validated inputs.
         # stdlib rename's preflight is not an atomic no-replace guarantee against
         # another process racing to create an empty directory on POSIX.
-        os.rename(staging, chosen)
+        staging.rename(chosen)
     return NativeExportReceipt(chosen, _sha256(serialized), tuple(item.event_id for item in selected), target.profile)
 
 

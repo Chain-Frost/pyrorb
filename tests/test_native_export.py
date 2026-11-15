@@ -71,7 +71,7 @@ def test_parameter_only_package_is_exact_copy_and_relocatable(tmp_path: Path) ->
     edited = replace(
         old,
         routing=(replace(old.routing[0], kc=Decimal("6.75"), m=Decimal("0.85")),),
-        losses=(replace(old.losses[0], initial_loss_mm=Decimal("24"), continuing=Decimal("5.5")),),
+        losses=(replace(old.losses[0], initial_loss_mm=Decimal(24), continuing=Decimal("5.5")),),
     )
     run = replace(loaded.run, parameters=edited)
     package = tmp_path / "export destination with spaces"
@@ -116,7 +116,7 @@ def test_parameter_only_package_is_exact_copy_and_relocatable(tmp_path: Path) ->
     )
     assert b"python " not in (new_location / "run.cmd").read_bytes().lower()
     assert b"RORB_CMD" in (new_location / "run.cmd").read_bytes()
-    assert "not_characterised" == manifest["events"][0]["requested_outputs"]["actual_output_filenames"]
+    assert manifest["events"][0]["requested_outputs"]["actual_output_filenames"] == "not_characterised"
 
 
 @pytest.mark.parametrize("verbosity", [1, 2, 3])
@@ -144,7 +144,7 @@ def test_selected_batch_is_isolated_and_storm_edit_is_semantic(tmp_path: Path) -
     changed_storm = replace(original.storm, depths_mm=tuple(value * 2 for value in original.storm.depths_mm))
     other = replace(
         original,
-        parameters=replace(original.parameters, routing=(replace(original.parameters.routing[0], kc=Decimal("9")),)),
+        parameters=replace(original.parameters, routing=(replace(original.parameters.routing[0], kc=Decimal(9)),)),
         storm=changed_storm,
     )
     package = tmp_path / "independent events"
@@ -165,7 +165,8 @@ def test_selected_batch_is_isolated_and_storm_edit_is_semantic(tmp_path: Path) -
     ).read_bytes()
     assert _model_from_emitted(package / "events" / "002").storm == changed_storm
     launcher = (package / "run.cmd").read_bytes()
-    assert b'events\\001' in launcher and b'events\\002' in launcher
+    assert b'events\\001' in launcher
+    assert b'events\\002' in launcher
 
 
 def test_failures_leave_no_misleading_partial_output(tmp_path: Path) -> None:
@@ -204,7 +205,7 @@ def test_refuse_overwrite_and_unsupported_target(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError, match="already exists"):
         export_cmd_package(project_path, destination, target=NativeCmdExportTarget("cmd-6.44"))
     assert marker.read_text(encoding="utf-8") == "original"
-    with pytest.raises(NativeExportError, match="only RORB CMD 6.44"):
+    with pytest.raises(NativeExportError, match=r"only RORB CMD 6\.44"):
         NativeCmdExportTarget("cmd-6.45")
 
 
@@ -229,7 +230,7 @@ def test_json_event_request_cli_reuses_existing_override_derivation(tmp_path: Pa
     summary = json.loads(capsys.readouterr().out)
     assert summary["event_ids"] == ["first", "second"]
     assert _model_from_emitted(destination / "events" / "001").parameters.routing[0].kc == Decimal("7.5")
-    assert _model_from_emitted(destination / "events" / "002").parameters.losses[0].initial_loss_mm == Decimal("19")
+    assert _model_from_emitted(destination / "events" / "002").parameters.losses[0].initial_loss_mm == Decimal(19)
     assert main([str(project_path), str(destination), "--target", "cmd-6.44"]) == 2
     assert "already exists" in capsys.readouterr().err
 
