@@ -13,7 +13,8 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Literal, cast
 
 SCHEMA_VERSION = 1
-ControlCode = Literal[1, 3, 4, 5, 7]
+ControlCode = Literal[1, 2, 3, 4, 5, 7]
+ReachMode = Literal["implicit_natural", "explicit_reach_types"]
 
 
 def _finite(value: Decimal, label: str, *, positive: bool = False) -> None:
@@ -108,10 +109,15 @@ class SubArea:
     identifier: str
     area_km2: Decimal
     label: str = ""
+    impervious_fraction: Decimal = Decimal(0)
 
     def __post_init__(self) -> None:
         _identity(self.identifier, "Subarea")
         _finite(self.area_km2, "subarea area", positive=True)
+        _finite(self.impervious_fraction, "impervious fraction")
+        if self.impervious_fraction > 1:
+            message = "Impervious fraction cannot exceed unity"
+            raise ValueError(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,6 +171,7 @@ class CatchmentModel:
     controls: tuple[ControlStep, ...]
     print_locations: tuple[PrintLocation, ...]
     storages: tuple[Storage, ...] = ()
+    reach_mode: ReachMode = "implicit_natural"
 
     def __post_init__(self) -> None:
         validate_catchment(self)
@@ -178,6 +185,12 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     if model.storages:
         message = "Special storages are not supported by the characterised catchment subset"
         raise ValueError(message)
+    if model.reach_mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "Unknown reach encoding mode"
+        raise ValueError(message)
+    if any(step.code == 2 for step in model.controls) and model.reach_mode != "explicit_reach_types":
+        message = "Source control code 2 requires an explicitly characterised reach encoding"
+        raise ValueError(message)
     _distinct(tuple(area.identifier for area in model.subareas), "subarea")
     _distinct(tuple(reach.identifier for reach in model.reaches), "reach")
     _distinct(tuple(point.identifier for point in model.print_locations), "print")
@@ -188,7 +201,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     running: set[str] | None = None
     stack: list[set[str]] = []
     for step in model.controls:
-        if step.code == 1:
+        if step.code in (1, 2):
             if (
                 area_cursor >= len(areas)
                 or reach_cursor >= len(reaches)
@@ -196,12 +209,21 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
                 or step.reach_id != reaches[reach_cursor]
                 or step.print_id is not None
             ):
-                message = "Code 1 must consume the next subarea and reach exactly once"
+                message = f"Code {step.code} must consume the next subarea and reach exactly once"
                 raise ValueError(message)
-            if running is not None and not stack:
-                message = "New subarea would overwrite an unstored running hydrograph"
+            if step.code == 2 and running is None:
+                message = "Code 2 needs a running hydrograph before adding another source"
                 raise ValueError(message)
-            running = {areas[area_cursor]}
+            # Adjacent code-1 sources in legacy cases also accumulate. Code 3
+            # saves *and clears* the current branch; code 4 restores via addition.
+            next_area = areas[area_cursor]
+            if running is None:
+                running = {next_area}
+            else:
+                if next_area in running:
+                    message = "A subarea cannot be added twice to the running hydrograph"
+                    raise ValueError(message)
+                running.add(next_area)
             area_cursor += 1
             reach_cursor += 1
         elif step.code == 5:
@@ -220,6 +242,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
                 message = "Code 3 requires a running hydrograph without additional operands"
                 raise ValueError(message)
             stack.append(set(running))
+            running = None
         elif step.code == 4:
             if (
                 running is None
@@ -373,7 +396,16 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
     return {
         "title": model.title,
         "subareas": [
-            {"identifier": item.identifier, "area_km2": str(item.area_km2), "label": item.label}
+            {
+                "identifier": item.identifier,
+                "area_km2": str(item.area_km2),
+                "label": item.label,
+                **(
+                    {"impervious_fraction": str(item.impervious_fraction)}
+                    if item.impervious_fraction != 0
+                    else {}
+                ),
+            }
             for item in model.subareas
         ],
         "reaches": [
@@ -392,6 +424,7 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
         ],
         "print_locations": [{"identifier": item.identifier, "label": item.label} for item in model.print_locations],
         "storages": [{"identifier": item.identifier, "kind": item.kind} for item in model.storages],
+        **({"reach_mode": model.reach_mode} if model.reach_mode != "implicit_natural" else {}),
     }
 
 
@@ -550,8 +583,16 @@ def _params(raw: object) -> ParameterSet:
 
 
 def _subarea(raw: object) -> SubArea:
-    record = _object(raw, {"identifier", "area_km2", "label"})
-    return SubArea(_field_str(record, "identifier"), _decimal(record["area_km2"]), _field_str(record, "label"))
+    fields = {"identifier", "area_km2", "label"}
+    if isinstance(raw, dict) and "impervious_fraction" in raw:
+        fields.add("impervious_fraction")
+    record = _object(cast("object", raw), fields)
+    return SubArea(
+        _field_str(record, "identifier"),
+        _decimal(record["area_km2"]),
+        _field_str(record, "label"),
+        _decimal(record["impervious_fraction"]) if "impervious_fraction" in record else Decimal(0),
+    )
 
 
 def _reach(raw: object) -> Reach:
@@ -585,7 +626,14 @@ def _storage(raw: object) -> Storage:
 
 
 def _catchment(raw: object) -> CatchmentModel:
-    record = _object(raw, {"title", "subareas", "reaches", "controls", "print_locations", "storages"})
+    fields = {"title", "subareas", "reaches", "controls", "print_locations", "storages"}
+    if isinstance(raw, dict) and "reach_mode" in raw:
+        fields.add("reach_mode")
+    record = _object(cast("object", raw), fields)
+    mode = _string(record.get("reach_mode", "implicit_natural"))
+    if mode not in ("implicit_natural", "explicit_reach_types"):
+        message = "Unknown reach encoding mode"
+        raise ValueError(message)
     return CatchmentModel(
         _field_str(record, "title"),
         tuple(_subarea(item) for item in _items(record["subareas"])),
@@ -593,6 +641,7 @@ def _catchment(raw: object) -> CatchmentModel:
         tuple(_control(item) for item in _items(record["controls"])),
         tuple(_print_location(item) for item in _items(record["print_locations"])),
         tuple(_storage(item) for item in _items(record["storages"])),
+        mode,
     )
 
 

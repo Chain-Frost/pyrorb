@@ -30,7 +30,7 @@ from .rorb_model import (
 )
 from .rorb_par import inspect_cmd_parameters
 
-Dialect = Literal["cmd_v2", "rorb_ge_002", "design_explicit"]
+Dialect = Literal["cmd_v2", "rorb_ge_002", "rorb_ge_645", "design_explicit"]
 Status = Literal["invalid", "unsupported"]
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eEdD][+-]?[0-9]+)?\Z")
 _AREA_NAME = re.compile(r"Sub-area\s+(\S+)", re.IGNORECASE)
@@ -297,6 +297,82 @@ def _graphical(lines: tuple[str, ...]) -> tuple[int, tuple[str, ...]]:
     return end, header
 
 
+
+def _graphic_entity_rows(
+    header: tuple[str, ...], section: str, *, columns: int
+) -> tuple[tuple[int, tuple[str, ...]], ...]:
+    """Read only the original 6.45 node/reach *header* records, not a topology."""
+    marker = header.index(f"C {section}")
+    count = _integer(header[marker + 1].strip()[2:].strip(), marker + 2)
+    end = next(
+        (i for i in range(marker + 2, len(header)) if header[i].strip().startswith("C #")),
+        len(header) - 1,
+    )
+    rows: list[tuple[int, tuple[str, ...]]] = []
+    for i in range(marker + 2, end):
+        line = header[i].strip()
+        if not line or line == "C":
+            continue
+        tokens = tuple(line.split())
+        # Reach geometry has separate single-coordinate continuation lines;
+        # these are retained raw but do not represent another reach.
+        if section == "#REACHES" and len(tokens) == 2 and tokens[0] == "C":
+            _number(tokens[1], i + 1)
+            continue
+        if len(tokens) < columns or tokens[0] != "C":
+            message = f"Uncharacterised {section} graphical record"
+            raise _problem(message, i + 1, unsupported=True)
+        _integer(tokens[1], i + 1, minimum=1)
+        rows.append((i + 1, tokens))
+    if len(rows) != count or tuple(_integer(tokens[1], line, minimum=1) for line, tokens in rows) != tuple(
+        range(1, count + 1)
+    ):
+        message = f"RORB_GE 6.45 {section} count or graphical IDs are inconsistent"
+        raise _problem(message)
+    return tuple(rows)
+
+
+def _validate_645_print_flags(header: tuple[str, ...]) -> tuple[SourceSpan, ...]:
+    """Recognise PR16's fixed *ordinary-export* print/excess settings only."""
+    nodes = _graphic_entity_rows(header, "#NODES", columns=14)
+    reaches = _graphic_entity_rows(header, "#REACHES", columns=12)
+    if not nodes or not reaches:
+        message = "RORB_GE 6.45 requires graphical nodes and reaches"
+        raise _problem(message)
+    spans: list[SourceSpan] = []
+    outlets = 0
+    for line, tokens in nodes:
+        _number(tokens[2], line)
+        _number(tokens[3], line)
+        _number(tokens[-5], line)
+        fi = _number(tokens[-4], line)
+        if not Decimal(0) <= fi <= Decimal(1):
+            message = "Graphical node impervious fraction must be between zero and one"
+            raise _problem(message, line)
+        native_print = _integer(tokens[-3], line, maximum=999)
+        excess = _integer(tokens[-2], line, maximum=999)
+        _integer(tokens[-1], line, maximum=999)
+        end_flag = _integer(tokens[6], line, maximum=1)
+        if excess != 0 or native_print not in (0, 70) or (native_print == 70) != (end_flag == 1):
+            message = "Only PR16 single-outlet graphical print 70 and zero excess are characterised"
+            raise _problem(message, line, unsupported=True)
+        outlets += native_print == 70
+        spans.append(SourceSpan("graphical_node_id", line, tokens[1]))
+    if outlets != 1:
+        message = "PR16 graphical header requires exactly one outlet print 70"
+        raise _problem(message, unsupported=True)
+    for line, tokens in reaches:
+        # Upstream ordinary writer sets reach translation, reach print and
+        # comment to zero; other flag values need output/feature review.
+        translation = _integer(tokens[-7], line)
+        native_print = _integer(tokens[-5], line)
+        if translation != 0 or native_print != 0:
+            message = "Graphical reach translations/additional prints are outside PR16 export"
+            raise _problem(message, line, unsupported=True)
+        spans.append(SourceSpan("graphical_reach_id", line, tokens[1]))
+    return tuple(spans)
+
+
 def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- ordered control vector states
     """Read RORB_GE 002's embedded explicit natural-reach stack vector."""
     source = SourceDocument.from_bytes(data)
@@ -305,12 +381,14 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
         message = "Empty RORB_GE catchment"
         raise _problem(message)
     end, graphics = _graphical(lines)
+    explicit_types = any(line.strip() == "C RORB_GE 6.45" for line in graphics)
+    graphical_spans = _validate_645_print_flags(graphics) if explicit_types else ()
     records = _raw_records(lines, end + 1)
     if not records:
         message = "Missing RORB_GE computation records"
         raise _problem(message)
-    if records[0][1] != "1":
-        message = "Only natural reach-type header 1 is supported"
+    if records[0][1] != ("0" if explicit_types else "1"):
+        message = "Unsupported reach mode for the declared graphical dialect"
         raise _problem(message, records[0][0], unsupported=True)
     controls: list[ControlStep] = []
     reaches: list[Reach] = []
@@ -329,30 +407,44 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
                 raise _problem(message, line_no)
             end_index = cursor + 1
             break
-        if code not in (1, 3, 4, 5, 7):
+        if code not in ((1, 2, 3, 4, 5, 7) if explicit_types else (1, 3, 4, 5, 7)):
             message = f"Uncharacterised numerical control code {code}"
             raise _problem(message, line_no, unsupported=True)
-        parts = [part.strip() for part in raw.split(",", maxsplit=3)]
+        parts = [part.strip() for part in raw.split(",", maxsplit=4)]
         label = ""
-        if code in (1, 5):
-            if len(parts) < 3 or _number(parts[2], line_no) != -99:
-                message = "Natural reach needs code, positive length, -99"
-                raise _problem(message, line_no)
-            length = _number(parts[1], line_no)
+        if code in (1, 2, 5):
+            if explicit_types:
+                if len(parts) != 4:
+                    message = "Explicit reach needs code, type, length and -99"
+                    raise _problem(message, line_no)
+                reach_type = _integer(parts[1], line_no, minimum=1, maximum=4)
+                if reach_type != 1:
+                    message = f"Reach type {reach_type} requires independent numerical qualification"
+                    raise _problem(message, line_no, unsupported=True)
+                if _number(parts[3], line_no) != -99:
+                    message = "Explicit natural reach must terminate with -99"
+                    raise _problem(message, line_no)
+                length_token = parts[2]
+            else:
+                if len(parts) < 3 or _number(parts[2], line_no) != -99:
+                    message = "Natural reach needs code, positive length, -99"
+                    raise _problem(message, line_no)
+                length_token = parts[1]
+                label = parts[3] if len(parts) == 4 else ""
+            length = _number(length_token, line_no)
             if length <= 0:
                 message = "Natural reach length must be positive"
                 raise _problem(message, line_no)
-            label = parts[3] if len(parts) == 4 else ""
             reach_id = f"reach_{len(reaches) + 1}"
             reaches.append(Reach(reach_id, length, label))
-            if code == 1:
+            if code in (1, 2):
                 area_id = f"area_{len(names) + 1}"
                 match = _AREA_NAME.search(label)
                 names.append(match[1] if match is not None else "")
-                controls.append(ControlStep(1, area_id, reach_id, None, label))
+                controls.append(ControlStep(cast("ControlCode", code), area_id, reach_id, None, label))
             else:
                 controls.append(ControlStep(5, None, reach_id, None, label))
-            spans.append(SourceSpan(f"reach_{len(reaches)}", line_no, parts[1]))
+            spans.append(SourceSpan(f"reach_{len(reaches)}", line_no, length_token))
         else:
             if len(parts) > 2:
                 message = "Stack/print controls accept no numeric operands"
@@ -397,30 +489,45 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
         message = "Missing explicit impervious-data sentinel"
         raise _problem(message)
     impervious_line, impervious = records[next_index]
-    flag = [token.strip() for token in impervious.split(",", maxsplit=2)]
-    if len(flag) < 2 or _number(flag[1], impervious_line) != -99:
-        message = "Expected impervious flag followed by -99"
-        raise _problem(message, impervious_line)
-    if _number(flag[0], impervious_line) != 0:
-        message = "Impervious fractions require a different model dialect"
-        raise _problem(message, impervious_line, unsupported=True)
-    if next_index + 1 != len(records):
+    flag = _csv(impervious, impervious_line)
+    if explicit_types and len(flag) == 1 and _number(flag[0], impervious_line) == 1:
+        fractions, after_fractions, fraction_spans = _terminated(records, next_index + 1, "impervious_fraction")
+        if len(fractions) != len(areas) or any(value > 1 for value in fractions):
+            message = "Impervious fraction table must have one value in [0,1] for every original source"
+            raise _problem(message, impervious_line)
+        spans.extend(fraction_spans)
+        final_index = after_fractions
+    else:
+        if len(flag) < 2 or _number(flag[1], impervious_line) != -99:
+            message = "Expected zero impervious flag followed by -99"
+            raise _problem(message, impervious_line)
+        if _number(flag[0], impervious_line) != 0:
+            message = "Uncharacterised impervious table flag"
+            raise _problem(message, impervious_line, unsupported=True)
+        fractions = (Decimal(0),) * len(areas)
+        final_index = next_index + 1
+    if final_index != len(records):
         message = "Trailing catchment data after impervious sentinel"
-        raise _problem(message, records[next_index + 1][0])
+        raise _problem(message, records[final_index][0])
     if len(areas) != len(names):
         message = f"Subarea count {len(areas)} differs from source controls {len(names)}"
         raise _problem(message)
     try:
         model = CatchmentModel(
             lines[0].strip(),
-            tuple(SubArea(f"area_{index + 1}", area, names[index]) for index, area in enumerate(areas)),
+            tuple(
+                SubArea(f"area_{index + 1}", area, names[index], fractions[index])
+                for index, area in enumerate(areas)
+            ),
             tuple(reaches),
             tuple(controls),
             tuple(prints),
+            reach_mode="explicit_reach_types" if explicit_types else "implicit_natural",
         )
     except ValueError as exc:
         raise _problem(str(exc)) from exc
-    return ParsedDocument("rorb_ge_002", source, model, tuple(spans), graphics)
+    dialect: Dialect = "rorb_ge_645" if explicit_types else "rorb_ge_002"
+    return ParsedDocument(dialect, source, model, (*graphical_spans, *spans), graphics)
 
 
 def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -- distinct DESIGN input contracts
@@ -496,7 +603,7 @@ def parse_bytes(
     extension = suffix.lower().lstrip(".")
     if extension == "par":
         return parse_cmd_par(data)
-    if extension == "catg":
+    if extension == "catg" or (extension == "cat" and b"C RORB_GE " in data[:1024]):
         return parse_catg(data)
     if extension == "stm":
         return parse_design_stm(data)
@@ -559,6 +666,9 @@ def serialize_catg(model: CatchmentModel) -> bytes:
     """Canonical computation vector with an *empty* drawing scaffold, not a native-verified redraw."""
     model.__post_init__()
     _canonical_ids(model)
+    if model.reach_mode != "implicit_natural" or any(area.impervious_fraction != 0 for area in model.subareas):
+        message = "No verified canonical CATG writer for explicit reach types and impervious tables"
+        raise ValueError(message)
     lines = [
         _safe_label(model.title),
         "C RORB_GE 002",
@@ -668,6 +778,12 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         raise ValueError(message)
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
+        raise ValueError(message)
+    if catchment.reach_mode != "implicit_natural" or any(step.code == 2 for step in catchment.controls):
+        message = "S2 does not yet qualify explicit reach types and control code 2"
+        raise ValueError(message)
+    if any(area.impervious_fraction != 0 for area in catchment.subareas):
+        message = "S2 cannot silently discard nonzero source impervious fractions"
         raise ValueError(message)
     lengths = {item.identifier: item.length_km for item in catchment.reaches}
     steps = tuple(
