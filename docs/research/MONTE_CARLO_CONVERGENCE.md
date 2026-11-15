@@ -45,6 +45,22 @@ The `near_tie` site's **2% envelope** at 1,000 evaluations/duration has pilot si
 
 The figure at 0.95 shows the **proposed reliability target**; plotted fractions are observed pass rates, not confidence bounds. See per-budget exact confidence limits in the retained summaries. Error against exact analytical truth, run-to-run mean bias, SD, CV, max and 90th-percentile absolute error, bootstrap uncertainty, critical-duration frequencies and their binomial intervals are preserved for every site/AEP/duration/envelope.
 
+## Positive control: a declared population where 1,000 passes
+
+A separate **constructed, nondegenerate low-variability synthetic population** (`STABLE_RESPONSES`) uses the same independent U/V/TP law, normal-coordinate probability bins with p-uniform conditional draws, two sites, two durations, four target response exceedance probabilities and 24-output whole-result rule. All response slopes, initial-loss widths and temporal-pattern effects are nonzero. This population was selected **after exploratory screening** to provide a contrast; it is *not* a blinded or random sample of hydrological catchments. The subsequent fixed-budget confirmation used **100 fresh, independently stage-separated seeds at each of 250, 500 and 1,000 evaluations per duration**, without sequential stopping. All 7,200 output rows, source/seed/probability parameters, exact analytical references, and binomial intervals are preserved in [stable_confirmation](issue148/stable_confirmation/manifest.json).
+
+| Events per duration | Independent whole-run passes (1% band, 100 seeds) | 95% one-sided success lower | 95% one-sided success upper | Decision versus provisional 95% reliability |
+| ---: | ---: | ---: | ---: | --- |
+| 250 | 72/100 | 0.637 | 0.793 | **Inadequate** |
+| 500 | 96/100 | 0.911 | 0.986 | **Unresolved** |
+| **1,000** | **100/100** | **0.970** | 1.000 | **Adequate only for this declared synthetic population/1% band** |
+
+At the more permissive 2% and 5% bands, all three budgets achieved 100/100 whole-result passes in this particular population; that does not imply a universally sufficient count or a generally adopted tolerance. The 100/100 observed success rate is not a 100% true success probability: its one-sided exact 95% lower confidence bound is 0.970. The second site's 10% envelope still chose different critical durations in 54 versus 46 of 100 runs at the 500-event budget, so *magnitude reliability is not critical-duration identity reliability*. These findings coexist with the negative population's poor performance even at 2,500 evaluations under 5%, demonstrating that **no universal 1,000-event minimum follows**.
+
+The new stage used **350,000** synthetic response evaluations in **7.309 seconds** on Linux/Python 3.13.5 (peak traced memory 4.11 MiB). Together with the prior five stages' 2,275,000 evaluations, the retained analytical work includes **2,625,000 synthetic evaluations across six stages**; none is a `python-cmd` routing benchmark. The new manifest pins the actual simulation-time script SHA-256 `7f46c621229c19b9ed3efdd68be04a853941d8fe40139d42ee490007949d035f`, rather than silently attributing that execution to later formatting/type-only commits.
+
+**Independent verification:** F/#150 independently re-evaluated all 7,200 raw values as 300 complete 24-output replications, recalculated the three 1% whole-run pass rates and exact one-sided Clopper–Pearson bounds, and independently checked all 16 positive reference quantiles by a separate 10,000-panel Simpson integration (maximum survival residual `2.46e-9`). No numerical/statistical discrepancy was found. [See the current-head scientific PR review](https://github.com/Chain-Frost/python-runoff-routing/pull/168). This review is of retained synthetic evidence, not independent execution of the Monte Carlo generator or a real catchment.
+
 ## Sensitivities and negative results
 
 - **Bin count:** at equal 1,000 events/duration, 25/50/100 stratification levels gave near-tie 2% envelope SDs of **0.00987 / 0.00883 / 0.00979** (30 independent runs each). The observed differences are not evidence of a systematic resolution bias. Correct conditional sampling has the **same exactly integrated target** at all bin counts; different bin allocation may change sampling variance. Rainfall IFD interpolation and deterministic solver timestep errors are entirely separate, unstudied here.
@@ -55,9 +71,9 @@ The figure at 0.95 shows the **proposed reliability target**; plotted fractions 
 
 ## Run cost, replay and interpretation
 
-The harness first completed a **77,000-evaluation timing pilot in approximately 1.1 seconds**. Explicit stage caps prevented unbounded campaigns. On this Linux/Python 3.13.5 study environment, the final five stages made **2,275,000 synthetic response evaluations** in about **32 seconds** total across the analytical generator, quantile inversion, exact-reference evaluation, confidence statistics and in-process memory tracing. Individual stage counts: pilot 1,155,000; confirmation 700,000; bins 180,000; finite TP 120,000; interpolation 120,000. Per-stage manifests retain actual times and peak traced memory. These costs are **not** `python-cmd` event-routing benchmarks; routing time, memory, source preparation and failure rates remain unmeasured. The previously completed 1,000-event performance requirement is not reopened.
+The harness first completed a **77,000-evaluation timing pilot in approximately 1.1 seconds**. Explicit stage caps prevented unbounded campaigns. On this Linux/Python 3.13.5 study environment, the final five stages made **2,275,000 synthetic response evaluations** in about **32 seconds** total across the analytical generator, quantile inversion, exact-reference evaluation, confidence statistics and in-process memory tracing. Individual stage counts: pilot 1,155,000; confirmation 700,000; bins 180,000; finite TP 120,000; interpolation 120,000. Per-stage manifests retain actual times and peak traced memory. These costs are **not** `python-cmd` event-routing benchmarks; routing time, memory, source preparation and failure rates remain unmeasured. The previously completed 1,000-event performance requirement is not reopened. The additional positive confirmation and six-stage combined cost are reported in the section above.
 
-Use Python ≥3.13; no product dependencies or hosted workflows are added. The scripts use only the standard library, except `pytest` for the seven focused controls:
+Use Python ≥3.13; no product dependencies or hosted workflows are added. The scripts use only the standard library, except `pytest` for the nine focused controls:
 
 ```sh
 python -m pytest -q tests/test_mc_convergence_research.py
@@ -67,10 +83,11 @@ python repo-scripts/mc_convergence_research.py --stage confirmation --opt-in --o
 python repo-scripts/mc_convergence_research.py --stage bins --opt-in --output .local/mc-bins --max-evaluations 180000 --max-wall-seconds 90
 python repo-scripts/mc_convergence_research.py --stage tp --opt-in --output .local/mc-tp --max-evaluations 120000 --max-wall-seconds 90
 python repo-scripts/mc_convergence_research.py --stage interpolation --opt-in --output .local/mc-interp --max-evaluations 120000 --max-wall-seconds 90
+python repo-scripts/mc_convergence_research.py --stage stable-independent-confirmation --opt-in --output .local/mc-stable --max-evaluations 350000 --max-wall-seconds 90
 python repo-scripts/plot_mc_convergence.py .local/mc-pilot/summary.json --output .local/mc-plots
 ```
 
-Each output directory must be new; outputs contain `manifest.json`, `raw.csv` (all 24 quantiles per replication), `summary.json` and `endpoint_sensitivity.json`. The included retained results and two SVG figures can be regenerated without routing, native RORB files, an installed CLI or external network. Independent reviewers should audit the exact integral and quantile inversion, one-sided binomial bounds, whole-output pass definition, seed independence, bootstrapping at the **replication** level, and absence of sequential optional stopping. Scientific conclusions require that review; this is author-run evidence, not an independent sign-off.
+Each output directory must be new; outputs contain `manifest.json`, `raw.csv` (all 24 quantiles per replication), `summary.json` and `endpoint_sensitivity.json`. The included retained original results, positive-control receipts and two SVG figures can be regenerated without routing, native RORB files, an installed CLI or external network. Independent reviewers should audit the exact integral and quantile inversion, one-sided binomial bounds, whole-output pass definition, seed independence, bootstrapping at the **replication** level, and absence of sequential optional stopping. Both synthetic retained populations have now received independent F/#150 output/reference reviews with no reported statistical discrepancies. They remain author-run generator evidence, not independent generator re-execution or real-model/native engineering sign-off.
 
 ## Subsequent catchment qualification — blocked by explicit interfaces, not the MVP
 
