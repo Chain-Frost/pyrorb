@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `b246e8c7bd9ddf97d2d286402202b14e9e48e595`, pinned
+The chosen upstream candidate revision is `598e5edea093df426cda64c3a528fd1c5784c612`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -131,7 +131,7 @@ scientific validity or a native executable. All local report lexical parsing
 has been removed from `reference._check_report`, `regression_metrics` and
 `rorb_out`. Existing capture-specific synthetic tests plus a new two-site
 bare-table/negative admission test are the acceptance gate. Current reviewed
-dependency revision: `b246e8c7bd9ddf97d2d286402202b14e9e48e595`.
+dependency revision: `598e5edea093df426cda64c3a528fd1c5784c612`.
 
 ## Read-only canonical report views
 
@@ -178,5 +178,36 @@ tests await their own execution.
 Upstream #233 now supports explicit companion CSV overrides under the five-part
 source event key (Run, duration token/unit, raw frequency label, TP); it still
 rejects unknown event keys and unverified/missing companions. This repo pins
-the upstream override revision `b246e8c7bd9ddf97d2d286402202b14e9e48e595`; it does not copy or maintain an
+the upstream override revision `598e5edea093df426cda64c3a528fd1c5784c612`; it does not copy or maintain an
 association parser.
+
+
+## 16 November 2026 — canonical reader full original-fixture acceptance
+
+[Upstream ryan-tools PR #233](https://github.com/Chain-Frost/ryan-tools/pull/233)
+at exact code revision `598e5edea093df426cda64c3a528fd1c5784c612` passed all six hosted checks in
+[run 43748737493](https://github.com/Chain-Frost/ryan-tools/actions/runs/43748737493).
+Windows Python 3.14 hosted regression: **3,371 passed, 16 skipped,
+eight deselected**. The three new original-fixture tests exercised all
+**640 accessible RORBwin 6.52 batch/CSV companions**, grouped as 80
+12-hour, 80 24-hour, and 480 multi-duration members. Exact-head Codex
+review reported no major issues. The P2 incorrect-success finding for
+missing or partial site description mappings is corrected with fail-closed
+full-flow-site coverage checks and synthetic negative/positive cases.
+Python 3.13 grammar is guarded in the narrow reader sources.
+
+The **distinct private 420-event RORBWin 6.45 source set** was not found
+in the repositories accessible through the connected GitHub app:
+`ryan-tools-test-data` contains 6.52 inputs (80/80/480), and
+`runoff-routing-investigations` has eight smaller GUI batch reports and
+150 companion CSVs on current branches. An earlier validation instruction
+identifies the 420-event set as local private Windows inputs. Their
+previous 420/420 receipt predates revised peak precision and cannot be
+relabelled current; a local read-only recheck is still necessary before
+treating that exact population as admitted. Do not copy private inputs
+into public GitHub or run native RORB.
+
+This downstream PR now pins the exact successfully tested reader commit
+`598e5edea093df426cda64c3a528fd1c5784c612` via the archive-based small distribution. Review and source/installed
+wheel CI on the downstream commit containing this new pin are a separate
+acceptance and cannot be inherited from the earlier head.
