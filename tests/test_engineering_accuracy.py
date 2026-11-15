@@ -123,7 +123,7 @@ def test_valid_near_100_percent_storm_weights_are_normalised_like_cmd() -> None:
     # divides by their actual sum before rainfall and IL/CL preparation.
     catchment = Catchment((Control(1, 3.0), Control(7)), (1.0,))
     event = Storm(1.0, 4, (49.995, 50.0), (10.0,))
-    result = calculate_storm(catchment, event, losses=Losses(0.0, 0.0), kc=0.1, m=0.8)
+    result = calculate_storm(catchment, event, losses=Losses(0.0, 0.0), kc=0.0, m=0.8)
     assert math.fsum(result.rainfall_excess_mm[0]) == pytest.approx(10.0, rel=1e-12)
     assert result.rainfall_excess_mm[0][0] == pytest.approx(10.0 * 49.995 / 99.995, rel=1e-12)
 
