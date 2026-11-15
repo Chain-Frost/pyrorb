@@ -208,7 +208,6 @@ def _nonretained_case_failures(
     return failed
 
 
-
 def _required_case_results(
     required: tuple[str, ...], by_id: dict[str, dict[str, Any]], rows: dict[str, int]
 ) -> tuple[list[str], list[str]]:
@@ -218,10 +217,8 @@ def _required_case_results(
     for case_id in required:
         item = by_id[case_id]
         scalar = _fresh_reporting_classification(item)
-        if item["status"] != "printed_pass" or item.get("rows") != rows[case_id] or scalar not in (
-            "pass",
-            "incomplete",
-        ):
+        scalar_valid = scalar in ("pass", "incomplete")
+        if item["status"] != "printed_pass" or item.get("rows") != rows[case_id] or not scalar_valid:
             failures.append(case_id)
         elif scalar == "incomplete":
             incomplete.append(case_id)
@@ -236,7 +233,8 @@ def main(required_cases: tuple[str, ...] = ()) -> int:
         print("CMD probe: invalid selected case register", file=sys.stderr)
         return 2
     selected_ids = {str(case["case_id"]): int(case["clock"]["row_count"]) for case in cases}
-    if len(required_cases) != len(set(required_cases)) or any(case_id not in selected_ids for case_id in required_cases):
+    invalid_required = set(required_cases).difference(selected_ids)
+    if len(required_cases) != len(set(required_cases)) or invalid_required:
         print("CMD probe: --require-case must name distinct registered CMD-eligible case IDs", file=sys.stderr)
         return 2
     outcomes = [_one(case) for case in cases]
