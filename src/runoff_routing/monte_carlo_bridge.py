@@ -35,6 +35,8 @@ _ADOPTED_PREBURST = "storm-IL-before-one-time-preburst-adjustment-by-event-owner
 
 class SamplePlanView(Protocol):
     plan_id: str
+    population_id: str
+    parent_plan_id: str | None
 
     def spec(self) -> dict[str, object]: ...
 
@@ -315,6 +317,8 @@ def prepare_saved_sample_plan(
         populations=(MCPopulation(scenario, duration, modelled, lower, upper),),
         event_count=event_count,
         strata=allocations,
+        sample_population_id=plan.population_id,
+        parent_plan_sha256=plan.parent_plan_id,
     )
     model = load_project(project_path).run
     kind = "point" if sum(s.area_km2 for s in model.catchment.subareas) < 75 else "areal"

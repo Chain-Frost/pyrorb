@@ -30,6 +30,46 @@ CLI, with one existing project and a fully materialised request:
     python -m runoff_routing.monte_carlo_execution inspect project.json effective.jsonl ledger.jsonl
     python -m runoff_routing.monte_carlo_execution replay project.json effective.jsonl ledger.jsonl sample-1 selected-event
 
+### Extending an immutable B plan without discarding earlier event work
+
+After B creates an explicitly extended plan (using its `SamplePlan.extend`
+and `write_sample_plan` API), materialise that revision into a **new**
+effective request with `prepare`, then run:
+
+```sh
+python -m runoff_routing.monte_carlo_execution extend project.json original-effective.jsonl original-ledger.jsonl extended-effective.jsonl extended-ledger.jsonl --engine python-cmd
+python -m runoff_routing.monte_carlo_execution frequency project.json extended-effective.jsonl extended-ledger.jsonl extended-frequency --aep 0.01
+```
+
+The extension operation requires the new plan's original
+`sample_population_id`, explicit `parent_plan_sha256`, unchanged
+policy/IFD/TP source SHA-256, rainfall domain, stratum identities/masses,
+project source, engine/profile and package revision, with only **increased**
+per-stratum allocations. It compares the full retained effective input
+of each previously computed logical sample **excluding old
+`stratum_size` and `probability_weight` only**. A temporary SQLite
+index retains earlier scalar peaks and error statuses on disk without
+keeping full Q arrays in memory. Previously completed events are
+reused only when their computation-input hashes agree; new events
+are routed through the existing prepared iterator. The original
+ledger is never modified.
+
+**Every old event's weight is recalculated** as the current full-plan
+`w_h/n_h(new)` and rechecksummed into the new ledger, and the C estimator
+must use the new complete planned allocations. Changing source,
+policy, original draw, loss, routing, effective-event identity,
+stratum mass or parent revision **rejects** reuse. This differs from
+`--resume`, which permits only the exact **unchanged** request/checkpoint
+prefix. An interrupted extension may be resumed with ordinary
+`run --resume` on its new ledger (which reroutes any uncompleted
+members rather than silently applying old weights). The tests compare
+extended reused results to complete fresh execution of the same
+effective events.
+
+Checksum chains and independent file digests are integrity safeguards,
+**not signatures**. Qualification of any retained computation still
+requires the appropriate engine, source and native acceptance evidence.
+
 The last command exclusively creates selected-event.json, selected-event.csv
 and selected-event.txt, retaining the full ordinary hydrograph, time and
 project/engine provenance.
@@ -180,7 +220,9 @@ envelope policies; the CLI deliberately does not invent those results.
   selection over this ledger; no independently implemented estimator here.
 - E: independent code review, source and isolated-wheel tests and bounded
   memory/throughput receipt must be recorded at the exact PR revision.
-  Explicit cross-plan computation reuse/reweighting remains outstanding.
+  Cross-plan reuse/reweighting is implemented as an explicitly selected
+new-revision operation and remains subject to independent code review and
+the source/wheel verification receipt.
 - F/#150: actual RORBwin MC distribution, source-preparation, native
   comparison and statistical qualification remain not assessed.
 

@@ -12,9 +12,12 @@ import hashlib
 import json
 import math
 import os
+import sqlite3
 import sys
+import tempfile
 from collections import Counter
 from collections.abc import Iterator
+from contextlib import closing
 from dataclasses import dataclass
 from decimal import Decimal
 from itertools import islice
@@ -27,6 +30,7 @@ from .monte_carlo_bridge import create_saved_sample_plan, prepare_saved_sample_p
 from .monte_carlo_effective import (
     MAX_LINE_BYTES,
     EffectiveMCEvent,
+    MCRequestHeader,
     encode_jsonl_line,
     iter_effective_events,
     parse_jsonl_line,
@@ -35,7 +39,7 @@ from .monte_carlo_effective import (
     validate_effective_request,
 )
 from .monte_carlo_frequency_bridge import write_mc_frequency
-from .project_batch import ProjectBatchReport, iter_project_events, run_project_events, write_batch_results
+from .project_batch import ProjectBatchReport, ProjectEvent, iter_project_events, run_project_events, write_batch_results
 from .project_json import LoadedProject, load_project
 
 LEDGER_FORMAT = "python-runoff-routing-mc-event-ledger"
@@ -146,6 +150,8 @@ def _header(
         "schema_version": LEDGER_VERSION,
         "request_sha256": input_sha256,
         "plan_sha256": header.plan_sha256,
+        "sample_population_id": header.sample_population_id,
+        "parent_plan_sha256": header.parent_plan_sha256,
         "policy_id": header.policy_id,
         "source_files": [{"path": f.path, "sha256": f.sha256} for f in header.source_files],
         "populations": [p.to_dict() for p in header.populations],
@@ -500,6 +506,164 @@ def replay_mc_event(
     return report
 
 
+def _check_extended_plan(old: MCRequestHeader, new: MCRequestHeader) -> None:
+    """Only an explicitly linked immutable B extension can reuse old computations."""
+    if (
+        old.sample_population_id is None
+        or old.sample_population_id != new.sample_population_id
+        or new.parent_plan_sha256 != old.plan_sha256
+        or old.plan_sha256 == new.plan_sha256
+        or old.policy_id != new.policy_id
+        or old.source_files != new.source_files
+        or old.populations != new.populations
+        or not old.strata
+        or not new.strata
+    ):
+        message = "Plan extension requires an identical source/policy/population and explicit parent revision"
+        raise MCRunError(message)
+    prior = {(s.scenario_id, s.duration_min, s.stratum_id): s for s in old.strata}
+    current = {(s.scenario_id, s.duration_min, s.stratum_id): s for s in new.strata}
+    if prior.keys() != current.keys():
+        message = "Extended plan changed its original rainfall strata"
+        raise MCRunError(message)
+    if any(
+        current[key].probability_mass != row.probability_mass
+        or current[key].planned_samples < row.planned_samples
+        for key, row in prior.items()
+    ) or not any(current[key].planned_samples > row.planned_samples for key, row in prior.items()):
+        message = "Plan extension must increase allocations while preserving each stratum probability mass"
+        raise MCRunError(message)
+
+
+def _index_prior_results(db: sqlite3.Connection, request: Path, ledger: Path) -> None:
+    """Index only small scalar records on temporary disk, not in-process hydrographs."""
+    db.execute(
+        "CREATE TABLE cached (sample_id TEXT PRIMARY KEY, input_id TEXT NOT NULL,"
+        " outcome_json TEXT NOT NULL, seen INTEGER NOT NULL DEFAULT 0)"
+    )
+    samples = iter_effective_events(request)
+    records = _read_ledger(ledger)
+    next(records)
+    for result in records:
+        sample = next(samples, None)
+        if sample is None or result["sample_id"] != sample.sample_id:
+            message = "Prior result/sample identity changed after validating the original ledger"
+            raise MCRunError(message)
+        db.execute(
+            "INSERT INTO cached (sample_id, input_id, outcome_json) VALUES (?, ?, ?)",
+            (
+                sample.sample_id,
+                sample.computation_digest(),
+                json.dumps(result, sort_keys=True, separators=(",", ":"), allow_nan=False),
+            ),
+        )
+    db.commit()
+
+
+def _verify_reusable_samples(db: sqlite3.Connection, request: Path) -> None:
+    """Reject any changed earlier effective rainfall, loss, TP or source inputs."""
+    for sample in iter_effective_events(request):
+        old = db.execute("SELECT input_id FROM cached WHERE sample_id = ?", (sample.sample_id,)).fetchone()
+        if old is None:
+            continue
+        if old[0] != sample.computation_digest():
+            message = "Previously computed sample differs in the extended plan's effective inputs"
+            raise MCRunError(message)
+        db.execute("UPDATE cached SET seen = 1 WHERE sample_id = ?", (sample.sample_id,))
+    result = db.execute("SELECT COUNT(*) FROM cached WHERE seen = 0").fetchone()
+    if result is None or result[0] != 0:
+        message = "New plan omits a previously computed logical sample"
+        raise MCRunError(message)
+
+
+def _uncached_events(db: sqlite3.Connection, request: Path) -> Iterator[ProjectEvent]:
+    for sample in iter_effective_events(request):
+        if db.execute("SELECT 1 FROM cached WHERE sample_id = ?", (sample.sample_id,)).fetchone() is None:
+            yield sample.event
+
+
+def _reweight_cached_record(raw_json: str, new: EffectiveMCEvent) -> dict[str, object]:
+    """Carry identical computations forward but discard all prior-plan weight and checksum fields."""
+    parsed: object = json.loads(raw_json)
+    if not isinstance(parsed, dict):
+        message = "Stored prior scalar record is not a JSON object"
+        raise MCRunError(message)
+    result = cast("dict[str, object]", parsed)
+    result.pop("previous_record_sha256", None)
+    result.pop("record_sha256", None)
+    result["probability_weight"] = str(new.probability_weight)
+    result["effective_event_sha256"] = new.digest()
+    return result
+
+
+def extend_mc_execution(
+    project_path: Path,
+    old_request_path: Path,
+    old_ledger_path: Path,
+    new_request_path: Path,
+    new_ledger_path: Path,
+    *,
+    selection: EngineSelection | None = None,
+    wheel_artifact: Path | None = None,
+) -> MCRunSummary:
+    """Reuse an exact unchanged B sample under an explicit extended plan revision.
+
+    Prior scalar peaks are disk-indexed; all event weights are recalculated
+    under the new allocation. Never modify or reinterpret the old ledger.
+    """
+    old_plan, old_digest = validate_effective_request(old_request_path)
+    new_plan, new_digest = validate_effective_request(new_request_path)
+    _check_extended_plan(old_plan, new_plan)
+    if new_ledger_path.exists() or new_ledger_path.is_symlink():
+        message = "The extended checkpoint destination already exists"
+        raise MCRunError(message)
+    loaded = load_project(project_path)
+    _project_subset(loaded)
+    selected = loaded.project.engine if selection is None else selection
+    old_header = _header(
+        loaded, old_digest, selection=selected, wheel_artifact=wheel_artifact, request_path=old_request_path
+    )
+    new_header = _header(
+        loaded, new_digest, selection=selected, wheel_artifact=wheel_artifact, request_path=new_request_path
+    )
+    _existing_prefix(old_ledger_path, old_header, old_request_path)
+    old_ledger_hash = sha256_file(old_ledger_path)
+    with tempfile.TemporaryDirectory(prefix="mc149-extend-") as folder:
+        with closing(sqlite3.connect(Path(folder) / "reused-results.sqlite3")) as db:
+            _index_prior_results(db, old_request_path, old_ledger_path)
+            _verify_reusable_samples(db, new_request_path)
+            for event in iter_effective_events(new_request_path):
+                _fixed_parameters(event, loaded)
+            previous = _new_ledger(new_ledger_path, new_header)
+            outcomes = iter_project_events(
+                project_path,
+                _uncached_events(db, new_request_path),
+                selection=selected,
+                wheel_artifact=wheel_artifact,
+            )
+            for event in iter_effective_events(new_request_path):
+                matched = db.execute(
+                    "SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)
+                ).fetchone()
+                if matched is None:
+                    routed = next(outcomes)
+                    if routed.event_id != event.event.event_id:
+                        message = "New event runner output is not the selected effective sample"
+                        raise MCRunError(message)
+                    row = _event_row(event, routed)
+                else:
+                    row = _reweight_cached_record(cast("str", matched[0]), event)
+                previous = _append_ledger(new_ledger_path, row, previous)
+    if (
+        sha256_file(old_ledger_path) != old_ledger_hash
+        or sha256_file(old_request_path) != old_digest
+        or sha256_file(new_request_path) != new_digest
+    ):
+        message = "Original/extended source or ledger changed during plan extension"
+        raise MCRunError(message)
+    return summarise_ledger(new_ledger_path, new_request_path, new_header)
+
+
 def _preparation_cli_action(options: argparse.Namespace) -> int | None:
     """Text-mode B plan and E materialisation use exactly one sampler and source profile."""
     if options.command == "plan":
@@ -520,6 +684,26 @@ def _preparation_cli_action(options: argparse.Namespace) -> int | None:
         )
         print(f"Prepared {header.event_count} exact B samples without new randomness: {options.request}")
         return 0
+    if options.command == "extend":
+        if options.numerical_profile is not None and options.engine is None:
+            message = "--numerical-profile requires --engine"
+            raise MCRunError(message)
+        selected = (
+            EngineSelection.for_engine(options.engine, options.numerical_profile)
+            if options.engine is not None
+            else None
+        )
+        result = extend_mc_execution(
+            options.project,
+            options.old_request,
+            options.old_ledger,
+            options.new_request,
+            options.new_ledger,
+            selection=selected,
+            wheel_artifact=options.wheel_artifact,
+        )
+        print(result.to_text(), end="")
+        return 0 if result.complete else 2
     if options.command == "validate":
         header, digest = validate_effective_request(options.request)
         print(f"Valid effective request: {header.event_count} samples; SHA-256 {digest}")
@@ -557,6 +741,12 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("ledger", type=Path)
     replay.add_argument("sample_id")
     replay.add_argument("output_prefix", type=Path)
+    extension = commands.add_parser("extend", help="reuse unchanged event computations under a new B plan revision")
+    extension.add_argument("project", type=Path)
+    extension.add_argument("old_request", type=Path)
+    extension.add_argument("old_ledger", type=Path)
+    extension.add_argument("new_request", type=Path)
+    extension.add_argument("new_ledger", type=Path)
     frequency = commands.add_parser("frequency", help="delegate exact weighted curves to #147")
     frequency.add_argument("project", type=Path)
     frequency.add_argument("request", type=Path)
@@ -568,7 +758,7 @@ def main(argv: list[str] | None = None) -> int:
     inspect.add_argument("request", type=Path)
     inspect.add_argument("ledger", type=Path)
     inspect.add_argument("--expected-ledger-sha256", help="independently stored ledger file SHA-256")
-    for sub in (run, replay, inspect, frequency):
+    for sub in (run, replay, inspect, frequency, extension):
         sub.add_argument("--engine", choices=("python", "python-cmd", "rorb-cmd"))
         sub.add_argument("--numerical-profile")
         sub.add_argument("--wheel-artifact", type=Path)

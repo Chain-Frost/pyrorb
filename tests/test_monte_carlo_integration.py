@@ -13,10 +13,13 @@ from decimal import Decimal
 from pathlib import Path
 from typing import cast
 
+import pytest
+
 from runoff_routing.bom_ifd import read_bom_ifd_csv
 from runoff_routing.monte_carlo_effective import iter_effective_events, validate_effective_request
-from runoff_routing.monte_carlo_execution import main
-from runoff_routing.monte_carlo_plan import ifd_from_bom
+from runoff_routing.monte_carlo_execution import MCRunError, execute_mc_request, extend_mc_execution, main
+from runoff_routing.monte_carlo_bridge import prepare_saved_sample_plan
+from runoff_routing.monte_carlo_plan import ifd_from_bom, read_sample_plan, write_sample_plan
 from runoff_routing.project_batch import run_project_events
 from runoff_routing.project_json import EmbeddedRun, Project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
@@ -135,3 +138,58 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     replayed = json.loads((tmp_path / "selected.json").read_text(encoding="utf-8"))
     outcomes = cast("list[dict[str, object]]", replayed["outcomes"])
     assert outcomes[0]["event_id"] == first.event.event_id
+
+
+def test_extended_plan_reuses_identical_computations_with_new_stratum_weights(tmp_path: Path) -> None:
+    project, config, ifd, patterns = _fixture(tmp_path)
+    assert main(["plan", str(config), str(tmp_path / "initial")]) == 0
+    old_plan_path = tmp_path / "initial.plan.json"
+    old_samples_path = tmp_path / "initial.samples.jsonl"
+    old_request = tmp_path / "original-effective.jsonl"
+    old_ledger = tmp_path / "original-ledger.jsonl"
+    prepare_saved_sample_plan(
+        project,
+        old_plan_path,
+        old_samples_path,
+        old_request,
+        ifd_path=ifd,
+        patterns_path=patterns,
+        arf_region="South-West Western Australia",
+        dry_tail_min=120,
+    )
+    assert execute_mc_request(project, old_request, old_ledger).complete
+
+    old_plan = read_sample_plan(old_plan_path)
+    new_plan = old_plan.extend({"h1": 4})
+    assert new_plan.parent_plan_id == old_plan.plan_id
+    new_plan_path, new_samples_path = write_sample_plan(tmp_path / "extended", new_plan)
+    new_request = tmp_path / "extended-effective.jsonl"
+    prepare_saved_sample_plan(
+        project,
+        new_plan_path,
+        new_samples_path,
+        new_request,
+        ifd_path=ifd,
+        patterns_path=patterns,
+        arf_region="South-West Western Australia",
+        dry_tail_min=120,
+    )
+    assert main(
+        ["extend", str(project), str(old_request), str(old_ledger), str(new_request), str(tmp_path / "reuse.jsonl")]
+    ) == 0
+    reused = (tmp_path / "reuse.jsonl").read_bytes()
+    assert len(reused.splitlines()) == 5
+    old_samples = tuple(iter_effective_events(old_request))
+    new_samples = tuple(iter_effective_events(new_request))
+    assert [s.sample_id for s in old_samples] == [s.sample_id for s in new_samples[:2]]
+    assert all(s.probability_weight == Decimal("0.0025") for s in new_samples)
+    assert all(s.probability_weight == Decimal("0.005") for s in old_samples)
+    assert execute_mc_request(project, new_request, tmp_path / "fresh.jsonl").complete
+    assert reused == (tmp_path / "fresh.jsonl").read_bytes()
+    assert (tmp_path / "original-ledger.jsonl").is_file()
+
+    with pytest.raises(MCRunError, match="parent"):
+        extend_mc_execution(
+            project, old_request, old_ledger, old_request, tmp_path / "not-an-extension.jsonl"
+        )
+    assert not (tmp_path / "not-an-extension.jsonl").exists()

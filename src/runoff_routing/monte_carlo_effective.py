@@ -237,9 +237,17 @@ class MCRequestHeader:
     populations: tuple[MCPopulation, ...]
     event_count: int
     strata: tuple[MCAllocation, ...] = ()
+    sample_population_id: str | None = None
+    parent_plan_sha256: str | None = None
 
     def __post_init__(self) -> None:
         _sha(self.plan_sha256, "plan_sha256")
+        if self.sample_population_id is not None:
+            _sha(self.sample_population_id, "sample_population_id")
+        if self.parent_plan_sha256 is not None:
+            _sha(self.parent_plan_sha256, "parent_plan_sha256")
+        if self.parent_plan_sha256 == self.plan_sha256:
+            _fail("An extended plan must have a new immutable revision hash")
         _name(self.policy_id, "policy_id")
         _int(self.event_count, "event_count")
         if not self.populations:
@@ -263,6 +271,8 @@ class MCRequestHeader:
             "populations": [item.to_dict() for item in self.populations],
             "event_count": self.event_count,
             "strata": [item.to_dict() for item in self.strata],
+            "sample_population_id": self.sample_population_id,
+            "parent_plan_sha256": self.parent_plan_sha256,
         }
 
 
@@ -372,7 +382,11 @@ class EffectiveMCEvent:
         depths = cast("list[object]", depths)
         if sum((_decimal(v, "pattern percentage") for v in percentages), Decimal(0)) != 100:
             _fail("Original pattern percentages must total exactly 100, without renormalisation")
-        total = self.gross_depth_mm * self.arf_factor
+        # #136 first distributes each gross increment, then applies one ARF,
+        # and sums the adjusted increments. Direct gross*ARF may differ by
+        # a final Decimal rounding digit for otherwise identical rainfall.
+        gross_increments = (self.gross_depth_mm * _decimal(v, "pattern percentage") / 100 for v in percentages)
+        total = sum((increment * self.arf_factor for increment in gross_increments), Decimal(0))
         if any(_decimal(v, "areal rainfall") != total for v in depths):
             _fail("Every pervious subarea needs gross rainfall multiplied by ARF exactly once")
         timestep = _decimal(storm["timestep_hours"], "timestep_hours", positive=True)
@@ -414,6 +428,13 @@ class EffectiveMCEvent:
                 "losses": dict(self.event.losses or {}),
             },
         }
+
+    def computation_digest(self) -> str:
+        """Identify exact immutable routed inputs independent of the new plan allocation."""
+        payload = self.to_dict()
+        payload.pop("stratum_size")
+        payload.pop("probability_weight")
+        return hashlib.sha256(encode_jsonl_line(payload)).hexdigest()
 
     def digest(self) -> str:
         """Bind a result to all exact effective inputs, not merely its logical sample ID."""
@@ -473,6 +494,8 @@ def read_header(path: Path) -> MCRequestHeader:
             "populations",
             "event_count",
             "strata",
+            "sample_population_id",
+            "parent_plan_sha256",
         },
         "MC header",
     )
@@ -503,6 +526,12 @@ def read_header(path: Path) -> MCRequestHeader:
         populations=populations,
         event_count=_int(data["event_count"], "event count"),
         strata=allocations,
+        sample_population_id=(
+            None if data["sample_population_id"] is None else _sha(data["sample_population_id"], "population hash")
+        ),
+        parent_plan_sha256=(
+            None if data["parent_plan_sha256"] is None else _sha(data["parent_plan_sha256"], "parent hash")
+        ),
     )
 
 
