@@ -12,6 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import cast
 
+from runoff_routing._cmd644.precision import store
 from runoff_routing._cmd644.preparation import prepare
 from runoff_routing.cmd_engine import adapt_event
 from runoff_routing.engine_execution import run_engine_project
@@ -37,7 +38,7 @@ def _event_source() -> RunModel:
     assert isinstance(template, RunModel)
     storm = replace(
         template.storm,
-        title="Authored PR16 CATG adapter control, not a retained native storm",
+        title="Authored PR16 CATG adapter control not a retained native storm",
         timestep_hours=Decimal("0.25"),
         calculation_increments=40,
         subarea_ids=tuple(source.identifier for source in catchment.subareas),
@@ -57,7 +58,7 @@ def test_original_pyromb_catg_source_admits_code_two_and_fi_without_substitution
     assert event.source_count == 6
     assert event.reach_count == 7
     assert tuple(value.lexeme for value in event.impervious) == ("0", "0.50000", "0.20000", "0", "0", "0")
-    assert tuple(value.stored for value in event.impervious) == (0.0, 0.5, 0.2, 0.0, 0.0, 0.0)
+    assert tuple(value.stored for value in event.impervious) == (0.0, 0.5, store(0.2), 0.0, 0.0, 0.0)
     assert len(event.weights) == 2
     assert tuple(value.stored for value in event.depths) == (20.0,) * 6
     prepared = prepare(event)
