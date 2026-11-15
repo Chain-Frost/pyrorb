@@ -253,9 +253,9 @@ def test_original_rorbwin_652_reports_preserve_rows_frequencies_and_representati
     assert len(representatives.rows) == 8
     frequencies = {str(row["aep_raw"]) for row in runs.rows}
     assert {"50%", "0.5EY", "20%", "0.2EY", "10%", "5%", "2%", "1%"} == frequencies
-    counts = Counter(int(row["Run"]) for row in runs.rows)
+    counts = Counter(int(str(row["Run"])) for row in runs.rows)
     assert counts == dict.fromkeys(range(1, 9), 10)
-    ids = {(int(row["Run"]), str(row["aep_raw"]), int(row["TPat"])) for row in runs.rows}
+    ids = {(int(str(row["Run"])), str(row["aep_raw"]), int(str(row["TPat"]))) for row in runs.rows}
     assert len(ids) == 80
     assert len({str(ref["reference"]) for ref in representatives.rows}) == 8
     assert all(str(ref["reference"]).endswith(".out") for ref in representatives.rows)
