@@ -27,6 +27,8 @@
 
 - [Monte Carlo #9 decomposition and statistical research plan](2026-11-15-issue9-scoping.md) — #145–#150 and the initial method note; no MC code, simulation results or native qualification claimed.
 
+- [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.
+
 ## Retained diagnostic/reference evidence
 
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
