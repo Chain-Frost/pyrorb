@@ -13,17 +13,30 @@ import json
 from dataclasses import replace
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Protocol, cast
 
 import pytest
 
 REFERENCE = Path(__file__).absolute().parent / "fixtures" / "monte-carlo-qualification-v1" / "analytic-controls.json"
 
 
-def _frequency() -> Any:
+class _FrequencyAPI(Protocol):
+    FrequencyScope: Callable[..., Any]
+    StratumWeight: Callable[..., Any]
+    UnmodelledTails: Callable[..., Any]
+    CurvePopulation: Callable[..., Any]
+    PeakRecord: Callable[..., Any]
+    FrequencyInputError: type[Exception]
+    build_frequency_curve: Callable[..., Any]
+    build_frequency_curves: Callable[..., Any]
+    duration_envelope: Callable[..., Any]
+
+
+def _frequency() -> _FrequencyAPI:
     if importlib.util.find_spec("runoff_routing.monte_carlo_frequency") is None:
         pytest.skip("#147 frequency API not integrated in this branch; production comparison not run")
-    return importlib.import_module("runoff_routing.monte_carlo_frequency")
+    return cast("_FrequencyAPI", importlib.import_module("runoff_routing.monte_carlo_frequency"))
 
 
 def _controls() -> dict[str, Any]:
@@ -35,7 +48,7 @@ def _fraction(text: str) -> float:
 
 
 def _population(
-    api: Any, data: dict[str, Any], *, plan: str = "external-fixture-v1", duration: int = 60, site: str = "outlet"
+    api: _FrequencyAPI, data: dict[str, Any], *, plan: str = "external-fixture-v1", duration: int = 60, site: str = "outlet"
 ) -> tuple[Any, tuple[Any, ...]]:
     scope = api.FrequencyScope(plan, "mc150-independent", "1", "synthetic", duration, site)
     strata = tuple(
@@ -117,7 +130,7 @@ def test_plan_extension_uses_new_weights_for_old_sample_ids() -> None:
     )
     assert next(r.event_probability_weight for r in old_records if r.sample_id == "a1") == pytest.approx(0.1)
     assert next(r.event_probability_weight for r in new_records if r.sample_id == "a1") == pytest.approx(0.05)
-    with pytest.raises(api.FrequencyInputError, match="Mismatched plan|Stale or mixed"):
+    with pytest.raises(api.FrequencyInputError, match=r"Mismatched plan|Stale or mixed"):
         api.build_frequency_curve(new_population, old_records)
 
 
