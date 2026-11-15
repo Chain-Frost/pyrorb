@@ -95,7 +95,7 @@ def test_mode_two_round_trip_and_source_level_proportional_excess(tmp_path: Path
     assert result.python_diagnostics["loss_model"] == 2
     assert result.python_diagnostics["runoff_coefficient_stored"] == 0.5
     assert result.python_diagnostics["continuing_loss_mm_h_stored"] is None
-    assert result.python_diagnostics["source_rainfall_excess_mm_stored"][0] == (3.5, 4.0)
+    assert result.python_diagnostics["source_rainfall_excess_mm_stored"] == ((3.5, 4.0),)
 
     # The same numeric 0.5 has different units and meaning in IL/CL mode 1.
     mode_one = replace(model, parameters=replace(model.parameters, loss_model=1))
