@@ -39,7 +39,13 @@ from .monte_carlo_effective import (
     validate_effective_request,
 )
 from .monte_carlo_frequency_bridge import write_mc_frequency
-from .project_batch import ProjectBatchReport, ProjectEvent, iter_project_events, run_project_events, write_batch_results
+from .project_batch import (
+    ProjectBatchReport,
+    ProjectEvent,
+    iter_project_events,
+    run_project_events,
+    write_batch_results,
+)
 from .project_json import LoadedProject, load_project
 
 LEDGER_FORMAT = "python-runoff-routing-mc-event-ledger"
@@ -628,32 +634,34 @@ def extend_mc_execution(
     )
     _existing_prefix(old_ledger_path, old_header, old_request_path)
     old_ledger_hash = sha256_file(old_ledger_path)
-    with tempfile.TemporaryDirectory(prefix="mc149-extend-") as folder:
-        with closing(sqlite3.connect(Path(folder) / "reused-results.sqlite3")) as db:
-            _index_prior_results(db, old_request_path, old_ledger_path)
-            _verify_reusable_samples(db, new_request_path)
-            for event in iter_effective_events(new_request_path):
-                _fixed_parameters(event, loaded)
-            previous = _new_ledger(new_ledger_path, new_header)
-            outcomes = iter_project_events(
-                project_path,
-                _uncached_events(db, new_request_path),
-                selection=selected,
-                wheel_artifact=wheel_artifact,
-            )
-            for event in iter_effective_events(new_request_path):
-                matched = db.execute(
-                    "SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)
-                ).fetchone()
-                if matched is None:
-                    routed = next(outcomes)
-                    if routed.event_id != event.event.event_id:
-                        message = "New event runner output is not the selected effective sample"
-                        raise MCRunError(message)
-                    row = _event_row(event, routed)
-                else:
-                    row = _reweight_cached_record(cast("str", matched[0]), event)
-                previous = _append_ledger(new_ledger_path, row, previous)
+    with (
+        tempfile.TemporaryDirectory(prefix="mc149-extend-") as folder,
+        closing(sqlite3.connect(Path(folder) / "reused-results.sqlite3")) as db,
+    ):
+        _index_prior_results(db, old_request_path, old_ledger_path)
+        _verify_reusable_samples(db, new_request_path)
+        for event in iter_effective_events(new_request_path):
+            _fixed_parameters(event, loaded)
+        previous = _new_ledger(new_ledger_path, new_header)
+        outcomes = iter_project_events(
+            project_path,
+            _uncached_events(db, new_request_path),
+            selection=selected,
+            wheel_artifact=wheel_artifact,
+        )
+        for event in iter_effective_events(new_request_path):
+            matched = db.execute(
+                "SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)
+            ).fetchone()
+            if matched is None:
+                routed = next(outcomes)
+                if routed.event_id != event.event.event_id:
+                    message = "New event runner output is not the selected effective sample"
+                    raise MCRunError(message)
+                row = _event_row(event, routed)
+            else:
+                row = _reweight_cached_record(cast("str", matched[0]), event)
+            previous = _append_ledger(new_ledger_path, row, previous)
     if (
         sha256_file(old_ledger_path) != old_ledger_hash
         or sha256_file(old_request_path) != old_digest
