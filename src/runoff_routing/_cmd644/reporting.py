@@ -28,12 +28,12 @@ class CandidateResult:
     revision: str
 
 
-def execute(event: Event, revision: str) -> CandidateResult:
-    """Execute one event without touching the filesystem or process state."""
-    geometry = compute_geometry(event)
+def execute(event: Event, revision: str, *, geometry: Geometry | None = None) -> CandidateResult:
+    """Execute with optional precomputed immutable geometry and fresh event state."""
+    resolved_geometry = compute_geometry(event) if geometry is None else geometry
     preparation = prepare(event)
-    network = route_network(event, geometry, preparation)
-    return CandidateResult(event, geometry, preparation, network, revision)
+    network = route_network(event, resolved_geometry, preparation)
+    return CandidateResult(event, resolved_geometry, preparation, network, revision)
 
 
 def _rational(value: Fraction) -> str:
@@ -157,8 +157,7 @@ def result_dict(result: CandidateResult) -> dict[str, Any]:
                 for c in prep.crossings
             ],
             "duration_seconds": _stored(prep.seconds),
-            "continuing_allowance_exact": _rational(prep.continuing_allowance) if event.loss_model == 1 else None,
-            "runoff_coefficient_stored": _stored(event.cl.stored) if event.loss_model == 2 else None,
+            "continuing_allowance_exact": _rational(prep.continuing_allowance),
         },
         "reaches": reach_results,
         "outlet": [_stored(x) for x in network.outlet],
