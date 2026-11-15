@@ -53,8 +53,7 @@ def test_canonical_json_and_csv_keep_raw_batch_order_and_frequency(tmp_path: Pat
     assert [row["Run"] for row in rows] == ["1", "1"]
     assert [row["TPat"] for row in rows] == ["1", "2"]
     assert [row["aep_raw"] for row in rows] == ["50%", "50%"]
-    assert rows[0]["source_token__Peak0001"] == "55.3000"
-    assert rows[1]["source_token__Peak0001"] == "6.5D1"
+    assert [row["source_token__Peak0001"] for row in rows] == ["55.3000", "6.5D1"]
     assert path.read_bytes() == original
 
 
@@ -73,7 +72,7 @@ def test_canonical_report_cli_exports_raw_csv_and_preserves_bytes(tmp_path: Path
     assert result.returncode == 0, result.stderr
     entries = list(csv.DictReader(io.StringIO(result.stdout)))
     assert len(entries) == 2
-    assert entries[1]["source_token__Peak0001"] == "6.5D1"
+    assert [entry["source_token__Peak0001"] for entry in entries] == ["55.3000", "6.5D1"]
     assert path.read_bytes() == original
 
 
@@ -101,7 +100,7 @@ def test_report_view_rejects_invalid_selection(tmp_path: Path, section: str, off
     path = tmp_path / "report.out"
     path.write_bytes(_batch())
     document = inspect_report(path)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Report offset|Unknown report section"):
         report_csv(document, section, offset=offset, limit=limit)
 
 
@@ -127,8 +126,10 @@ def test_signed_hydrograph_csv_preserves_source_clock_and_fortran_values(tmp_pat
     rows = list(csv.DictReader(io.StringIO(report_csv(document, "hydrographs"))))
     assert len(rows) == 3
     assert [row["Inc"] for row in rows] == ["0", "1", "2"]
-    assert rows[1]["source_token__Time (hrs)"] == "0.333"
-    assert rows[1]["source_token__Calculated hydrograph: Outlet"] == "5.53D1"
+    assert [
+        rows[1]["source_token__Time (hrs)"],
+        rows[1]["source_token__Calculated hydrograph: Outlet"],
+    ] == ["0.333", "5.53D1"]
     shown = json.loads(report_json(document, section="hydrographs", offset=1, limit=1))
     assert shown["selection"]["rows"][0]["original_tokens"]["Time (hrs)"] == "0.333"
     assert path.read_text(encoding="utf-8") == source
