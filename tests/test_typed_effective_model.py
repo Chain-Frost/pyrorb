@@ -12,8 +12,9 @@ from typing import Any, cast
 import pytest
 
 from runoff_routing.engine_types import EngineKind, EngineSelection, ResultStatus
+from runoff_routing.integration import canonical_run_bytes
 from runoff_routing.project_batch import EventConfigError, ProjectEvent, resolve_effective_model, run_project_events
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, load_project, write_project
 from runoff_routing.rorb_model import (
     ControlCode,
     ControlStep,
@@ -145,3 +146,40 @@ def test_effective_resolver_rejects_incompatible_loss_fields_and_cross_model_ide
         edit_run_model(base, storm=replace(base.storm, subarea_ids=("other",)))
     with pytest.raises(EventConfigError, match="Event ID"):
         resolve_effective_model(base, {"event_id": True})
+
+
+def test_imported_source_bytes_and_provenance_survive_event_edit(tmp_path: Path) -> None:
+    original = _model()
+    names = ("original.par", "original.catg", "original.stm")
+    byte_records = canonical_run_bytes(original)
+    sources: list[SourceFile] = []
+    for name, raw in zip(names, byte_records, strict=True):
+        (tmp_path / name).write_bytes(raw)
+        sources.append(SourceFile(name, hashlib.sha256(raw).hexdigest()))
+    project_path = tmp_path / "imported.json"
+    write_project(
+        project_path,
+        Project(
+            "imported",
+            "legacy-rorb",
+            LegacyRunFiles(sources[0], sources[1], sources[2]),
+        ),
+    )
+    raw_project = project_path.read_bytes()
+    loaded = load_project(project_path)
+    before = tuple((tmp_path / name).read_bytes() for name in names)
+    edited = resolve_effective_model(
+        loaded.run,
+        ProjectEvent("modified", losses={"continuing_loss_mm_h": "0.2"}, routing={"kc": "2.5"}),
+    )
+    assert edited.run != loaded.run
+    assert edited.run.catchment is loaded.run.catchment
+    assert edited.run.storm is loaded.run.storm
+    assert edited.run.parameters.losses[0].continuing == Decimal("0.2")
+    assert edited.run.parameters.routing[0].kc == Decimal("2.5")
+    assert tuple((tmp_path / name).read_bytes() for name in names) == before
+    assert tuple(hashlib.sha256(raw).hexdigest() for raw in before) == tuple(source.sha256 for source in sources)
+    assert project_path.read_bytes() == raw_project
+    reloaded = load_project(project_path)
+    assert reloaded.run == loaded.run
+    assert reloaded.file_hashes == loaded.file_hashes

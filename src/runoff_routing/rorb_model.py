@@ -274,7 +274,7 @@ class ControlStep:
     label: str = ""
 
     def __post_init__(self) -> None:
-        code = _native_code(self.code, ControlCode, "Unrecognised RORB computational control code")
+        code = _native_code(self.code, ControlCode, f"Unsupported control code {self.code}")
         object.__setattr__(self, "code", code)
 
 
