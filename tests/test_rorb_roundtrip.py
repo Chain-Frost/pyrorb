@@ -230,16 +230,21 @@ def test_duplicate_json_identifiers_and_impossible_controls_rejected() -> None:
         replace(model, subareas=(SubArea("area_1", Decimal(0)), *model.subareas[1:]))
 
 
-def test_s2_boundary_converts_once_and_rejects_unverified_losses() -> None:
+def test_s2_boundary_converts_once_and_keeps_loss_modes_distinct() -> None:
     run = _run()
     adapter = to_s2_payload(run)
     assert adapter.controls == ((1, 5.0), (3, 0.0), (1, 4.0), (4, 0.0), (5, 2.5), (7, 0.0))
     assert adapter.areas_km2 == (30.0, 20.0)
     assert adapter.kc == 12.0
-    supported_mode_two_loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
-    unsupported = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(supported_mode_two_loss,)))
-    with pytest.raises(ValueError, match="IL/CL"):
-        to_s2_payload(unsupported)
+    # Coefficient validity is checked by S1 before numerical selection.
+    with pytest.raises(ValueError, match="Runoff coefficient"):
+        replace(run.parameters, loss_model=2)
+    loss = replace(run.parameters.losses[0], continuing=Decimal("0.5"))
+    mode_two = replace(run, parameters=replace(run.parameters, loss_model=2, losses=(loss,)))
+    admitted = to_s2_payload(mode_two)
+    assert admitted.continuing_loss_mm_h == 0
+    assert admitted.runoff_coefficient == 0.5
+    assert adapter.runoff_coefficient is None
 
 
 def test_s2_float_boundary_rejects_nonzero_underflow() -> None:

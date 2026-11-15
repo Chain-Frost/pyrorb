@@ -2,19 +2,9 @@
 
 **Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
+**Current programme (15 November 2026):** #119 CLI/text-file MVP and #136 bounded deterministic ARR/BoM software have merged. The reviewed original CMD 6.44 `python-cmd` result remains **50/50 printed Q / 19,550 ordinates, 48 complete scalars and two undefined zero-flow peak times**, not full #5 acceptance. The curated #133 original PR16 bytes and eight CMD native captures remain **unadmitted gaps**. The later [actual #137 execution receipt](2026-11-15-issue137-actual-execution.md) documents 60/60 source/wheel matches but 1,320 differing native-written rain increments; #137/#8 input/routed qualification remains open. #152 owns downstream deterministic reporting. #9 Monte Carlo is separately staged, not delivered to `main`. See [current status](../STATUS.md), [single CMD matrix](../CMD_FEATURE_MATRIX.md) and [programme receipt](2026-11-15-programme-current-reconciliation.md).
+
 ## Current implementation / regression receipts
-
-- [Canonical report reader (#142)](2026-11-15-canonical-rorb-adoption.md) — separate source owner; synthetic integration test snapshot only.
-
-- [Portable CMD export (#141)](2026-11-15-issue141-native-export.md) — separate source owner; synthetic integration test snapshot only.
-
-- [PAR-led import (#140)](2026-11-15-issue140-par-projects.md) — separate source owner; synthetic integration test snapshot only.
-
-- [PyRomb CATG writer (#139)](2026-11-15-issue139-pyromb-writer.md) — separate source owner; synthetic integration test snapshot only.
-
-- [Typed effective settings (#138)](2026-11-15-issue138-types-and-editing.md) — separate source owner; synthetic integration test snapshot only.
-
-- [Independent S5 contract acceptance (#143)](2026-11-15-issue143-s5-acceptance.md) — currently unmerged acceptance PR #160; native Windows execution pending.
 
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
@@ -34,9 +24,10 @@
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
-- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
+- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, archived source/print audit; **at the time of that preflight**, merged-#136 software execution had not run. Later actual execution and remaining native parity limits are recorded above.
 
-- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
+- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; distinguish historical concern from later merged #135 comparator review.
+- [Current programme documentation reconciliation](2026-11-15-programme-current-reconciliation.md) — #1/#5 current owner map and evidence separation; original historical receipts remain dated.
 
 ## Retained diagnostic/reference evidence
 - [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) — original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.

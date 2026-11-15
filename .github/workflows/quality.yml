@@ -31,6 +31,8 @@ jobs:
         run: python repo-scripts/check_local.py
       - name: Verify fresh source CMD 36-case regression (fail-closed)
         run: python repo-scripts/cmd_public_probe.py
+      - name: Independent Python/original CMD deviation (diagnostic, not acceptance)
+        run: python -m pytest -q -s tests/test_python96_original_deviation.py
       - name: Build wheel
         run: python -m build --wheel
       - name: Verify installed wheel outside checkout
