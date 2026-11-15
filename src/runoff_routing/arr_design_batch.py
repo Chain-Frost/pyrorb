@@ -137,9 +137,12 @@ def _file(config_path: Path, value: object, label: str) -> Path:
 
 
 def _axis(value: object, label: str, limit: int) -> list[object]:
-    if not isinstance(value, list) or not 1 <= len(value) <= limit:
+    if not isinstance(value, list):
+        _fail(f"{label} must be a JSON array")
+    items = cast("list[object]", value)
+    if not 1 <= len(items) <= limit:
         _fail(f"{label} must contain between one and {limit} values")
-    return cast("list[object]", value)
+    return items
 
 
 def _read_loss_config(
@@ -170,8 +173,8 @@ def _read_loss_config(
         raw_policy = loss["excess_policy"]
         if raw_policy not in ("reject", "clamp_burst_il_to_zero"):
             _fail("Unsupported excess-preburst policy")
-        percentile = cast("Literal[10, 25, 50, 75, 90]", raw_percentile)
-        excess_policy = cast("Literal['reject', 'clamp_burst_il_to_zero']", raw_policy)
+        percentile = raw_percentile
+        excess_policy = raw_policy
         legacy_path = _file(config_path, loss["arr_txt"], "loss.arr_txt")
     return cast("LossProfile", mode), legacy_path, percentile, excess_policy
 
@@ -233,7 +236,7 @@ def read_design_config(path: Path) -> DesignConfig:
         project=_file(path, source["project"], "project"),
         bom_ifd=_file(path, source["bom_ifd"], "bom_ifd"),
         temporal_patterns=_file(path, source["temporal_patterns"], "temporal_patterns"),
-        pattern_kind=cast("PatternKind", kind),
+        pattern_kind=kind,
         temporal_region=_string(source["temporal_region"], "temporal_region"),
         arf_region=_string(source["arf_region"], "arf_region"),
         catchment_area_km2=_decimal(source["catchment_area_km2"], "catchment_area_km2"),
@@ -241,7 +244,7 @@ def read_design_config(path: Path) -> DesignConfig:
         aep_labels=labels,
         dry_tail_min=dry_tail,
         engine=selected,
-        loss_profile=cast("LossProfile", mode),
+        loss_profile=mode,
         legacy_arr_txt=legacy_path,
         preburst_percentile=percentile,
         excess_policy=excess_policy,
@@ -474,7 +477,7 @@ def _prepare_cell(
         stage = "ensemble_selection" if ensemble is None else "effective_event_preparation"
         cell, rejected = _cell_failure(duration, aep_label, stage, exc, ensemble.patterns if ensemble else ())
         return cell, [], rejected
-    cell = {
+    cell: dict[str, object] = {
         "duration_min": duration,
         "aep_label": aep_label,
         "aep_percent": str(ensemble.aep_percent),

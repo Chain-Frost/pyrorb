@@ -6,10 +6,12 @@ import hashlib
 import json
 from decimal import Decimal
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
 from runoff_routing.arr_design_batch import (
+    DesignBatchResult,
     DesignConfigError,
     read_design_config,
     run_design_batch,
@@ -25,6 +27,11 @@ IFD = EXAMPLES / "arr-design-synthetic-ifd.csv"
 PATTERNS = EXAMPLES / "arr-design-synthetic-patterns.csv"
 MODEL = EXAMPLES / "synthetic-run.json"
 LEGACY = Path(__file__).parent / "fixtures" / "arr" / "2016-era-synthetic.txt"
+
+
+def _audit(result: DesignBatchResult) -> dict[str, Any]:
+    """Test-only nested JSON manifest view; preserve typed model interfaces."""
+    return cast("dict[str, Any]", result.effective)
 
 
 def _project(directory: Path) -> Path:
@@ -67,23 +74,23 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     config, _ = _config(tmp_path)
     result = run_design_batch(config)
     assert result.succeeded
-    assert result.effective["expected_population"] == 40
-    assert result.effective["prepared_population"] == 40
-    assert result.effective["input_population_complete"] is True
+    assert _audit(result)["expected_population"] == 40
+    assert _audit(result)["prepared_population"] == 40
+    assert _audit(result)["input_population_complete"] is True
     assert all(item.status == "computed_unvalidated" for item in result.routed.outcomes)
-    records = result.effective["members"]
+    records = _audit(result)["members"]
     assert isinstance(records, list)
     assert [record["original_tp_id"] for record in records[:10]] == [f"{value:04d}" for value in range(1, 11)]
     assert [record["source_order"] for record in records[:10]] == list(range(1, 11))
     assert [record["ensemble_order"] for record in records[:10]] == list(range(1, 11))
     assert [record["original_tp_id"] for record in records[20:30]] == [f"{value:04d}" for value in range(101, 111)]
-    assert [item["status"] for item in result.effective["cells"]] == ["ready"] * 4
+    assert [item["status"] for item in _audit(result)["cells"]] == ["ready"] * 4
     assert len({outcome.event_id for outcome in result.routed.outcomes}) == 40
-    assert result.effective["generated_input_reference_status"] == "not_assessed"
-    assert result.effective["critical_duration_rule"] == "not_selected_unverified"
-    assert result.effective["representative_event_rule"] == "not_selected_unverified"
+    assert _audit(result)["generated_input_reference_status"] == "not_assessed"
+    assert _audit(result)["critical_duration_rule"] == "not_selected_unverified"
+    assert _audit(result)["representative_event_rule"] == "not_selected_unverified"
 
-    sources = result.effective["source_files"]
+    sources = _audit(result)["source_files"]
     assert sources["bom_ifd"]["sha256"] == hashlib.sha256(IFD.read_bytes()).hexdigest()
     assert sources["temporal_patterns"]["sha256"] == hashlib.sha256(PATTERNS.read_bytes()).hexdigest()
     assert sources["temporal_patterns"]["members"][0]["sha256"] == hashlib.sha256(PATTERNS.read_bytes()).hexdigest()
@@ -122,14 +129,14 @@ def test_missing_tenth_tp_is_incomplete_without_substitution(tmp_path: Path) -> 
     config, _ = _config(tmp_path, patterns=source)
     result = run_design_batch(config)
     assert not result.succeeded
-    assert result.effective["expected_population"] == 40
-    assert result.effective["prepared_population"] == 20
-    assert [cell["status"] for cell in result.effective["cells"]] == ["ready", "ready", "input_error", "input_error"]
-    assert all(cell["expected_count"] == 10 for cell in result.effective["cells"])
-    assert all(cell["ready_count"] == 0 for cell in result.effective["cells"][2:])
+    assert _audit(result)["expected_population"] == 40
+    assert _audit(result)["prepared_population"] == 20
+    assert [cell["status"] for cell in _audit(result)["cells"]] == ["ready", "ready", "input_error", "input_error"]
+    assert all(cell["expected_count"] == 10 for cell in _audit(result)["cells"])
+    assert all(cell["ready_count"] == 0 for cell in _audit(result)["cells"][2:])
     assert len(result.routed.outcomes) == 20
     assert all(outcome.status == "computed_unvalidated" for outcome in result.routed.outcomes)
-    assert result.effective["status"] == "incomplete"
+    assert _audit(result)["status"] == "incomplete"
     write_design_outputs(tmp_path / "incomplete", result)
     assert "FAILED 120 min" in (tmp_path / "incomplete.summary.txt").read_text()
     assert (tmp_path / "incomplete.events.json").exists()
@@ -141,11 +148,11 @@ def test_source_label_does_not_convert_ey_to_aep(tmp_path: Path) -> None:
     _write_config(config, data)
     result = run_design_batch(config)
     assert not result.succeeded
-    assert result.effective["expected_population"] == 20
-    assert result.effective["prepared_population"] == 0
+    assert _audit(result)["expected_population"] == 20
+    assert _audit(result)["prepared_population"] == 0
     assert len(result.routed.outcomes) == 0
-    assert all(cell["status"] == "input_error" for cell in result.effective["cells"])
-    assert all("not present" in cell["error"] for cell in result.effective["cells"])
+    assert all(cell["status"] == "input_error" for cell in _audit(result)["cells"])
+    assert all("not present" in cell["error"] for cell in _audit(result)["cells"])
 
 
 @pytest.mark.parametrize(
@@ -166,7 +173,7 @@ def test_legacy_burst_only_losses_applied_by_engine_once(
     result = run_design_batch(config)
     assert result.succeeded
     assert len(result.routed.outcomes) == 10
-    for record in result.effective["members"]:
+    for record in _audit(result)["members"]:
         applied = record["loss"]
         assert applied["preburst_source_depth_mm"] == "7.00"
         assert applied["storm_initial_loss_mm"] == "21.0"
@@ -179,7 +186,7 @@ def test_legacy_burst_only_losses_applied_by_engine_once(
             assert applied["rainfall_basis_total_mm"] == record["areal_total_mm"]
         assert record["effective_losses"]["initial_loss_mm"] == applied["burst_initial_loss_mm"]
         assert record["engine_loss_application"] == "once_by_selected_engine"
-    assert result.effective["source_files"]["legacy_arr"]["sha256"] == hashlib.sha256(LEGACY.read_bytes()).hexdigest()
+    assert _audit(result)["source_files"]["legacy_arr"]["sha256"] == hashlib.sha256(LEGACY.read_bytes()).hexdigest()
 
 
 def test_unsafe_or_unsupported_config_rejected_before_execution(tmp_path: Path) -> None:
@@ -206,6 +213,6 @@ def test_missing_arf_or_time_grid_is_explicit_failure(tmp_path: Path) -> None:
     _write_config(config, data)
     result = run_design_batch(config)
     assert not result.succeeded
-    assert result.effective["prepared_population"] == 0
-    assert all(cell["status"] == "input_error" for cell in result.effective["cells"])
-    assert all("dry tail" in cell["error"] for cell in result.effective["cells"])
+    assert _audit(result)["prepared_population"] == 0
+    assert all(cell["status"] == "input_error" for cell in _audit(result)["cells"])
+    assert all("dry tail" in cell["error"] for cell in _audit(result)["cells"])
