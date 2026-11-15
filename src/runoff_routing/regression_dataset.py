@@ -12,7 +12,6 @@ import gzip
 import hashlib
 import importlib.util
 import json
-import math
 import platform
 import re
 import sys

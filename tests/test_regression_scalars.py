@@ -44,7 +44,7 @@ def test_cmd_scalar_reporting_clock_matches_independently_retained_binary32_conv
 
 @pytest.mark.parametrize("source_hours", ["0", "-0.2", "NaN", "Infinity", "1e-9999", "1e9999"])
 def test_cmd_scalar_reporting_clock_rejects_unrepresentable_timesteps(source_hours: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="CMD source timestep|CMD scalar timestep"):
         stored_cmd_reporting_clock(Decimal(source_hours))
 
 
