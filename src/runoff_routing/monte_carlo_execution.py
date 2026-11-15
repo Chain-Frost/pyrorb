@@ -26,9 +26,9 @@ from .engine_types import EngineOutcome, EngineSelection
 from .monte_carlo_effective import (
     MAX_LINE_BYTES,
     EffectiveMCEvent,
-    _digest_file,
-    _json_line,
-    _line_json,
+    encode_jsonl_line,
+    parse_jsonl_line,
+    sha256_file,
     iter_effective_events,
     read_header,
     validate_effective_request,
@@ -195,17 +195,21 @@ def _read_ledger(path: Path) -> Iterator[dict[str, object]]:
         if not first:
             message = "Empty MC ledger"
             raise MCRunError(message)
-        raw_header = _line_json(first)
+        raw_header = parse_jsonl_line(first)
         if not isinstance(raw_header, dict):
             message = "Invalid MC ledger header"
             raise MCRunError(message)
         yield cast("dict[str, object]", raw_header)
         for ordinal, raw in enumerate(iter(lambda: stream.readline(MAX_LINE_BYTES + 1), b""), start=1):
-            parsed = _line_json(raw)
-            if not isinstance(parsed, dict) or set(parsed) != _LEDGER_ROW_KEYS:
+            parsed = parse_jsonl_line(raw)
+            if not isinstance(parsed, dict):
                 message = f"Invalid ledger event record at row {ordinal}"
                 raise MCRunError(message)
-            yield cast("dict[str, object]", parsed)
+            row = cast("dict[str, object]", parsed)
+            if set(row) != _LEDGER_ROW_KEYS:
+                message = f"Invalid ledger event record at row {ordinal}"
+                raise MCRunError(message)
+            yield row
 
 
 def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path) -> int:
@@ -245,13 +249,13 @@ def _new_ledger(path: Path, header: dict[str, object]) -> None:
         message = "MC ledger already exists; specify --resume for an unchanged plan"
         raise MCRunError(message)
     with path.open("xb") as stream:
-        stream.write(_json_line(header))
+        stream.write(encode_jsonl_line(header))
         stream.flush()
         os.fsync(stream.fileno())
 
 
 def _append_ledger(path: Path, record: dict[str, object]) -> None:
-    encoded = _json_line(record)
+    encoded = encode_jsonl_line(record)
     if len(encoded) > MAX_LINE_BYTES:
         message = "Compact MC ledger record exceeds bounded line length"
         raise MCRunError(message)
@@ -275,11 +279,17 @@ def summarise_ledger(path: Path, request_path: Path, expected: dict[str, object]
             raise MCRunError(message)
         counts[status] += 1
         sites = record["sites"]
+        if not isinstance(sites, list):
+            message = "Invalid MC ledger site collection"
+            raise MCRunError(message)
+        sites_list = cast("list[object]", sites)
         if (
             status == _STATUS_OK
-            and isinstance(sites, list)
-            and sites
-            and all(isinstance(site, dict) and site.get("peak_m3_s") == 0 for site in sites)
+            and sites_list
+            and all(
+                isinstance(site, dict) and cast("dict[str, object]", site).get("peak_m3_s") == 0
+                for site in sites_list
+            )
         ):
             zeros += 1
     return MCRunSummary(
@@ -335,7 +345,7 @@ def execute_mc_request(
             message = "Existing runner returned an outcome with a different event ID"
             raise MCRunError(message)
         _append_ledger(ledger_path, _event_row(record, outcome))
-    if _digest_file(request_path) != request_hash:
+    if sha256_file(request_path) != request_hash:
         message = "MC request changed during execution; checkpoint is not reusable"
         raise MCRunError(message)
     return summarise_ledger(ledger_path, request_path, header)

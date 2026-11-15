@@ -7,6 +7,7 @@ import json
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -121,7 +122,8 @@ def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Pat
     ledger = tmp_path / "ledger.jsonl"
     report = execute_mc_request(project, request, ledger)
     assert report.complete
-    assert _rows(ledger)[1]["sites"][0]["peak_m3_s"] == max(direct.hydrographs[0].discharge_m3_s)
+    site_records = cast("list[dict[str, object]]", _rows(ledger)[1]["sites"])
+    assert site_records[0]["peak_m3_s"] == max(direct.hydrographs[0].discharge_m3_s)
     prefix = tmp_path / "selected"
     replayed = replay_mc_event(project, request, ledger, sample.sample_id, prefix, selection=CMD)
     assert replayed.outcomes[0].model_sha256 == direct.model_sha256

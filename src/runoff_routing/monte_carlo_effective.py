@@ -73,9 +73,12 @@ def _sha(value: object, label: str) -> str:
 
 
 def _obj(value: object, keys: set[str], label: str) -> dict[str, object]:
-    if not isinstance(value, dict) or set(value) != keys:
+    if not isinstance(value, dict):
+        _fail(f"{label} must be a JSON object")
+    data = cast("dict[str, object]", value)
+    if set(data) != keys:
         _fail(f"{label} has an unsupported shape; expected {sorted(keys)}")
-    return cast("dict[str, object]", value)
+    return data
 
 
 def _pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -91,7 +94,7 @@ def _constant(value: str) -> Never:
     _fail(f"Nonstandard JSON constant: {value}")
 
 
-def _line_json(raw: bytes) -> object:
+def parse_jsonl_line(raw: bytes) -> object:
     if not raw.endswith(b"\n") or not 1 <= len(raw) <= MAX_LINE_BYTES:
         _fail("Every effective-event JSONL record must end with newline and fit in 64 KiB")
     try:
@@ -101,7 +104,7 @@ def _line_json(raw: bytes) -> object:
         raise MCInputError(message) from exc
 
 
-def _json_line(value: object) -> bytes:
+def encode_jsonl_line(value: object) -> bytes:
     return (
         json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
     ).encode("utf-8")
@@ -252,6 +255,8 @@ class EffectiveMCEvent:
             _fail("Effective rainfall increments and subarea depths must be nonempty arrays")
         if sum((_decimal(v, "pattern percentage") for v in percentages), Decimal(0)) != 100:
             _fail("Original pattern percentages must total exactly 100, without renormalisation")
+        percentages = cast("list[object]", percentages)
+        depths = cast("list[object]", depths)
         total = self.gross_depth_mm * self.arf_factor
         if any(_decimal(v, "areal rainfall") != total for v in depths):
             _fail("Every pervious subarea needs gross rainfall multiplied by ARF exactly once")
@@ -292,14 +297,14 @@ class EffectiveMCEvent:
 
     def digest(self) -> str:
         """Bind a result to all exact effective inputs, not merely its logical sample ID."""
-        return hashlib.sha256(_json_line(self.to_dict())).hexdigest()
+        return hashlib.sha256(encode_jsonl_line(self.to_dict())).hexdigest()
 
 
 def read_header(path: Path) -> MCRequestHeader:
     with path.open("rb") as stream:
         raw = stream.readline(MAX_LINE_BYTES + 1)
     data = _obj(
-        _line_json(raw),
+        parse_jsonl_line(raw),
         {"format", "schema_version", "plan_sha256", "policy_id", "source_files", "populations", "event_count"},
         "MC header",
     )
@@ -313,12 +318,14 @@ def read_header(path: Path) -> MCRequestHeader:
     raw_populations = data["populations"]
     if not isinstance(raw_sources, list) or not isinstance(raw_populations, list):
         _fail("MC header source_files and populations must be arrays")
+    source_items = cast("list[object]", raw_sources)
+    population_items = cast("list[object]", raw_populations)
     sources = tuple(
         SourceFile(
             cast("str", _obj(item, {"path", "sha256"}, "source file")["path"]),
             _sha(_obj(item, {"path", "sha256"}, "source file")["sha256"], "source sha256"),
         )
-        for item in raw_sources
+        for item in source_items
     )
     populations = tuple(
         MCPopulation(
@@ -330,7 +337,7 @@ def read_header(path: Path) -> MCRequestHeader:
                 _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["modelled_mass"], "mass"
             ),
         )
-        for item in raw_populations
+        for item in population_items
     )
     return MCRequestHeader(
         plan_sha256=_sha(data["plan_sha256"], "plan hash"),
@@ -403,10 +410,10 @@ def iter_effective_events(path: Path) -> Iterator[EffectiveMCEvent]:
         for ordinal, raw in enumerate(iter(lambda: stream.readline(MAX_LINE_BYTES + 1), b""), start=1):
             if not raw or len(raw) > MAX_LINE_BYTES:
                 _fail(f"Effective record {ordinal} exceeds 64 KiB")
-            yield _event_from_dict(_line_json(raw))
+            yield _event_from_dict(parse_jsonl_line(raw))
 
 
-def _digest_file(path: Path) -> str:
+def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -419,7 +426,7 @@ def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     header = read_header(path)
     for source in header.source_files:
         candidate = path.absolute().parent / source.path
-        if not candidate.is_file() or candidate.is_symlink() or _digest_file(candidate) != source.sha256:
+        if not candidate.is_file() or candidate.is_symlink() or sha256_file(candidate) != source.sha256:
             _fail(f"MC source is missing, modified or a symlink: {source.path}")
     target = {(p.scenario_id, p.duration_min): p.modelled_mass for p in header.populations}
     strata: dict[tuple[str, int, str], tuple[Decimal, int, int]] = {}
@@ -444,7 +451,7 @@ def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
         sums[(scenario, duration)] += mass
     if sums != target:
         _fail("A scenario/duration population omits probability strata or exceeds declared modelled mass")
-    return header, _digest_file(path)
+    return header, sha256_file(path)
 
 
 def write_effective_request(path: Path, header: MCRequestHeader, records: Iterable[EffectiveMCEvent]) -> None:
@@ -453,13 +460,13 @@ def write_effective_request(path: Path, header: MCRequestHeader, records: Iterab
     try:
         with path.open("xb") as stream:
             created = True
-            stream.write(_json_line(header.to_dict()))
+            stream.write(encode_jsonl_line(header.to_dict()))
             count = 0
             for item in records:
                 count += 1
                 if count > header.event_count:
                     _fail("Too many explicit events for header")
-                encoded = _json_line(item.to_dict())
+                encoded = encode_jsonl_line(item.to_dict())
                 if len(encoded) > MAX_LINE_BYTES:
                     _fail("Oversized explicit MC event")
                 stream.write(encoded)
@@ -507,7 +514,7 @@ def materialise_arr_sample(
         or model.storm.pattern_basis != "percent_of_depth"
     ):
         _fail("MC materialisation requires one pervious ISA/burst/pluviograph with IL/CL")
-    if not isinstance(dry_tail_min, int) or isinstance(dry_tail_min, bool) or dry_tail_min < 0:
+    if type(dry_tail_min) is not int or dry_tail_min < 0:
         _fail("dry_tail_min must be a nonnegative whole number")
     _sha(bom_source_sha256, "BoM input SHA-256")
     if pattern_source_order <= 0 or pattern_source_order > len(pattern_set.patterns):
