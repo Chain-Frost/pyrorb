@@ -2,7 +2,7 @@
 
 These commands apply to the public repository and need no private workspace. Python 3.13 **or** 3.14 on Linux **or** Windows is sufficient for pure-Python checks; use the interpreter's actual `python`, `py -3.13` or `py -3.14` command as appropriate. Only native RORB/Windows-specific integration needs a Windows host.
 
-**Development priority:** [MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) is **CLI/text-file only**. The exact five-case original CMD seed (1,805 printed rows), four authored safeguards and planned batch/negative tests are defined in the [single backlog](BACKLOG.md). They are acceptance requirements for the *next* combined implementation, not claims that the complete CLI/batch path already exists. Advanced #114–#118 are post-MVP; ordinary PR16 code-2/per-source impervious remains active #96. The [single CMD matrix](CMD_FEATURE_MATRIX.md) separately retains full feature evidence and unknowns. There is no GUI requirement.
+**Current delivery:** CLI/text-file MVP [#119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) / [merged #128](https://github.com/Chain-Frost/python-runoff-routing/pull/128) is completed, including direct CLI acceptance of five original CMD cases / **1,805 ordinates**. [#136](https://github.com/Chain-Frost/python-runoff-routing/pull/136) now adds bounded ARR2019/BoM deterministic design-ensemble software. `python-cmd/cmd-6.44` is the temporary new-project default, independent `python/engineering-v1` the explicit future intended default. Full CMD-native #5 and original rainfall/routed qualification #137/#8 remain open. No GUI work.
 
 ## 1. Installation and quality
 
@@ -22,7 +22,7 @@ from pathlib import Path
 from runoff_routing.integration import read_run_json, run_model
 
 run = read_run_json(Path("examples/synthetic-run.json").read_text(encoding="utf-8"))
-report = run_model(run)  # default Python reference/engineering calculation
+report = run_model(run)  # direct S2 engineering API, not the schema-2 project default
 print(report.to_csv())
 ```
 
@@ -51,9 +51,27 @@ python -m runoff_routing.project_json run cmd-example-project.json cmd-example-r
 
 Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
 
-## 4. Explicit-event batches
+## 4. Delivered explicit-event batches and ARR design rainfall
 
-The independent `python/engineering-v1` engine has a **supported bounded, non-accelerated explicit-event batch API** from [merged PR #99](https://github.com/Chain-Frost/python-runoff-routing/pull/99). Use `prepare_catchment(...)` once, then `run_explicit_batch(prepared, events)` or stream with `iter_explicit_events(...)` for bounded memory. Each `ExplicitEvent` provides a stable ID, explicit Storm and per-event Losses; outcomes independently identify computed/invalid/numerical failures without cross-event state leaks. Full examples, limitations and measured workload are in [ENGINEERING_BATCHES.md](ENGINEERING_BATCHES.md). This is **not** generated ARR rainfall, Monte Carlo or full CMD acceptance; the bounded [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) stage is closed, [#103](https://github.com/Chain-Frost/python-runoff-routing/issues/103) retains deferred physical-volume/continuity work and [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) retains full feature qualification.
+From the checkout with the public package installed, [#119's completed workflow](PROJECT_BATCH_MVP.md) runs ordered selected-engine event files, and outputs no-overwrite JSON/CSV/text:
+
+```sh
+python examples/create_cmd_project.py
+mkdir -p .local
+python -m runoff_routing.project_batch cmd-example-project.json .local/mvp-results --events examples/mvp-events.json
+python -m runoff_routing.project_batch cmd-example-project.json .local/eng-results --events examples/mvp-events.json --engine python --numerical-profile engineering-v1
+```
+
+With no override, the temporary default is `python-cmd/cmd-6.44`. Choose unused prefixes for each run. `examples/mvp-events-with-failure.json` is a deliberate failure-isolation/non-success aggregate example; it preserves the other event outcomes rather than aborting the batch.
+
+The [merged #136 design workflow](ARR_DESIGN_BATCH.md) produces replayable explicit-event requests for the same #119 runner:
+
+```sh
+python -m runoff_routing.arr_design_batch examples/arr-design-config.json .local/arr-design
+python -m runoff_routing.project_batch cmd-example-project.json .local/arr-replayed --events .local/arr-design.events.json --engine python-cmd
+```
+
+Its synthetic source CSVs are **not** real design rainfall. Six generated artifacts preserve original source/effective precipitation, ten-member event IDs, statuses and complete routing reports; native effective-storm/routed scientific qualification and selection rules remain #137/#8. The separate [engineering explicit prepared-batch API](ENGINEERING_BATCHES.md) from completed #6/#99 remains available, but does not establish Monte Carlo or complete CMD physical acceptance.
 
 ## 5. Public cached regression and mathematical controls
 

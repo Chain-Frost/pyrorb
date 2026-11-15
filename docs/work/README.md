@@ -2,6 +2,8 @@
 
 **Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
+**Current programme (after #133 and #137 merges):** #119 CLI/text-file MVP and #136 bounded ARR design software are delivered. Current independently reviewed original CMD `python-cmd` source/wheel remains **50 printed Q / 19,550 ordinates, 48 complete scalars / two undefined all-zero peak-time incompletes**. Merged #133 curates eight authenticated native CMD captures and exact upstream PR16 2,818-byte exporter input into a 254-file index, retaining eight unadmitted native gaps. Merged #137 preflight authenticates the archived 60 RORBwin storm source files, **not** #136 generated-input/routed parity. Use [status](../STATUS.md), [backlog](../BACKLOG.md), the [single matrix](../CMD_FEATURE_MATRIX.md) and [native closeout](2026-11-15-independent-native-closeout.md) for the separate evidence claims.
+
 ## Current implementation / regression receipts
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
@@ -22,7 +24,8 @@
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
 - [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
 
-- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
+- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — earlier initial binary32/p53 clock-binding concern; later independently reviewed and merged #135 without changing goldens.
+- [Current programme documentation reconciliation](2026-11-15-programme-current-reconciliation.md) — dated #1/#5, owners and evidence alignment after #133/#137, not a second matrix.
 
 ## Retained diagnostic/reference evidence
 
