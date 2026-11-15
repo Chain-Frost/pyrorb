@@ -442,10 +442,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         result = summarise_ledger(args.ledger, args.request, expected)
         print(result.to_text(), end="")
-        return 0 if result.complete else 2
     except (OSError, ValueError, TypeError, ArithmeticError) as exc:
         print(f"MC execution failed: {exc}", file=sys.stderr)
         return 2
+    else:
+        return 0 if result.complete else 2
 
 
 if __name__ == "__main__":

@@ -67,14 +67,14 @@ def _input(
             sample_id=f"sample-{index + 1}",
             scenario_id="base",
             stratum_id="h1",
-            stratum_mass=Decimal("1"),
+            stratum_mass=Decimal(1),
             stratum_size=count,
-            rainfall_aep_percent=Decimal("2"),
+            rainfall_aep_percent=Decimal(2),
             gross_depth_mm=Decimal(20 + index),
             bom_source_sha256=hashlib.sha256(b"synthetic_B_sampled_IFD").hexdigest(),
             arf_region="South-West Western Australia",
-            storm_initial_loss_mm=Decimal("6"),
-            preburst_depth_mm=Decimal("1"),
+            storm_initial_loss_mm=Decimal(6),
+            preburst_depth_mm=Decimal(1),
             preburst_policy="subtract_reject",
             dry_tail_min=120,
         )
@@ -182,17 +182,15 @@ def test_duplicate_samples_missing_strata_and_double_transform_rejected(tmp_path
     project, request, events = _input(tmp_path)
     del project
     raw = request.read_bytes()
+    assert events[0].event.storm is not None
+    assert events[0].event.losses is not None
+    modified = ProjectEvent(
+        events[0].sample_id,
+        storm={**events[0].event.storm, "depths_mm": [str(events[0].gross_depth_mm)]},
+        losses=events[0].event.losses,
+    )
     with pytest.raises(MCInputError, match="ARF exactly once"):
-        assert events[0].event.storm is not None
-        assert events[0].event.losses is not None
-        replace(
-            events[0],
-            event=ProjectEvent(
-                events[0].sample_id,
-                storm={**events[0].event.storm, "depths_mm": [str(events[0].gross_depth_mm)]},
-                losses=events[0].event.losses,
-            ),
-        )
+        replace(events[0], event=modified)
     parts = raw.splitlines(keepends=True)
     request.write_bytes(parts[0] + parts[1] + parts[1])
     with pytest.raises(MCInputError, match="Duplicate sample"):

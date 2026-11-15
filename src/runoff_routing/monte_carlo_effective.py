@@ -47,7 +47,8 @@ def _decimal(value: object, label: str, *, positive: bool = False) -> Decimal:
     try:
         number = Decimal(value)
     except InvalidOperation as exc:
-        raise MCInputError(f"Invalid {label} decimal") from exc
+        message = f"Invalid {label} decimal"
+        raise MCInputError(message) from exc
     if not number.is_finite() or number < 0 or (positive and number == 0):
         _fail(f"{label} must be finite and {'positive' if positive else 'nonnegative'}")
     return number
@@ -96,7 +97,8 @@ def _line_json(raw: bytes) -> object:
     try:
         return json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs, parse_constant=_constant)
     except (UnicodeError, ValueError, TypeError) as exc:
-        raise MCInputError("Malformed effective-event JSONL record") from exc
+        message = "Malformed effective-event JSONL record"
+        raise MCInputError(message) from exc
 
 
 def _json_line(value: object) -> bytes:
@@ -184,6 +186,12 @@ class EffectiveMCEvent:
     event: ProjectEvent
 
     def __post_init__(self) -> None:
+        self._validate_identity()
+        self._validate_probabilities()
+        self._validate_preburst()
+        self._validate_overrides()
+
+    def _validate_identity(self) -> None:
         for value, label in (
             (self.sample_id, "sample_id"),
             (self.scenario_id, "scenario_id"),
@@ -197,6 +205,8 @@ class EffectiveMCEvent:
             _fail("An original TP source identifier is mandatory")
         if self.event.event_id != self.sample_id or self.event.routing is not None:
             _fail("MC event ID must equal its sample ID; routing coefficients remain fixed")
+
+    def _validate_probabilities(self) -> None:
         if (
             not all(
                 value.is_finite()
@@ -220,12 +230,16 @@ class EffectiveMCEvent:
             or self.preburst_depth_mm < 0
         ):
             _fail("Invalid MC probability, rainfall/ARF or storm-loss values")
+
+    def _validate_preburst(self) -> None:
         if self.loss_policy not in {"none", "subtract_reject", "subtract_clamp"}:
             _fail("Unsupported preburst transformation policy")
         if self.loss_policy == "none" and self.preburst_depth_mm != 0:
             _fail("No-preburst policy cannot consume a positive preburst depth")
         if self.loss_policy == "subtract_reject" and self.preburst_depth_mm > self.storm_initial_loss_mm:
             _fail("Preburst exceeds sampled storm IL; explicit clamp policy required")
+
+    def _validate_overrides(self) -> None:
         if self.event.storm is None or self.event.losses is None:
             _fail("MC events must include explicit storm and loss overrides")
         storm = self.event.storm
