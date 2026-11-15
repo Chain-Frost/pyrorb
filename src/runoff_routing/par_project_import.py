@@ -151,7 +151,10 @@ def import_from_par(
     base_directory: Path | None,
 ) -> Project:
     """Inspect PAR, choose its complete input closure, then stage exact bytes."""
-    from .project_json import ProjectError, read_bounded_source_bytes  # noqa: PLC0415 -- entrypoint defines project model
+    from .project_json import (  # noqa: PLC0415 -- entrypoint defines project model
+        ProjectError,
+        read_bounded_source_bytes,
+    )
 
     destination = target.absolute()
     root = destination.parent
