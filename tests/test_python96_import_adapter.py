@@ -223,6 +223,36 @@ def test_subnormal_relative_weights_preserve_original_rainfall_and_fresh_batch_q
     assert excess[0] == pytest.approx((0.05, 0.05))
 
 
+def test_unequal_subnormal_weights_reject_distorted_decimal_source_ratios(tmp_path: Path) -> None:
+    model = _imported_model()
+    relative = replace(model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(7)))
+    losses = replace(model.parameters.losses[0], initial_loss_mm=Decimal(0), continuing=Decimal(0))
+    parameters = replace(model.parameters, losses=(losses,))
+    project = _project(tmp_path / "unequal_subnormal.json", replace(model, storm=relative, parameters=parameters))
+    report = run_project_events(
+        project,
+        (
+            ProjectEvent("normal"),
+            ProjectEvent("rounded", storm={"percentages": ["3e-324", "7e-324"]}),
+            ProjectEvent("normal-again"),
+        ),
+        selection=SELECTION,
+    )
+    first, invalid, repeated = report.outcomes
+    assert [event.status for event in report.outcomes] == [
+        "computed_unvalidated",
+        "unsupported_feature",
+        "computed_unvalidated",
+    ]
+    assert all(event.effective_selection == SELECTION for event in report.outcomes)
+    assert invalid.diagnostics[0].code == "storm_precision"
+    assert "original proportions" in invalid.diagnostics[0].message
+    assert not invalid.hydrographs
+    assert first.hydrographs == repeated.hydrographs
+    assert first.physical_time_hours == repeated.physical_time_hours
+    assert any(q > 0 for q in first.hydrographs[0].discharge_m3_s)
+
+
 def test_relative_weights_are_explicit_and_not_substituted_for_percentages(tmp_path: Path) -> None:
     model = _imported_model()
     relative = replace(model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(1)))

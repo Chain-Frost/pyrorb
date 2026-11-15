@@ -13,6 +13,7 @@ import json
 import math
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal, cast
 
@@ -248,6 +249,18 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         message = "S2 requires percentages to total 100 within its 0.01 numerical tolerance"
         error = RunInputError("unsupported", "storm_precision", message, role="storm")
         raise error
+    if payload.pattern_basis == "relative_weights":
+        # The original Decimal ratios, not the rounded absolute magnitudes,
+        # establish the source storm. Equal subnormal floats may conceal
+        # materially different source weights and fabricate a new event.
+        source_total = sum(model.storm.percentages, Decimal(0))
+        for source, converted in zip(model.storm.percentages, payload.percentages, strict=True):
+            source_share = source / source_total
+            converted_share = Decimal.from_float(converted / total_weights)
+            if source_share > 0 and abs(converted_share / source_share - 1) > Decimal("1e-12"):
+                message = "Relative storm weights lose their original proportions at the S2 float boundary"
+                error = RunInputError("unsupported", "storm_precision", message, role="storm")
+                raise error
     if any(code not in (1, 2, 3, 4, 5, 7) for code, _ in payload.controls):
         message = "An uncharacterised control code reached the S2 input boundary"
         error = RunInputError("unsupported", "control_code", message, role="catchment")
