@@ -22,6 +22,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any, cast
 
+from .cmd_engine import CmdBoundaryError, PreparedCmdModel, prepare_cmd_model
 from .engine_execution import (
     SelectionSource,
     attribute_engine_outcome,
@@ -29,6 +30,7 @@ from .engine_execution import (
     execute_loaded_engine,
 )
 from .engine_types import EngineDiagnostic, EngineOutcome, EngineSelection, EngineStatus
+from .integration import RunInputError, prepare_run_model
 from .native_cmd import NativeConfiguration
 from .project_json import (
     EmbeddedRun,
@@ -36,7 +38,8 @@ from .project_json import (
     ProjectError,
     load_project,
 )
-from .rorb_model import ParameterSet, RunModel, StormModel, from_dict, to_dict, to_json
+from .rorb_model import CatchmentModel, ParameterSet, RoutingValue, RunModel, StormModel, from_dict, to_dict, to_json
+from .single_storm import PreparedCatchment
 
 REQUEST_FORMAT = "python-runoff-routing-explicit-events"
 REQUEST_VERSION = 1
@@ -54,6 +57,7 @@ _STORM_FIELDS = {
     "depths_mm",
 }
 _LOSS_FIELDS = {"initial_loss_mm", "continuing"}
+_ROUTING_FIELDS = {"kc", "m"}
 _CSV_HEADER = (
     "event_index",
     "event_id",
@@ -107,6 +111,7 @@ class ProjectEvent:
     event_id: str
     storm: Mapping[str, object] | None = None
     losses: Mapping[str, object] | None = None
+    routing: Mapping[str, object] | None = None
 
 
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -171,11 +176,15 @@ def _request_fields(item: object) -> dict[str, object]:
             data["storm"] = dict(item.storm)
         if item.losses is not None:
             data["losses"] = dict(item.losses)
+        if item.routing is not None:
+            data["routing"] = dict(item.routing)
         return data
     if not isinstance(item, dict):
         raise EventConfigError(_INVALID_INPUT, "event_record", "Event must be a JSON object")
     data = cast("dict[str, object]", item)
-    if set(data) - {"event_id", "storm", "losses"}:
+    if "storages" in data:
+        raise EventConfigError(_UNSUPPORTED_FEATURE, "event_storages", "Event-level special storage is unsupported")
+    if set(data) - {"event_id", "storm", "losses", "routing"}:
         raise EventConfigError(_INVALID_INPUT, "event_fields", "Unknown event fields")
     return data
 
@@ -230,6 +239,26 @@ def _derive_parameters(original: ParameterSet, raw: object) -> ParameterSet:
     return restored
 
 
+def _derive_routing(original: ParameterSet, raw: object) -> ParameterSet:
+    """Change explicit lumped routing parameters without changing CATG source order."""
+    if not original.lumped_kc or len(original.routing) != 1:
+        raise EventConfigError(
+            _UNSUPPORTED_FEATURE,
+            "routing_override_scope",
+            "Per-event routing parameter override requires a single lumped kc/m",
+        )
+    patch = _overlay(raw, _ROUTING_FIELDS, "routing")
+    document = to_dict(original)
+    body = cast("dict[str, Any]", document["model"])
+    routing = cast("list[dict[str, Any]]", body["routing"])
+    routing[0].update(patch)
+    restored = from_dict(document)
+    if not isinstance(restored, ParameterSet):
+        message = "Routing override did not produce S1 parameters"
+        raise EventConfigError(_INVALID_INPUT, "routing_model", message)
+    return restored
+
+
 def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunModel, str]:
     current = loaded.run
     storm = current.storm
@@ -245,12 +274,20 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
         changed.append("storm")
     if "losses" in fields:
         try:
-            parameters = _derive_parameters(current.parameters, fields["losses"])
+            parameters = _derive_parameters(parameters, fields["losses"])
         except (TypeError, ValueError) as exc:
             if isinstance(exc, EventConfigError):
                 raise
             raise EventConfigError(_INVALID_INPUT, "loss_model", str(exc)) from exc
         changed.append("losses")
+    if "routing" in fields:
+        try:
+            parameters = _derive_routing(parameters, fields["routing"])
+        except (TypeError, ValueError) as exc:
+            if isinstance(exc, EventConfigError):
+                raise
+            raise EventConfigError(_INVALID_INPUT, "routing_model", str(exc)) from exc
+        changed.append("routing")
     try:
         return RunModel(parameters, current.catchment, storm), ",".join(changed) if changed else "none"
     except (TypeError, ValueError) as exc:
@@ -284,6 +321,8 @@ def iter_project_events(
     source: SelectionSource = "project" if selection is None else selection_source
     attributed = attribute_engine_outcome(create_engine_outcome_base(loaded, effective, source), wheel_artifact)
     source_kind = "embedded-run" if isinstance(loaded.project.model_source, EmbeddedRun) else "rorb-files"
+    python_cache: dict[tuple[CatchmentModel, tuple[RoutingValue, ...]], PreparedCatchment] = {}
+    cmd_cache: dict[tuple[CatchmentModel, tuple[RoutingValue, ...]], PreparedCmdModel] = {}
     seen: set[str] = set()
     for ordinal, item in enumerate(events, start=1):
         identifier = _identifier(item, ordinal)
@@ -332,7 +371,37 @@ def iter_project_events(
             )
             continue
         event_loaded = replace(loaded, run=model)
-        yield execute_loaded_engine(event_loaded, event_base, project_path=project_path, native_config=native_config)
+        prepared_python: PreparedCatchment | None = None
+        prepared_cmd: PreparedCmdModel | None = None
+        preparation_key = (model.catchment, model.parameters.routing)
+        if effective.engine == "python":
+            prepared_python = python_cache.get(preparation_key)
+            if prepared_python is None:
+                try:
+                    prepared_python = prepare_run_model(model)
+                except RunInputError:
+                    # Dispatch normally to retain the existing typed per-event failure.
+                    pass
+                else:
+                    python_cache[preparation_key] = prepared_python
+        elif effective.engine == "python-cmd":
+            prepared_cmd = cmd_cache.get(preparation_key)
+            if prepared_cmd is None:
+                try:
+                    prepared_cmd = prepare_cmd_model(event_loaded)
+                except CmdBoundaryError:
+                    # Unsupported events must not invalidate another event's cached geometry.
+                    pass
+                else:
+                    cmd_cache[preparation_key] = prepared_cmd
+        yield execute_loaded_engine(
+            event_loaded,
+            event_base,
+            project_path=project_path,
+            native_config=native_config,
+            prepared_python=prepared_python,
+            prepared_cmd=prepared_cmd,
+        )
 
 
 def _trapezoidal_volume(outcome: EngineOutcome, values: tuple[float, ...]) -> float | None:

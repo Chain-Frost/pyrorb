@@ -18,8 +18,9 @@ engine. `python/engineering-v1` remains the default, is separately computed,
 and must never masquerade as a CMD-compatible result.
 
 The public original-input acceptance population includes existing maintained
-register IDs `review-design-baseline`, `review-ensemble-tp1` and
-`timestep-design-baseline-f2`. The previously retained public source/wheel
+register IDs `review-design-baseline`, `review-ensemble-tp1`,
+`timestep-design-baseline-f2`, `timestep-ensemble-tp3-f4` and
+`zero-loss-ensemble-tp9-f1` (**1,805 original printed ordinates**). The previously retained public source/wheel
 CMD probe records these as among 36 printed-Q/scalar-supported cases; its
 comparison policy and exact original output files are **not** reimplemented
 here. New batch tests use those identities and original .par/.catg/.stm
@@ -117,11 +118,41 @@ Storm keys are a strict subset of the existing S1 `StormModel` schema:
 inherit the project storm exactly. Decimals remain strings; counts are JSON
 integers. Ordered `subarea_ids`, ISA, burst count and pluviograph count
 cannot be overridden. Loss overrides accept only S1
-`initial_loss_mm` and `continuing` for the one-ISA case; `continuing`
+`initial_loss_mm` and `continuing` for the one-ISA case.
+A `routing` override may specify `kc` and `m` for the supported single
+lumped routing group; this is re-prepared as a **new invariant parameter
+combination**, never reused with a different set of route coefficients.
+The `continuing` loss
 is **mm/hour** in this IL/CL subset. Imported original catchment and
 parameters otherwise remain immutable. Each event's effective model is
 constructed through the maintained S1 model and validation and is
 never written to a temporary project file.
+
+### In-memory preparation lifecycle
+
+The verified project/immutable typed CATG, PAR and STM is resolved once per
+batch, not re-read per event. Both Python engines now reuse their existing
+**immutable** prepared routing geometry and coefficient structures, keyed
+strictly by typed catchment computational order/areas and routing parameters
+(including kc/m). Different routing parameters produce independent prepared
+entries. Neither engine caches per-event rainfall, loss memory, reach storage,
+branch stacks, routing iteration state or Q. No global/path-based cache is
+retained between independent runs, so modifying a source file requires loading
+and hash-validating a new project; corrupt original bytes are never bypassed.
+Unprepared single-event execution uses the same kernels and is an independent
+bitwise-value equality control. This is not a new numerical engine.
+
+Original CMD source reference case IDs `review-design-baseline`,
+`review-ensemble-tp1`, `timestep-design-baseline-f2`,
+`timestep-ensemble-tp3-f4`, `zero-loss-ensemble-tp9-f1` are tested
+through the **batch API and complete CSV/JSON/text reporting**, not merely
+through the pre-existing numerical probe. The required four-event sequence
+contains baseline, TP1 with separately resolved storm/kc, a negative
+`mvp-invalid-control` with no fabricated Q, and an equivalent baseline
+under a *different* ID. `mvp-unsupported-storage` remains an explicitly
+rejected event. Independent authored controls retain analytical, not
+authenticated native, reference status.
+
 
 Event IDs are ASCII, unique within the request and retain request order.
 Malformed event entries, malformed IDs (given an ordinal placeholder),

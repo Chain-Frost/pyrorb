@@ -10,9 +10,10 @@ from pathlib import Path
 
 import pytest
 
+from runoff_routing import project_batch
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
-from runoff_routing.integration import canonical_run_bytes
+from runoff_routing.integration import canonical_run_bytes, read_run_files
 from runoff_routing.project_batch import (
     ProjectEvent,
     iter_project_events,
@@ -24,7 +25,9 @@ from runoff_routing.project_batch import (
 from runoff_routing.project_json import (
     EmbeddedRun,
     Project,
+    LoadedProject,
     import_rorb_project,
+    load_project,
     write_project,
 )
 from runoff_routing.rorb_model import RunModel, from_json
@@ -262,7 +265,13 @@ def test_selected_native_fails_explicitly_without_using_python(tmp_path: Path) -
 
 @pytest.mark.parametrize(
     "case_id",
-    ["review-design-baseline", "review-ensemble-tp1", "timestep-design-baseline-f2"],
+    [
+        "review-design-baseline",
+        "review-ensemble-tp1",
+        "timestep-design-baseline-f2",
+        "timestep-ensemble-tp3-f4",
+        "zero-loss-ensemble-tp9-f1",
+    ],
 )
 def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, case_id: str) -> None:
     """Original retained inputs, not generated RORB substitutes or cached solver output."""
@@ -305,6 +314,201 @@ def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, 
     assert combined.outcomes[0].hydrographs == single.hydrographs == combined.outcomes[2].hydrographs
     assert combined.outcomes[0].physical_time_hours == single.physical_time_hours
     assert len(single.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
+    assert single.effective_selection == selection
+    assert single.hydrographs[0].print_id == case["sites"][0]["model_print_id"]
+    assert len(single.physical_time_hours) == case["clock"]["row_count"]
+    assert single.physical_time_hours[0] == "0.00000" or float(single.physical_time_hours[0]) == 0.0
+    assert all(item.status != "native_execution_failed" for item in combined.outcomes)
+    baseline = combined.outcomes[0]
+    assert baseline.model_sha256 == single.model_sha256
+    assert baseline.hydrographs[0].discharge_m3_s == single.hydrographs[0].discharge_m3_s
+    report_json = json.loads(combined.to_json())
+    assert report_json["requested_event_count"] == 3
+    assert len(report_json["outcomes"]) == 3
+    assert report_json["volumes"][0]["physical_trapezoidal_volume_m3"] is not None
+    assert report_json["volumes"][0]["native_inclusive_reported_volume_m3"] is None
+    rows = list(csv.DictReader(io.StringIO(combined.to_csv())))
+    assert len(rows) == 2 * case["clock"]["row_count"] + 1
+    assert rows[0]["event_id"] == "original"
+    assert rows[-1]["event_id"] == "again"
+    assert rows[case["clock"]["row_count"]]["status"] == "invalid_input"
+    assert all(row["engine"] == "python-cmd" for row in rows)
+    assert max(float(row["discharge_m3_s"]) for row in rows if row["discharge_m3_s"]) == max(
+        single.hydrographs[0].discharge_m3_s
+    )
+    target_json = tmp_path / "embedded-project.json"
+    write_project(
+        target_json,
+        Project("embedded_cmd", "legacy-rorb", EmbeddedRun(load_project(project).run), engine=selection),
+    )
+    equivalent = run_project_events(target_json, (ProjectEvent("equivalent"),)).outcomes[0]
+    assert equivalent.hydrographs == single.hydrographs
+    assert equivalent.physical_time_hours == single.physical_time_hours
+
+
+def _registered_original_files(root: Path, case_id: str) -> dict[str, Path]:
+    """Locate immutable original published sources by maintained case ID."""
+    register = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    return {
+        Path(source["path"]).suffix: root / source["path"]
+        for source in case["files"]
+        if Path(source["path"]).suffix in (".par", ".catg", ".stm")
+    }
+
+
+@pytest.mark.parametrize("engine", ["python", "python-cmd"])
+def test_cached_preparation_once_per_invariant_model_and_fresh_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, engine: str
+) -> None:
+    """Every distinct geometry/routing signature is prepared once, never every storm."""
+    project = _project(tmp_path)
+    selected = EngineSelection.for_engine(engine)
+    calls: list[str] = []
+    if engine == "python":
+        prepare_once = project_batch.prepare_run_model
+
+        def count_preparation(model: RunModel) -> object:
+            calls.append(str(model.parameters.routing[0].kc))
+            return prepare_once(model)
+
+        monkeypatch.setattr("runoff_routing.project_batch.prepare_run_model", count_preparation)
+    else:
+        prepare_once_cmd = project_batch.prepare_cmd_model
+
+        def count_preparation(model: LoadedProject) -> object:
+            calls.append("cmd")
+            return prepare_once_cmd(model)
+
+        monkeypatch.setattr("runoff_routing.project_batch.prepare_cmd_model", count_preparation)
+
+    events = (
+        ProjectEvent("first"),
+        ProjectEvent("wet", storm={"depths_mm": ["25.0"]}),
+        ProjectEvent("invalid", storm={"calculation_increments": -1}),
+        ProjectEvent("different_kc", routing={"kc": "0.8"}),
+        ProjectEvent("another_wet", storm={"depths_mm": ["30.0"]}),
+        ProjectEvent("last"),
+    )
+    result = run_project_events(project, events, selection=selected)
+    assert [item.status for item in result.outcomes] == [
+        "computed_unvalidated",
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
+        "computed_unvalidated",
+        "computed_unvalidated",
+    ]
+    assert len(calls) == 2  # original + changed kc; subsequent original events hit original cache
+    assert result.outcomes[0].hydrographs == result.outcomes[-1].hydrographs
+    assert result.outcomes[0].model_sha256 == result.outcomes[-1].model_sha256
+    assert result.outcomes[3].model_sha256 != result.outcomes[0].model_sha256
+    assert not result.outcomes[2].hydrographs
+
+
+def test_five_authentic_cmd_seed_cases_and_four_event_isolation_with_cli(tmp_path: Path) -> None:
+    """The TP1 source is reconstructed via explicit typed storm+kc, not a second CATG parse per event."""
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    baseline_paths = _registered_original_files(root, "review-design-baseline")
+    tp1_paths = _registered_original_files(root, "review-ensemble-tp1")
+    baseline = read_run_files(
+        baseline_paths[".par"], baseline_paths[".catg"], baseline_paths[".stm"]
+    ).model
+    tp1 = read_run_files(tp1_paths[".par"], tp1_paths[".catg"], tp1_paths[".stm"]).model
+    assert baseline.catchment == tp1.catchment
+    project = tmp_path / "baseline.json"
+    write_project(
+        project,
+        Project(
+            "cmd_original_seed", "legacy-rorb", EmbeddedRun(baseline),
+            engine=EngineSelection.for_engine("python-cmd"),
+        ),
+    )
+    tp1_event = ProjectEvent(
+        "review-ensemble-tp1",
+        storm={
+            "title": tp1.storm.title,
+            "timestep_hours": str(tp1.storm.timestep_hours),
+            "calculation_increments": tp1.storm.calculation_increments,
+            "start_increment": tp1.storm.start_increment,
+            "percentages": [str(item) for item in tp1.storm.percentages],
+            "depths_mm": [str(item) for item in tp1.storm.depths_mm],
+        },
+        routing={"kc": str(tp1.parameters.routing[0].kc)},
+    )
+    requests: tuple[object, ...] = (
+        ProjectEvent("review-design-baseline"),
+        tp1_event,
+        {"event_id": "mvp-invalid-control", "controls": [{"code": 99}]},
+        ProjectEvent("baseline-repeat"),
+    )
+    report = run_project_events(project, requests)
+    assert [item.status for item in report.outcomes] == [
+        "computed_unvalidated", "computed_unvalidated", "invalid_input", "computed_unvalidated",
+    ]
+    first, second, invalid, repeated = report.outcomes
+    assert invalid.hydrographs == () and invalid.diagnostics[0].code == "event_fields"
+    assert first.hydrographs == repeated.hydrographs
+    assert first.python_diagnostics == repeated.python_diagnostics
+    assert first.model_sha256 == repeated.model_sha256
+    tp1_reference = tmp_path / "tp1.json"
+    write_project(
+        tp1_reference,
+        Project("tp1_reference", "legacy-rorb", EmbeddedRun(tp1), engine=EngineSelection.for_engine("python-cmd")),
+    )
+    tp1_single = run_engine_project(tp1_reference)
+    assert second.hydrographs == tp1_single.hydrographs
+    assert second.physical_time_hours == tp1_single.physical_time_hours
+    assert first.physical_time_hours == repeated.physical_time_hours
+    assert len(first.hydrographs[0].discharge_m3_s) == 201
+    assert len(second.hydrographs[0].discharge_m3_s) == 201
+    serialized_events = [
+        {"event_id": "review-design-baseline"},
+        {
+            "event_id": tp1_event.event_id,
+            "storm": dict(tp1_event.storm or {}),
+            "routing": dict(tp1_event.routing or {}),
+        },
+        {"event_id": "mvp-invalid-control", "controls": [{"code": 99}]},
+        {"event_id": "baseline-repeat"},
+    ]
+    events_file = tmp_path / "events.json"
+    events_file.write_text(
+        json.dumps({
+            "format": "python-runoff-routing-explicit-events",
+            "schema_version": 1,
+            "events": serialized_events,
+        }),
+        encoding="utf-8",
+    )
+    output = tmp_path / "cmd-seed"
+    assert main([str(project), str(output), "--events", str(events_file), "--engine", "python-cmd"]) == 2
+    receipt = json.loads(Path(f"{output}.json").read_text(encoding="utf-8"))
+    assert [r["status"] for r in receipt["outcomes"]] == [r.status for r in report.outcomes]
+    csv_rows = list(csv.DictReader(io.StringIO(Path(f"{output}.csv").read_text(encoding="utf-8"))))
+    assert len(csv_rows) == 604
+    assert csv_rows[201 + 201]["error_code"] == "event_fields"
+    assert csv_rows[0]["discharge_m3_s"] == csv_rows[-201]["discharge_m3_s"]
+    assert "mvp-invalid-control: invalid_input" in Path(f"{output}.txt").read_text(encoding="utf-8")
+
+
+def test_unsupported_storage_event_is_explicit_and_does_not_change_adjacent_results(tmp_path: Path) -> None:
+    project = _project(tmp_path)
+    report = run_project_events(
+        project,
+        (
+            ProjectEvent("first"),
+            {"event_id": "mvp-unsupported-storage", "storages": [{"type": "reservoir"}]},
+            ProjectEvent("last"),
+        ),
+        selection=EngineSelection.for_engine("python-cmd"),
+    )
+    assert [outcome.status for outcome in report.outcomes] == [
+        "computed_unvalidated", "unsupported_feature", "computed_unvalidated",
+    ]
+    assert report.outcomes[1].diagnostics[0].code == "event_storages"
+    assert report.outcomes[1].hydrographs == ()
+    assert report.outcomes[0].hydrographs == report.outcomes[2].hydrographs
 
 
 def test_batch_file_writer_is_exclusive_and_tracked(tmp_path: Path) -> None:

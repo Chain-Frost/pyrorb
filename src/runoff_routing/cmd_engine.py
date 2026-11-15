@@ -11,13 +11,14 @@ import math
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 
+from ._cmd644.geometry import Geometry, compute_geometry
 from ._cmd644.models import Control, Event, NumberInput
 from ._cmd644.native_diagnostics import DIAGNOSTIC_PROFILE, TargetOperands, target_diagnostic
 from ._cmd644.precision import UnsupportedNumericPath, store
 from ._cmd644.reporting import CONTRACT_ID, execute
 from .engine_types import EngineHydrograph, EngineStatus
 from .project_json import LoadedProject
-from .rorb_model import to_json
+from .rorb_model import CatchmentModel, RoutingValue, to_json
 
 CMD_PROFILE = "cmd-6.44"
 CANDIDATE_SOURCE = "fea9c80c521127325b779ea0ea87ddf77795b290"
@@ -44,6 +45,25 @@ class CmdComputed:
     hydrographs: tuple[EngineHydrograph, ...]
     physical_time_hours: tuple[str, ...]
     diagnostics: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCmdModel:
+    """One source/control/area/coefficient interpretation, not event hydraulic state."""
+
+    catchment: CatchmentModel
+    routing: tuple[RoutingValue, ...]
+    geometry: Geometry
+
+
+def prepare_cmd_model(loaded: LoadedProject) -> PreparedCmdModel:
+    """Precompute the existing CMD geometry once for invariant CATG and kc/m."""
+    event = adapt_event(loaded)
+    try:
+        geometry = compute_geometry(event)
+    except UnsupportedNumericPath as exc:
+        raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
+    return PreparedCmdModel(loaded.run.catchment, loaded.run.parameters.routing, geometry)
 
 
 def _unsupported(code: str, description: str) -> None:
@@ -143,12 +163,18 @@ def adapt_event(loaded: LoadedProject) -> Event:
     )
 
 
-def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdComputed:
-    """Calculate rainfall/losses, geometry and every reach with frozen CMD rules."""
+def run_cmd_model(
+    loaded: LoadedProject, implementation_revision: str, *, prepared: PreparedCmdModel | None = None
+) -> CmdComputed:
+    """Calculate one fresh CMD event with optional immutable prepared geometry."""
 
     event = adapt_event(loaded)
+    if prepared is not None and (
+        prepared.catchment != loaded.run.catchment or prepared.routing != loaded.run.parameters.routing
+    ):
+        raise CmdBoundaryError(_INVALID_INPUT, "prepared_mismatch", "Prepared CATG/routing parameters differ")
     try:
-        result = execute(event, implementation_revision)
+        result = execute(event, implementation_revision, geometry=prepared.geometry if prepared is not None else None)
     except UnsupportedNumericPath as exc:
         raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
     if len(result.network.outlet) != event.n + 1:

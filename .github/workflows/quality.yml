@@ -43,6 +43,7 @@ jobs:
           $publicNativeTests = (Resolve-Path 'tests/test_regression_public_native.py').Path
           $publicDatasetTests = (Resolve-Path 'tests/test_regression_dataset.py').Path
           $publicScalarTests = (Resolve-Path 'tests/test_regression_scalars.py').Path
+          $publicBatchTests = (Resolve-Path 'tests/test_project_batch.py').Path
           $env:RUNOFF_ENGINE_EXAMPLE = (Resolve-Path 'examples/synthetic-run.json').Path
           $env:RUNOFF_ENGINE_WHEEL = $wheel
           Write-Host ("Wheel SHA-256: " + (Get-FileHash $wheel -Algorithm SHA256).Hash.ToLowerInvariant())
@@ -60,7 +61,7 @@ jobs:
             python -c "import os,hashlib; from pathlib import Path; from runoff_routing.engine_execution import run_engine_project; project=Path('wheel-engine-smoke.json'); wheel=Path(os.environ['RUNOFF_ENGINE_WHEEL']); result=run_engine_project(project,wheel_artifact=wheel); assert result.status == 'computed_unvalidated' and result.verified_wheel_sha256 == hashlib.sha256(wheel.read_bytes()).hexdigest() and result.implementation_revision.startswith('package-code-v1-sha256:'); print('Installed-wheel exact code/verified artifact provenance OK')"
             python -m runoff_routing.regression_dataset preflight "$publicRegister" --set authored --engine python
             python -m runoff_routing.regression_dataset preflight "$publicRegister" --set cmd-eligible --full-index
-            python -m pytest "$publicNativeTests" "$publicDatasetTests" "$publicScalarTests" -q
+            python -m pytest "$publicNativeTests" "$publicDatasetTests" "$publicScalarTests" "$publicBatchTests" -q
             python -c "from decimal import Decimal; from runoff_routing.rorbwin_losses import calculate_rorbwin_652_excess; r=calculate_rorbwin_652_excess((Decimal(10),), timestep_min=60, initial_loss_mm=Decimal(0), continuing_loss_mm_per_hour=Decimal(0)); assert r.excess_increments_mm == (Decimal(10),); print('S6 experimental installed-wheel smoke OK')"
           } finally {
             Pop-Location

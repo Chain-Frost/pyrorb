@@ -14,13 +14,14 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
-from .cmd_engine import CMD_PROFILE, CmdBoundaryError, run_cmd_model
+from .cmd_engine import CMD_PROFILE, CmdBoundaryError, PreparedCmdModel, run_cmd_model
 from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
 from .native_cmd import NativeBoundaryError, NativeConfiguration, run_native_cmd
 from .project_json import LoadedProject, load_project
 from .rorb_model import to_json
+from .single_storm import PreparedCatchment
 
 SelectionSource = Literal["project", "api_override", "cli_override"]
 
@@ -86,7 +87,9 @@ def attribute_engine_outcome(base: EngineOutcome, wheel_artifact: Path | None) -
     return replace(attributed, verified_wheel_sha256=wheel_hash)
 
 
-def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
+def _python(
+    loaded: LoadedProject, base: EngineOutcome, *, prepared: PreparedCatchment | None = None
+) -> EngineOutcome:
     if loaded.project.rainfall_profile == "arr-2026v1":
         return _failure(
             base,
@@ -102,7 +105,7 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
             "External rainfall, temporal pattern and curve assets are unprocessed",
         )
     try:
-        result = run_model(loaded.run)
+        result = run_model(loaded.run, prepared=prepared)
     except RunInputError as exc:
         state: EngineStatus = (
             "invalid_input"
@@ -127,7 +130,13 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     )
 
 
-def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: NativeConfiguration | None) -> EngineOutcome:
+def _python_cmd(
+    loaded: LoadedProject,
+    base: EngineOutcome,
+    native_config: NativeConfiguration | None,
+    *,
+    prepared: PreparedCmdModel | None = None,
+) -> EngineOutcome:
     """Run only the selected CMD profile; never reuse the improved engine."""
 
     if native_config is not None:
@@ -135,7 +144,7 @@ def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: Nativ
     if base.effective_selection.numerical_profile != CMD_PROFILE:
         return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
     try:
-        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
+        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed", prepared=prepared)
     except CmdBoundaryError as exc:
         return _failure(base, exc.status, exc.code, str(exc))
     return replace(
@@ -154,6 +163,8 @@ def execute_loaded_engine(
     *,
     project_path: Path,
     native_config: NativeConfiguration | None = None,
+    prepared_python: PreparedCatchment | None = None,
+    prepared_cmd: PreparedCmdModel | None = None,
 ) -> EngineOutcome:
     """Dispatch an already verified, in-memory S1 event using its attributed outcome.
 
@@ -167,9 +178,9 @@ def execute_loaded_engine(
     if effective.engine == "python":
         if native_config is not None:
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
-        return _python(loaded, base)
+        return _python(loaded, base, prepared=prepared_python)
     if effective.engine == "python-cmd":
-        return _python_cmd(loaded, base, native_config)
+        return _python_cmd(loaded, base, native_config, prepared=prepared_cmd)
     if native_config is None:
         return _failure(
             base,
