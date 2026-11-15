@@ -95,6 +95,14 @@ def checked_canonical_report(source: RorbSource) -> RorbDocument:
     return canonical
 
 
+def _has_non_scalar_errors(diagnostics: list[Diagnostic]) -> bool:
+    """Preserve independently valid tables when only a reported scalar failed."""
+    scalar_codes = {"reported_scalar_value", "reported_scalar_values", "reported_scalar_layout"}
+    return any(
+        diagnostic.severity == "error" and diagnostic.code not in scalar_codes for diagnostic in diagnostics
+    )
+
+
 def inspect_output(source: RorbSource) -> Inspection:
     """Inspect a selected source via ryan-tools; never infer HydNNN physical sites."""
     try:
@@ -137,11 +145,7 @@ def inspect_output(source: RorbSource) -> Inspection:
     # Scalar parsing is independent of numeric hydrograph parsing. Retain a
     # valid table for diagnostic review even if a scalar is malformed; report
     # status remains invalid and cannot be treated as simulated acceptance.
-    scalar_codes = {"reported_scalar_value", "reported_scalar_values", "reported_scalar_layout"}
-    other_errors = [
-        diagnostic for diagnostic in diagnostics if diagnostic.severity == "error" and diagnostic.code not in scalar_codes
-    ]
-    if other_errors:
+    if _has_non_scalar_errors(diagnostics):
         return Inspection("output_report", "invalid", source, tuple(diagnostics))
     try:
         report = _report(canonical, tables[0])
