@@ -111,6 +111,7 @@ def test_default_zero_storage_is_not_equivalent_to_zero_exponent() -> None:
     assert route_default_reach(incoming, coefficient_k=0.0, exponent_m=0.8, time_step_hours=0.5) == incoming
     assert all(math.isfinite(v) for v in incoming)
 
+
 def test_cmd_routing_failure_is_explicit_and_never_returns_partial_q(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -132,4 +133,3 @@ def test_cmd_routing_failure_is_explicit_and_never_returns_partial_q(
     assert result.hydrographs == ()
     assert result.physical_time_hours == ()
     assert result.native_raw_time_tokens == ()
-
