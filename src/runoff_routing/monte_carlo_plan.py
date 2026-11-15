@@ -42,7 +42,7 @@ def _fail(message: str) -> Never:
 
 
 def _obj(value: object, label: str) -> dict[str, object]:
-    if not isinstance(value, dict) or any(not isinstance(key, str) for key in value):
+    if not isinstance(value, dict) or any(not isinstance(key, str) for key in cast("dict[object, object]", value)):
         _fail(f"{label} must be a JSON object with string keys")
     return cast("dict[str, object]", value)
 
@@ -93,7 +93,7 @@ def _prob(value: object, label: str) -> Decimal:
 def _int(value: object, label: str, minimum: int, maximum: int) -> int:
     if type(value) is not int or not minimum <= value <= maximum:
         _fail(f"{label} requires an integer in {minimum}..{maximum}")
-    return cast("int", value)
+    return value
 
 
 def _digest(value: object, label: str) -> str:
