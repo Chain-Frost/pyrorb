@@ -429,7 +429,7 @@ def test_pyromb_writer_rejects_unrepresentable_reach_precision() -> None:
     model, drawing = _modern_model_and_drawing()
     short = replace(model.reaches[1], length_km=Decimal("2.5001"))
     edited = replace(model, reaches=(model.reaches[0], short))
-    with pytest.raises(ValueError, match="three-decimal|3-decimal"):
+    with pytest.raises(ValueError, match="3-decimal"):
         serialize_catg_with_drawing(edited, drawing)
 
 
@@ -446,7 +446,8 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
 
     def no_writer(name: str, *args: object, **kwargs: object) -> object:
         if name == "pyromb.models.rorb":
-            raise ImportError("optional PyRomb unavailable")
+            message = "optional PyRomb unavailable"
+            raise ImportError(message)
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(importlib, "import_module", no_writer)
