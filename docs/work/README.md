@@ -4,7 +4,19 @@
 
 ## Current implementation / regression receipts
 
-- [Independent S5 import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — focused original input, edited JSON and retained-report checks; native package and third-party integration gates remain open.
+- [Canonical report reader (#142)](2026-11-15-canonical-rorb-adoption.md) — separate source owner; synthetic integration test snapshot only.
+
+- [Portable CMD export (#141)](2026-11-15-issue141-native-export.md) — separate source owner; synthetic integration test snapshot only.
+
+- [PAR-led import (#140)](2026-11-15-issue140-par-projects.md) — separate source owner; synthetic integration test snapshot only.
+
+- [PyRomb CATG writer (#139)](2026-11-15-issue139-pyromb-writer.md) — separate source owner; synthetic integration test snapshot only.
+
+- [Typed effective settings (#138)](2026-11-15-issue138-types-and-editing.md) — separate source owner; synthetic integration test snapshot only.
+
+- [Independent S5 contract acceptance (#143)](2026-11-15-issue143-s5-acceptance.md) — currently unmerged acceptance PR #160; native Windows execution pending.
+
+- [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
 - [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
@@ -22,11 +34,14 @@
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
 
 ## Retained diagnostic/reference evidence
+- [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) — original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.
 
+- [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
 - [S2 reporting-convention audit](2026-11-11-s2-reporting-conventions.md), [integrated print review](2026-11-12-integrated-print-review.md) and [nonlinear onset audit](2026-11-12-s2-onset-audit.md) — do not infer a numerical routing fix.
 - [S6 reconciliation](2026-11-14-s6-reconciliation.md), [RORBwin N4 completion review](2026-11-14-s6-n4-completion-review.md), [N4 native result](2026-11-14-s6-n4-native-result.md) and [controlled loss experiment](2026-11-14-s6-controlled-loss-kernel.md) — preserve failed and incomplete native precision/physical claims. CMD-first rules defer new RORBwin campaigns.

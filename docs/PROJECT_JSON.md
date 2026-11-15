@@ -1,9 +1,11 @@
 # S5-P0 — JSON-only project files
 
-**Status:** initial source/model import and validation, not solver equivalence.
-Current versus deferred RORB CMD interchange is recorded in the
-[S5 interoperability guide](S5_INTEROPERABILITY.md) and
-[independent #143 acceptance record](work/2026-11-15-issue143-s5-acceptance.md). [S5 issue #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7), [JSON-only slice #35](https://github.com/Chain-Frost/python-runoff-routing/issues/35).
+See [S5 interoperability](S5_INTEROPERABILITY.md) and the independent
+[issue #143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md)
+for implemented versus deferred import, edit, native export and report reading.
+
+
+**Status:** initial source/model import and validation, not solver equivalence. [S5 issue #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7), [JSON-only slice #35](https://github.com/Chain-Frost/python-runoff-routing/issues/35).
 
 **Owner decision (11 November 2026): Ignore every TOML requirement for now.** TOML parsing, output, migrations and JSON/TOML equivalence are explicitly deferred until the rest of the project is working.
 
@@ -15,11 +17,13 @@ Current versus deferred RORB CMD interchange is recorded in the
 > `python/engineering-v1` choice without changing source content or execution semantics. The `rainfall_profile` is independent of the numerical
 > engine. See [the three-engine execution contract](ENGINES.md).
 
+> **PAR-led imports (#140, schema 3):** importing an original CMD PAR can now discover its embedded CATG/STM references, accept per-role file overrides and stage all three original byte streams under the destination project directory. The source-bound manifest records selected bindings separately from an optional editable effective S1 run. An old schema-1 or schema-2 project retains its existing interpretation. See [PAR import workflow](PAR_PROJECTS.md).
+
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
 - S5 adds a separate version-1 JSON *project manifest*. Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
-- Both source modes validate into the same S1 RunModel. The explicit project paths are used, but embedded filenames inside the original `.par` are preserved and **never followed**. No graphical-to-computational reordering or source rewriting.
+- Both source modes validate into the same S1 RunModel. Legacy schema-1/2 file-backed projects load their explicit hash-pinned paths and never follow embedded PAR references. **Only the opt-in PAR-led importer** reads and selects embedded paths at import time, stages exact bytes, and records its explicit overrides. Once staged, reopen does not follow original or embedded paths. No graphical-to-computational reordering or source rewriting.
 - The project selects an explicit `rainfall_profile`: `explicit`, `legacy-rorb`, or `arr-2026v1`. This records a method boundary, **not** proof of a historical/modern calculation or a default selection of rainfall guidance.
 - External rainfall, temporal patterns, curves and reference evidence can be catalogued with an independent data-profile ID, relative path and hash. Original assets are read only for verification and are otherwise opaque to S5; the S6 rainfall workpack performs semantic processing. A single project may catalogue modern and legacy data for comparison, but does not silently combine them.
 
@@ -90,13 +94,17 @@ py -3.14 -m runoff_routing.project_json import-rorb case-one legacy-rorb "C:\mod
 
 The validation output deliberately reports `structural_only` and `numerical_parity: not_assessed`; it never launches RORB or the Python solver.
 
+## PAR-led import and editable source-bound projects
+
+See [the end-to-end CLI/API examples and exact path semantics](PAR_PROJECTS.md). Original PAR/CATG/STM files are hash-pinned and remain byte-identical; an edited S1 run is stored as an effective settings overlay (project schema 3). `load_project(path).run`, selected-engine execution and `export-run` consume the effective typed model, not stale original parameters. `save_project_as` creates a new manifest and copies the immutable source closure if the project is relocated; it never overwrites files. The separate native-runnable CMD packaging and PAR semantic writer belong to #141 and are **not** provided by this operation.
+
 ## Security and path rules
 
 File references use forward-slash project-relative paths even on Windows. The selected project directory itself can be local, mapped drive or UNC. Entries reject absolute/drive/UNC references, parent traversal, empty path components and unsafe separators. Readers deliberately resolve symlinks **solely to establish physical containment**, verify original SHA-256 and impose a 64 MiB first-slice file-size bound. Original path spelling and source bytes are retained. Exclusive-create writes never clobber a file.
 
 ## Unsupported and deferred
 
-- Full text `.cat`, combined `.dat`, GUI `.par`, uncharacterised S1 dialects and additional external rainfall file parsing remain unsupported.
+- Old plain computational `.cat`, combined `.dat`, RORBwin saved-`.par` *settings import*, uncharacterised S1 dialects and additional external rainfall file parsing remain unsupported. Characterised modern graphical content named `.cat` is supported. Known RORBwin saved-PAR structures are now positively recognised and reported as deferred rather than partially parsed as CMD.
 - The S5-P1 adapter now executes already supplied, supported DESIGN storms through the strict Python S2 reference. This computes unvalidated Python ordinates; it is not RORB native parity or modern ARR rainfall generation. Full native comparisons and an accepted numerical profile remain future work.
 - Legacy ARR/RORB rainfall preparation and ARR Data Hub 2026v1 methods remain separate in S6 [#33](https://github.com/Chain-Frost/python-runoff-routing/issues/33). Neither climate adjustments nor rainfall bursts are generated by this S5 layer.
 

@@ -30,8 +30,10 @@ This checks that an already-supplied supported DESIGN event can execute. It does
 
 ## 3. JSON project and engine selection
 
-For current three-file CMD import and the pending PAR-led import/edit/native export/report gates, see
-[S5 interoperability](S5_INTEROPERABILITY.md) and the [#143 acceptance record](work/2026-11-15-issue143-s5-acceptance.md).
+The [S5 interoperability guide](S5_INTEROPERABILITY.md) and
+[issue #143 acceptance record](work/2026-11-15-issue143-s5-acceptance.md)
+distinguish JSON project results from relocatable native CMD packages.
+
 
 For an existing supported [JSON project](PROJECT_JSON.md) (`project.json` below), use a *new* output filename:
 
@@ -52,7 +54,7 @@ python examples/create_cmd_project.py
 python -m runoff_routing.project_json run cmd-example-project.json cmd-example-result.json
 ```
 
-Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
+Use new result names; exclusive-create refuses overwrites. For **PAR-led import**, file overrides, source preservation, editable settings and relocation, see [PAR project workflow](PAR_PROJECTS.md). Native `rorb-cmd` still requires a separately installed hash-checked executable and original file-backed inputs. See [engine selection](ENGINES.md), [project import](PROJECT_JSON.md) and [single CMD feature matrix](CMD_FEATURE_MATRIX.md).
 
 ## 4. Explicit-event batches
 

@@ -650,14 +650,14 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
     if final_index != len(records):
         message = "Trailing records after the DESIGN rainfall depths"
         raise _problem(message, records[final_index][0])
-    basis: PatternBasis = "relative_weights" if relative_weights else "percent_of_depth"
+    basis = PatternBasis.RELATIVE_WEIGHTS if relative_weights else PatternBasis.PERCENT_OF_DEPTH
     preburst_bins = 0
     preburst_spans: tuple[SourceSpan, ...] = ()
     if not relative_weights and abs(sum(percentages, Decimal(0)) - Decimal(100)) > Decimal("0.05"):
         # Source annotations must independently prove the split. A nonunit
         # pattern without its original pre-burst+burst identity is rejected.
         preburst_bins, preburst_spans = _original_combined_preburst(lines, dt, percentages, depths)
-        basis = "combined_preburst_percent"
+        basis = PatternBasis.COMBINED_PREBURST_PERCENT
     try:
         model = StormModel(
             lines[0].strip(),
