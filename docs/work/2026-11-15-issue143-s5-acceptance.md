@@ -260,3 +260,81 @@ subsequent documentation-only work requiring their own link/CI review.
 The actual command syntax must be recorded from the authorised Windows CMD target rather than guessed here. A missing executable or unsupported native setting remains an explicit **not-run** or **unsupported** result and does not invalidate completed pure-Python checks.
 
 **Next action:** inspect integration PRs #138–#142 at their exact tested heads, update the focused cases to their actual public APIs, verify writer/reader provenance, run source/installed-wheel checks and attempt the direct native package procedure if an authorised Windows executable is available. Keep #5 open; do not merge or release this preparatory receipt without review.
+
+## Windows-local preflight receipt — 16 November 2026 (Perth)
+
+**Acceptance: incomplete; native execution: not_run.** The installed executable
+is available, but the handoff's reviewed integrated implementation prerequisite
+is unmet. No package was exported and no native process was launched (zero of
+the maximum five events). This is a blocker receipt, not native acceptance.
+
+Remote heads were refreshed and inspected locally on Windows. Exact revisions:
+
+| Component | Inspected revision | Integration state at inspection |
+| --- | --- | --- |
+| Public main | `215bcc36f847d8b644779f7061d37c9c1c35093f` | Includes #140 and #139 |
+| #140 merge | `42c7137308e6a90ea2ce73568e89473ebad59143` | Merged |
+| #139 merge | `215bcc36f847d8b644779f7061d37c9c1c35093f` | Merged |
+| #138 / PR #157 | `8f784a91a55cd8165afe76bbfede4d663b1d2e15` | Open, unmerged |
+| #141 / PR #162 | `f44f7f34fbec5b57390fbb2f8bef3b8bd8db133f` | Open, unmerged; stacked on older #138 `6df9466048766abce0514f491a634435519bddd8` |
+| #142 / PR #165 | `6acd994a71e5cf7a6662c4f9fd47ca994832cbd7` | Open, unmerged |
+| Acceptance receipt/handoff baseline | `e1c04a6c74f4525fc6029f408a3e740d0e8c00be` | PR #160 documentation branch |
+
+The newer combined [PR #174](https://github.com/Chain-Frost/python-runoff-routing/pull/174)
+at `e01443d077552998a4d7552dabaf13eecb010736` explicitly describes itself as
+**TEST-ONLY / DO NOT MERGE**, and **not a production integration**. It therefore
+does not supply the required reviewed integrated product revision. Neither it
+nor closed PR #172 was checked out or used as production code. No owner branch
+was reconciled, merged or changed for this preflight.
+
+Dependency declarations inspected: main's optional CATG writer pins PyRomb
+`8653babdb544d400775d754b409c1571e773f7bb`; the separate #142 branch pins
+the `ryan-rorb-readers` distribution from ryan-tools
+`b246e8c7bd9ddf97d2d286402202b14e9e48e595`, subdirectory
+`packaging/rorb-readers`. These are **declared revisions**, not installed
+dependency or integrated-wheel verification. No candidate wheel was built,
+installed or admitted; wheel SHA-256 and source/wheel equality are **not_run**.
+
+The installed RORB CMD executable was hashed directly, without launching it:
+9,778,880 bytes, SHA-256
+`10999ca29f9516c6a7abd26df37cafd433a1cd4ae70d7ac61aa7213845c5ab6f`.
+This matches the previously authenticated
+[S0 CMD identity and native banner](2026-11-11-s0-native.md):
+`Program version 6.44 (last updated 12th March 2019)`.
+PowerShell FileVersion and ProductVersion are empty. The banner is retained
+historical evidence bound by the matching executable hash, **not a banner
+newly observed in this session**. The absolute installation path remains local.
+
+| Contract / planned event | Verdict | Evidence or remaining requirement |
+| --- | --- | --- |
+| Installed executable identity | pass | Actual local size/hash matches the authenticated CMD profile; fresh banner not observed |
+| Reviewed integrated #138–#142 product revision | incomplete | Exporter and canonical reader remain on separate unmerged branches |
+| Baseline, verbosity 3 | not_run | No admitted integrated exporter revision |
+| Parameter-only kc/IL edit, verbosity 1 | not_run | Same prerequisite |
+| Parameter-only kc/IL edit, verbosity 2 | not_run | Same prerequisite |
+| Parameter-only kc/IL edit, verbosity 3 | not_run | Same prerequisite |
+| Edited DESIGN storm depth, verbosity 3 | not_run | Same prerequisite |
+| Manifest/input authentication, relocated closure and original-path unavailability | not_run | No emitted candidate package; original fixtures left untouched |
+| Native 180-second timeout, argv/cwd/exit/stdout/stderr and input pre/post checks | not_run | No invocation or execution records exist |
+| Genuine output inventory, hashes and verbosity-dependent availability | not_run | No new reports or batch.out produced |
+| Installed canonical reader of newly produced reports | not_run | No new native reports or integrated installed wheel |
+| Existing comparator with exact original and physical-site binding | not_run | No new native observations; edited-event equivalence would remain not_assessed without an exact reference |
+
+No native calculation failed, and no new unsupported numerical feature was
+classified: the campaign stopped at its revision prerequisite. Existing
+historical software receipts above are unchanged and were not rerun or
+reattributed to these newer heads. No Python results substituted for native
+observations; no fixtures, goldens, tolerances or scientific gates changed.
+
+Private-path preflight evidence is retained in ignored local storage
+`.local/issue143-windows-20261116/preflight.json` (in the original development
+checkout), SHA-256
+`6b02523e9e48f9948589c017df1a01d2aec2a231b341616299dad02c15e5af5e`.
+There are no new native output bytes to preserve. No executable or unreviewed
+private evidence is included in this public receipt.
+
+**Next action:** supply a reviewed integrated production revision containing
+the real #138/#141/#142 implementations and the merged #139/#140 code, then
+qualify its source/wheel and actual dependency pins and execute the five-event
+handoff against the authenticated local binary. This requires integration,
+not additional native-launch permission. Keep #143 incomplete and #5 open.
