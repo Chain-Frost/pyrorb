@@ -65,9 +65,7 @@ def test_positive_nonunit_m_is_preserved_at_typed_cmd_boundary(tmp_path: Path, e
 
 
 @pytest.mark.parametrize("exponent", ["0.999", "1", "1.001"])
-def test_positive_exponents_execute_complete_events_on_both_selected_engines(
-    tmp_path: Path, exponent: str
-) -> None:
+def test_positive_exponents_execute_complete_events_on_both_selected_engines(tmp_path: Path, exponent: str) -> None:
     """Synthetic event software check only; no original CMD boundary golden is inferred."""
     original = _model()
     routing = replace(original.parameters.routing[0], m=Decimal(exponent))
