@@ -110,7 +110,7 @@ def test_duplicate_missing_and_mismatched_site_identities_fail_closed() -> None:
             catchment,
             print_locations=(catchment.print_locations[0], catchment.print_locations[0]),
         )
-    with pytest.raises(ValueError, match="Unbalanced|Code 7"):
+    with pytest.raises(ValueError, match=r"Unbalanced|Code 7"):
         replace(catchment, print_locations=(catchment.print_locations[0],))
     with pytest.raises(ValueError, match="Code 7"):
         replace(

@@ -262,7 +262,9 @@ def _add_stored(left: tuple[float, ...], right: tuple[float, ...]) -> tuple[floa
     return tuple(internal_store(safe64(a + b)) for a, b in zip(left, right, strict=True))
 
 
-def route_network(event: Event, geometry: Geometry, preparation: Preparation) -> NetworkResult:
+def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/print control cases
+    event: Event, geometry: Geometry, preparation: Preparation
+) -> NetworkResult:
     """Execute the ordered code-1/2/3/4/5/7 machine, preserving independent branches."""
     active: tuple[float, ...] | None = None
     members: tuple[int, ...] = ()
