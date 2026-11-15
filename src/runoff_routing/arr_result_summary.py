@@ -16,6 +16,7 @@ from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
+from itertools import pairwise
 from pathlib import Path
 from statistics import fmean, median
 from typing import Any, Never, cast
@@ -88,7 +89,8 @@ def _read_json(path: Path) -> dict[str, Any]:
     try:
         parsed: object = json.loads(data.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_constant)
     except (UnicodeError, ValueError, TypeError) as exc:
-        raise ResultSummaryError(f"Invalid JSON in {path}: {exc}") from exc
+        message = f"Invalid JSON in {path}: {exc}"
+        raise ResultSummaryError(message) from exc
     return _object(parsed, str(path))
 
 
@@ -145,7 +147,7 @@ def _metric(outcome: Mapping[str, Any], graph: Mapping[str, Any], volume: float 
         if not math.isfinite(time):
             return {"metric_status": "incomplete_output"}
         time_values.append(time)
-    if len(time_values) < 2 or any(b <= a for a, b in zip(time_values, time_values[1:], strict=False)):
+    if len(time_values) < 2 or any(b <= a for a, b in pairwise(time_values)):
         return {"metric_status": "incomplete_output"}
     if graph.get("units") != "m3/s":
         return {"metric_status": "incomplete_output"}
@@ -374,29 +376,46 @@ class DeterministicSummary:
             "Generated-input qualification: not_assessed; routed native qualification: not_assessed",
             "Native representative and critical-duration selection: UNVERIFIED (no event/duration selected)",
         ]
-        for cell in self.data["cell_sites"]:
-            lines.append(
-                f"{cell['duration_min']} min / {cell['aep_label']} / {cell['site_id'] or 'SITE UNKNOWN'}: "
-                f"complete {cell['completed_member_count']}/{cell['expected_member_count']}; "
-                f"observed peak min/median/max (m3/s): "
-                f"{cell['observed_peak_min_m3_s']}/{cell['observed_peak_median_m3_s']}/"
-                f"{cell['observed_peak_max_m3_s']}; comparable={cell['complete_comparable_population']}"
-            )
+        lines.extend(
+            f"{cell['duration_min']} min / {cell['aep_label']} / {cell['site_id'] or 'SITE UNKNOWN'}: "
+            f"complete {cell['completed_member_count']}/{cell['expected_member_count']}; "
+            f"observed peak min/median/max (m3/s): "
+            f"{cell['observed_peak_min_m3_s']}/{cell['observed_peak_median_m3_s']}/"
+            f"{cell['observed_peak_max_m3_s']}; comparable={cell['complete_comparable_population']}"
+            for cell in self.data["cell_sites"]
+        )
         return "\n".join(lines) + "\n"
 
 
-def summarize_deterministic_results(
-    effective: Mapping[str, Any], routed: Mapping[str, Any]
-) -> DeterministicSummary:
-    """Summarise existing #136/#119 persisted structures without re-execution or native claims."""
-    _format_check(effective, routed)
-    selection = _object(effective.get("selection"), "selection")
-    durations = _array(selection.get("duration_axis_min"), "duration axis")
-    aeps = _array(selection.get("aep_label_axis"), "AEP axis")
-    axes = [(_int(duration, "duration"), _text(aep, "AEP")) for duration in durations for aep in aeps]
-    cells = [_object(raw, "cell") for raw in _array(effective.get("cells"), "cells")]
-    if [(cell.get("duration_min"), cell.get("aep_label")) for cell in cells] != axes:
-        _fail("Cell order/population differs from the recorded duration/AEP axes")
+def _validate_ready_members(
+    cell: Mapping[str, Any],
+    selected: list[dict[str, Any]],
+    selection: Mapping[str, Any],
+    key: tuple[int, str],
+) -> None:
+    """Reject missing or re-ordered eligible members and mixed design-loss policies."""
+    if cell.get("status") != "ready":
+        return
+    if len(selected) != _int(cell["expected_count"], "expected count"):
+        _fail(f"Ready cell has a missing temporal pattern: {key}")
+    orders = [_int(row.get("ensemble_order"), "ensemble order") for row in selected]
+    if orders != list(range(1, len(orders) + 1)):
+        _fail(f"Ensemble ordinal is not preserved for {key}")
+    for row in selected:
+        _text(row.get("original_tp_id"), "original source EventID")
+        _int(row.get("source_order"), "original source order")
+        loss = _object(row.get("loss"), "effective loss selection")
+        if loss.get("method") != selection.get("loss_profile"):
+            _fail(f"Mixed design-loss method for {key}")
+
+
+def _validate_population(
+    effective: Mapping[str, Any],
+    routed: Mapping[str, Any],
+    cells: list[dict[str, Any]],
+    selection: Mapping[str, Any],
+) -> tuple[dict[tuple[int, str], list[dict[str, Any]]], dict[str, dict[str, Any]], tuple[str, ...]]:
+    """Bind exactly the generated event ledger to all existing routed outcomes."""
     members = _members_by_cell(effective, cells)
     outcomes, sites = _outcome_index(effective, routed)
     seen: set[str] = set()
@@ -405,18 +424,7 @@ def summarize_deterministic_results(
         selected = [row for row in members[key] if isinstance(row.get("event_id"), str)]
         if len(selected) != _int(cell.get("ready_count"), "cell.ready_count"):
             _fail(f"Prepared event count inconsistent for {key}")
-        if cell.get("status") == "ready":
-            if len(selected) != _int(cell["expected_count"], "expected count"):
-                _fail(f"Ready cell has a missing temporal pattern: {key}")
-            orders = [_int(row.get("ensemble_order"), "ensemble order") for row in selected]
-            if orders != list(range(1, len(orders) + 1)):
-                _fail(f"Ensemble ordinal is not preserved for {key}")
-            for row in selected:
-                _text(row.get("original_tp_id"), "original source EventID")
-                _int(row.get("source_order"), "original source order")
-                loss = _object(row.get("loss"), "effective loss selection")
-                if loss.get("method") != selection.get("loss_profile"):
-                    _fail(f"Mixed design-loss method for {key}")
+        _validate_ready_members(cell, selected, selection, key)
         for row in selected:
             event_id = _text(row.get("event_id"), "member.event_id")
             if event_id in seen or event_id not in outcomes:
@@ -433,16 +441,13 @@ def summarize_deterministic_results(
         effective.get("expected_population"), "expected_population"
     ):
         _fail("Expected population is inconsistent with its per-cell denominators")
-    volumes = _volume_map(routed)
-    summaries: list[dict[str, Any]] = []
-    for cell in cells:
-        key = (cell["duration_min"], cell["aep_label"])
-        for site in sites or (None,):
-            rows = [
-                _member_row(member, site, outcomes.get(member.get("event_id")), volumes)
-                for member in members[key]
-            ]
-            summaries.append(_site_summary(cell, site, rows, _int(cell["expected_count"], "expected count")))
+    return members, outcomes, sites
+
+
+def _critical_duration_records(
+    aeps: list[Any], sites: tuple[str, ...], summaries: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Retain all duration candidates; forbid unevidenced native duration selection."""
     critical: list[dict[str, Any]] = []
     for aep in aeps:
         for site in sites or (None,):
@@ -461,6 +466,33 @@ def summarize_deterministic_results(
                 "selection_status": "unverified",
                 "reason": "No qualified native duration-aggregation/representative rule or common-horizon policy",
             })
+    return critical
+
+
+def summarize_deterministic_results(
+    effective: Mapping[str, Any], routed: Mapping[str, Any]
+) -> DeterministicSummary:
+    """Summarise existing #136/#119 persisted structures without re-execution or native claims."""
+    _format_check(effective, routed)
+    selection = _object(effective.get("selection"), "selection")
+    durations = _array(selection.get("duration_axis_min"), "duration axis")
+    aeps = _array(selection.get("aep_label_axis"), "AEP axis")
+    axes = [(_int(duration, "duration"), _text(aep, "AEP")) for duration in durations for aep in aeps]
+    cells = [_object(raw, "cell") for raw in _array(effective.get("cells"), "cells")]
+    if [(cell.get("duration_min"), cell.get("aep_label")) for cell in cells] != axes:
+        _fail("Cell order/population differs from the recorded duration/AEP axes")
+    members, outcomes, sites = _validate_population(effective, routed, cells, selection)
+    volumes = _volume_map(routed)
+    summaries: list[dict[str, Any]] = []
+    for cell in cells:
+        key = (cell["duration_min"], cell["aep_label"])
+        for site in sites or (None,):
+            rows = [
+                _member_row(member, site, outcomes.get(member.get("event_id")), volumes)
+                for member in members[key]
+            ]
+            summaries.append(_site_summary(cell, site, rows, _int(cell["expected_count"], "expected count")))
+    critical = _critical_duration_records(aeps, sites, summaries)
     complete = bool(sites) and all(row["complete_comparable_population"] for row in summaries)
     software_execution_success = all(item.get("status") == "computed_unvalidated" for item in outcomes.values())
     return DeterministicSummary({

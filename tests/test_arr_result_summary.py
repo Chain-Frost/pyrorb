@@ -100,7 +100,8 @@ def test_api_file_and_real_cli_agree_and_do_not_modify_hydrographs(
     api = read_deterministic_results(*inputs)
     api_paths = write_summary(tmp_path / "api", api)
     assert main([str(inputs[0]), str(inputs[1]), str(tmp_path / "direct")]) == 0
-    result = subprocess.run(
+    # Fixed interpreter and repository module; arguments are local test paths, not shell commands.
+    result = subprocess.run(  # noqa: S603
         [sys.executable, "-m", "runoff_routing.arr_result_summary", *map(str, inputs), str(tmp_path / "cli")],
         cwd=tmp_path,
         text=True,
@@ -176,7 +177,7 @@ def test_failed_input_cell_preserves_all_candidate_ids_and_missing_ten(
         "unqualified_source_candidate_ids": [item["original_tp_id"] for item in records],
         "unqualified_source_candidate_orders": [item["source_order"] for item in records],
     })
-    effective["members"] = effective["members"][:-10] + [{
+    effective["members"] = [*effective["members"][:-10], {
         "duration_min": cell["duration_min"], "aep_label": cell["aep_label"],
         "original_tp_id": None, "event_id": None, "status": "input_error",
     }]
