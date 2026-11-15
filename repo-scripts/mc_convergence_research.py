@@ -361,7 +361,6 @@ def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> 
     return (low + high) / 2
 
 
-
 def upper_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> float:
     """Exact one-sided Clopper-Pearson upper bound, for rejection of adequacy."""
     if not 0 <= successes <= trials or trials < 1 or not 0 < alpha < 1:
@@ -397,6 +396,7 @@ def sd_bootstrap_interval(values: list[float], seed_key: str, *, resamples: int 
         estimates.append(statistics.stdev(drawn))
     estimates.sort()
     return estimates[int(0.025 * resamples)], estimates[math.ceil(0.975 * resamples) - 1]
+
 
 def _variant_key(strata: int, n: int, tp_method: str, quantile_method: str) -> str:
     return f"h{strata}-n{n}-{tp_method}-{quantile_method}"
