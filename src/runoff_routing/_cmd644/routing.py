@@ -261,6 +261,9 @@ def route_network(event: Event, geometry: Geometry, preparation: Preparation) ->
     next_source = 0
     next_reach = 0
     for control in event.controls:
+        if control.code == 2 and active is None:
+            message = "code-2 source needs an existing running hydrograph"
+            raise UnsupportedNumericPath(message)
         if control.code in (1, 2):
             source = preparation.hydrographs[next_source]
             next_source += 1
