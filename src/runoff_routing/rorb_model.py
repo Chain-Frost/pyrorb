@@ -8,14 +8,37 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
+from enum import IntEnum, StrEnum
 from typing import Any, Literal, cast
 
 SCHEMA_VERSION = 1
-ControlCode = Literal[1, 2, 3, 4, 5, 7]
-ReachMode = Literal["implicit_natural", "explicit_reach_types"]
-PatternBasis = Literal["percent_of_depth", "relative_weights", "combined_preburst_percent"]
+
+
+class LossMode(IntEnum):
+    INITIAL_CONTINUING = 1
+    INITIAL_RUNOFF_COEFFICIENT = 2
+
+
+class ControlCode(IntEnum):
+    SOURCE = 1
+    ADD_SOURCE = 2
+    STORE_BRANCH = 3
+    JOIN_BRANCH = 4
+    ROUTE_REACH = 5
+    PRINT = 7
+
+
+class ReachMode(StrEnum):
+    IMPLICIT_NATURAL = "implicit_natural"
+    EXPLICIT_REACH_TYPES = "explicit_reach_types"
+
+
+class PatternBasis(StrEnum):
+    PERCENT_OF_DEPTH = "percent_of_depth"
+    RELATIVE_WEIGHTS = "relative_weights"
+    COMBINED_PREBURST_PERCENT = "combined_preburst_percent"
 
 
 def _finite(value: Decimal, label: str, *, positive: bool = False) -> None:
@@ -66,6 +89,46 @@ class LossValue:
 
 
 @dataclass(frozen=True, slots=True)
+class InitialContinuingLoss:
+    """Mode 1: initial loss in mm and continuing loss in mm/hour."""
+
+    isa: int
+    burst: int
+    initial_loss_mm: Decimal
+    continuing_loss_mm_h: Decimal
+
+    def __post_init__(self) -> None:
+        if type(self.isa) is not int or self.isa < 1 or type(self.burst) is not int or self.burst < 1:
+            message = "Loss ISA and burst must be positive integers"
+            raise ValueError(message)
+        _finite(self.initial_loss_mm, "initial loss")
+        _finite(self.continuing_loss_mm_h, "continuing loss")
+
+
+@dataclass(frozen=True, slots=True)
+class InitialRunoffCoefficientLoss:
+    """Mode 2: initial loss in mm and dimensionless runoff coefficient."""
+
+    isa: int
+    burst: int
+    initial_loss_mm: Decimal
+    runoff_coefficient: Decimal
+
+    def __post_init__(self) -> None:
+        if type(self.isa) is not int or self.isa < 1 or type(self.burst) is not int or self.burst < 1:
+            message = "Loss ISA and burst must be positive integers"
+            raise ValueError(message)
+        _finite(self.initial_loss_mm, "initial loss")
+        _finite(self.runoff_coefficient, "runoff coefficient")
+        if self.runoff_coefficient > 1:
+            message = "Runoff coefficient must not exceed 1"
+            raise ValueError(message)
+
+
+LossPolicy = InitialContinuingLoss | InitialRunoffCoefficientLoss
+
+
+@dataclass(frozen=True, slots=True)
 class ParameterSet:
     """Documented CMD parameter values; path spellings are references, not dereferenced paths."""
 
@@ -73,7 +136,7 @@ class ParameterSet:
     storm_reference: str
     lumped_kc: bool
     verbosity: int
-    loss_model: Literal[1, 2]
+    loss_model: LossMode | Literal[1, 2]
     num_isa: int
     num_bursts: int
     routing: tuple[RoutingValue, ...]
@@ -87,10 +150,21 @@ class ParameterSet:
         if type(self.lumped_kc) is not bool or type(self.verbosity) is not int or self.verbosity not in (1, 2, 3):
             message = "Invalid CMD lumped flag or verbosity"
             raise ValueError(message)
-        if self.loss_model not in (1, 2) or type(self.loss_model) is not int:
+        if isinstance(self.loss_model, bool) or not isinstance(self.loss_model, int):
             message = "Unsupported CMD loss model"
             raise ValueError(message)
-        if type(self.num_isa) is not int or not 1 <= self.num_isa <= 10_000 or self.num_bursts != 1:
+        try:
+            mode = LossMode(self.loss_model)
+        except ValueError as exc:
+            message = "Unsupported CMD loss model"
+            raise ValueError(message) from exc
+        object.__setattr__(self, "loss_model", mode)
+        if (
+            type(self.num_isa) is not int
+            or not 1 <= self.num_isa <= 10_000
+            or type(self.num_bursts) is not int
+            or self.num_bursts != 1
+        ):
             message = "Only a positive ISA count and one explicit burst are characterised"
             raise ValueError(message)
         routing_ids = tuple(item.isa for item in self.routing)
@@ -103,6 +177,41 @@ class ParameterSet:
         ):
             message = "Loss ISA/burst identifiers/order do not match CMD headers"
             raise ValueError(message)
+        if mode is LossMode.INITIAL_RUNOFF_COEFFICIENT and any(item.continuing > 1 for item in self.losses):
+            message = "Runoff coefficient must not exceed 1"
+            raise ValueError(message)
+
+    @property
+    def loss_policies(self) -> tuple[LossPolicy, ...]:
+        """Mode-discriminated, unit-labelled editing view of native loss records."""
+        if self.loss_model is LossMode.INITIAL_CONTINUING:
+            return tuple(
+                InitialContinuingLoss(item.isa, item.burst, item.initial_loss_mm, item.continuing)
+                for item in self.losses
+            )
+        return tuple(
+            InitialRunoffCoefficientLoss(item.isa, item.burst, item.initial_loss_mm, item.continuing)
+            for item in self.losses
+        )
+
+    def with_loss_policies(self, policies: tuple[LossPolicy, ...]) -> ParameterSet:
+        """Create validated replacement without editing original native records."""
+        if len(policies) != len(self.losses):
+            message = "Loss policy count must match the existing source map"
+            raise ValueError(message)
+        converted: list[LossValue] = []
+        for policy in policies:
+            if self.loss_model is LossMode.INITIAL_CONTINUING and isinstance(policy, InitialContinuingLoss):
+                value = policy.continuing_loss_mm_h
+            elif self.loss_model is LossMode.INITIAL_RUNOFF_COEFFICIENT and isinstance(
+                policy, InitialRunoffCoefficientLoss
+            ):
+                value = policy.runoff_coefficient
+            else:
+                message = "Loss policy type is incompatible with selected loss mode"
+                raise ValueError(message)
+            converted.append(LossValue(policy.isa, policy.burst, policy.initial_loss_mm, value))
+        return replace(self, losses=tuple(converted))
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,11 +264,22 @@ class PrintLocation:
 
 @dataclass(frozen=True, slots=True)
 class ControlStep:
-    code: ControlCode
+    code: ControlCode | Literal[1, 2, 3, 4, 5, 7]
     subarea_id: str | None = None
     reach_id: str | None = None
     print_id: str | None = None
     label: str = ""
+
+    def __post_init__(self) -> None:
+        if isinstance(self.code, bool) or not isinstance(self.code, int):
+            message = "Unrecognised RORB computational control code"
+            raise ValueError(message)
+        try:
+            code = ControlCode(self.code)
+        except ValueError as exc:
+            message = "Unrecognised RORB computational control code"
+            raise ValueError(message) from exc
+        object.__setattr__(self, "code", code)
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,9 +292,15 @@ class CatchmentModel:
     controls: tuple[ControlStep, ...]
     print_locations: tuple[PrintLocation, ...]
     storages: tuple[Storage, ...] = ()
-    reach_mode: ReachMode = "implicit_natural"
+    reach_mode: ReachMode | Literal["implicit_natural", "explicit_reach_types"] = ReachMode.IMPLICIT_NATURAL
 
     def __post_init__(self) -> None:
+        try:
+            mode = ReachMode(self.reach_mode)
+        except (TypeError, ValueError) as exc:
+            message = "Unknown reach encoding mode"
+            raise ValueError(message) from exc
+        object.__setattr__(self, "reach_mode", mode)
         validate_catchment(self)
 
 
@@ -302,10 +428,18 @@ class StormModel:
     pluviograph_count: int = 1
     isa_count: int = 1
     burst_count: int = 1
-    pattern_basis: PatternBasis = "percent_of_depth"
+    pattern_basis: PatternBasis | Literal[
+        "percent_of_depth", "relative_weights", "combined_preburst_percent"
+    ] = PatternBasis.PERCENT_OF_DEPTH
     preburst_bins: int = 0
 
     def __post_init__(self) -> None:
+        try:
+            basis = PatternBasis(self.pattern_basis)
+        except (TypeError, ValueError) as exc:
+            message = "Unknown temporal pattern basis"
+            raise ValueError(message) from exc
+        object.__setattr__(self, "pattern_basis", basis)
         validate_storm(self)
 
 
@@ -342,6 +476,12 @@ def validate_storm(model: StormModel) -> None:
         message = "Storm title is required"
         raise ValueError(message)
     _finite(model.timestep_hours, "storm timestep", positive=True)
+    if any(
+        type(value) is not int
+        for value in (model.pluviograph_count, model.isa_count, model.burst_count, model.preburst_bins)
+    ):
+        message = "Storm counts and pre-burst split must be integers"
+        raise ValueError(message)
     if (
         type(model.calculation_increments) is not int
         or type(model.start_increment) is not int
@@ -387,6 +527,21 @@ class RunModel:
 RorbModel = ParameterSet | CatchmentModel | StormModel | RunModel
 
 
+def edit_run_model(
+    original: RunModel,
+    *,
+    parameters: ParameterSet | None = None,
+    catchment: CatchmentModel | None = None,
+    storm: StormModel | None = None,
+) -> RunModel:
+    """Return an independently validated immutable edit; never mutate source documents."""
+    return RunModel(
+        original.parameters if parameters is None else parameters,
+        original.catchment if catchment is None else catchment,
+        original.storm if storm is None else storm,
+    )
+
+
 def _units(kind: str, loss_model: int = 1) -> dict[str, str]:
     common = {"area": "km2", "reach_length": "km", "time": "hour", "rainfall_depth": "mm"}
     if kind in ("parameters", "run"):
@@ -409,7 +564,7 @@ def _parameter_data(model: ParameterSet) -> dict[str, Any]:
         "storm_reference": model.storm_reference,
         "lumped_kc": model.lumped_kc,
         "verbosity": model.verbosity,
-        "loss_model": model.loss_model,
+        "loss_model": int(model.loss_model),
         "num_isa": model.num_isa,
         "num_bursts": model.num_bursts,
         "routing": [{"isa": item.isa, "kc": str(item.kc), "m": str(item.m)} for item in model.routing],
@@ -443,7 +598,7 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
         ],
         "controls": [
             {
-                "code": item.code,
+                "code": int(item.code),
                 "subarea_id": item.subarea_id,
                 "reach_id": item.reach_id,
                 "print_id": item.print_id,
@@ -453,7 +608,7 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
         ],
         "print_locations": [{"identifier": item.identifier, "label": item.label} for item in model.print_locations],
         "storages": [{"identifier": item.identifier, "kind": item.kind} for item in model.storages],
-        **({"reach_mode": model.reach_mode} if model.reach_mode != "implicit_natural" else {}),
+        **({"reach_mode": str(model.reach_mode)} if model.reach_mode != "implicit_natural" else {}),
     }
 
 
@@ -473,7 +628,7 @@ def _storm_data(model: StormModel) -> dict[str, Any]:
     # Omit the default in schema-1 JSON to preserve existing 36-case
     # model hashes and source/installed-wheel identity contracts.
     if model.pattern_basis != "percent_of_depth":
-        data["pattern_basis"] = model.pattern_basis
+        data["pattern_basis"] = str(model.pattern_basis)
     if model.preburst_bins != 0:
         data["preburst_bins"] = model.preburst_bins
     return data
@@ -604,7 +759,7 @@ def _params(raw: object) -> ParameterSet:
     if loss_model not in (1, 2):
         message = "Unsupported CMD loss model"
         raise ValueError(message)
-    recognised_loss: Literal[1, 2] = 1 if loss_model == 1 else 2
+    recognised_loss = LossMode(loss_model)
     return ParameterSet(
         _field_str(record, "catchment_reference"),
         _field_str(record, "storm_reference"),
@@ -643,7 +798,7 @@ def _control(raw: object) -> ControlStep:
         message = "Unrecognised RORB computational control code"
         raise ValueError(message)
     return ControlStep(
-        code,
+        ControlCode(code),
         _optional_str(record, "subarea_id"),
         _optional_str(record, "reach_id"),
         _optional_str(record, "print_id"),
@@ -677,7 +832,7 @@ def _catchment(raw: object) -> CatchmentModel:
         tuple(_control(item) for item in _items(record["controls"])),
         tuple(_print_location(item) for item in _items(record["print_locations"])),
         tuple(_storage(item) for item in _items(record["storages"])),
-        mode,
+        ReachMode(mode),
     )
 
 
@@ -715,7 +870,7 @@ def _storm(raw: object) -> StormModel:
         _integer_field(record, "pluviograph_count"),
         _integer_field(record, "isa_count"),
         _integer_field(record, "burst_count"),
-        basis,
+        PatternBasis(basis),
         _integer_field(record, "preburst_bins") if "preburst_bins" in record else 0,
     )
 
