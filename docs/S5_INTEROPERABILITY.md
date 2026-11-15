@@ -27,6 +27,34 @@ python-cmd/cmd-6.44 default; explicit python/engineering-v1 and optional
 rorb-cmd selections remain available. Pure-Python calculated events remain
 computed_unvalidated, with no claim of original CMD numerical equivalence.
 
+## Provisional unmerged import/edit/export CLI (not yet in main)
+
+The following commands belong to the separate #140/#141 implementation
+branches and were exercised against the temporary #143 integration test tree.
+They **must not** be described as implemented in current main until the
+implementation owners reconcile and merge the contracts:
+
+~~~sh
+python -m runoff_routing.project_json inspect-par "historic/settings.par"
+python -m runoff_routing.project_json import-rorb case-one legacy-rorb "historic/settings.par" "project.json" --catchment "actual catchment.catg"
+python -m runoff_routing.project_json validate "project.json"
+mkdir relocated
+python -m runoff_routing.project_json save-run "project.json" "edited-run.json" "relocated/edited-project.json"
+python -m runoff_routing.native_export "relocated/edited-project.json" "native-bundle" --target cmd-6.44
+~~~
+
+The import resolver uses the original PAR directory unless an explicit
+base directory is supplied; selected path overrides take precedence over
+embedded PAR references. The optional `--catchment` override is shown to
+illustrate a missing/replaced original file. `edited-run.json` is an S1 typed
+RunModel after deliberate user edits, not a dynamically invented CMD event.
+A successful bundle contains relative native PAR/CATG/STM inputs and may be
+moved without referencing the original project. Export status is
+`native_execution=not_run` until an authorised native RORB CMD executable
+actually launches the emitted relocated PAR; the bundled launcher is not
+numeric proof. The demonstrated source/wheel evidence is linked in the
+[independent acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md).
+
 ## Contract boundaries
 
 | Operation | Baseline support | Remaining integration |
@@ -37,6 +65,17 @@ computed_unvalidated, with no claim of original CMD numerical equivalence.
 | Export | S1 JSON model export; existing local canonical writers are **not** a native package | Direct PyRomb writer integration (#139) and native package export (#141) |
 | Inspect reports | Read-only bounded CMD .out parsing | Installed canonical ryan-tools .out/batch.out reader and consumer migration (#142) |
 | Execute | Explicit engine selection; optional local verified native CMD adapter | Direct execution of actual **emitted relocated PAR**, separately from numerical acceptance |
+
+**Native edited-source safety limit:** the provisional combined-code review
+found that selecting `rorb-cmd` directly on a file-backed project with
+edited effective storm depths or catchment geometry can still pass the
+**original staged source assets** to the native adapter. Until the
+#140/native-adapter owner fixes and tests this mismatch, such execution is
+**not qualified**: reject before launch or use a separately verified
+effective native package. A resulting native report must never be
+attributed to edits the executable did not actually receive.
+Independent [#143 review evidence](work/2026-11-15-issue143-s5-acceptance.md)
+records the P1 boundary.
 
 Unknown PAR dialects must be rejected rather than guessed from the suffix.
 RORBwin saved-PAR editing is deferred to #144; RORBwin-produced report reading

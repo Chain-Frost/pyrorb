@@ -158,3 +158,21 @@ def test_canonical_bare_table_preserves_exact_values_without_engine_claim(tmp_pa
     malformed = read_rorb_table_file(path)
     assert malformed.status == "invalid"
     assert any(d.code == "output_record" for d in malformed.diagnostics)
+
+
+@pytest.mark.parametrize("original_encoding", ["utf-8", "utf-8-sig"])
+def test_missing_report_path_preserves_bom_and_bom_free_utf8_bytes(tmp_path: Path, original_encoding: str) -> None:
+    """UTF-8 decoder selection does not imply the original source contained a BOM."""
+    path = tmp_path / "original.out"
+    raw = _report().decode("cp1252").encode(original_encoding)
+    path.write_bytes(raw)
+    source = RorbSource.read(path)
+    assert source.encoding == "utf-8-sig"
+    assert source.size_bytes == len(raw)
+    assert source.sha256 == hashlib.sha256(raw).hexdigest()
+    path.unlink()
+    inspected = inspect_output(source)
+    assert inspected.status == "partial"
+    assert inspected.hydrographs is not None
+    assert inspected.hydrographs.rows[1].raw_time == "1.00"
+    assert any(d.code == "source_path_unavailable" for d in inspected.diagnostics)

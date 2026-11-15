@@ -12,7 +12,7 @@ from typing import Any, cast
 import pytest
 
 from runoff_routing.engine_types import EngineKind, EngineSelection, ResultStatus
-from runoff_routing.integration import canonical_run_bytes
+from runoff_routing.integration import canonical_run_bytes, parse_run_bytes
 from runoff_routing.project_batch import EventConfigError, ProjectEvent, resolve_effective_model, run_project_events
 from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, load_project, write_project
 from runoff_routing.rorb_model import (
@@ -183,3 +183,66 @@ def test_imported_source_bytes_and_provenance_survive_event_edit(tmp_path: Path)
     reloaded = load_project(project_path)
     assert reloaded.run == loaded.run
     assert reloaded.file_hashes == loaded.file_hashes
+
+
+def test_raw_event_overlays_remain_unchanged_after_repeated_resolution() -> None:
+    base = _model()
+    original_model = to_json(base)
+    mode_one: dict[str, object] = {
+        "event_id": "legacy-1",
+        "losses": {"continuing_loss_mm_h": "0.3"},
+    }
+    for _ in range(2):
+        resolved = resolve_effective_model(base, mode_one)
+        assert resolved.run.parameters.losses[0].continuing == Decimal("0.3")
+    assert mode_one["losses"] == {"continuing_loss_mm_h": "0.3"}
+
+    mode_two = edit_run_model(
+        base,
+        parameters=replace(
+            base.parameters,
+            loss_model=LossMode.INITIAL_RUNOFF_COEFFICIENT,
+            losses=(replace(base.parameters.losses[0], continuing=Decimal("0.5")),),
+        ),
+    )
+    mode_two_event: dict[str, object] = {
+        "event_id": "legacy-2",
+        "losses": {"runoff_coefficient": "0.75"},
+    }
+    for _ in range(2):
+        resolved = resolve_effective_model(mode_two, mode_two_event)
+        assert resolved.run.parameters.losses[0].continuing == Decimal("0.75")
+    assert mode_two_event["losses"] == {"runoff_coefficient": "0.75"}
+    assert mode_two.parameters.losses[0].continuing == Decimal("0.5")
+    assert to_json(base) == original_model
+    with pytest.raises(EventConfigError, match="Mutually exclusive"):
+        resolve_effective_model(
+            mode_two,
+            {"event_id": "invalid", "losses": {"continuing": "0.1", "runoff_coefficient": "0.2"}},
+        )
+
+
+def test_mode_two_native_roundtrip_and_result_status_are_primitive_on_wire(tmp_path: Path) -> None:
+    base = _model()
+    mode_two = edit_run_model(
+        base,
+        parameters=replace(
+            base.parameters,
+            loss_model=LossMode.INITIAL_RUNOFF_COEFFICIENT,
+            losses=(replace(base.parameters.losses[0], continuing=Decimal("0.5")),),
+        ),
+    )
+    event = ProjectEvent("runoff", losses={"runoff_coefficient": "0.75"})
+    resolved = resolve_effective_model(mode_two, event)
+    native_roundtrip = parse_run_bytes(*canonical_run_bytes(resolved.run))
+    assert native_roundtrip.model == resolved.run
+    project_path = tmp_path / "runoff.json"
+    write_project(project_path, Project("runoff_mode_two", "explicit", EmbeddedRun(mode_two)))
+    outcome = run_project_events(project_path, (event,)).outcomes[0]
+    assert outcome.status is ResultStatus.COMPUTED_UNVALIDATED
+    wire = cast("dict[str, Any]", json.loads(outcome.to_json()))
+    assert wire["status"] == "computed_unvalidated"
+    assert type(wire["status"]) is str
+    assert wire["effective_selection"]["engine"] == "python-cmd"
+    with pytest.raises(ValueError, match="Unknown project result status"):
+        replace(outcome, status=cast("ResultStatus", "unexpected"))

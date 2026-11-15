@@ -10,7 +10,9 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field, replace
+from importlib import import_module
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, cast
 
@@ -207,6 +209,15 @@ class LoadedProject:
     original_json_bytes: bytes
     file_hashes: tuple[tuple[str, str], ...]
     validation_status: Literal["structural_only"] = "structural_only"
+    original_run: RunModel | None = None
+
+    def original_inputs_match_effective(self) -> bool:
+        """Whether the current typed CATG/STM match hash-verified immutable source models."""
+        return (
+            self.original_run is not None
+            and self.run.catchment == self.original_run.catchment
+            and self.run.storm == self.original_run.storm
+        )
 
 
 def _object(raw: object, fields: set[str], label: str) -> dict[str, object]:
@@ -513,7 +524,9 @@ def load_project(path: Path) -> LoadedProject:
     all_files = (*references, *(asset.source for asset in project.assets))
     for asset in project.assets:
         _source_bytes(directory, asset.source)
-    return LoadedProject(project, run, source, tuple((item.path, item.sha256) for item in all_files))
+    return LoadedProject(
+        project, run, source, tuple((item.path, item.sha256) for item in all_files), original_run=original_run
+    )
 
 
 def write_project(path: Path, project: Project) -> None:
@@ -573,11 +586,10 @@ def _relocated_source_files(source: Path, target: Path, project: Project) -> Non
     written: list[Path] = []
     try:
         for output, raw in planned:
-            output.parent.mkdir(parents=True, exist_ok=True)
             _ensure_relocation_directory(output.parent, target)
             with output.open("xb") as stream:
+                written.append(output)
                 stream.write(raw)
-            written.append(output)
     except (OSError, ProjectError):
         for output in written:
             output.unlink(missing_ok=True)
@@ -585,9 +597,28 @@ def _relocated_source_files(source: Path, target: Path, project: Project) -> Non
 
 
 def _ensure_relocation_directory(directory: Path, target: Path) -> None:
-    if not directory.resolve(strict=True).is_relative_to(target.resolve(strict=True)):
-        message = f"Relocated source directory escapes destination: {directory}"
-        raise ProjectError(message)
+    """Never mkdir through an existing symlink before checking containment."""
+    root = target.resolve(strict=True)
+    current = target
+    try:
+        components = directory.relative_to(target).parts
+    except ValueError as exc:
+        message = f"Relocated source directory is not under project root: {directory}"
+        raise ProjectError(message) from exc
+    for component in components:
+        current = current / component
+        if current.is_symlink():
+            message = f"Relocated source directory contains a symlink: {current}"
+            raise ProjectError(message)
+        if current.exists():
+            if not current.is_dir():
+                message = f"Relocated source parent is not a directory: {current}"
+                raise ProjectError(message)
+        else:
+            current.mkdir()
+        if not current.resolve(strict=True).is_relative_to(root):
+            message = f"Relocated source directory escapes destination: {current}"
+            raise ProjectError(message)
 
 
 def save_project_as(source: Path, destination: Path, *, effective_run: RunModel | None = None) -> Project:
@@ -758,7 +789,9 @@ def _cli_import_rorb(args: list[str]) -> None:
     overrides: dict[str, Path] = {}
     if len(remaining) == 3 and not any(item.startswith("--") for item in remaining):
         catg, stm, destination = remaining
-        overrides = {"catchment": Path(catg), "storm": Path(stm)}
+        # The legacy positional interface used CWD-relative paths. Preserve
+        # that real caller behaviour; flag-based overrides use the PAR base.
+        overrides = {"catchment": Path(catg).absolute(), "storm": Path(stm).absolute()}
     else:
         destination, *options = remaining
         if len(options) % 2:
@@ -794,6 +827,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command d
         from .engine_execution import run_cli  # noqa: PLC0415 -- avoids a JSON/dispatch import cycle
 
         return run_cli(args[1:])
+    if args and args[0] == "export-native":
+        # #141 owns this leaf module on a separate PR; load at the command
+        # boundary without a static import that breaks independent #140 checks.
+        try:
+            module = import_module(".native_export", package=__package__)
+        except ModuleNotFoundError as exc:
+            if exc.name != "runoff_routing.native_export":
+                raise
+            print("Native CMD package export requires integration of #141 native_export", file=sys.stderr)
+            return 2
+        export_native_cli = cast("Callable[[list[str]], int]", module.__dict__["main"])
+        return export_native_cli(args[1:])
     try:
         if len(args) == 8 and args[0] == "review-native":
             from .project_native_review import (  # noqa: PLC0415 -- CLI-only, depends on S5 source validation
@@ -919,7 +964,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command d
         "| import-rorb <id> <rainfall-profile> <par> <project.json> "
         "[--catchment FILE] [--storm FILE] [--base DIR] "
         "| save-run <project.json> <edited-run.json> <new-project.json> "
-        "| export-run <project.json> <run.json> | compare <left.json> <right.json> "
+        "| export-run <project.json> <run.json> "
+        "| export-native <project.json> <new-package-dir> --target cmd-6.44 [--events request.json] "
+        "| compare <left.json> <right.json> "
         "| run <project.json> <result.json> [--engine ID --numerical-profile PROFILE] "
         "[--native-config LOCAL.json] | compare-runs <left.json> <right.json> "
         "| review-native <project.json> <manifest.json> <manifest-sha256> "

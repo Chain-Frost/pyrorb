@@ -14,14 +14,14 @@
 
 ## Verification and non-acceptance
 
-At initial authoring this run uses GitHub connector writes; the local environment cannot clone GitHub, and no supported Windows native executable is available here. The source/wheel quality checks and required relocated *native Windows* execution are **not run** by this authoring session. Subsequent exact-head repository CI and independent review must be checked at the PR head; a green CI report is not native execution.
+GitHub Windows quality run `43728094889` passed on `d5f13a6639b78b4d3c40d7729b9be4331f9360bc` (Python 3.13) after correcting the reviewed signed negative-exit handling: source tests, Ruff, strict Pyright, original CMD source regression, wheel build, isolated-wheel tests and original CMD installed-wheel regression. This is a **historical exact-head receipt**; subsequent changes require a fresh head validation. Actual relocated native RORB CMD execution with the real executable remains **not run**.
 
 Each successful software export has an emitted-byte hash and in-process reparse, with manifest state `native_execution=not_run` and `numerical_equivalence=not_assessed`. No new RORB goldens, source reference bytes or numerical comparators are changed. No target output-name/verbosity-output availability claims have been admitted.
 
 ## Integration gates / next actions
 
-1. #138/#140 should expose the selected effective `RunModel` and retained source-role bindings for run/save/native export, and wire the new command handler to their shared project dispatcher. The standalone CLI now imports #138's public `resolve_effective_model`, not private #119 helpers; PR #162 is stacked on #138 PR #157 until that shared contract merges.
-2. #139 should provide the reviewed PyRomb edited-CATG adapter; the exporter intentionally rejects changed catchments until an actual upstream writer can round-trip their order, physical lengths, FI and metadata.
+1. The exporter consumes #138's public `resolve_effective_model`, #140's canonical staged `LegacyRunFiles`, persisted `LoadedProject.run` and serialized input binding provenance. #140 still owns shared project dispatcher delegation; PR #162 remains stacked on #138 PR #157 until the contract is reviewed and integrated.
+2. Edited CATG with an explicit validated `GeDrawing` now calls #139's PyRomb-backed `serialize_catg_with_drawing`, and reparses the result. Until #139 PR #166 is present with the reviewed PyRomb dependency, changes fail explicitly; unchanged originals are exact-copied without that dependency. Cross-branch integrated tests are still required.
 3. Run focused source tests, Ruff/Pyright, Windows quality CI, and installed-wheel checks on the **exact integrated head**; track exact revisions, skips and failures.
 4. On an authorised Windows machine, move the package, execute the *emitted* `model.par` (not S0 capture-generated PAR), hash it before/after, record executable version/SHA/cwd/argv and all actual output/verbosity observations. Only then assess numerical evidence via the existing comparator.
 

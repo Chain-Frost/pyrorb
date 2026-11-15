@@ -231,7 +231,9 @@ def _overlay(raw: object, allowed: set[str], label: str) -> dict[str, object]:
     data = cast("dict[str, object]", raw)
     if set(data) - allowed:
         raise EventConfigError(_UNSUPPORTED_FEATURE, f"{label}_fields", f"Unsupported {label} override fields")
-    return data
+    # Alias normalization may pop() a loss field. Never mutate the caller's
+    # raw event dictionary, including when replaying or exporting it twice.
+    return dict(data)
 
 
 def _derive_storm(original: StormModel, raw: object) -> StormModel:

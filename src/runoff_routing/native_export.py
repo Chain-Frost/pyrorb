@@ -15,9 +15,9 @@ import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from .project_json import MAX_SOURCE_BYTES, LegacyRunFiles, LoadedProject, SourceFile, load_project
+from .project_json import MAX_SOURCE_BYTES, LegacyRunFiles, LoadedProject, SourceFile, load_project, project_to_dict
 from .rorb_codec import (
     FormatProblem,
     parse_catg,
@@ -27,6 +27,9 @@ from .rorb_codec import (
     serialize_design_stm,
 )
 from .rorb_model import RunModel, to_json
+
+if TYPE_CHECKING:
+    from .rorb_ge_authoring import GeDrawing
 
 _EVENT_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
 _TARGET_PROFILE = "cmd-6.44"
@@ -55,6 +58,7 @@ class NativeExportEvent:
 
     event_id: str
     run: RunModel
+    catchment_drawing: GeDrawing | None = None
 
     def __post_init__(self) -> None:
         if _EVENT_ID.fullmatch(self.event_id) is None:
@@ -196,14 +200,40 @@ def _reparse_staged(event_dir: Path, cat_name: str, intended: RunModel) -> None:
         raise NativeExportError(message)
 
 
-def _stage_event(root: Path, ordinal: int, event: NativeExportEvent, source: _OriginalInputs) -> dict[str, Any]:
-    model = event.run
-    if model.catchment != source.run.catchment:
+def _edited_catg(event: NativeExportEvent) -> bytes:
+    """Use only #139's reviewed PyRomb adapter for edited graphical inputs."""
+    drawing = event.catchment_drawing
+    if drawing is None:
         message = (
-            f"Event {event.event_id}: edited CATG needs the #139 PyRomb writer; "
-            "no local CATG renderer or patch fallback is permitted"
+            f"Event {event.event_id}: edited CATG needs an explicit verified GeDrawing "
+            "for #139's PyRomb writer; unchanged CATG may be copied without one"
         )
         raise NativeExportError(message)
+    from . import rorb_codec  # noqa: PLC0415 -- changed-input-only writer dependency
+
+    if not hasattr(rorb_codec, "CatgWriterLossError"):
+        message = "Edited CATG requires the reviewed #139 PyRomb adapter; no local CATG renderer is permitted"
+        raise NativeExportError(message)
+    from .rorb_ge_authoring import serialize_catg_with_drawing  # noqa: PLC0415 -- lazy pinned writer adapter
+
+    try:
+        result = serialize_catg_with_drawing(event.run.catchment, drawing)
+        if parse_catg(result).model != event.run.catchment:
+            message = "PyRomb export lost CATG computational ordering, lengths or print identity"
+            raise NativeExportError(message)
+    except (FormatProblem, ValueError) as exc:
+        message = f"Event {event.event_id}: PyRomb cannot represent edited CATG: {exc}"
+        raise NativeExportError(message) from exc
+    return result
+
+
+def _stage_event(root: Path, ordinal: int, event: NativeExportEvent, source: _OriginalInputs) -> dict[str, Any]:
+    model = event.run
+    changed_catchment = model.catchment != source.run.catchment
+    if event.catchment_drawing is not None and not changed_catchment:
+        message = f"Event {event.event_id}: a catchment drawing was supplied without a CATG edit"
+        raise NativeExportError(message)
+    cat_data = _edited_catg(event) if changed_catchment else source.catchment
     cat_suffix = Path(source.files.catchment.path).suffix.lower()
     if cat_suffix not in {".cat", ".catg"}:
         message = "Only modern graphical .catg and characterised graphical .cat aliases can be exported"
@@ -221,7 +251,7 @@ def _stage_event(root: Path, ordinal: int, event: NativeExportEvent, source: _Or
 
     relative = Path("events") / f"{ordinal:03d}"
     event_dir = root / relative
-    cat_output = _written(root, relative / cat_name, source.catchment)
+    cat_output = _written(root, relative / cat_name, cat_data)
     stm_output = _written(root, relative / "storm.stm", stm_data)
     par_output = _written(root, relative / "model.par", par_data)
     _reparse_staged(event_dir, cat_name, intended)
@@ -251,7 +281,11 @@ def _stage_event(root: Path, ordinal: int, event: NativeExportEvent, source: _Or
                 source.files.parameters, source.parameters, par_output, par_data, mode="rebound"
             ),
             "catchment": _role_record(
-                source.files.catchment, source.catchment, cat_output, source.catchment, mode="source_exact"
+                source.files.catchment,
+                source.catchment,
+                cat_output,
+                cat_data,
+                mode="semantic_edit" if changed_catchment else "source_exact",
             ),
             "storm": _role_record(
                 source.files.storm,
@@ -285,7 +319,7 @@ def _launcher(number_of_events: int) -> bytes:
         '  echo Usage: run.cmd "C:\\full\\path\\to\\RORB_CMD.exe" 1>&2',
         "  exit /b 2",
         ")",
-        'set "NATIVE_EXE=%~1"',
+        'set "NATIVE_EXE=%~f1"',
         'if not exist "%NATIVE_EXE%" (',
         "  echo RORB CMD executable not found 1>&2",
         "  exit /b 2",
@@ -358,9 +392,9 @@ def export_cmd_package(
 ) -> NativeExportReceipt:
     """Stage, validate, then publish an exclusive native-only CMD input package.
 
-    Only original graphical catchment bytes are currently accepted; when a
-    catchment changes, the PyRomb writer owner supplies the edited-asset adapter.
-    No Python numerical engine is selected or executed by this function.
+    Original CATG is copied byte-exact. Edited CATG needs an explicit
+    verified drawing and the reviewed #139 PyRomb adapter. No local renderer
+    or string patching is permitted. No numerical engine is executed.
     """
     project = load_project(project_path)
     original = _original_inputs(project, project_path)
@@ -374,6 +408,24 @@ def export_cmd_package(
         staging = Path(scratch) / "package"
         staging.mkdir()
         records = tuple(_stage_event(staging, index, item, original) for index, item in enumerate(selected, start=1))
+        # Reuse the #140 versioned project serializer. Local resolved_source
+        # machine paths are intentionally not copied into a deliverable.
+        persisted_bindings: object = project_to_dict(project.project).get("source_bindings")
+        selected_bindings: list[dict[str, object]] = []
+        if isinstance(persisted_bindings, list):
+            for raw_binding in cast("list[object]", persisted_bindings):
+                if not isinstance(raw_binding, dict):
+                    message = "Invalid selected source binding in imported project"
+                    raise NativeExportError(message)
+                binding = cast("dict[str, object]", raw_binding)
+                selected_bindings.append(
+                    {
+                        "role": binding["role"],
+                        "origin": binding["origin"],
+                        "declared_reference": binding["declared_reference"],
+                        "selected_reference": binding["selected_reference"],
+                    }
+                )
         manifest: dict[str, Any] = {
             "format": "python-runoff-routing-native-cmd-package",
             "schema_version": 1,
@@ -385,6 +437,7 @@ def export_cmd_package(
                 "stored_engine_profile": project.project.engine.numerical_profile,
             },
             "required_input_roles": ["parameters", "catchment", "storm"],
+            "selected_input_bindings": selected_bindings,
             "native_executable_included": False,
             "native_execution": "not_run",
             "numerical_equivalence": "not_assessed",

@@ -6,12 +6,17 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineSelection
+from runoff_routing.native_cmd import NativeConfiguration
 from runoff_routing.project_json import (
     LegacyRunFiles,
     ProjectError,
@@ -287,3 +292,118 @@ def test_import_fails_without_partial_sources_for_invalid_cat_and_occupied_targe
     target.write_text("already here", encoding="utf-8")
     with pytest.raises(FileExistsError):
         _import(target, par)
+
+
+def test_legacy_positional_cli_preserves_cwd_relative_input_bindings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    par, catg, stm, run = _inputs(tmp_path / "inputs")
+    monkeypatch.chdir(tmp_path)
+    # Deliberately use CWD-relative paths where the PAR lives one level below.
+    args = [
+        "import-rorb",
+        "casedir",
+        "legacy-rorb",
+        "inputs/settings.par",
+        "inputs/catchment.catg",
+        "inputs/storm.stm",
+        "result.json",
+    ]
+    assert main(args) == 0
+    capsys.readouterr()
+    project = load_project(tmp_path / "result.json")
+    assert project.run == run
+    assert project.project.source_bindings[1].resolved_source == str(catg)
+    assert project.project.source_bindings[2].resolved_source == str(stm)
+    assert project.project.source_bindings[1].origin == "override"
+    assert project.project.source_bindings[2].origin == "override"
+    assert not (par.parent / "inputs").exists()
+
+
+@pytest.mark.parametrize("changed_role", ["catchment", "storm"])
+def test_native_adapter_rejects_overlay_without_executing_stale_original_inputs(
+    tmp_path: Path, changed_role: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    par, _, _, run = _inputs(tmp_path / "original")
+    project_dir = tmp_path / "source-project"
+    project_dir.mkdir()
+    original_project = project_dir / "source.json"
+    _import(original_project, par)
+    if changed_role == "storm":
+        effective = replace(run, storm=replace(run.storm, depths_mm=(Decimal(80),)))
+    else:
+        original_area = run.catchment.subareas[0]
+        effective = replace(
+            run,
+            catchment=replace(
+                run.catchment,
+                subareas=(replace(original_area, area_km2=Decimal(4)),),
+            ),
+        )
+    new_project = project_dir / "edited.json"
+    save_project_as(original_project, new_project, effective_run=effective)
+
+    executable = tmp_path / "native-stub.exe"
+    executable.write_bytes(b"not an executable; no native launch permitted")
+    config = NativeConfiguration(
+        executable,
+        "0" * 64,
+        "6.44",
+        "synthetic test banner",
+        "cmd-6.44",
+        tmp_path,
+        (("print_1", "Hyd001"),),
+    )
+
+    def must_not_launch(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("No native execution for a model whose staged source differs from the effective model")
+
+    monkeypatch.setattr("runoff_routing.native_cmd.capture_cmd", must_not_launch)
+    selected = EngineSelection.for_engine("rorb-cmd")
+    result = run_engine_project(new_project, selection=selected, native_config=config)
+    assert result.status == "unsupported_feature"
+    assert result.diagnostics[0].code == "native_effective_source_mismatch"
+    assert result.model_sha256 == hashlib.sha256(to_json(effective).encode("utf-8")).hexdigest()
+    assert not list(tmp_path.glob("native-spec*"))
+
+
+def test_shared_native_package_command_is_delegated(monkeypatch: pytest.MonkeyPatch) -> None:
+    sample = ["example.json", "new-package", "--target", "cmd-6.44"]
+    forwarded: list[str] = []
+
+    def fake_cli(args: list[str] | None = None) -> int:
+        forwarded.extend(args or [])
+        return 0
+
+    module = ModuleType("runoff_routing.native_export")
+    module.__dict__["main"] = fake_cli
+    monkeypatch.setitem(sys.modules, "runoff_routing.native_export", module)
+    assert main(["export-native", *sample]) == 0
+    assert forwarded == sample
+
+
+def test_relocation_symlink_is_rejected_before_external_directory_creation(tmp_path: Path) -> None:
+    par, _, _, _ = _inputs(tmp_path / "source")
+    existing_root = tmp_path / "existing"
+    existing_root.mkdir()
+    source = existing_root / "hydrology.json"
+    _import(source, par)
+
+    destination_root = tmp_path / "destination"
+    destination_root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "untouched.txt"
+    sentinel.write_text("unchanged", encoding="utf-8")
+    link = destination_root / "sources"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Directory symlinks are unavailable on this filesystem")
+
+    destination = destination_root / "edited.json"
+    with pytest.raises(ProjectError, match="symlink"):
+        save_project_as(source, destination)
+    assert not destination.exists()
+    assert tuple(outside.iterdir()) == (sentinel,)
+    assert sentinel.read_text(encoding="utf-8") == "unchanged"
