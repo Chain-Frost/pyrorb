@@ -288,6 +288,7 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
     except (TypeError, ValueError) as exc:
         raise EventConfigError(_INVALID_INPUT, "event_model", str(exc)) from exc
 
+
 def _event_failure(base: EngineOutcome, status: EngineStatus, code: str, message: str) -> EngineOutcome:
     return replace(base, status=status, diagnostics=(EngineDiagnostic(code, message),))
 
