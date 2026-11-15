@@ -19,11 +19,11 @@ from typing import Any
 
 import pytest
 
+from ryan_library.functions.RORB.readers import read_rorb_file
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.native_export import NativeCmdExportTarget, NativeExportEvent, NativeExportError, export_cmd_package
 from runoff_routing.project_batch import EventConfigError, ProjectEvent, resolve_effective_model, run_project_events
 from runoff_routing.project_json import (
-    ProjectError,
     import_rorb_project,
     load_project,
     save_project_as,
@@ -33,8 +33,6 @@ from runoff_routing.rorb_codec import parse_catg, parse_cmd_par, parse_design_st
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_model import LossMode, RunModel, from_json
 from runoff_routing.rorb_out import inspect_output
-
-from ryan_library.functions.RORB.readers import read_rorb_file
 
 REGISTER = Path(__file__).absolute().parent / "fixtures" / "regression-v1" / "register.json"
 RETENTION = Path(__file__).absolute().parent / "fixtures" / "s5-acceptance"
@@ -125,7 +123,6 @@ def test_par_only_import_edit_save_run_and_native_package_relocation(tmp_path: P
     receipt = export_cmd_package(saved, bundle, target=NativeCmdExportTarget("cmd-6.44"))
     assert receipt.native_execution == "not_run"
     assert receipt.numerical_equivalence == "not_assessed"
-    exported = bundle / "events" / "001"
     manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["native_execution"] == "not_run"
     assert manifest["events"][0]["effective_settings"]["kc_m"][0]["kc"] == "12.75"
@@ -207,7 +204,7 @@ def test_new_catg_invokes_actual_pinned_pyromb_writer(monkeypatch: pytest.Monkey
     current = pyromb.render_ordered_catg
     called = 0
 
-    def observing_writer(*args: Any, **kwargs: Any) -> str:
+    def observing_writer(*args: object, **kwargs: object) -> str:
         nonlocal called
         called += 1
         return current(*args, **kwargs)
@@ -259,7 +256,7 @@ def test_original_rorbwin_652_reports_preserve_rows_frequencies_and_representati
     frequencies = {str(row["aep_raw"]) for row in runs.rows}
     assert {"50%", "0.5EY", "20%", "0.2EY", "10%", "5%", "2%", "1%"} == frequencies
     counts = Counter(int(row["Run"]) for row in runs.rows)
-    assert counts == {run: 10 for run in range(1, 9)}
+    assert counts == dict.fromkeys(range(1, 9), 10)
     ids = {(int(row["Run"]), str(row["aep_raw"]), int(row["TPat"])) for row in runs.rows}
     assert len(ids) == 80
     assert len({str(ref["reference"]) for ref in representatives.rows}) == 8
