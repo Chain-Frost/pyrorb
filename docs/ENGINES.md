@@ -6,8 +6,8 @@ or launched for normal Python use, inspection, installation or CI.
 
 | Engine | Selection | Availability / numerical qualification | Supported inputs | Outputs |
 | --- | --- | --- | --- | --- |
-| `python` | Default; `engineering-v1` | Working S1/S2 single-event Python calculations; scientifically unaccepted pending #6 | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
-| `python-cmd` | Explicit; `cmd-6.44` | Bounded integrated candidate; **public source/wheel native acceptance outstanding** | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
+| `python` | Default; `engineering-v1` | Accepted bounded method and explicit-event batches (#6 closed, #97/#99/#101/#102); deferred residual #103, not full scientific qualification | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
+| `python-cmd` | Explicit; `cmd-6.44` | Merged bounded #79; independently verified #100 source/installed-wheel 36-case printed and scalar CMD comparison with 14 source exclusions; full feature/physical qualification #5 open | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
 
 ## JSON schema and selection
@@ -206,11 +206,7 @@ observed native states. Exact ties/sub-print times and network conservation
 are not accepted by this integration.
 
 Contract/source tests use manufactured process stubs; ordinary tests, wheel
-checks, and hosted Windows CI **do not launch RORB**. An installed-wheel,
-real-Windows CMD 6.44 acceptance run remains a separate opt-in local gate.
+checks, and hosted Windows CI **do not launch RORB**. Fresh actual source and out-of-tree installed-wheel printed/scalar verification already passed through merged #100. New native CMD 6.44 observations require a separately scoped local check for a concrete unresolved feature; ordinary tests do not launch RORB.
 A real CMD success does not imply Python equivalence or prove print-site mapping.
 
-**Coordination:** #75 owns CMD source/wheel native replay and bounded event extensions;
-#6 owns engineering method/accuracy and batch optimisation; the offline
-regression owner owns case schema, native reference choices and comparison
-policies. Engine code does not redefine these policies or regenerate baselines.
+**Coordination:** bounded compatible #75/#79 and maintained regression #100 are delivered. Open CMD feature requirements are #90–#96 under #5; #103 retains deferred default physical/volume qualification after bounded #6 closure. The maintained regression owner controls case bindings, native references and frozen comparison policies. Engine code does not redefine these policies or regenerate baselines.
