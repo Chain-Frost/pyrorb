@@ -353,8 +353,9 @@ def test_adopted_a_two_stratum_zero_tie_exact_mixture() -> None:
     assert curve.exceedance(10).known_exceedance_probability == pytest.approx(0.1)
     assert curve.exceedance(20).known_exceedance_probability == 0
     assert curve.estimate(0.2).peak_m3_s == 10
-    assert curve.estimate(0.2).representative is not None
-    assert curve.estimate(0.2).representative.sample_id == "c"
+    representative = curve.estimate(0.2).representative
+    assert representative is not None
+    assert representative.sample_id == "c"
     failed = build_frequency_curve(
         population,
         (*rows[:3], replace(rows[3], status="failed", peak_m3_s=None, event_id=None, effective_input_id=None)),
