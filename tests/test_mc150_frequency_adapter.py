@@ -48,12 +48,16 @@ def _fraction(text: str) -> float:
 
 
 def _population(
-    api: _FrequencyAPI, data: dict[str, Any], *, plan: str = "external-fixture-v1", duration: int = 60, site: str = "outlet"
+    api: _FrequencyAPI,
+    data: dict[str, Any],
+    *,
+    plan: str = "external-fixture-v1",
+    duration: int = 60,
+    site: str = "outlet",
 ) -> tuple[Any, tuple[Any, ...]]:
     scope = api.FrequencyScope(plan, "mc150-independent", "1", "synthetic", duration, site)
     strata = tuple(
-        api.StratumWeight(item["stratum_id"], _fraction(item["mass"]), len(item["events"]))
-        for item in data["strata"]
+        api.StratumWeight(item["stratum_id"], _fraction(item["mass"]), len(item["events"])) for item in data["strata"]
     )
     tails = data["unmodelled_tails"]
     population = api.CurvePopulation(
@@ -151,16 +155,26 @@ def test_independent_two_site_two_duration_envelopes(aep: str) -> None:
         for i, peak in enumerate((q_05 - 10,) * 94 + (q_05,) * 4 + (q_01,) * 2):
             records.append(
                 api.PeakRecord(
-                    scope, "h", f"{site}-{duration}-{i:03d}", 0.01, "valid", peak,
-                    f"event-{site}-{duration}-{i:03d}", f"input-{site}-{duration}-{i:03d}",
+                    scope,
+                    "h",
+                    f"{site}-{duration}-{i:03d}",
+                    0.01,
+                    "valid",
+                    peak,
+                    f"event-{site}-{duration}-{i:03d}",
+                    f"input-{site}-{duration}-{i:03d}",
                 )
             )
     curves = api.build_frequency_curves(populations, reversed(records))
     target = _fraction(aep)
     assert len(curves) == 4
     for item in [row for row in control["expected"] if row["aep"] == aep]:
-        site_curves = tuple(sorted((curve for curve in curves if curve.scope.output_site_id == item["site_id"]),
-                                   key=lambda curve: curve.scope.duration_minutes))
+        site_curves = tuple(
+            sorted(
+                (curve for curve in curves if curve.scope.output_site_id == item["site_id"]),
+                key=lambda curve: curve.scope.duration_minutes,
+            )
+        )
         assert len(site_curves) == 2
         envelope = api.duration_envelope(site_curves, target)
         assert envelope.status == "estimated"
