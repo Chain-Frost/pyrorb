@@ -273,8 +273,6 @@ def test_incompatible_within_cell_horizon_does_not_pool_or_rank(sample: tuple[di
     assert all(item["selected_duration_min"] is None for item in report.data["critical_durations"])
 
 
-
-
 def test_empty_routed_population_cannot_claim_software_success(
     sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
@@ -300,6 +298,7 @@ def test_empty_routed_population_cannot_claim_software_success(
     assert not report.data["software_execution_success"]
     assert not report.data["software_population_complete"]
     assert report.data["physical_print_sites"] == []
+
 
 def test_truncated_or_duplicate_input_fails_closed(
     tmp_path: Path, sample: tuple[dict[str, Any], dict[str, Any]]
