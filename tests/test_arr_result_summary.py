@@ -202,6 +202,7 @@ def test_failed_input_cell_preserves_all_candidate_ids_and_missing_ten(
     assert all(candidate["original_tp_event_id"] is not None for candidate in last["unqualified_source_candidates"])
     assert not last["complete_comparable_population"]
     assert last["representative_selection"]["calculated_by_package"] is None
+    assert report.to_csv().count("unqualified_source_candidate") == 10
 
 
 def test_zero_flow_tie_preserves_all_peak_samples_and_avoids_selection(
@@ -271,6 +272,34 @@ def test_incompatible_within_cell_horizon_does_not_pool_or_rank(sample: tuple[di
     assert first["diagnostic_peak_ranking"] == []
     assert all(item["selected_duration_min"] is None for item in report.data["critical_durations"])
 
+
+
+
+def test_empty_routed_population_cannot_claim_software_success(
+    sample: tuple[dict[str, Any], dict[str, Any]],
+) -> None:
+    effective, routed = _copy(sample)
+    effective["members"] = [
+        {
+            "duration_min": cell["duration_min"],
+            "aep_label": cell["aep_label"],
+            "event_id": None,
+            "original_tp_id": None,
+            "status": "input_error",
+        }
+        for cell in effective["cells"]
+    ]
+    for cell in effective["cells"]:
+        cell["status"] = "input_error"
+        cell["ready_count"] = 0
+    effective["prepared_population"] = 0
+    routed["outcomes"] = []
+    routed["volumes"] = []
+    routed["requested_event_count"] = 0
+    report = summarize_deterministic_results(effective, routed)
+    assert not report.data["software_execution_success"]
+    assert not report.data["software_population_complete"]
+    assert report.data["physical_print_sites"] == []
 
 def test_truncated_or_duplicate_input_fails_closed(
     tmp_path: Path, sample: tuple[dict[str, Any], dict[str, Any]]

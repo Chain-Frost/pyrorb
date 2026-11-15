@@ -381,6 +381,20 @@ class DeterministicSummary:
                 if fields.get("peak_time_hours") is not None:
                     fields["peak_time_hours"] = json.dumps(fields["peak_time_hours"], separators=(",", ":"))
                 writer.writerow([fields.get(key) for key in columns])
+            for candidate in cell["unqualified_source_candidates"]:
+                # Candidates are visible, but are not accepted ensemble members.
+                fields = {
+                    "duration_min": cell["duration_min"],
+                    "aep_label": cell["aep_label"],
+                    "site_id": cell["site_id"],
+                    "original_tp_event_id": candidate["original_tp_event_id"],
+                    "source_order": candidate["source_order"],
+                    "input_status": "unqualified_source_candidate",
+                    "routing_status": "not_dispatched",
+                    "metric_status": "not_computed",
+                    "selection_status": "unverified",
+                }
+                writer.writerow([fields.get(key) for key in columns])
         return output.getvalue()
 
     def to_text(self) -> str:
@@ -517,7 +531,9 @@ def summarize_deterministic_results(effective: Mapping[str, Any], routed: Mappin
             summaries.append(_site_summary(cell, site, rows, _int(cell["expected_count"], "expected count")))
     critical = _critical_duration_records(aeps, sites, summaries)
     complete = bool(sites) and all(row["complete_comparable_population"] for row in summaries)
-    software_execution_success = all(item.get("status") == "computed_unvalidated" for item in outcomes.values())
+    software_execution_success = bool(outcomes) and all(
+        item.get("status") == "computed_unvalidated" for item in outcomes.values()
+    )
     return DeterministicSummary(
         {
             "format": REPORT_FORMAT,
