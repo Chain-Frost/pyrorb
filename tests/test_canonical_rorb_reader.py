@@ -160,11 +160,8 @@ def test_canonical_bare_table_preserves_exact_values_without_engine_claim(tmp_pa
     assert any(d.code == "output_record" for d in malformed.diagnostics)
 
 
-
 @pytest.mark.parametrize("original_encoding", ["utf-8", "utf-8-sig"])
-def test_missing_report_path_preserves_bom_and_bom_free_utf8_bytes(
-    tmp_path: Path, original_encoding: str
-) -> None:
+def test_missing_report_path_preserves_bom_and_bom_free_utf8_bytes(tmp_path: Path, original_encoding: str) -> None:
     """UTF-8 decoder selection does not imply the original source contained a BOM."""
     path = tmp_path / "original.out"
     raw = _report().decode("cp1252").encode(original_encoding)
