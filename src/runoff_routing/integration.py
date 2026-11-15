@@ -234,7 +234,12 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         message = "A nonzero source value underflows to zero at the S2 float boundary"
         error = RunInputError("unsupported", "float_boundary", message)
         raise error
-    total_weights = math.fsum(payload.percentages)
+    try:
+        total_weights = math.fsum(payload.percentages)
+    except OverflowError as exc:
+        message = "S2 storm requires a finite positive source pattern denominator"
+        error = RunInputError("unsupported", "storm_precision", message, role="storm")
+        raise error from exc
     if not math.isfinite(total_weights) or total_weights <= 0:
         message = "S2 storm requires a finite positive source pattern denominator"
         error = RunInputError("unsupported", "storm_precision", message, role="storm")

@@ -277,7 +277,11 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
         _check_finite_nonnegative(depth, "Rainfall depth")
     for percent in storm.percentages:
         _check_finite_nonnegative(percent, "Temporal percentage")
-    total_percent = math.fsum(storm.percentages)
+    try:
+        total_percent = math.fsum(storm.percentages)
+    except OverflowError as exc:
+        message = "Temporal weights must have a finite positive denominator."
+        raise RoutingDomainError(message) from exc
     if not math.isfinite(total_percent) or total_percent <= 0:
         message = "Temporal weights must have a finite positive denominator."
         raise RoutingDomainError(message)

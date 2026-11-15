@@ -66,6 +66,12 @@ def test_default_fi_with_runoff_coefficient_does_not_reuse_continuing_loss() -> 
     )
 
 
+def test_direct_independent_relative_weight_overflow_is_a_domain_rejection() -> None:
+    storm = Storm(0.5, 12, (1e308, 1e308), (10.0, 10.0), "relative_weights")
+    with pytest.raises(RoutingDomainError, match="Temporal weights"):
+        calculate_storm(Catchment(CONTROLS, (1.0, 2.0)), storm, losses=Losses(0, 0), kc=3, m=1)
+
+
 @pytest.mark.parametrize("fractions", [(1.2, 0.0), (-0.01, 0.0), (math.nan, 0.0), (0.2,)])
 def test_impervious_domain_rejected_before_source_preparation(fractions: tuple[float, ...]) -> None:
     model = Catchment(CONTROLS, (1.0, 2.0), fractions)

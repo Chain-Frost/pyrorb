@@ -168,6 +168,30 @@ def test_imported_code_two_fi_event_batch_keeps_fresh_state_and_failures(tmp_pat
     assert not invalid.hydrographs
 
 
+def test_relative_weight_denominator_overflow_is_an_isolated_event_failure(tmp_path: Path) -> None:
+    """Finite individual weights cannot crash the explicitly selected Python batch."""
+    model = _imported_model()
+    relative = replace(model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(1)))
+    project = _project(tmp_path / "relative_overflow.json", replace(model, storm=relative))
+    requests = (
+        ProjectEvent("before"),
+        ProjectEvent("overflow", storm={"percentages": ["1e308", "1e308"]}),
+        ProjectEvent("after"),
+    )
+    report = run_project_events(project, requests, selection=SELECTION)
+    first, invalid, last = report.outcomes
+    assert [item.status for item in report.outcomes] == [
+        "computed_unvalidated",
+        "unsupported_feature",
+        "computed_unvalidated",
+    ]
+    assert invalid.effective_selection == SELECTION
+    assert invalid.diagnostics[0].code == "storm_precision"
+    assert not invalid.hydrographs
+    assert first.hydrographs == last.hydrographs
+    assert first.physical_time_hours == last.physical_time_hours
+
+
 def test_relative_weights_are_explicit_and_not_substituted_for_percentages(tmp_path: Path) -> None:
     model = _imported_model()
     relative = replace(model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(1)))
