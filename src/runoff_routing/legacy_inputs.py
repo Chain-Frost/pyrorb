@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import math
 from decimal import Decimal
+from typing import cast
 
 from .rorb_codec import FormatProblem, parse_catg, parse_design_stm
-from .single_storm import Catchment, Control, Storm
+from .rorb_model import PatternBasis
+from .single_storm import Catchment, Control, ControlCode as S2ControlCode, Storm
 
 
 class LegacyInputError(ValueError):
@@ -44,7 +46,8 @@ def parse_control_bytes(data: bytes) -> Catchment:
         raise LegacyInputError(message)
     lengths = {reach.identifier: _float(reach.length_km) for reach in model.reaches}
     controls = tuple(
-        Control(step.code, lengths[step.reach_id] if step.reach_id is not None else 0.0) for step in model.controls
+        Control(cast("S2ControlCode", int(step.code)), lengths[step.reach_id] if step.reach_id is not None else 0.0)
+        for step in model.controls
     )
     return Catchment(controls, tuple(_float(area.area_km2) for area in model.subareas))
 
@@ -69,7 +72,7 @@ def parse_explicit_design_storm_bytes(data: bytes) -> Storm:
         model.calculation_increments,
         tuple(_float(value) for value in model.percentages),
         tuple(_float(value) for value in model.depths_mm),
-        model.pattern_basis,
+        PatternBasis(model.pattern_basis),
     )
 
 
