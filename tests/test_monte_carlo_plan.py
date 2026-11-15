@@ -1,0 +1,291 @@
+"""Analytic and serialisation controls for provisional explicit Monte Carlo sample plans."""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+from dataclasses import replace
+from decimal import Decimal
+from pathlib import Path
+from typing import Any, Callable
+
+import pytest
+
+from runoff_routing.monte_carlo_plan import (
+    SamplePlan,
+    SamplePlanError,
+    SampleRecord,
+    interpolate_ifd_depth,
+    inverse_storm_loss,
+    iter_plan_samples,
+    iter_stratum_samples,
+    normal_coordinate_strata,
+    read_sample_plan,
+    read_sample_records,
+    iter_saved_sample_records,
+    select_temporal_pattern,
+    validate_sample_records,
+    write_sample_plan,
+)
+
+
+def _sha(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "policy": {"id": "synthetic-analytic-control", "version": "1", "status": "provisional"},
+        "scenario_id": "control-no-climate-uplift",
+        "duration_min": 60,
+        "sources": {
+            "ifd": _sha(b"synthetic source IFD data"),
+            "temporal_patterns": _sha(b"synthetic source temporal patterns"),
+            "initial_loss": _sha(b"synthetic source CDF"),
+        },
+        "rng": {
+            "algorithm": "sha256-counter53-v1",
+            "derivation": "sha256-utf8-zero-separated-v1",
+            "root_seed": seed,
+        },
+        "within_stratum": "uniform_aep_mass_v1",
+        "strata": [
+            {"id": "h1", "aep_lower": "0.1", "aep_upper": "0.2", "probability_mass": "0.1", "count": 2},
+            {"id": "h2", "aep_lower": "0.2", "aep_upper": "0.7", "probability_mass": "0.5", "count": 4},
+        ],
+        "ifd": {
+            "source_id": "exact BoM source labels", "interpolation": "linear_aep_depth_v1",
+            "points": [
+                {"aep": "0.05", "depth_mm": "100"},
+                {"aep": "0.20", "depth_mm": "80"},
+                {"aep": "0.70", "depth_mm": "40"},
+            ],
+        },
+        "tp_bins": [
+            {
+                "id": "rare", "aep_lower": "0.1", "aep_upper": "0.2",
+                "choices": [
+                    {"event_id": "0001", "source_order": 7, "probability": "0.3"},
+                    {"event_id": "0101", "source_order": 19, "probability": "0.7"},
+                ],
+            },
+            {
+                "id": "frequent", "aep_lower": "0.2", "aep_upper": "0.7",
+                "choices": [{"event_id": "0201", "source_order": 10, "probability": "1"}],
+            },
+        ],
+        "loss": (
+            {"mode": "fixed_storm_il", "storm_il_mm": "20"}
+            if loss == "fixed_storm_il"
+            else {
+                "mode": "empirical_scaled_storm_il", "source_id": "synthetic inverse CDF",
+                "median_storm_il_mm": "20",
+                "cdf_quantiles": [
+                    {"nonexceedance": "0", "ratio_to_median": "0.2"},
+                    {"nonexceedance": "0.5", "ratio_to_median": "1"},
+                    {"nonexceedance": "1", "ratio_to_median": "2"},
+                ],
+            }
+        ),
+        "fixed_parameters": [
+            {"name": "kc", "value": "2.6", "unit": "model"},
+            {"name": "m", "value": "0.8", "unit": "dimensionless"},
+        ],
+        "arf_policy": "catchment-wide-once-after-sampling-by-event-owner",
+        "preburst_policy": "storm-IL-before-one-time-preburst-adjustment-by-event-owner",
+        "joint_policy": "conditional-TP-on-AEP; independent-storm-IL-for-synthetic-only",
+    }
+
+
+def test_mass_and_sample_weights_are_exact_and_no_tail_renormalisation() -> None:
+    plan = SamplePlan.create(_spec())
+    rows = list(iter_plan_samples(plan))
+    assert len(rows) == 6
+    assert [x.event_probability_weight for x in rows] == [Decimal("0.05")] * 2 + [Decimal("0.125")] * 4
+    assert sum((x.event_probability_weight for x in rows), Decimal(0)) == Decimal("0.6")
+    assert plan.to_dict()["domain"] == {
+        "convention": "AEP_FRACTION",
+        "endpoint_rule": "[lower,upper); final upper closed; inverse draws strictly interior",
+        "modelled_mass": "0.6",
+        "lower_unmodelled_mass": "0.1",
+        "upper_unmodelled_mass": "0.3",
+    }
+    validate_sample_records(plan, rows)
+
+
+def test_inverse_table_direction_median_and_ifd_interpolation() -> None:
+    plan = SamplePlan.create(_spec())
+    assert interpolate_ifd_depth(plan, Decimal("0.2")) == Decimal("80")
+    assert interpolate_ifd_depth(plan, Decimal("0.45")) == Decimal("60")
+    assert interpolate_ifd_depth(plan, Decimal("0.7")) == Decimal("40")
+    assert inverse_storm_loss(plan, Decimal("0.0")) == (Decimal("0.2"), Decimal("4.0"))
+    assert inverse_storm_loss(plan, Decimal("0.25")) == (Decimal("0.60"), Decimal("12.00"))
+    assert inverse_storm_loss(plan, Decimal("0.5")) == (Decimal("1"), Decimal("20"))
+    assert inverse_storm_loss(plan, Decimal("1")) == (Decimal("2"), Decimal("40"))
+    with pytest.raises(SamplePlanError, match="extrapolation"):
+        interpolate_ifd_depth(plan, Decimal("0.9"))
+
+
+def test_exact_conditional_tp_bin_edges_and_original_source_ids() -> None:
+    plan = SamplePlan.create(_spec())
+    assert select_temporal_pattern(plan, Decimal("0.199999"), Decimal("0.2999")) == ("rare", "0001", 7)
+    assert select_temporal_pattern(plan, Decimal("0.199999"), Decimal("0.3")) == ("rare", "0101", 19)
+    assert select_temporal_pattern(plan, Decimal("0.2"), Decimal("0.0")) == ("frequent", "0201", 10)
+    assert select_temporal_pattern(plan, Decimal("0.7"), Decimal("0.5")) == ("frequent", "0201", 10)
+    with pytest.raises(SamplePlanError, match="No eligible TP"):
+        select_temporal_pattern(plan, Decimal("0.75"), Decimal("0.5"))
+    rows = list(iter_plan_samples(plan))
+    assert {row.tp_event_id for row in rows[:2]} <= {"0001", "0101"}
+    assert {row.tp_event_id for row in rows[2:]} == {"0201"}
+
+
+def test_plan_roundtrip_and_explicit_replay_never_redraws(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import runoff_routing.monte_carlo_plan as module
+
+    plan = SamplePlan.create(_spec())
+    paths = write_sample_plan(tmp_path / "run1", plan)
+    loaded = read_sample_plan(paths[0])
+    assert loaded == plan
+    expected = list(iter_plan_samples(plan))
+    monkeypatch.setattr(module, "_draw", lambda *args: (_ for _ in ()).throw(AssertionError("RNG called")))
+    replay = read_sample_records(paths[1], loaded)
+    assert replay == expected
+    assert [x.to_dict() for x in replay] == [x.to_dict() for x in expected]
+    with pytest.raises(SamplePlanError, match="already exists"):
+        write_sample_plan(tmp_path / "run1", loaded)
+
+
+def test_reordered_and_chunked_draws_are_identical() -> None:
+    plan = SamplePlan.create(_spec())
+    expected = list(iter_plan_samples(plan))
+    chunks = [
+        *iter_stratum_samples(plan, "h2", start=2),
+        *iter_stratum_samples(plan, "h1", start=1),
+        *iter_stratum_samples(plan, "h2", start=0, stop=2),
+        *iter_stratum_samples(plan, "h1", start=0, stop=1),
+    ]
+    validate_sample_records(plan, chunks)
+    assert {x.sample_id: x for x in chunks} == {x.sample_id: x for x in expected}
+
+
+def test_extension_preserves_logical_draws_and_reweights_all_old_records() -> None:
+    plan = SamplePlan.create(_spec())
+    extended = plan.extend({"h1": 4, "h2": 8})
+    full = copy.deepcopy(_spec())
+    full["strata"][0]["count"] = 4
+    full["strata"][1]["count"] = 8
+    fresh = SamplePlan.create(full)
+    assert extended.parent_plan_id == plan.plan_id
+    assert extended.plan_id == fresh.plan_id
+    assert extended.population_id == plan.population_id == fresh.population_id
+    assert [x.to_dict() for x in iter_plan_samples(extended)] == [x.to_dict() for x in iter_plan_samples(fresh)]
+    prior = list(iter_plan_samples(plan))
+    later = list(iter_plan_samples(extended))
+    lookup = {(x.stratum_id, x.index): x for x in later}
+    for old in prior:
+        new = lookup[(old.stratum_id, old.index)]
+        assert new == replace(old, plan_id=extended.plan_id, event_probability_weight=old.event_probability_weight / 2)
+    with pytest.raises(SamplePlanError, match="revision weight mismatch"):
+        validate_sample_records(extended, prior)
+    validate_sample_records(extended, later)
+
+
+def test_seed_changes_draws_but_not_fixed_policy() -> None:
+    a = SamplePlan.create(_spec(seed=1))
+    b = SamplePlan.create(_spec(seed=2))
+    assert a.plan_id != b.plan_id and a.population_id != b.population_id
+    a_rows, b_rows = list(iter_plan_samples(a)), list(iter_plan_samples(b))
+    assert a_rows[0].aep_fraction != b_rows[0].aep_fraction
+    assert [(r.stratum_id, r.index, r.event_probability_weight) for r in a_rows] == [
+        (r.stratum_id, r.index, r.event_probability_weight) for r in b_rows
+    ]
+
+
+def test_fixed_losses_are_distinct_from_stochastic_loss_draws() -> None:
+    spec = _spec(loss="fixed_storm_il")
+    plan = SamplePlan.create(spec)
+    rows = list(iter_plan_samples(plan))
+    assert all(r.storm_initial_loss_mm == 20 and r.storm_il_ratio_to_median is None for r in rows)
+    assert all(r.loss_uniform is None for r in rows)
+    with pytest.raises(SamplePlanError, match="Fixed storm loss"):
+        validate_sample_records(plan, [replace(rows[0], loss_uniform=Decimal("0.5"))], require_complete=False)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda s: s["strata"][1].__setitem__("aep_lower", "0.21"), "gaps/overlap"),
+        (lambda s: s["strata"][0].__setitem__("probability_mass", "0.099"), "mass"),
+        (lambda s: s["strata"][0].__setitem__("count", -1), "count"),
+        (lambda s: s["strata"][0].__setitem__("count", True), "count"),
+        (lambda s: s["strata"][0].__setitem__("count", 1000001), "count"),
+        (lambda s: s["ifd"]["points"][1].__setitem__("depth_mm", "NaN"), "finite"),
+        (lambda s: s["ifd"]["points"][1].__setitem__("depth_mm", "200"), "depth"),
+        (lambda s: s["tp_bins"][0]["choices"][0].__setitem__("probability", "0.8"), "sum"),
+        (lambda s: s["tp_bins"][1].__setitem__("aep_lower", "0.3"), "gaps/overlap"),
+        (lambda s: s["loss"]["cdf_quantiles"][1].__setitem__("ratio_to_median", "0.1"), "monotone"),
+        (lambda s: s["loss"]["cdf_quantiles"][0].__setitem__("nonexceedance", "0.1"), "endpoints"),
+        (lambda s: s["rng"].__setitem__("algorithm", "MT19937"), "Unsupported RNG"),
+        (lambda s: s["sources"].__setitem__("ifd", "wrong"), "SHA-256"),
+        (lambda s: s["ifd"]["points"][-1].__setitem__("aep", "0.6"), "IFD support"),
+    ],
+)
+def test_invalid_config_is_rejected(mutate: Callable[[dict[str, Any]], None], message: str) -> None:
+    spec = _spec()
+    mutate(spec)
+    with pytest.raises(SamplePlanError, match=message):
+        SamplePlan.create(spec)
+
+
+def test_corrupt_plan_and_ledger_are_rejected(tmp_path: Path) -> None:
+    plan = SamplePlan.create(_spec())
+    manifest, ledger = write_sample_plan(tmp_path / "s", plan)
+    raw = json.loads(manifest.read_text())
+    raw["domain"]["upper_unmodelled_mass"] = "0"
+    with pytest.raises(SamplePlanError, match="mass mismatch"):
+        SamplePlan.from_dict(raw)
+    raw = json.loads(manifest.read_text())
+    raw["spec"]["strata"][0]["count"] = 3
+    with pytest.raises(SamplePlanError, match="hash mismatch"):
+        SamplePlan.from_dict(raw)
+    lines = ledger.read_text().splitlines()
+    lines.pop()
+    ledger.write_text("\n".join(lines) + "\n")
+    with pytest.raises(SamplePlanError, match="Incomplete"):
+        read_sample_records(ledger, plan)
+    lines.append(lines[0])
+    ledger.write_text("\n".join(lines) + "\n")
+    with pytest.raises(SamplePlanError, match="Duplicate"):
+        read_sample_records(ledger, plan)
+
+
+def test_normal_coordinate_boundaries_are_probability_weights_not_normal_depth_draws() -> None:
+    strata = normal_coordinate_strata((-1.0, 0.0, 1.0), (5, 7))
+    assert len(strata) == 2
+    assert strata[0]["aep_upper"] == "0.5"
+    assert Decimal(str(strata[0]["probability_mass"])) + Decimal(str(strata[1]["probability_mass"])) == (
+        Decimal(str(strata[1]["aep_upper"])) - Decimal(str(strata[0]["aep_lower"]))
+    )
+    with pytest.raises(SamplePlanError, match="strictly increasing"):
+        normal_coordinate_strata((0.0, -1.0), (10,))
+
+
+def test_duplicated_json_keys_and_nonfinite_constants_cannot_be_loaded(tmp_path: Path) -> None:
+    manifest = tmp_path / "bad.plan.json"
+    manifest.write_text('{"format":"x","format":"y"}')
+    with pytest.raises(SamplePlanError, match="Invalid sample plan JSON"):
+        read_sample_plan(manifest)
+    manifest.write_text('{"x":NaN}')
+    with pytest.raises(SamplePlanError, match="Invalid sample plan JSON"):
+        read_sample_plan(manifest)
+
+
+def test_streamed_saved_samples_validate_without_buffering(tmp_path: Path) -> None:
+    plan = SamplePlan.create(_spec())
+    _, ledger = write_sample_plan(tmp_path / "stream", plan)
+    assert [item.sample_id for item in iter_saved_sample_records(ledger, plan)] == [
+        item.sample_id for item in iter_plan_samples(plan)
+    ]
+
