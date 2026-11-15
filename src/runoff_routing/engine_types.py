@@ -79,7 +79,7 @@ CAPABILITIES: tuple[EngineCapability, ...] = (
     EngineCapability(
         "python-cmd",
         "installed bounded cmd-6.44 event backend; public native replay outstanding",
-        "One explicit DESIGN pluviograph, pervious ISA/burst, lumped kc, IL/CL or IL/RoC, one terminal print",
+        "One explicit DESIGN pluviograph, pervious ISA/burst, lumped kc, IL/CL or IL/RoC, multiple code-7 prints",
         "Full computed hydrograph with separate CMD states/diagnostics; public native parity unaccepted",
     ),
     EngineCapability(

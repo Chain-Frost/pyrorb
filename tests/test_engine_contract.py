@@ -220,10 +220,20 @@ def _mock_native(monkeypatch: pytest.MonkeyPatch, *, invalid: str | None = None)
             ]
             if invalid == "negative":
                 rows[-1] = "6 3.00 -1"
+            if invalid == "duplicate":
+                rows = [f"{row} {float(index):.2f}" for index, row in enumerate(rows)]
+            header = "Inc Time Hyd001"
+            if invalid == "duplicate":
+                header = "Inc Time Hyd001 Hyd001"
+            elif invalid == "unmapped":
+                header = "Inc Time Hyd002"
             (root / "native.out").write_text(
                 "Time increment (hours)= 0.5\n"
                 "Duration of calculations: 5\n"
-                "Inc Time Hyd001\n" + "\n".join(rows) + "\nEnd\n",
+                + header
+                + "\n"
+                + "\n".join(rows)
+                + "\nEnd\n",
                 encoding="utf-8",
             )
         return subprocess.CompletedProcess(["mock"], 0, b"", b"")
@@ -254,7 +264,7 @@ def test_mocked_cmd_is_checked_and_has_distinct_raw_clocks(tmp_path: Path, monke
     assert json.loads((tmp_path / "result.json").read_text(encoding="utf-8"))["native_executable_sha256"]
 
 
-@pytest.mark.parametrize("invalid", ["missing", "short", "negative"])
+@pytest.mark.parametrize("invalid", ["missing", "short", "negative", "duplicate", "unmapped"])
 def test_zero_exit_is_not_sufficient_for_native_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalid: str
 ) -> None:
