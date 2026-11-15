@@ -144,3 +144,92 @@ def test_scalar_baseline_pass_retains_full_population_incomplete(
     assert report["retained_36_case_fresh_scalar_baseline"] == "pass"
     assert report["retained_scalar_baseline_failures"] == []
     assert report["fresh_reporting_full_population"] == "incomplete"
+
+
+@pytest.mark.parametrize(
+    ("status", "scalar_classification", "row_override"),
+    [
+        ("printed_fail", "pass", None),
+        ("printed_invalid", "pass", None),
+        ("printed_pass", "fail", None),
+        ("printed_pass", "invalid", None),
+        ("printed_pass", "pass", 1),
+        ("unverified_attribution", "not_run", None),
+    ],
+)
+def test_unretained_admitted_failure_is_not_masked_by_the_retained_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    status: str,
+    scalar_classification: str,
+    row_override: int | None,
+) -> None:
+    """A new H1 Q/scalar failure must fail the same public probe, not disappear."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    main = cast("Callable[[], int]", namespace["main"])
+    affected = "H1-three-source-asymmetric"
+
+    def fake_one(case: dict[str, Any]) -> dict[str, Any]:
+        case_id = str(case["case_id"])
+        if "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]:
+            return {
+                "case_id": case_id,
+                "status": "printed_pass",
+                "rows": case["clock"]["row_count"],
+                "fresh_reporting": {"classification": "pass"},
+            }
+        if case_id == affected:
+            return {
+                "case_id": case_id,
+                "status": status,
+                "rows": case["clock"]["row_count"] if row_override is None else row_override,
+                "fresh_reporting": {"classification": scalar_classification},
+                "first_mismatch": {"sample_index": 2},
+            }
+        return {"case_id": case_id, "status": "source_unsupported"}
+
+    monkeypatch.setitem(main.__globals__, "_one", fake_one)
+    assert main() == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["cases_checked"] == 50
+    assert report["retained_36_case_printed_baseline"] == "pass"
+    assert report["retained_36_case_fresh_scalar_baseline"] == "pass"
+    assert report["nonretained_case_failure_gate"] == "fail"
+    assert report["nonretained_case_diagnostic_failures"] == [affected]
+    assert next(item for item in report["results"] if item["case_id"] == affected)["first_mismatch"] == {
+        "sample_index": 2
+    }
+
+
+def test_new_admission_with_incomplete_scalar_is_reported_without_fake_failure(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """H2 and zero-flow incomplete fields must remain incomplete, not failed or passing."""
+    namespace = runpy.run_path(str(ROOT / "repo-scripts" / "cmd_public_probe.py"))
+    main = cast("Callable[[], int]", namespace["main"])
+
+    def fake_one(case: dict[str, Any]) -> dict[str, Any]:
+        case_id = str(case["case_id"])
+        if "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]:
+            return {
+                "case_id": case_id,
+                "status": "printed_pass",
+                "rows": case["clock"]["row_count"],
+                "fresh_reporting": {"classification": "pass"},
+            }
+        if case_id == "H2-four-source-nested-odd-rain":
+            return {
+                "case_id": case_id,
+                "status": "printed_pass",
+                "rows": case["clock"]["row_count"],
+                "fresh_reporting": {"classification": "incomplete", "reason": "Unqualified stored timestep"},
+            }
+        return {"case_id": case_id, "status": "source_unsupported"}
+
+    monkeypatch.setitem(main.__globals__, "_one", fake_one)
+    assert main() == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["nonretained_case_failure_gate"] == "pass"
+    assert report["nonretained_case_diagnostic_failures"] == []
+    assert report["fresh_reporting_status_counts"]["incomplete"] == 1
+    assert report["fresh_reporting_full_population"] == "incomplete"

@@ -180,6 +180,33 @@ def _retained_scalar_failures(expected: dict[str, int], observed: dict[str, dict
     return [case_id for case_id in expected if _fresh_reporting_classification(observed[case_id]) != "pass"]
 
 
+def _nonretained_case_failures(
+    cases: list[dict[str, Any]], observed: dict[str, dict[str, Any]], retained_ids: set[str]
+) -> list[str]:
+    """Fail on newly computed Q/scalar defects without rejecting honest evidence gaps.
+
+    Retained 36-case acceptance is separate. Source-unsupported cases are still
+    unadmitted, not green numerical comparisons. A legitimate incomplete scalar
+    (for example, zero-flow peak time) does not imply a fabricated pass.
+    """
+    failed: list[str] = []
+    for case in cases:
+        case_id = str(case["case_id"])
+        if case_id in retained_ids:
+            continue
+        outcome = observed[case_id]
+        status = outcome["status"]
+        if status == "source_unsupported":
+            continue
+        if (
+            status != "printed_pass"
+            or outcome.get("rows") != case["clock"]["row_count"]
+            or _fresh_reporting_classification(outcome) in ("fail", "invalid")
+        ):
+            failed.append(case_id)
+    return failed
+
+
 def main() -> int:
     """Return success for a complete diagnostic inventory, not a numerical pass claim."""
     register = json.loads(REGISTER.read_text(encoding="utf-8"))
@@ -200,6 +227,7 @@ def main() -> int:
     gate_ok = len(expected) == 36 and sum(expected.values()) == 16_836 and not failures
     scalar_failures = _retained_scalar_failures(expected, observed)
     scalar_gate_ok = gate_ok and not scalar_failures
+    nonretained_failures = _nonretained_case_failures(cases, observed, set(expected))
     scalar_statuses = dict(sorted(Counter(_fresh_reporting_classification(item) for item in outcomes).items()))
     full_scalar_status = (
         "fail"
@@ -216,6 +244,8 @@ def main() -> int:
                 "fresh_reporting_full_population": full_scalar_status,
                 "retained_36_case_fresh_scalar_baseline": "pass" if scalar_gate_ok else "fail",
                 "retained_scalar_baseline_failures": scalar_failures,
+                "nonretained_case_diagnostic_failures": nonretained_failures,
+                "nonretained_case_failure_gate": "pass" if not nonretained_failures else "fail",
                 "fresh_reporting_acceptance": "unassessed_pending_independent_review",
                 "cases_checked": len(outcomes),
                 "status_counts": counts,
@@ -233,7 +263,7 @@ def main() -> int:
             allow_nan=False,
         )
     )
-    return 0 if scalar_gate_ok else 1
+    return 0 if scalar_gate_ok and not nonretained_failures else 1
 
 
 if __name__ == "__main__":
