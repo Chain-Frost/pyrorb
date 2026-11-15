@@ -854,7 +854,7 @@ class S2Payload:
     m: float
     runoff_coefficient: float | None = None
     impervious_fractions: tuple[float, ...] = ()
-    pattern_basis: PatternBasis = "percent_of_depth"
+    pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
 
 
 def _as_float(value: Decimal) -> float:
@@ -880,7 +880,7 @@ def to_s2_payload(model: RunModel) -> S2Payload:
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
-    basis = storm.pattern_basis
+    basis = PatternBasis(storm.pattern_basis)
     if basis not in ("percent_of_depth", "relative_weights"):
         message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
         raise ValueError(message)

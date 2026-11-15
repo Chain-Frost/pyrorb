@@ -32,3 +32,8 @@
 - While the previous exact-head CI was running, main advanced from `40b1bad9c` to **`b0cd0aef3f44f47655e99b0de554e47063300141`** through merged independent Python code-2/FI PR #125. This reconciliation takes the newest `rorb_codec.py` and `test_rorb_roundtrip.py` from that main revision, preserving all original-order code-2, impervious-fraction and source/clock handling.
 - The only necessary changes in the new CATG/STM codec are constructing `PatternBasis` enums instead of Literal strings; the shared valid/invalid mode-2 S2 test is retained with the S1 validation assertion. All newly merged #125 source/testing modules and their metadata remain unchanged.
 - Previous exact-head CI receipts do not establish the new combined head; full source and wheel CI plus independent review are again required before a safe merge. Do not replace the #125 independent Python engine with the CMD backend and do not claim native parity from this coordination.
+
+### Explicit S1→S2 type conversion after #125
+
+- The first joined Windows CI (run 43744078996) passed hygiene and Ruff but correctly found nine strict-Pyright boundary diagnostics, *before* executing tests. These are static API mismatches from the independently merged #125 `single_storm` and `legacy_inputs` consumers, not numerical comparison failures.
+- Normalize `PatternBasis` into the shared StrEnum in the S2 storm default, typed S1→S2 payload and the legacy fixture adapter. Convert already validated S1 `ControlCode(IntEnum)` to a native integer at the independent S2 Control Literal boundary. Update four direct S2 relative-weight construction tests to use the explicit enum, without changing the rainfall algorithm, outputs, source grammar, or declared engine selection. Re-run full exact-head checks.
