@@ -203,7 +203,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
     for index, value in enumerate(payload.areas_km2, start=1):
         _checked_positive(value, f"Subarea {index} area", "catchment")
     for command in payload.controls:
-        if command[0] in (1, 5):
+        if command[0] in (1, 2, 5):
             _checked_positive(command[1], "Natural reach length", "catchment")
     _checked_positive(payload.timestep_hours, "Storm timestep", "storm")
     _checked_positive(payload.kc, "Routing kc", "parameters")
@@ -224,6 +224,11 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
             model.parameters.losses[0].continuing,
             payload.runoff_coefficient if payload.runoff_coefficient is not None else payload.continuing_loss_mm_h,
         ),
+        *zip(
+            (area.impervious_fraction for area in model.catchment.subareas),
+            payload.impervious_fractions,
+            strict=True,
+        ),
     )
     if any(source != 0 and converted == 0.0 for source, converted in source_values):
         message = "A nonzero source value underflows to zero at the S2 float boundary"
@@ -233,12 +238,12 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         message = "S2 requires percentages to total 100 within its 0.01 numerical tolerance"
         error = RunInputError("unsupported", "storm_precision", message, role="storm")
         raise error
-    if any(code not in (1, 3, 4, 5, 7) for code, _ in payload.controls):
+    if any(code not in (1, 2, 3, 4, 5, 7) for code, _ in payload.controls):
         message = "An uncharacterised control code reached the S2 input boundary"
         error = RunInputError("unsupported", "control_code", message, role="catchment")
         raise error
     controls = tuple(Control(cast("ControlCode", code), length) for code, length in payload.controls)
-    catchment = Catchment(controls, payload.areas_km2)
+    catchment = Catchment(controls, payload.areas_km2, payload.impervious_fractions)
     storm = Storm(
         payload.timestep_hours,
         payload.calculation_increments,
