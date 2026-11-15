@@ -14,7 +14,7 @@ from typing import cast
 import pytest
 
 from runoff_routing._cmd644.geometry import ReachGeometry
-from runoff_routing._cmd644.precision import store
+from runoff_routing._cmd644.precision import UnsupportedNumericPath, store
 from runoff_routing._cmd644.routing import route_reach as route_cmd_reach
 from runoff_routing.cmd_engine import adapt_event
 from runoff_routing.engine_execution import run_engine_project
@@ -110,3 +110,25 @@ def test_default_zero_storage_is_not_equivalent_to_zero_exponent() -> None:
     incoming = (0.0, 1.0, 0.5, 0.0)
     assert route_default_reach(incoming, coefficient_k=0.0, exponent_m=0.8, time_step_hours=0.5) == incoming
     assert all(math.isfinite(v) for v in incoming)
+
+def test_cmd_routing_failure_is_explicit_and_never_returns_partial_q(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Manufactured convergence/error propagation; not a native CMD observation."""
+    project = tmp_path / "event.json"
+    write_project(project, Project("error_boundary", "explicit", EmbeddedRun(_model())))
+
+    def fail_convergence(*_args: object, **_kwargs: object) -> None:
+        raise UnsupportedNumericPath("manufactured nonlinear convergence failure")
+
+    monkeypatch.setattr("runoff_routing.cmd_engine.execute", fail_convergence)
+    result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
+    assert result.effective_selection.engine == "python-cmd"
+    assert result.status == "numerical_error"
+    assert result.diagnostics[0].code == "cmd_arithmetic"
+    assert "convergence failure" in result.diagnostics[0].message
+    assert result.requested_print_ids == ("print_1",)
+    assert result.hydrographs == ()
+    assert result.physical_time_hours == ()
+    assert result.native_raw_time_tokens == ()
+
