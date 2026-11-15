@@ -119,7 +119,8 @@ def test_cmd_routing_failure_is_explicit_and_never_returns_partial_q(
     write_project(project, Project("error_boundary", "explicit", EmbeddedRun(_model())))
 
     def fail_convergence(*_args: object, **_kwargs: object) -> None:
-        raise UnsupportedNumericPath("manufactured nonlinear convergence failure")
+        message = "manufactured nonlinear convergence failure"
+        raise UnsupportedNumericPath(message)
 
     monkeypatch.setattr("runoff_routing.cmd_engine.execute", fail_convergence)
     result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
