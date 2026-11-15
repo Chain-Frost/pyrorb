@@ -382,7 +382,6 @@ def test_shared_native_package_command_is_delegated(monkeypatch: pytest.MonkeyPa
     assert forwarded == sample
 
 
-
 def test_relocation_symlink_is_rejected_before_external_directory_creation(tmp_path: Path) -> None:
     par, _, _, _ = _inputs(tmp_path / "source")
     existing_root = tmp_path / "existing"

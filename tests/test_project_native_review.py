@@ -346,9 +346,7 @@ def test_native_review_rejects_zero_based_cmd_row_identity(tmp_path: Path) -> No
 
 
 @pytest.mark.parametrize("changed_source", ["catchment", "storm"])
-def test_recorded_native_review_rejects_edited_effective_original_mismatch(
-    tmp_path: Path, changed_source: str
-) -> None:
+def test_recorded_native_review_rejects_edited_effective_original_mismatch(tmp_path: Path, changed_source: str) -> None:
     """No native evidence may be attributed to altered CATG or STM semantics."""
     project_path, manifest_path, digest = _synthetic_case(tmp_path)
     original = load_project(project_path)
