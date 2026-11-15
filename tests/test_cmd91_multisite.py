@@ -13,7 +13,8 @@ from typing import cast
 import pytest
 
 from runoff_routing._cmd644.models import Event
-from runoff_routing._cmd644.reporting import CandidateResult, execute as execute_unmodified
+from runoff_routing._cmd644.reporting import CandidateResult
+from runoff_routing._cmd644.reporting import execute as execute_unmodified
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_json import EmbeddedRun, Project, write_project
