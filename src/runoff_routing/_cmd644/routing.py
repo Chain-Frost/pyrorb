@@ -262,6 +262,13 @@ def _add_stored(left: tuple[float, ...], right: tuple[float, ...]) -> tuple[floa
     return tuple(internal_store(safe64(a + b)) for a, b in zip(left, right, strict=True))
 
 
+def _require_code_two_running_branch(code: int, active: tuple[float, ...] | None) -> None:
+    """Code 2 adds to an existing running branch; it cannot initialise one."""
+    if code == 2 and active is None:
+        message = "code-2 source needs an existing running hydrograph"
+        raise UnsupportedNumericPath(message)
+
+
 def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/print control cases
     event: Event, geometry: Geometry, preparation: Preparation
 ) -> NetworkResult:
@@ -274,6 +281,7 @@ def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/
     next_source = 0
     next_reach = 0
     for control_index, control in enumerate(event.controls, start=1):
+        _require_code_two_running_branch(control.code, active)
         if control.code in (1, 2):
             source = preparation.hydrographs[next_source]
             next_source += 1

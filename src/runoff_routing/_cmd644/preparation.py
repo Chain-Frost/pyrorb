@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from fractions import Fraction
 
-from .models import Event
+from .models import Event, NumberInput
 from .precision import (
     UnsupportedNumericPath,
     add53,
@@ -37,6 +37,14 @@ class Preparation:
     crossings: tuple[LossCrossing, ...]
     seconds: float
     continuing_allowance: Fraction
+
+
+def _pervious_fraction(value: NumberInput, source_id: int) -> Fraction:
+    """Reject impossible direct-kernel FI values before loss transitions."""
+    if not 0 <= value.stored <= 1:
+        message = f"source {source_id}: impervious fraction outside [0, 1]"
+        raise UnsupportedNumericPath(message)
+    return sub53(Fraction(1), fraction(value.stored))
 
 
 def _effective_excess(after: float, allowance: Fraction, coefficient: float, mode: int) -> float:
@@ -74,7 +82,7 @@ def prepare(event: Event) -> Preparation:
         zip(event.areas, event.depths, event.impervious, strict=True), 1
     ):
         flow_scale = mul53(mul53(Fraction(1000), fraction(area.stored)), reciprocal_duration)
-        pervious = sub53(Fraction(1), fraction(impervious.stored))
+        pervious = _pervious_fraction(impervious, source_index)
         remaining = mul53(pervious, fraction(event.il.stored))
         effective_allowance = mul53(allowance, pervious)
         crossed = False
