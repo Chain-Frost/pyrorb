@@ -57,11 +57,8 @@ class NativeExportEvent:
     run: RunModel
 
     def __post_init__(self) -> None:
-        if not isinstance(self.event_id, str) or _EVENT_ID.fullmatch(self.event_id) is None:
+        if _EVENT_ID.fullmatch(self.event_id) is None:
             message = "Native export event IDs must be unique stable ASCII identifiers"
-            raise NativeExportError(message)
-        if not isinstance(self.run, RunModel):
-            message = "Native export requires a fully resolved RunModel for every event"
             raise NativeExportError(message)
 
 
@@ -156,9 +153,6 @@ def _events(loaded: LoadedProject, events: tuple[NativeExportEvent, ...] | None)
         raise NativeExportError(message)
     names: set[str] = set()
     for event in selected:
-        if not isinstance(event, NativeExportEvent):
-            message = "Native export events must be NativeExportEvent records"
-            raise NativeExportError(message)
         folded = event.event_id.casefold()
         if folded in names:
             message = f"Duplicate native export event ID: {event.event_id}"
@@ -367,10 +361,6 @@ def export_cmd_package(
     catchment changes, the PyRomb writer owner supplies the edited-asset adapter.
     No Python numerical engine is selected or executed by this function.
     """
-    if not isinstance(target, NativeCmdExportTarget):
-        message = "An explicit NativeCmdExportTarget is required"
-        raise NativeExportError(message)
-    target.__post_init__()
     project = load_project(project_path)
     original = _original_inputs(project, project_path)
     selected = _events(project, events)
