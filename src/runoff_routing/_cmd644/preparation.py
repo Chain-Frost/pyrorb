@@ -39,6 +39,13 @@ class Preparation:
     continuing_allowance: Fraction
 
 
+def _effective_excess(after: float, allowance: Fraction, coefficient: float, mode: int) -> float:
+    """Keep the two different loss formulations separate from the source loop."""
+    if mode == 2:
+        return store_rational(mul53(fraction(after), fraction(coefficient)))
+    return store_rational(max(Fraction(), sub53(fraction(after), allowance)))
+
+
 def prepare(event: Event) -> Preparation:
     """Apply C06-C10 with separately rounded p53 operations and source ownership."""
     total = Fraction()
@@ -95,11 +102,7 @@ def prepare(event: Event) -> Preparation:
                     if remaining == 0:
                         equality_bins.append(bin_index)
             post.append(after)
-            if event.loss_model == 2:
-                # IL/RoC is a proportion of post-initial-loss rainfall, not a continuing loss rate.
-                excess_amount = store_rational(mul53(fraction(after), fraction(event.cl.stored)))
-            else:
-                excess_amount = store_rational(max(Fraction(), sub53(fraction(after), effective_allowance)))
+            excess_amount = _effective_excess(after, effective_allowance, event.cl.stored, event.loss_model)
             excess.append(excess_amount)
             flow.append(store_rational(mul53(fraction(excess_amount), flow_scale)))
         flow.extend(0.0 for _ in range(event.n - len(event.weights)))

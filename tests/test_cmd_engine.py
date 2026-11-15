@@ -14,8 +14,8 @@ import pytest
 
 from runoff_routing._cmd644.geometry import ReachGeometry
 from runoff_routing._cmd644.power import bounded_power
-from runoff_routing._cmd644.preparation import prepare
 from runoff_routing._cmd644.precision import direct_binary32, internal_store, store
+from runoff_routing._cmd644.preparation import prepare
 from runoff_routing._cmd644.routing import route_reach
 from runoff_routing.cmd_engine import CMD_PROFILE, CmdBoundaryError, adapt_event
 from runoff_routing.engine_execution import run_engine_project
