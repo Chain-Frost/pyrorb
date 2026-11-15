@@ -34,12 +34,15 @@ For an existing supported [JSON project](PROJECT_JSON.md) (`project.json` below)
 
 ```sh
 python -m runoff_routing.project_json validate project.json
-python -m runoff_routing.project_json run project.json result.json --engine python
-python -m runoff_routing.project_json run project.json cmd-result.json --engine python-cmd --numerical-profile cmd-6.44
+python -m runoff_routing.project_json run project.json result.json
+python -m runoff_routing.project_json run project.json python-result.json --engine python --numerical-profile engineering-v1
 python -m runoff_routing.project_json run project.json native-result.json --engine rorb-cmd --numerical-profile cmd-6.44 --native-config local-cmd.json
 ```
 
-The first execution selects the default Python engine. The merged bounded [CMD-compatible engine #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) computes supported DESIGN events separately and returns `computed_unvalidated`, **not** native equivalence. Unsupported features fail closed. To create and execute a complete publicly reproducible CMD example:
+New schema-2 projects temporarily default to `python-cmd/cmd-6.44`; existing projects
+keep their stored selection, and schema-1 projects preserve their historical
+`python/engineering-v1` selection. The improved `python` engine is available
+by explicit override and remains the intended future default. The merged bounded [CMD-compatible engine #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) computes supported DESIGN events separately and returns `computed_unvalidated`, **not** native equivalence. Unsupported features fail closed. To create and execute a complete publicly reproducible CMD example:
 
 ```sh
 python examples/create_cmd_project.py
@@ -50,7 +53,7 @@ Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` sti
 
 ## 4. Explicit-event batches
 
-The default `python/engineering-v1` engine now has a **supported bounded, non-accelerated explicit-event batch API** from [merged PR #99](https://github.com/Chain-Frost/python-runoff-routing/pull/99). Use `prepare_catchment(...)` once, then `run_explicit_batch(prepared, events)` or stream with `iter_explicit_events(...)` for bounded memory. Each `ExplicitEvent` provides a stable ID, explicit Storm and per-event Losses; outcomes independently identify computed/invalid/numerical failures without cross-event state leaks. Full examples, limitations and measured workload are in [ENGINEERING_BATCHES.md](ENGINEERING_BATCHES.md). This is **not** generated ARR rainfall, Monte Carlo or full CMD acceptance; the bounded [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) stage is closed, [#103](https://github.com/Chain-Frost/python-runoff-routing/issues/103) retains deferred physical-volume/continuity work and [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) retains full feature qualification.
+The independent `python/engineering-v1` engine has a **supported bounded, non-accelerated explicit-event batch API** from [merged PR #99](https://github.com/Chain-Frost/python-runoff-routing/pull/99). Use `prepare_catchment(...)` once, then `run_explicit_batch(prepared, events)` or stream with `iter_explicit_events(...)` for bounded memory. Each `ExplicitEvent` provides a stable ID, explicit Storm and per-event Losses; outcomes independently identify computed/invalid/numerical failures without cross-event state leaks. Full examples, limitations and measured workload are in [ENGINEERING_BATCHES.md](ENGINEERING_BATCHES.md). This is **not** generated ARR rainfall, Monte Carlo or full CMD acceptance; the bounded [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) stage is closed, [#103](https://github.com/Chain-Frost/python-runoff-routing/issues/103) retains deferred physical-volume/continuity work and [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) retains full feature qualification.
 
 ## 5. Public cached regression and mathematical controls
 

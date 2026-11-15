@@ -6,8 +6,8 @@ or launched for normal Python use, inspection, installation or CI.
 
 | Engine | Selection | Availability / numerical qualification | Supported inputs | Outputs |
 | --- | --- | --- | --- | --- |
-| `python` | Default; `engineering-v1` | Accepted bounded method and explicit-event batches (#6 closed, #97/#99/#101/#102); deferred residual #103, not full scientific qualification | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
-| `python-cmd` | Explicit; `cmd-6.44` | Merged bounded #79; independently verified #100 source/installed-wheel 36-case printed and scalar CMD comparison with 14 source exclusions; full feature/physical qualification #5 open | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
+| `python` | Explicit for now; intended future default; `engineering-v1` | Accepted bounded method and explicit-event batches (#6 closed, #97/#99/#101/#102); deferred residual #103, not full scientific qualification | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
+| `python-cmd` | **Temporary default**; `cmd-6.44` | Merged bounded #79; independently verified #100 source/installed-wheel 36-case printed and scalar CMD comparison with 14 source exclusions; full feature/physical qualification #5 open | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
 
 The next supported common-model delivery is [CLI/text-file MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119), with the finite selected five-case original CMD reference seed in [the public backlog](BACKLOG.md). The current table states **implemented boundaries**, not a promise that batch-compatible `python-cmd`, full CSV/JSON/text CLI or PR16 code-2/impervious import is already qualified. Advanced #114–#118 are post-MVP; #96 is the current ordinary PyRomb target. No GUI or general native investigation is in scope.
@@ -18,11 +18,14 @@ Project **schema 2** adds a required top-level field independent of
 `rainfall_profile`:
 
 ```json
-"engine": {"id": "python", "numerical_profile": "engineering-v1"}
+"engine": {"id": "python-cmd", "numerical_profile": "cmd-6.44"}
 ```
 
-Schema-1 files lacking this field still load as `python/engineering-v1`; the next
-serialisation writes schema 2. An unknown engine, profile or field fails closed.
+Newly constructed schema-2 projects temporarily default to `python-cmd/cmd-6.44`.
+Schema-1 files without an engine preserve their historical implicit
+`python/engineering-v1` choice; migration does **not** silently change
+computation. The intended long-term default remains the improved `python` engine.
+The next serialisation writes schema 2. An unknown engine, profile or field fails closed.
 A project does not store an executable path.
 
 `run_engine_project(path)` honours the stored selection. Explicit
@@ -41,10 +44,10 @@ from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import CAPABILITIES, EngineSelection
 
 project_path = Path("project.json")
-result = run_engine_project(project_path)  # stored engine, python for migrated projects
+result = run_engine_project(project_path)  # stored engine, as recorded in this project
 other = run_engine_project(
     project_path,
-    selection=EngineSelection.for_engine("python-cmd", "cmd-6.44"),
+    selection=EngineSelection.for_engine("python", "engineering-v1"),
 )
 assert other.status == "computed_unvalidated"  # computation only; public native parity unassessed
 print(result.to_json(), [item.engine for item in CAPABILITIES])
@@ -84,8 +87,8 @@ assert len(cmd.hydrographs[0].discharge_m3_s) == 6
 ## CLI
 
 ```powershell
-py -3.14 -m runoff_routing.project_json run project.json python-result.json
-py -3.14 -m runoff_routing.project_json run project.json cmd-attempt.json --engine python-cmd --numerical-profile cmd-6.44
+py -3.14 -m runoff_routing.project_json run project.json cmd-result.json
+py -3.14 -m runoff_routing.project_json run project.json python-result.json --engine python --numerical-profile engineering-v1
 py -3.14 -m runoff_routing.project_json run project.json native-result.json --engine rorb-cmd --numerical-profile cmd-6.44 --native-config local-cmd.json
 py -3.14 -m runoff_routing.project_json run --help
 ```
