@@ -136,6 +136,7 @@ def test_unproven_code_eleven_is_explicitly_rejected_not_inferred_from_code_seve
             controls=(*catchment.controls[:-1], ControlStep(11), catchment.controls[-1]),  # type: ignore[arg-type]
         )
 
+
 @pytest.mark.parametrize(
     ("damage", "reason"),
     [
@@ -173,4 +174,3 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
     assert outcome.requested_print_ids == ("interior", "print_1")
     assert outcome.hydrographs == ()
     assert outcome.physical_time_hours == ()
-
