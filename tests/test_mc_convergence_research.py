@@ -205,15 +205,9 @@ def test_stable_population_positive_result_is_non_degenerate() -> None:
 def test_large_replication_confidence_limits_do_not_underflow() -> None:
     """Independent binomial reference values for a million trial replications."""
     mc = _research()
-    assert mc.binomial_upper_tail(500000, 1_000_000, 0.5) == pytest.approx(
-        0.5003989421806654, abs=2e-9
-    )
-    assert mc.binomial_upper_tail(500100, 1_000_000, 0.5) == pytest.approx(
-        0.4211313785258083, abs=2e-9
-    )
-    assert mc.binomial_upper_tail(950000, 1_000_000, 0.95) == pytest.approx(
-        0.5011898042280432, abs=2e-9
-    )
+    assert mc.binomial_upper_tail(500000, 1_000_000, 0.5) == pytest.approx(0.5003989421806654, abs=2e-9)
+    assert mc.binomial_upper_tail(500100, 1_000_000, 0.5) == pytest.approx(0.4211313785258083, abs=2e-9)
+    assert mc.binomial_upper_tail(950000, 1_000_000, 0.95) == pytest.approx(0.5011898042280432, abs=2e-9)
     lower = mc.lower_confidence_bound(500000, 1_000_000)
     upper = mc.upper_confidence_bound(500000, 1_000_000)
     assert lower == pytest.approx(0.4991770739498, abs=1e-9)
@@ -223,9 +217,7 @@ def test_large_replication_confidence_limits_do_not_underflow() -> None:
     assert mc.lower_confidence_bound(1_000_000, 1_000_000) == pytest.approx(
         math.exp(math.log(0.05) / 1_000_000), abs=1e-14
     )
-    assert mc.upper_confidence_bound(0, 1_000_000) == pytest.approx(
-        -math.expm1(math.log(0.05) / 1_000_000), abs=1e-14
-    )
+    assert mc.upper_confidence_bound(0, 1_000_000) == pytest.approx(-math.expm1(math.log(0.05) / 1_000_000), abs=1e-14)
     assert mc.lower_confidence_bound(1, 1_000_000) == pytest.approx(
         -math.expm1(math.log1p(-0.05) / 1_000_000), abs=1e-11
     )
@@ -239,9 +231,7 @@ def test_binomial_tail_extreme_values_are_finite() -> None:
     assert mc.binomial_upper_tail(0, 1_000_000, 0.5) == 1.0
     assert mc.binomial_upper_tail(1, 1_000_000, 0.0) == 0.0
     assert mc.binomial_upper_tail(1_000_000, 1_000_000, 1.0) == 1.0
-    assert mc.binomial_upper_tail(1, 1_000_000, 1e-6) == pytest.approx(
-        0.632120742768355, abs=1e-11
-    )
+    assert mc.binomial_upper_tail(1, 1_000_000, 1e-6) == pytest.approx(0.632120742768355, abs=1e-11)
     with pytest.raises(ValueError, match="invalid binomial"):
         mc.binomial_upper_tail(5, 4, 0.3)
     with pytest.raises(ValueError, match="invalid binomial"):
