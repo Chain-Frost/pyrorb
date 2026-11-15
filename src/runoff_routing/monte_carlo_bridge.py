@@ -17,12 +17,12 @@ from typing import Never, Protocol, cast
 from .arr_patterns import PatternKind, read_pattern_file
 from .bom_ifd import BoMIFD, read_bom_ifd_csv
 from .monte_carlo_effective import (
+    MC_SAMPLE_DECIMAL_CONTEXT,
     EffectiveMCEvent,
     MCAllocation,
     MCInputError,
     MCPopulation,
     MCRequestHeader,
-    MC_SAMPLE_DECIMAL_CONTEXT,
     materialise_arr_sample,
     sha256_file,
     write_effective_request,
