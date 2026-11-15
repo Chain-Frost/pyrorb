@@ -10,7 +10,7 @@ import subprocess
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 import pytest
 
@@ -309,7 +309,7 @@ def _synthetic_number(value: float) -> NumberInput:
 
 
 @pytest.mark.parametrize("loss_model", [1, 2])
-def test_code_two_and_impervious_fraction_preserve_ordered_multiple_prints(loss_model: int) -> None:
+def test_code_two_and_impervious_fraction_preserve_ordered_multiple_prints(loss_model: Literal[1, 2]) -> None:
     """Internal #96/#91 interoperation: authored controls, not a PR16 original CMD golden."""
     number = _synthetic_number
     event = Event(
