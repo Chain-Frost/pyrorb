@@ -475,4 +475,5 @@ def test_145_published_hmac_three_purpose_vectors() -> None:
             "loss": Decimal(7249325353445475) / Decimal(18014398509481984),
         }
     for purpose, unit in expected.items():
-        assert module._draw(42, plan, spec, row, 0, purpose) == unit
+        # Test the private pure kernel against independently published byte-level reference vectors.
+        assert module._draw(42, plan, spec, row, 0, purpose) == unit  # noqa: SLF001
