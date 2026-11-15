@@ -44,11 +44,11 @@ It reads the same authenticated published register, visits **all 50 eligible ori
 
 The same **frozen `cmd644-report-scalars-v1`** comparator now evaluates actual newly computed Q, source-derived verified stored h/dt and authenticated original native report selectors, with *separate* fresh peak magnitude, uniquely defined peak time and **inclusive native reported volume** fields. At [public PR #100 exact code `e93c12b`](https://github.com/Chain-Frost/python-runoff-routing/pull/100) [Python 3.13 source+installed wheel CI #43651931036](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43651931036), all **36/36** admitted cases pass each fresh metric and the 50 per-case JSON records are identical between source and installed wheel; the other **14 are `not_run` for scalar**, so `fresh_reporting_full_population` remains explicitly **`incomplete`**. This evidence is **not** the earlier `fea9c80` historical cached 50/48/50 snapshot. No printed-native ties/hidden states, physical trapezoidal volume, conservation, full CMD capability or improved default-engine numerical accuracy are claimed.
 
-For an independently installed public wheel, build and install it outside the checkout as in the next section. With an isolated interpreter and the copied public checkout/fixture scaffold, execute that **same** `repo-scripts/cmd_public_probe.py` using the installed wheel. Check `runoff_routing.__file__` resolves to external site-packages, record both exact source commit and wheel SHA-256, and compare the 50 full per-case/field results with the source run. No second runner, catalogue, export or reference regeneration is needed.
+For an independently installed public wheel, build and install it outside the checkout as in the next section. With an isolated interpreter and the copied public checkout/fixture scaffold, execute that **same** `repo-scripts/cmd_public_probe.py` using the installed wheel. Check `runoff_routing.__file__` resolves **within the verified installed root outside the checkout** (either a venv's `site-packages` or a fresh `pip --target` directory), record the exact source head/CI merge tree and wheel SHA-256, and compare **all 50 full per-case/field results**, including statuses, source/site/time identities, raw provenance, scalar classifications and first discrepancies. Do not demand a second site-packages replay merely because the approved CI used `--target`. No second runner, catalogue, export or reference regeneration is needed.
 
 ### Installed comparator wheel and complete tests
 
-Use a fresh external directory. Copy test scaffolding; isolated mode and import verification ensure the installed package executes, even where scaffold tests inspect source-file existence. Clear any source PYTHONPATH in the shell before these commands.
+Use a fresh external directory. Copy test scaffolding; isolated mode and import verification ensure the installed package executes, even where scaffold tests inspect source-file existence. This virtual-environment procedure is one **optional implementation** of the installed-wheel check; the approved quality workflow's fresh external `pip --target` directory is equally valid when verified as described above. Clear any source PYTHONPATH in the shell before these commands.
 
 ```powershell
 $Checkout = (Get-Location).Path
@@ -74,6 +74,73 @@ Pop-Location
 ```
 
 Data are checkout fixtures, not runtime package files. Wheel-only users pass the public checkout register explicitly. Source/wheel per-case results must agree, including both incomplete times. See the [work record](work/2026-11-15-public-cmd-data.md) for executed commands, hashes, counts and limitations.
+
+### Portable offline VM target installation
+
+This is an alternative **installation/isolation procedure**, not another regression runner, a new comparator, or an extra operating-system acceptance gate. It works on Linux/Python 3.13 or 3.14 (Windows can use equivalent PowerShell commands) with an **already available, source-matched public wheel** and the exact source checkout, including `tests/fixtures/regression-v1`. No GitHub, private checkout, native executable or package index is needed at execution time. If the VM lacks the checkout/wheel, obtain authenticated copies first; an empty VM cannot perform a project regression. Building a new wheel from an available source checkout is also valid if the pinned build backend is installed.
+
+From the root of that public checkout, using a fresh wheel in `dist/` (replace the filename to match the actual artifact):
+
+~~~sh
+REPO="$(pwd)"
+VERIFY="$(mktemp -d)"
+WHEEL="$REPO/dist/runoff_routing-0.0.0.dev0-py3-none-any.whl"
+test -f "$WHEEL" || { echo "Provide the exact source-matched wheel" >&2; exit 1; }
+python3.13 -m pip install --no-deps --no-index --target "$VERIFY/installed" "$WHEEL"
+sha256sum "$WHEEL"
+export RUNOFF_PROBE="$REPO/repo-scripts/cmd_public_probe.py"
+
+# -I ignores user-site/PYTHONPATH and cwd injection; the chosen source or
+# installed package root is added deliberately and its module origin checked.
+export RUNOFF_IMPORT_ROOT="$REPO/src"
+(cd "$VERIFY" && python3.13 -I -c '
+import os, pathlib, runpy, sys
+root = pathlib.Path(os.environ["RUNOFF_IMPORT_ROOT"]).resolve()
+sys.path.insert(0, str(root))
+import runoff_routing
+origin = pathlib.Path(runoff_routing.__file__).resolve()
+assert origin.is_relative_to(root), origin
+print(f"Source import: {origin}", file=sys.stderr)
+runpy.run_path(os.environ["RUNOFF_PROBE"], run_name="__main__")
+') > "$VERIFY/source.json"
+
+export RUNOFF_IMPORT_ROOT="$VERIFY/installed"
+(cd "$VERIFY" && python3.13 -I -c '
+import os, pathlib, runpy, sys
+root = pathlib.Path(os.environ["RUNOFF_IMPORT_ROOT"]).resolve()
+sys.path.insert(0, str(root))
+import runoff_routing
+origin = pathlib.Path(runoff_routing.__file__).resolve()
+assert origin.is_relative_to(root), origin
+print(f"Installed wheel import: {origin}", file=sys.stderr)
+runpy.run_path(os.environ["RUNOFF_PROBE"], run_name="__main__")
+') > "$VERIFY/wheel.json"
+
+python3.13 -I -c '
+import json, pathlib, sys
+source, wheel = (json.loads(pathlib.Path(name).read_text(encoding="utf-8")) for name in sys.argv[1:])
+assert source == wheel, "Fresh source and installed-wheel per-case/field outcomes differ"
+assert source["cases_checked"] == 50
+assert len({case["case_id"] for case in source["results"]}) == 50
+assert source["retained_36_case_printed_baseline"] == "pass"
+assert source["retained_36_case_fresh_scalar_baseline"] == "pass"
+assert sum(source["status_counts"].values()) == 50
+print("Complete fresh source/installed-wheel 50-case identities and fields agree")
+' "$VERIFY/source.json" "$VERIFY/wheel.json"
+
+# Run the existing authenticated full-index check with the installed wheel.
+export RUNOFF_REGISTER="$REPO/tests/fixtures/regression-v1/register.json"
+(cd "$VERIFY" && python3.13 -I -c '
+import os, runpy, sys
+sys.path.insert(0, os.environ["RUNOFF_IMPORT_ROOT"])
+sys.argv = ["regression_dataset", "preflight", os.environ["RUNOFF_REGISTER"], "--set", "cmd-eligible", "--full-index"]
+runpy.run_module("runoff_routing.regression_dataset", run_name="__main__")
+')
+~~~
+
+Both probe JSON files contain the **actual freshly computed** per-case Q/scalar/source/site/clock statuses. Compare every original required case and failure classification for the selected feature; the retained 36-case gate and a successful installer alone are **not** full CMD acceptance. Expect genuine incomplete scalar outcomes such as the two zero-flow undefined peak times and the H2 stored-time gap until independently resolved; do not silently drop them, shift the original CMD one-based clock, invent a physical HydNNN mapping or convert a printed discharge comparison into a physical-volume conservation pass. Full-index preflight must verify the actual byte-preserved checkout. Keep `--snapshot` as a separate historical replay, never input to this fresh acceptance comparison.
+
+For final evidence, record the source SHA or authenticated archive identity, exact wheel SHA-256, package-code fingerprint, operating system and Python version, imported paths, full-index count, both complete 50-case reports, retained/new admission and per-field failures, and the feature's reference/policy identity. A green reviewed [approved quality workflow](https://github.com/Chain-Frost/python-runoff-routing/blob/main/.github/workflows/quality.yml) with external `--target` import and two identical full reports already supplies equivalent pure-Python software evidence for that exact revision; the verifier must still independently inspect it. This VM method does **not** run Windows-only native RORB and cannot qualify a new native reference without the reviewed evidence.
 
 ## Authentication and curation
 
