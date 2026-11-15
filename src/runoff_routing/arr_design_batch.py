@@ -11,7 +11,7 @@ import hashlib
 import json
 import sys
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Literal, Never, cast
@@ -295,18 +295,38 @@ def _loss_for_event(
         }
     if legacy is None or config.preburst_percentile is None or config.excess_policy is None:
         _fail("Legacy loss selection requires an explicit parsed ARR source and preburst policy")
+    use_ratio = config.loss_profile == "legacy_ratio_areal_burst_only"
+    # The source depth is retained as evidence for the ratio method, but is
+    # NOT its applied depth. Defer the configured rejection until the ratio
+    # times once-ARF-reduced rainfall has been materialised.
+    source_policy = "clamp_burst_il_to_zero" if use_ratio else config.excess_policy
     selected: PreburstLossSelection = select_legacy_preburst_loss(
         legacy,
         duration_min=duration,
         aep_percent=aep,
         percentile=config.preburst_percentile,
         method="burst_only_reduced_il",
-        excess_policy=config.excess_policy,
+        excess_policy=source_policy,
     )
     # Bind the same source point and original BoM bytes before applying losses.
     verify_legacy_bom_source_point(bom, selected, adjusted)
-    if config.loss_profile == "legacy_ratio_areal_burst_only":
+    if use_ratio:
+        source_only_steps = {
+            "BURST_IL_STORM_IL_MINUS_PREBURST_DEPTH",
+            "PREBURST_EXCEEDS_IL_CLAMPED_EXPLICITLY_NO_EXCESS_STORM_RAINFALL",
+        }
+        selected = replace(
+            selected,
+            excess_policy=config.excess_policy,
+            operations=tuple(step for step in selected.operations if step not in source_only_steps),
+        )
+        # This existing P3 method performs the actual ratio-depth rejection
+        # and computes the final burst IL under the configured excess policy.
         selected = derive_preburst_from_areal_rainfall(selected, adjusted)
+        selected = replace(
+            selected,
+            operations=(*selected.operations, "BURST_IL_FROM_SELECTED_RATIO_DEPTH_ONCE"),
+        )
     if selected.burst_initial_loss_mm is None:
         _fail("A burst-only design cannot use unmaterialised explicit preburst rainfall")
     return {

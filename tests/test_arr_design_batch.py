@@ -194,6 +194,74 @@ def test_legacy_burst_only_losses_applied_by_engine_once(
     assert _audit(result)["source_files"]["legacy_arr"]["sha256"] == hashlib.sha256(LEGACY.read_bytes()).hexdigest()
 
 
+@pytest.mark.parametrize(
+    ("ratio", "should_succeed"),
+    [("1.020", True), ("3.000", False)],
+)
+def test_ratio_excess_policy_checks_applied_depth_not_source_depth(
+    tmp_path: Path, ratio: str, should_succeed: bool
+) -> None:
+    """Source preburst > storm IL is not itself a ratio-method failure."""
+    source = tmp_path / "source-with-high-exported-depth.txt"
+    fixture = LEGACY.read_text(encoding="utf-8")
+    original = "60 (1.0),2.0 (0.010),7.00 (1.020),"
+    assert fixture.count(original) == 1
+    source.write_text(
+        fixture.replace(original, f"60 (1.0),2.0 (0.010),30.00 ({ratio}),"), encoding="utf-8"
+    )
+    config, data = _config(tmp_path)
+    data["aep_labels"] = ["1%"]
+    data["durations_min"] = [60]
+    data["loss"] = {
+        "mode": "legacy_ratio_areal_burst_only",
+        "arr_txt": str(source),
+        "percentile": 50,
+        "excess_policy": "reject",
+    }
+    _write_config(config, data)
+    result = run_design_batch(config)
+    assert result.succeeded is should_succeed
+    if should_succeed:
+        assert len(result.routed.outcomes) == 10
+        for record in _audit(result)["members"]:
+            loss = record["loss"]
+            assert loss["preburst_source_depth_mm"] == "30.00"
+            assert Decimal(loss["preburst_applied_depth_mm"]) < Decimal("21")
+            assert loss["preburst_depth_basis"] == "ratio_x_areal_reduced_design_depth"
+            assert "BURST_IL_FROM_SELECTED_RATIO_DEPTH_ONCE" in loss["operations"]
+            assert "PREBURST_EXCEEDS_IL_CLAMPED_EXPLICITLY_NO_EXCESS_STORM_RAINFALL" not in loss["operations"]
+            assert record["execution_status"] == "computed_unvalidated"
+    else:
+        assert _audit(result)["input_population_complete"] is False
+        assert _audit(result)["cells"][0]["status"] == "input_error"
+        assert "Ratio-derived preburst exceeds storm IL" in _audit(result)["cells"][0]["error"]
+        assert len(result.routed.outcomes) == 0
+
+
+def test_exported_source_depth_over_il_still_rejects_source_depth_method(tmp_path: Path) -> None:
+    config, data = _config(tmp_path)
+    source = tmp_path / "excess-source.txt"
+    source.write_text(
+        LEGACY.read_text(encoding="utf-8").replace(
+            "60 (1.0),2.0 (0.010),7.00 (1.020),",
+            "60 (1.0),2.0 (0.010),30.00 (1.020),",
+        ),
+        encoding="utf-8",
+    )
+    data["aep_labels"] = ["1%"]
+    data["durations_min"] = [60]
+    data["loss"] = {
+        "mode": "legacy_source_depth_burst_only",
+        "arr_txt": str(source),
+        "percentile": 50,
+        "excess_policy": "reject",
+    }
+    _write_config(config, data)
+    result = run_design_batch(config)
+    assert result.succeeded is False
+    assert "Preburst exceeds storm IL" in _audit(result)["cells"][0]["error"]
+
+
 def test_unsafe_or_unsupported_config_rejected_before_execution(tmp_path: Path) -> None:
     config, data = _config(tmp_path)
     data["engine"] = "rorb-cmd"
