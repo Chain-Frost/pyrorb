@@ -400,11 +400,7 @@ def _catchment_data(model: CatchmentModel) -> dict[str, Any]:
                 "identifier": item.identifier,
                 "area_km2": str(item.area_km2),
                 "label": item.label,
-                **(
-                    {"impervious_fraction": str(item.impervious_fraction)}
-                    if item.impervious_fraction != 0
-                    else {}
-                ),
+                **({"impervious_fraction": str(item.impervious_fraction)} if item.impervious_fraction != 0 else {}),
             }
             for item in model.subareas
         ],

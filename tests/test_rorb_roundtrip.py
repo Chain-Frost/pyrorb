@@ -349,7 +349,12 @@ def test_original_pyromb_645_mode_zero_preserves_code2_impervious_and_graphical_
         f"area_{index}" for index in range(1, 7)
     ]
     assert tuple(area.impervious_fraction for area in model.subareas) == (
-        Decimal(0), Decimal("0.50000"), Decimal("0.20000"), Decimal(0), Decimal(0), Decimal(0)
+        Decimal(0),
+        Decimal("0.50000"),
+        Decimal("0.20000"),
+        Decimal(0),
+        Decimal(0),
+        Decimal(0),
     )
     assert [s.source_text for s in parsed.source_map if s.field == "graphical_node_id"] == [
         str(index) for index in range(1, 9)
@@ -405,9 +410,7 @@ def test_pyromb_graphical_rejects_unrecognised_sections_without_source_mutation(
         ("C      8         92.500", "C      9         92.500", "invalid"),
     ],
 )
-def test_pyromb_pr16_source_rejects_invalid_control_and_fraction_records(
-    before: str, after: str, status: str
-) -> None:
+def test_pyromb_pr16_source_rejects_invalid_control_and_fraction_records(before: str, after: str, status: str) -> None:
     original, _register = _registered_pyromb_originals()
     text = original.decode("utf-8").replace("\r\n", "\n")
     edited = text.replace(before.replace("\\n", "\n"), after.replace("\\n", "\n"))
@@ -481,8 +484,12 @@ def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_
     assert from_json(to_json(parsed)) == parsed
     project_file = tmp_path / "pr16-cat-project.json"
     project = import_rorb_project(
-        project_file, identifier="pr16-cat-source-test", rainfall_profile="legacy-rorb",
-        parameters=p, catchment=source_cat, storm=s
+        project_file,
+        identifier="pr16-cat-source-test",
+        rainfall_profile="legacy-rorb",
+        parameters=p,
+        catchment=source_cat,
+        storm=s,
     )
     write_project(project_file, project)
     loaded = load_project(project_file)

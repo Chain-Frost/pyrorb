@@ -297,7 +297,6 @@ def _graphical(lines: tuple[str, ...]) -> tuple[int, tuple[str, ...]]:
     return end, header
 
 
-
 def _graphic_entity_rows(
     header: tuple[str, ...], section: str, *, columns: int
 ) -> tuple[tuple[int, tuple[str, ...]], ...]:
@@ -516,8 +515,7 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
         model = CatchmentModel(
             lines[0].strip(),
             tuple(
-                SubArea(f"area_{index + 1}", area, names[index], fractions[index])
-                for index, area in enumerate(areas)
+                SubArea(f"area_{index + 1}", area, names[index], fractions[index]) for index, area in enumerate(areas)
             ),
             tuple(reaches),
             tuple(controls),
