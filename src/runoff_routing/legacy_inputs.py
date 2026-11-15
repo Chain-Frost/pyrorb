@@ -62,11 +62,15 @@ def parse_explicit_design_storm_bytes(data: bytes) -> Storm:
     except FormatProblem as exc:
         message = f"S1 {exc.status} DESIGN storm: {exc}"
         raise LegacyInputError(message) from exc
+    if model.pattern_basis not in ("percent_of_depth", "relative_weights"):
+        message = "Legacy fixture adapter cannot represent a combined preburst/burst pattern"
+        raise LegacyInputError(message)
     return Storm(
         _float(model.timestep_hours),
         model.calculation_increments,
         tuple(_float(value) for value in model.percentages),
         tuple(_float(value) for value in model.depths_mm),
+        model.pattern_basis,
     )
 
 

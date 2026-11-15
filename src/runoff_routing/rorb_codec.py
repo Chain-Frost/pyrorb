@@ -854,6 +854,7 @@ class S2Payload:
     m: float
     runoff_coefficient: float | None = None
     impervious_fractions: tuple[float, ...] = ()
+    pattern_basis: PatternBasis = "percent_of_depth"
 
 
 def _as_float(value: Decimal) -> float:
@@ -879,8 +880,9 @@ def to_s2_payload(model: RunModel) -> S2Payload:
     if storm.start_increment != 0:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
-    if storm.pattern_basis != "percent_of_depth":
-        message = "S2 requires percentage patterns; native relative-weight/preburst semantics are not yet qualified"
+    basis = storm.pattern_basis
+    if basis not in ("percent_of_depth", "relative_weights"):
+        message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
         raise ValueError(message)
     if catchment.reach_mode not in ("implicit_natural", "explicit_reach_types"):
         message = "S2 accepts only characterised natural-reach computation modes"
@@ -905,4 +907,5 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         _as_float(parameters.routing[0].m),
         _as_float(parameters.losses[0].continuing) if parameters.loss_model == 2 else None,
         tuple(_as_float(area.impervious_fraction) for area in catchment.subareas),
+        basis,
     )

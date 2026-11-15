@@ -151,10 +151,33 @@ def test_imported_code_two_fi_event_batch_keeps_fresh_state_and_failures(tmp_pat
     assert not invalid.hydrographs
 
 
-def test_independent_adapter_rejects_unqualified_relative_weights(tmp_path: Path) -> None:
+def test_relative_weights_are_explicit_and_not_substituted_for_percentages(tmp_path: Path) -> None:
     model = _imported_model()
-    storm = replace(model.storm, pattern_basis="relative_weights")
-    project = _project(tmp_path / "relative.json", replace(model, storm=storm))
+    relative = replace(
+        model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(1))
+    )
+    percentages = replace(
+        model.storm, pattern_basis="percent_of_depth", percentages=(Decimal(75), Decimal(25))
+    )
+    relative_project = _project(tmp_path / "relative.json", replace(model, storm=relative))
+    result = run_engine_project(relative_project)
+    assert result.status == "computed_unvalidated", result.diagnostics
+    assert result.effective_selection == SELECTION
+    assert run_model(replace(model, storm=relative)).prints == run_model(
+        replace(model, storm=percentages)
+    ).prints
+    assert result.native_parity_status == "not_assessed"
+
+
+def test_combined_preburst_remains_explicitly_unsupported(tmp_path: Path) -> None:
+    model = _imported_model()
+    storm = replace(
+        model.storm,
+        pattern_basis="combined_preburst_percent",
+        percentages=(Decimal(20), Decimal(100)),
+        preburst_bins=1,
+    )
+    project = _project(tmp_path / "preburst.json", replace(model, storm=storm))
     result = run_engine_project(project)
     assert result.status == "unsupported_feature"
     assert result.effective_selection == SELECTION

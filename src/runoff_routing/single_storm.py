@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from runoff_routing.reach_routing import RoutingDomainError, RoutingNumericalError, route_reach
+from runoff_routing.rorb_model import PatternBasis
 
 ControlCode = Literal[1, 2, 3, 4, 5, 7]
 
@@ -33,6 +34,7 @@ class Storm:
     calculation_increments: int
     percentages: tuple[float, ...]
     depths_mm: tuple[float, ...]
+    pattern_basis: PatternBasis = "percent_of_depth"
 
 
 @dataclass(frozen=True, slots=True)
@@ -276,9 +278,18 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     for percent in storm.percentages:
         _check_finite_nonnegative(percent, "Temporal percentage")
     total_percent = math.fsum(storm.percentages)
-    if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
-        message = "Temporal pattern percentages must total 100 within printed precision."
+    if not math.isfinite(total_percent) or total_percent <= 0:
+        message = "Temporal weights must have a finite positive denominator."
         raise RoutingDomainError(message)
+    if storm.pattern_basis == "percent_of_depth":
+        if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
+            message = "Temporal pattern percentages must total 100 within printed precision."
+            raise RoutingDomainError(message)
+    elif storm.pattern_basis != "relative_weights":
+        message = "Unsupported temporal basis: only explicit percentages or distinct relative weights are admitted."
+        raise RoutingDomainError(message)
+    # In both explicit cases rainfall depth is apportioned by its original
+    # total denominator. Never relabel relative raw source weights as 100% data.
     fractions = catchment.impervious_fractions or (0.0,) * len(catchment.areas_km2)
     excesses = tuple(
         rainfall_excess(
