@@ -5,6 +5,8 @@ All controls are manufactured. Original code-11 native output remains incomplete
 
 from __future__ import annotations
 
+import hashlib
+import subprocess
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
@@ -17,7 +19,9 @@ from runoff_routing._cmd644.reporting import CandidateResult
 from runoff_routing._cmd644.reporting import execute as execute_unmodified
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.integration import canonical_run_bytes
+from runoff_routing.native_cmd import NativeConfiguration
+from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, write_project
 from runoff_routing.rorb_model import (
     ControlStep,
     PrintLocation,
@@ -180,3 +184,97 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
     assert outcome.requested_print_ids == ("interior", "print_1")
     assert outcome.hydrographs == ()
     assert outcome.physical_time_hours == ()
+
+def _native_two_prints() -> RunModel:
+    """Canonical IDs make this authored multi-site model round-trip via RORB_GE 002."""
+    model = _model()
+    original = model.catchment
+    updated = replace(
+        original,
+        reaches=(*original.reaches, Reach("reach_2", Decimal("2.5"))),
+        controls=(
+            original.controls[0],
+            ControlStep(7, print_id="print_1"),
+            ControlStep(5, reach_id="reach_2"),
+            ControlStep(7, print_id="print_2"),
+        ),
+        print_locations=(
+            PrintLocation("print_1", "Before second reach"),
+            PrintLocation("print_2", "After second reach"),
+        ),
+    )
+    return replace(model, catchment=updated)
+
+
+@pytest.mark.parametrize("complete", [True, False])
+def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, complete: bool
+) -> None:
+    """Actual selected native adapter, manufactured process: no RORB parity claim."""
+    model = _native_two_prints()
+    files: list[SourceFile] = []
+    for name, data in zip(("model.par", "model.catg", "model.stm"), canonical_run_bytes(model), strict=True):
+        (tmp_path / name).write_bytes(data)
+        files.append(SourceFile(name, hashlib.sha256(data).hexdigest()))
+    project = tmp_path / "legacy-project.json"
+    write_project(
+        project,
+        Project(
+            "native_two_prints",
+            "legacy-rorb",
+            LegacyRunFiles(files[0], files[1], files[2]),
+            engine=EngineSelection.for_engine("rorb-cmd"),
+        ),
+    )
+    executable = tmp_path / "mock-cmd.exe"
+    executable.write_bytes(b"manufactured native multi-site adapter test only")
+    config = NativeConfiguration(
+        executable=executable,
+        executable_sha256=hashlib.sha256(executable.read_bytes()).hexdigest(),
+        observed_version="6.44",
+        observed_banner="synthetic mocked CMD output",
+        numerical_profile="cmd-6.44",
+        output_root=tmp_path / "captures",
+        print_columns=(("print_1", "Hyd001"), ("print_2", "Hyd002")),
+        timeout_seconds=5,
+    )
+
+    def fake_run(*_args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        root = kwargs["cwd"]
+        assert isinstance(root, Path)
+        assert (root / "reference.par").is_file()
+        head = "Inc Time Hyd001 Hyd002" if complete else "Inc Time Hyd001"
+        records = [
+            f"{index} {index * 0.5:.2f} {index - 1:.4f}" + (f" {2 * (index - 1):.4f}" if complete else "")
+            for index in range(1, 7)
+        ]
+        (root / "native.out").write_text(
+            "Time increment (hours)= 0.5\n"
+            "Duration of calculations: 5\n"
+            + head
+            + "\n"
+            + "\n".join(records)
+            + "\nEnd\n",
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess([executable.name], 0, b"", b"")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = run_engine_project(project, native_config=config)
+    assert result.effective_selection.engine == "rorb-cmd"
+    assert result.requested_print_ids == ("print_1", "print_2")
+    assert result.capture_manifest_path is not None
+    if not complete:
+        assert result.status == "incomplete_output"
+        assert result.hydrographs == ()
+        return
+    assert result.status == "computed_unvalidated", result.diagnostics
+    assert tuple(h.print_id for h in result.hydrographs) == ("print_1", "print_2")
+    assert tuple(h.native_column_id for h in result.hydrographs) == ("Hyd001", "Hyd002")
+    assert result.hydrographs[0].discharge_m3_s == (0, 1, 2, 3, 4, 5)
+    assert result.hydrographs[1].discharge_m3_s == (0, 2, 4, 6, 8, 10)
+    assert result.hydrographs[1].native_discharge_tokens == ("0.0000", "2.0000", "4.0000", "6.0000", "8.0000", "10.0000")
+    assert result.native_raw_increment_tokens == ("1", "2", "3", "4", "5", "6")
+    assert result.native_raw_time_tokens == ("0.50", "1.00", "1.50", "2.00", "2.50", "3.00")
+    assert result.physical_time_hours == result.native_raw_time_tokens
+
