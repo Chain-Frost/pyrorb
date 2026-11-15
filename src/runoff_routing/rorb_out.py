@@ -64,11 +64,15 @@ def _reauthenticated_inline_bytes(source: RorbSource) -> bytes:
     This is a source transport step, not a report grammar or numeric parser.
     """
     source_text = "\n".join(source.lines)
-    for separator in ("\n", "\r\n"):
-        for suffix in ("", separator):
-            candidate = (source_text.replace("\n", separator) + suffix).encode(source.encoding)
-            if len(candidate) == source.size_bytes and sha256(candidate).hexdigest() == source.sha256:
-                return candidate
+    # The utf-8-sig decoder accepts both BOM-bearing and BOM-free input.
+    # Only the exact original byte count and SHA-256 may select a candidate.
+    codecs = ("utf-8", "utf-8-sig") if source.encoding == "utf-8-sig" else (source.encoding,)
+    for codec in codecs:
+        for separator in ("\n", "\r\n"):
+            for suffix in ("", separator):
+                candidate = (source_text.replace("\n", separator) + suffix).encode(codec)
+                if len(candidate) == source.size_bytes and sha256(candidate).hexdigest() == source.sha256:
+                    return candidate
     message = "Cannot reauthenticate missing source path from original line/byte/hash evidence"
     raise SourceChangedError(message)
 
