@@ -189,15 +189,30 @@ def read_design_config(path: Path) -> DesignConfig:
         raise DesignConfigError(str(exc)) from exc
     source = _object(data, "Design configuration")
     expected = {
-        "format", "schema_version", "project", "bom_ifd", "temporal_patterns", "pattern_kind",
-        "temporal_region", "arf_region", "catchment_area_km2", "durations_min", "aep_labels",
-        "dry_tail_min", "engine", "numerical_profile", "loss",
+        "format",
+        "schema_version",
+        "project",
+        "bom_ifd",
+        "temporal_patterns",
+        "pattern_kind",
+        "temporal_region",
+        "arf_region",
+        "catchment_area_km2",
+        "durations_min",
+        "aep_labels",
+        "dry_tail_min",
+        "engine",
+        "numerical_profile",
+        "loss",
     }
     if set(source) != expected or source["format"] != DESIGN_FORMAT or type(source["schema_version"]) is not int:
         _fail("Unknown design configuration format, version or fields")
     if source["schema_version"] != DESIGN_VERSION:
         _fail("Unsupported design configuration version")
-    durations = tuple(_positive_int(item, "Duration", 10080) for item in _axis(source["durations_min"], "durations_min", MAX_DURATION_AXIS))
+    durations = tuple(
+        _positive_int(item, "Duration", 10080)
+        for item in _axis(source["durations_min"], "durations_min", MAX_DURATION_AXIS)
+    )
     labels = tuple(_string(item, "AEP label") for item in _axis(source["aep_labels"], "aep_labels", MAX_AEP_AXIS))
     if len(set(durations)) != len(durations) or len(set(labels)) != len(labels):
         _fail("Duplicate duration or AEP label on selected axes")
@@ -262,18 +277,25 @@ def _loss_for_event(
     baseline = loaded.run.parameters.losses[0]
     if config.loss_profile == "project_il_cl":
         return None, {
-            "method": "project_il_cl", "storm_initial_loss_mm": str(baseline.initial_loss_mm),
+            "method": "project_il_cl",
+            "storm_initial_loss_mm": str(baseline.initial_loss_mm),
             "burst_initial_loss_mm": str(baseline.initial_loss_mm),
             "continuing_loss_mm_per_hour": str(baseline.continuing),
-            "preburst_applied_depth_mm": "0", "preburst_source_depth_mm": None,
-            "preburst_ratio": None, "preburst_depth_basis": "none",
-            "source_sha256": None, "operations": ["PROJECT_IL_CL_APPLIED_BY_ENGINE_ONCE"],
+            "preburst_applied_depth_mm": "0",
+            "preburst_source_depth_mm": None,
+            "preburst_ratio": None,
+            "preburst_depth_basis": "none",
+            "source_sha256": None,
+            "operations": ["PROJECT_IL_CL_APPLIED_BY_ENGINE_ONCE"],
         }
     if legacy is None or config.preburst_percentile is None or config.excess_policy is None:
         _fail("Legacy loss selection requires an explicit parsed ARR source and preburst policy")
     selected: PreburstLossSelection = select_legacy_preburst_loss(
-        legacy, duration_min=duration, aep_percent=aep,
-        percentile=config.preburst_percentile, method="burst_only_reduced_il",
+        legacy,
+        duration_min=duration,
+        aep_percent=aep,
+        percentile=config.preburst_percentile,
+        method="burst_only_reduced_il",
         excess_policy=config.excess_policy,
     )
     # Bind the same source point and original BoM bytes before applying losses.
@@ -320,8 +342,10 @@ def _event(
     probability = bom.probability(aep_label)
     gross = storm_from_bom(bom, probability, patterns, pattern, convert_intensity=False)
     factor = calculate_arr2019_arf(
-        catchment_area_km2=config.catchment_area_km2, duration_min=selection.duration_min,
-        aep_percent=selection.aep_percent, coefficients=published_coefficients(config.arf_region),
+        catchment_area_km2=config.catchment_area_km2,
+        duration_min=selection.duration_min,
+        aep_percent=selection.aep_percent,
+        coefficients=published_coefficients(config.arf_region),
     )
     areal = apply_arr2019_arf_to_bom_storm(gross, factor)
     if config.dry_tail_min % pattern.timestep_min:
@@ -340,23 +364,34 @@ def _event(
         "depths_mm": [str(areal.total_mm)] * len(loaded.run.storm.subarea_ids),
     }
     record: dict[str, object] = {
-        "event_id": event_id, "status": "ready", "duration_min": selection.duration_min,
-        "aep_label": aep_label, "aep_percent": str(selection.aep_percent),
-        "original_tp_id": pattern.event_id, "source_order": source_ordinal, "ensemble_order": ordinal,
-        "tp_region": pattern.region, "tp_aep_band": pattern.aep_band,
-        "tp_area_bin": pattern.area_bin, "timestep_min": pattern.timestep_min,
+        "event_id": event_id,
+        "status": "ready",
+        "duration_min": selection.duration_min,
+        "aep_label": aep_label,
+        "aep_percent": str(selection.aep_percent),
+        "original_tp_id": pattern.event_id,
+        "source_order": source_ordinal,
+        "ensemble_order": ordinal,
+        "tp_region": pattern.region,
+        "tp_aep_band": pattern.aep_band,
+        "tp_area_bin": pattern.area_bin,
+        "timestep_min": pattern.timestep_min,
         "raw_pattern_percent": [str(value) for value in pattern.increments_percent],
         "raw_gross_total_mm": str(gross.total_mm),
         "raw_gross_increments_mm": [str(value) for value in gross.increments_mm],
         "areal_total_mm": str(areal.total_mm),
         "areal_increments_mm": [str(value) for value in areal.increments_mm],
-        "arf_factor": str(factor.factor), "arf_policy_version": factor.policy_version,
+        "arf_factor": str(factor.factor),
+        "arf_policy_version": factor.policy_version,
         "arf_coefficient_region": factor.region,
         "arf_coefficient_source": factor.coefficient_origin,
         "source_ifd_depth_mm": str(gross.source_rainfall_depth_mm),
-        "source_units": bom.rainfall_unit, "effective_rainfall_units": "mm",
-        "loss": loss_audit, "engine_loss_application": "once_by_selected_engine",
-        "effective_storm": override, "effective_losses": losses,
+        "source_units": bom.rainfall_unit,
+        "effective_rainfall_units": "mm",
+        "loss": loss_audit,
+        "engine_loss_application": "once_by_selected_engine",
+        "effective_storm": override,
+        "effective_losses": losses,
         "operations": list(areal.operations),
         "generated_input_reference_status": "not_assessed",
         "routed_native_reference_status": "not_assessed",
@@ -369,15 +404,24 @@ def _cell_failure(
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
     reason = str(error)
     cell: dict[str, object] = {
-        "duration_min": duration, "aep_label": label, "status": "input_error",
-        "error_stage": stage, "error": reason, "expected_count": 10, "ready_count": 0,
+        "duration_min": duration,
+        "aep_label": label,
+        "status": "input_error",
+        "error_stage": stage,
+        "error": reason,
+        "expected_count": 10,
+        "ready_count": 0,
         "original_tp_ids": [p.event_id for p in patterns],
     }
     records: list[dict[str, object]] = [
         {
-            "event_id": None, "status": "input_error", "duration_min": duration,
-            "aep_label": label, "original_tp_id": p.event_id,
-            "error_stage": stage, "error": reason,
+            "event_id": None,
+            "status": "input_error",
+            "duration_min": duration,
+            "aep_label": label,
+            "original_tp_id": p.event_id,
+            "error_stage": stage,
+            "error": reason,
         }
         for p in patterns
     ]
@@ -402,15 +446,26 @@ def _prepare_cell(
         if probability.kind != "AEP_PERCENT":
             _fail("Only original BoM percentage AEP labels are supported; EY/ARI are not converted")
         ensemble = select_arr2019_ensemble(
-            patterns, catchment_area_km2=config.catchment_area_km2, duration_min=duration,
-            aep_percent=probability.value, region=config.temporal_region,
+            patterns,
+            catchment_area_km2=config.catchment_area_km2,
+            duration_min=duration,
+            aep_percent=probability.value,
+            region=config.temporal_region,
         )
         local: list[ProjectEvent] = []
         records: list[dict[str, object]] = []
         for i, pattern in enumerate(ensemble.patterns, start=1):
             event, audit = _event(
-                config, bom, patterns, loaded, legacy, selection=ensemble,
-                pattern=pattern, ordinal=i, aep_label=aep_label, aep_index=aep_index,
+                config,
+                bom,
+                patterns,
+                loaded,
+                legacy,
+                selection=ensemble,
+                pattern=pattern,
+                ordinal=i,
+                aep_label=aep_label,
+                aep_index=aep_index,
                 source_ordinal=source_orders[pattern],
             )
             local.append(event)
@@ -420,10 +475,16 @@ def _prepare_cell(
         cell, rejected = _cell_failure(duration, aep_label, stage, exc, ensemble.patterns if ensemble else ())
         return cell, [], rejected
     cell = {
-        "duration_min": duration, "aep_label": aep_label, "aep_percent": str(ensemble.aep_percent),
-        "status": "ready", "expected_count": 10, "ready_count": len(local),
-        "source_kind": ensemble.source_kind, "area_bin": ensemble.area_bin,
-        "frequency_band": ensemble.aep_band, "original_tp_ids": list(ensemble.event_ids),
+        "duration_min": duration,
+        "aep_label": aep_label,
+        "aep_percent": str(ensemble.aep_percent),
+        "status": "ready",
+        "expected_count": 10,
+        "ready_count": len(local),
+        "source_kind": ensemble.source_kind,
+        "area_bin": ensemble.area_bin,
+        "frequency_band": ensemble.aep_band,
+        "original_tp_ids": list(ensemble.event_ids),
         "selection_policy": ensemble.policy_version,
     }
     return cell, local, records
@@ -438,7 +499,8 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     patterns = read_pattern_file(config.temporal_patterns, kind=config.pattern_kind)
     legacy = (
         read_arr_file(config.legacy_arr_txt, legacy_profile="arr2016_txt")
-        if config.legacy_arr_txt is not None else None
+        if config.legacy_arr_txt is not None
+        else None
     )
     source_orders = {pattern: i for i, pattern in enumerate(patterns.patterns, start=1)}
     if len(source_orders) != len(patterns.patterns):
@@ -449,16 +511,20 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     for duration in config.durations_min:
         for index, label in enumerate(config.aep_labels, start=1):
             cell, selected, member_records = _prepare_cell(
-                config, bom, patterns, loaded, legacy,
-                duration=duration, aep_label=label, aep_index=index, source_orders=source_orders,
+                config,
+                bom,
+                patterns,
+                loaded,
+                legacy,
+                duration=duration,
+                aep_label=label,
+                aep_index=index,
+                source_orders=source_orders,
             )
             cells.append(cell)
             events.extend(selected)
             records.extend(member_records)
-    routed = (
-        run_project_events(config.project, events, selection=config.engine)
-        if events else ProjectBatchReport(())
-    )
+    routed = run_project_events(config.project, events, selection=config.engine) if events else ProjectBatchReport(())
     if len(routed.outcomes) != len(events):
         _fail("Common #119 execution did not return exactly one outcome per materialised event")
     outcomes = {item.event_id: item for item in routed.outcomes}
@@ -475,8 +541,10 @@ def run_design_batch(path: Path) -> DesignBatchResult:
     input_complete = len(events) == expected_count and all(cell["status"] == "ready" for cell in cells)
     succeeded = input_complete and routed.succeeded
     effective: dict[str, object] = {
-        "format": EFFECTIVE_FORMAT, "schema_version": DESIGN_VERSION,
-        "method_profile": METHOD_PROFILE, "status": "computed_unvalidated" if succeeded else "incomplete",
+        "format": EFFECTIVE_FORMAT,
+        "schema_version": DESIGN_VERSION,
+        "method_profile": METHOD_PROFILE,
+        "status": "computed_unvalidated" if succeeded else "incomplete",
         "generated_input_reference_status": "not_assessed",
         "routed_native_reference_status": "not_assessed",
         "representative_event_rule": "not_selected_unverified",
@@ -489,11 +557,15 @@ def run_design_batch(path: Path) -> DesignBatchResult:
                 "original_files": list(loaded.file_hashes),
             },
             "bom_ifd": {
-                "path": str(config.bom_ifd), "sha256": bom.sha256, "units": bom.rainfall_unit,
-                "source_system": bom.source_system, "issued": bom.issued,
+                "path": str(config.bom_ifd),
+                "sha256": bom.sha256,
+                "units": bom.rainfall_unit,
+                "source_system": bom.source_system,
+                "issued": bom.issued,
             },
             "temporal_patterns": {
-                "path": str(config.temporal_patterns), "sha256": patterns.source_sha256,
+                "path": str(config.temporal_patterns),
+                "sha256": patterns.source_sha256,
                 "kind": patterns.kind,
                 "members": [
                     {"locator": member.locator, "sha256": member.sha256, "byte_length": member.byte_length}
@@ -501,29 +573,38 @@ def run_design_batch(path: Path) -> DesignBatchResult:
                 ],
             },
             "legacy_arr": {
-                "path": str(config.legacy_arr_txt), "sha256": legacy.source.sha256,
+                "path": str(config.legacy_arr_txt),
+                "sha256": legacy.source.sha256,
                 "profile": legacy.source.compatibility_profile,
-            } if legacy is not None else None,
+            }
+            if legacy is not None
+            else None,
         },
         "selection": {
             "duration_axis_min": list(config.durations_min),
             "aep_label_axis": list(config.aep_labels),
             "catchment_area_km2": str(config.catchment_area_km2),
             "tp_region": config.temporal_region,
-            "arf_region": config.arf_region, "pattern_kind": config.pattern_kind,
+            "arf_region": config.arf_region,
+            "pattern_kind": config.pattern_kind,
             "dry_tail_min": config.dry_tail_min,
-            "engine": config.engine.engine, "numerical_profile": config.engine.numerical_profile,
+            "engine": config.engine.engine,
+            "numerical_profile": config.engine.numerical_profile,
             "loss_profile": config.loss_profile,
             "preburst_percentile": config.preburst_percentile,
             "excess_policy": config.excess_policy,
         },
-        "expected_population": expected_count, "prepared_population": len(events),
-        "input_population_complete": input_complete, "routed_population_complete": routed.succeeded,
+        "expected_population": expected_count,
+        "prepared_population": len(events),
+        "input_population_complete": input_complete,
+        "routed_population_complete": routed.succeeded,
         "routing_status_counts": dict(sorted(Counter(outcome.status for outcome in routed.outcomes).items())),
-        "cells": cells, "members": records,
+        "cells": cells,
+        "members": records,
     }
     event_request: dict[str, object] = {
-        "format": REQUEST_FORMAT, "schema_version": REQUEST_VERSION,
+        "format": REQUEST_FORMAT,
+        "schema_version": REQUEST_VERSION,
         "events": [
             {
                 "event_id": event.event_id,

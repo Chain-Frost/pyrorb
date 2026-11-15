@@ -38,13 +38,20 @@ def _project(directory: Path) -> Path:
 def _config(directory: Path, *, ifd: Path = IFD, patterns: Path = PATTERNS) -> tuple[Path, dict[str, object]]:
     project = _project(directory)
     data: dict[str, object] = {
-        "format": "python-runoff-routing-arr2019-design", "schema_version": 1,
-        "project": str(project), "bom_ifd": str(ifd), "temporal_patterns": str(patterns),
-        "pattern_kind": "point", "temporal_region": "SyntheticPoint",
-        "arf_region": "South-West Western Australia", "catchment_area_km2": "2",
-        "durations_min": [60, 120], "aep_labels": ["1%", "2%"],
+        "format": "python-runoff-routing-arr2019-design",
+        "schema_version": 1,
+        "project": str(project),
+        "bom_ifd": str(ifd),
+        "temporal_patterns": str(patterns),
+        "pattern_kind": "point",
+        "temporal_region": "SyntheticPoint",
+        "arf_region": "South-West Western Australia",
+        "catchment_area_km2": "2",
+        "durations_min": [60, 120],
+        "aep_labels": ["1%", "2%"],
         "dry_tail_min": 120,
-        "engine": "python-cmd", "numerical_profile": "cmd-6.44",
+        "engine": "python-cmd",
+        "numerical_profile": "cmd-6.44",
         "loss": {"mode": "project_il_cl"},
     }
     path = directory / "design.json"
@@ -66,14 +73,10 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     assert all(item.status == "computed_unvalidated" for item in result.routed.outcomes)
     records = result.effective["members"]
     assert isinstance(records, list)
-    assert [record["original_tp_id"] for record in records[:10]] == [
-        f"{value:04d}" for value in range(1, 11)
-    ]
+    assert [record["original_tp_id"] for record in records[:10]] == [f"{value:04d}" for value in range(1, 11)]
     assert [record["source_order"] for record in records[:10]] == list(range(1, 11))
     assert [record["ensemble_order"] for record in records[:10]] == list(range(1, 11))
-    assert [record["original_tp_id"] for record in records[20:30]] == [
-        f"{value:04d}" for value in range(101, 111)
-    ]
+    assert [record["original_tp_id"] for record in records[20:30]] == [f"{value:04d}" for value in range(101, 111)]
     assert [item["status"] for item in result.effective["cells"]] == ["ready"] * 4
     assert len({outcome.event_id for outcome in result.routed.outcomes}) == 40
     assert result.effective["generated_input_reference_status"] == "not_assessed"
@@ -98,16 +101,10 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
     paths = write_design_outputs(tmp_path / "design-results", result)
     assert len(paths) == 6
     request = load_event_request(tmp_path / "design-results.events.json")
-    replay = run_project_events(
-        tmp_path / "project.json", request, selection=EngineSelection.for_engine("python-cmd")
-    )
+    replay = run_project_events(tmp_path / "project.json", request, selection=EngineSelection.for_engine("python-cmd"))
     assert replay.succeeded
-    assert [
-        (a.event_id, a.model_sha256, a.hydrographs, a.physical_time_hours)
-        for a in replay.outcomes
-    ] == [
-        (a.event_id, a.model_sha256, a.hydrographs, a.physical_time_hours)
-        for a in result.routed.outcomes
+    assert [(a.event_id, a.model_sha256, a.hydrographs, a.physical_time_hours) for a in replay.outcomes] == [
+        (a.event_id, a.model_sha256, a.hydrographs, a.physical_time_hours) for a in result.routed.outcomes
     ]
     assert json.loads((tmp_path / "design-results.json").read_text())["requested_event_count"] == 40
     assert "computed_unvalidated" in (tmp_path / "design-results.txt").read_text()
@@ -127,9 +124,7 @@ def test_missing_tenth_tp_is_incomplete_without_substitution(tmp_path: Path) -> 
     assert not result.succeeded
     assert result.effective["expected_population"] == 40
     assert result.effective["prepared_population"] == 20
-    assert [cell["status"] for cell in result.effective["cells"]] == [
-        "ready", "ready", "input_error", "input_error"
-    ]
+    assert [cell["status"] for cell in result.effective["cells"]] == ["ready", "ready", "input_error", "input_error"]
     assert all(cell["expected_count"] == 10 for cell in result.effective["cells"])
     assert all(cell["ready_count"] == 0 for cell in result.effective["cells"][2:])
     assert len(result.routed.outcomes) == 20
@@ -166,9 +161,7 @@ def test_legacy_burst_only_losses_applied_by_engine_once(
     config, data = _config(tmp_path)
     data["aep_labels"] = ["1%"]
     data["durations_min"] = [60]
-    data["loss"] = {
-        "mode": mode, "arr_txt": str(LEGACY), "percentile": 50, "excess_policy": "reject"
-    }
+    data["loss"] = {"mode": mode, "arr_txt": str(LEGACY), "percentile": 50, "excess_policy": "reject"}
     _write_config(config, data)
     result = run_design_batch(config)
     assert result.succeeded
