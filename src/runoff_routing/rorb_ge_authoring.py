@@ -1,9 +1,7 @@
-"""Optional RORB_GE 002 drawing authoring for an existing typed catchment.
+"""Optional metre-GIS topology validation for the PyRomb CATG writer.
 
-Topology checks and GE field layouts are adapted from PyROMB PR #16 (MIT,
-Copyright 2022 Tom Norman; see docs/third_party/PYROMB_LICENSE.txt).
-The computational vector comes from serialize_catg; drawing coordinates
-never reconstruct or reorder the routing instructions.
+The local module validates identity, topology and physical units; the only
+CATG rendering and display normalisation occur in the pinned PyRomb writer.
 """
 
 from __future__ import annotations
@@ -15,7 +13,7 @@ from decimal import Decimal
 from itertools import pairwise
 from typing import Literal
 
-from .rorb_codec import parse_catg, serialize_catg
+from .rorb_codec import _render_catg, parse_catg
 from .rorb_model import CatchmentModel
 
 Point = tuple[float, float]
@@ -210,13 +208,16 @@ def _matches_model(model: CatchmentModel, drawing: GeDrawing, network: _Directed
     running: str | None = None
     stack: list[str] = []
     for control in model.controls:
-        if control.code == 1:
+        if control.code in (1, 2):
             if control.reach_id is None or control.subarea_id is None:
                 message = "Source control is missing an explicit reach or area identity"
                 raise ValueError(message)
             upstream, downstream = network.edge_nodes[control.reach_id]
             if area_nodes[control.subarea_id] != upstream:
                 message = f"Source {control.subarea_id!r} is not upstream of its own computational reach"
+                raise ValueError(message)
+            if control.code == 2 and running != upstream:
+                message = f"Code-2 source {control.subarea_id!r} does not join the running GIS node"
                 raise ValueError(message)
             running = downstream
         elif control.code == 3:
@@ -247,145 +248,49 @@ def _matches_model(model: CatchmentModel, drawing: GeDrawing, network: _Directed
     return outlet
 
 
-def _layout(nodes: tuple[GeNode, ...]) -> dict[str, Point]:
-    """Adapt PyROMB normalisation without division by zero for flat extents."""
-    min_x = min(node.x_m for node in nodes)
-    min_y = min(node.y_m for node in nodes)
-    range_x = max(node.x_m for node in nodes) - min_x
-    range_y = max(node.y_m for node in nodes) - min_y
-    scale = max(range_x, range_y)
-    if scale <= 0 or not math.isfinite(scale):
-        message = "Graphical coordinate extent is degenerate or nonfinite"
-        raise ValueError(message)
-    return {
-        node.identifier: (
-            2.5 + 90 * (node.x_m - min_x) / scale,
-            2.5 + 90 * (node.y_m - min_y) / scale,
-        )
-        for node in nodes
-    }
-
-
-def _graphic_node(
-    node: GeNode,
-    index: int,
-    downstream_number: int,
-    area: Decimal | None,
-    position: Point,
-) -> str:
-    """Render a legacy RORB_GE node record with fixed graphical columns."""
-    drawn_area = Decimal(0) if area is None else area
-    if drawn_area != drawn_area.quantize(Decimal("0.001")):
-        message = "RORB_GE 002 node area field supports only three decimal places"
-        raise ValueError(message)
-    return (
-        f"C{index:>7}{position[0]:>15.3f}{position[1]:>15.3f}{1.0:>15.3f}"
-        f"{int(node.subarea_id is not None):>2d}{int(node.outlet):>2d}{downstream_number:>6d}"
-        f" {node.display_label:<28}{float(drawn_area):>15.3f}{0.0:>15.3f}"
-        f"{70 if node.outlet else 0:>3d}{0:>3d}"
-    )
-
-
-def _graphic_reach(
-    identifier: str,
-    number: int,
-    upstream: int,
-    downstream: int,
-    distance_km: Decimal,
-    midpoint: Point,
-) -> tuple[str, str, str]:
-    """Adapt PyROMB's RORB reach record and two midpoint ordinates."""
-    if distance_km != distance_km.quantize(Decimal("0.001")):
-        message = f"RORB_GE 002 reach {identifier!r} requires three-decimal kilometre length"
-        raise ValueError(message)
-    record = (
-        f"C{number:>7}{(' ' + identifier):<9}{upstream:>18d}{downstream:>6d}"
-        f"{0:>15d}{1:>2d}{0:>2d}{float(distance_km):>15.3f}{0.0:>15.3f}{1:>6d}{0:>3d}"
-    )
-    return record, f"C{midpoint[0]:>16.3f}", f"C{midpoint[1]:>16.3f}"
-
-
-def _graphical_prefix(model: CatchmentModel, drawing: GeDrawing, network: _DirectedNetwork) -> str:
-    positions = _layout(drawing.nodes)
-    node_numbers = {node.identifier: number for number, node in enumerate(drawing.nodes, start=1)}
-    area_by_id = {area.identifier: area.area_km2 for area in model.subareas}
-    lines = [
-        model.title,
-        "C RORB_GE 002",
-        "C ",
-        f"C {model.title}",
-        "C ",
-        "C #FILE COMMENTS",
-        "C   0",
-        "C ",
-        "C #SUB-AREA AREA COMMENTS",
-        "C   0",
-        "C ",
-        "C #IMPERVIOUS FRACTION COMMENTS",
-        "C   0",
-        "C ",
-        "C #BACKGROUND IMAGE",
-        "C  T  F",
-        "C ",
-        "C #NODES",
-        f"C{len(drawing.nodes):>7d}",
-    ]
-    for node in drawing.nodes:
-        next_node = network.downstream[node.identifier]
-        downstream_number = node_numbers[next_node] if next_node is not None else 0
-        area = area_by_id[node.subarea_id] if node.subarea_id is not None else None
-        lines.extend(
-            [
-                _graphic_node(node, node_numbers[node.identifier], downstream_number, area, positions[node.identifier]),
-                "C ",
-            ]
-        )
-    lines.extend(["C #REACHES", f"C{len(model.reaches):>7d}"])
-    for number, reach in enumerate(model.reaches, start=1):
-        upstream, downstream = network.edge_nodes[reach.identifier]
-        point_a, point_b = positions[upstream], positions[downstream]
-        midpoint = ((point_a[0] + point_b[0]) / 2, (point_a[1] + point_b[1]) / 2)
-        lines.extend(
-            _graphic_reach(
-                reach.identifier,
-                number,
-                node_numbers[upstream],
-                node_numbers[downstream],
-                reach.length_km,
-                midpoint,
-            )
-        )
-    lines.extend(
-        [
-            "C ",
-            "C #STORAGES",
-            "C      0",
-            "C ",
-            "C #INFLOW/OUTFLOW",
-            "C      0",
-            "C ",
-            "C END RORB_GE",
-        ]
-    )
-    return "\n".join(lines) + "\n"
-
-
 def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> bytes:
-    """Write checked GE 002 metadata with the authoritative computational vector.
+    """Validate physical GIS links, then invoke the public PyRomb renderer.
 
-    This is syntactic/model round-trip validation, not native RORB compatibility.
+    Computational controls and reach lengths come from the model, never from
+    normalized display XY or a fresh topology traversal.
     """
     model.__post_init__()
     network = _network(drawing)
     _matches_model(model, drawing, network)
-    canonical = serialize_catg(model).decode("utf-8")
-    marker = "C END RORB_GE\n"
-    computation = canonical.partition(marker)[2]
-    if not computation:
-        message = "Canonical catchment writer omitted the computational vector"
-        raise ValueError(message)
-    data = (_graphical_prefix(model, drawing, network) + computation).encode("utf-8")
+    node_numbers = {node.identifier: index for index, node in enumerate(drawing.nodes, start=1)}
+    areas = {area.identifier: area for area in model.subareas}
+    physical_reaches = {reach.identifier: reach.length_km for reach in model.reaches}
+    node_records = tuple(
+        (
+            node_numbers[node.identifier],
+            node.display_label or node.identifier,
+            node.x_m,
+            node.y_m,
+            node_numbers[network.downstream[node.identifier]] if network.downstream[node.identifier] else 0,
+            node.subarea_id is not None,
+            node.outlet,
+            areas[node.subarea_id].area_km2 if node.subarea_id else Decimal(0),
+            areas[node.subarea_id].impervious_fraction if node.subarea_id else Decimal(0),
+        )
+        for node in drawing.nodes
+    )
+    drawing_reaches = {reach.identifier: reach for reach in drawing.reaches}
+    reach_records = tuple(
+        (
+            index,
+            reach.identifier,
+            node_numbers[network.edge_nodes[reach.identifier][0]],
+            node_numbers[network.edge_nodes[reach.identifier][1]],
+            (drawing_reaches[reach.identifier].vertices_m[0][0]
+             + drawing_reaches[reach.identifier].vertices_m[-1][0]) / 2,
+            (drawing_reaches[reach.identifier].vertices_m[0][1]
+             + drawing_reaches[reach.identifier].vertices_m[-1][1]) / 2,
+            physical_reaches[reach.identifier],
+        )
+        for index, reach in enumerate(model.reaches, start=1)
+    )
+    data = _render_catg(model, node_records=node_records, reach_records=reach_records)
     if parse_catg(data).model != model:
-        message = "Authored GE metadata unexpectedly modified the computational model"
+        message = "Graphical metadata unexpectedly changed the computational model"
         raise ValueError(message)
     return data

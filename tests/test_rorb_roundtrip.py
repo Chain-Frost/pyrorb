@@ -368,7 +368,7 @@ def test_original_pyromb_645_mode_zero_preserves_code2_impervious_and_graphical_
     assert from_json(to_json(model)) == model
     assert parse_bytes(original, ".cat").model == model
     assert parse_bytes(original, ".catg").model == model
-    with pytest.raises(ValueError, match="No verified canonical CATG writer"):
+    with pytest.raises(ValueError, match="requires explicit ordered graphical"):
         serialize_catg(model)
 
 
