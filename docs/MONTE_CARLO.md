@@ -196,6 +196,8 @@ The same materialised event can later be evaluated using another supported engin
 
 Use prepared catchment geometry with fresh loss/routing state for each event. The current request-file array loader and materialised batch outcomes need a bounded adapter for large plans: stream or chunk plans/results, validate checkpoint identities and reject duplicate or mixed-policy resumes. Compact peak/result ledgers can support frequency calculations; full hydrographs may be retained selectively or replayed from saved events. No new GUI or general execution framework is needed.
 
+The [rerunnable convergence research under #148](research/MONTE_CARLO_CONVERGENCE.md) includes both a high-variability counterexample for which 1,000 simulations are inadequate and a low-variability nondegenerate synthetic population where 1,000 meets a proposed whole-run precision criterion. This does not establish a universal minimum, RORBwin compatibility or real-catchment statistical acceptance.
+
 ## Research question: is 1,000 enough?
 
 There is no accepted universal simulation count. ARR Book 4 section 4.3.3.3 gives indicative guidance of about 50 probability intervals and 50–200 simulations per interval, depending on input variability. This corresponds to 2,500–10,000 event evaluations per duration, not a guarantee and not proof of a current RORBwin default.

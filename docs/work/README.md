@@ -30,6 +30,8 @@
 
 - [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.
 
+- [#148 independent-seed simulation-budget convergence research](2026-11-15-issue148-convergence.md) — exact synthetic controls, negative and positive 100-seed confirmation, and separately pending real-catchment qualification.
+
 ## Retained diagnostic/reference evidence
 
 - [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import importlib.util
 import json
 import sys
@@ -78,25 +79,26 @@ def test_complete_unequal_strata_and_exact_finite_tp() -> None:
     assert edges[-1] == 1
     assert edges[1] - edges[0] != pytest.approx(edges[3] - edges[2])
     for method in ("random_tp", "paired_tp"):
-        peaks = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method=method)
+        peaks = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+                                tp_method=method)
         assert set(peaks) == {"zero_atom", "near_tie"}
         assert all(len(values) == 20 for values in peaks.values())
         for values in peaks.values():
             assert sum(weight for _, weight in values) == pytest.approx(1.0)
-    first = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method="random_tp")
-    repeat = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method="random_tp")
-    changed = mc.trial_peaks(
-        root=9, stage="test", replication=1, duration="short", strata=5, n=4, tp_method="random_tp"
-    )
+    first = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+                            tp_method="random_tp")
+    repeat = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
+                             tp_method="random_tp")
+    changed = mc.trial_peaks(root=9, stage="test", replication=1, duration="short", strata=5, n=4,
+                              tp_method="random_tp")
     assert first == repeat
     assert first != changed
 
 
 def test_envelope_uses_each_duration_and_all_sites() -> None:
     mc = _research()
-    rows = mc.one_trial(
-        root=7, stage="test", replication=0, strata=5, n=4, tp_method="random_tp", quantile_method="rank"
-    )
+    rows = mc.one_trial(root=7, stage="test", replication=0, strata=5, n=4,
+                        tp_method="random_tp", quantile_method="rank")
     assert len(rows) == 2 * 4 * 3
     for site in mc.RESPONSES:
         for aep in mc.AEPS:
@@ -120,22 +122,55 @@ def test_smoke_writes_immutable_replay_receipts(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError):
         mc.run("smoke", output, root=123, replications=2, max_evaluations=80, max_wall_seconds=30, opt_in=False)
     with pytest.raises(ValueError, match="require --opt-in"):
-        mc.run(
-            "pilot",
-            tmp_path / "pilot",
-            root=123,
-            replications=2,
-            max_evaluations=77000,
-            max_wall_seconds=30,
-            opt_in=False,
-        )
+        mc.run("pilot", tmp_path / "pilot", root=123, replications=2, max_evaluations=77000,
+               max_wall_seconds=30, opt_in=False)
     with pytest.raises(ValueError, match="exceeds"):
-        mc.run(
-            "smoke",
-            tmp_path / "over-budget",
-            root=123,
-            replications=2,
-            max_evaluations=79,
-            max_wall_seconds=30,
-            opt_in=False,
+        mc.run("smoke", tmp_path / "over-budget", root=123, replications=2, max_evaluations=79,
+               max_wall_seconds=30, opt_in=False)
+
+
+def test_archived_negative_and_positive_confirmation_first_run_replays() -> None:
+    """Original receipts retain their historical SHA, not today's source SHA."""
+    mc = _research()
+    repo_data = Path(__file__).parents[1] / "docs" / "research" / "issue148"
+    local_data = Path(__file__).parent
+    for stage, directory in (("confirmation", "confirmation"),
+                             ("stable-independent-confirmation", "stable_confirmation")):
+        receipt = repo_data / directory if repo_data.is_dir() else local_data / f"receipt-{stage}"
+        if not receipt.exists():
+            receipt = local_data / f"receipt-{directory}"
+        if not receipt.exists() and stage == "stable-independent-confirmation":
+            receipt = local_data / "receipt-stable-independent-confirmation"
+        manifest = json.loads((receipt / "manifest.json").read_text(encoding="utf-8"))
+        assert manifest["stage"] == stage
+        first_variant = mc.STAGE_VARIANTS[stage][0]
+        strata, count, tp, method = first_variant
+        expected = mc.one_trial(
+            root=manifest["root_seed"], stage=stage, replication=0, strata=strata,
+            n=count, tp_method=tp, quantile_method=method, responses=mc.response_population(stage),
         )
+        with (receipt / "raw.csv").open(newline="", encoding="utf-8") as stream:
+            first = next(csv.DictReader(stream))
+        assert first["site"] == expected[0]["site"]
+        assert float(first["estimate"]) == pytest.approx(expected[0]["estimate"])
+        assert float(first["exact"]) == pytest.approx(expected[0]["exact"])
+        assert manifest["total_evaluations"] > 0
+
+
+def test_stable_population_positive_result_is_non_degenerate() -> None:
+    mc = _research()
+    assert mc.RESPONSES != mc.STABLE_RESPONSES
+    for site in mc.STABLE_RESPONSES.values():
+        for response in site.values():
+            assert response.slope > 0.0
+            assert response.tp_bump > 0.0
+            assert response.loss_width > 0.0
+    rows = mc.one_trial(
+        root=mc.ROOT_SEED, stage="stable-independent-confirmation", replication=0,
+        strata=50, n=20, tp_method="random_tp", quantile_method="rank",
+        responses=mc.STABLE_RESPONSES,
+    )
+    assert len(rows) == 24
+    assert all(row["exact"] > 0 for row in rows)
+    assert mc.lower_confidence_bound(100, 100) > 0.95
+    assert mc.lower_confidence_bound(96, 100) < 0.95
