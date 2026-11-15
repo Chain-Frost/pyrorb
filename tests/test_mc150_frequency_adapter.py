@@ -10,10 +10,10 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import json
+from collections.abc import Callable
 from dataclasses import replace
 from fractions import Fraction
 from pathlib import Path
-from collections.abc import Callable
 from typing import Any, Protocol, cast
 
 import pytest
