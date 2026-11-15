@@ -61,8 +61,11 @@ def _keys(obj: dict[str, object], required: set[str], label: str, optional: set[
 
 
 def _name(value: object, label: str) -> str:
-    if not isinstance(value, str) or not 1 <= len(value) <= 128 or value != value.strip() or any(
-        ord(c) < 32 for c in value
+    if (
+        not isinstance(value, str)
+        or not 1 <= len(value) <= 128
+        or value != value.strip()
+        or any(ord(c) < 32 for c in value)
     ):
         _fail(f"{label} requires nonempty trimmed text without control characters")
     return value
@@ -144,8 +147,20 @@ def _check_spec(spec: dict[str, object]) -> None:
     _keys(
         spec,
         {
-            "schema_version", "policy", "scenario_id", "duration_min", "sources", "rng", "strata", "ifd",
-            "tp_bins", "loss", "fixed_parameters", "arf_policy", "preburst_policy", "joint_policy",
+            "schema_version",
+            "policy",
+            "scenario_id",
+            "duration_min",
+            "sources",
+            "rng",
+            "strata",
+            "ifd",
+            "tp_bins",
+            "loss",
+            "fixed_parameters",
+            "arf_policy",
+            "preburst_policy",
+            "joint_policy",
             "within_stratum",
         },
         "spec",
@@ -365,9 +380,7 @@ def ifd_from_bom(source: BoMIFD, duration_min: int) -> dict[str, object]:
             with localcontext() as ctx:
                 ctx.prec = 60
                 aep_fraction = probability.value / Decimal(100)
-            points.append(
-                {"aep": str(aep_fraction), "depth_mm": str(source.depth_mm_at(duration_min, probability))}
-            )
+            points.append({"aep": str(aep_fraction), "depth_mm": str(source.depth_mm_at(duration_min, probability))})
     points.sort(key=lambda p: Decimal(p["aep"]))
     if len(points) < 2:
         _fail("Source BoM IFD needs two explicit percentage-AEP points; no EY/ARI conversion")
@@ -443,8 +456,11 @@ class SamplePlan:
     @classmethod
     def from_dict(cls, raw: object) -> SamplePlan:
         value = _obj(raw, "sample plan")
-        _keys(value, {"format", "schema_version", "spec", "plan_id", "population_id", "parent_plan_id", "domain"},
-              "sample plan")
+        _keys(
+            value,
+            {"format", "schema_version", "spec", "plan_id", "population_id", "parent_plan_id", "domain"},
+            "sample plan",
+        )
         if value["format"] != PLAN_FORMAT or value["schema_version"] != SCHEMA_VERSION:
             _fail("Unexpected persisted sample-plan format/version")
         parent = value["parent_plan_id"]
@@ -608,17 +624,19 @@ def _tp_selection(p: Decimal, u: Decimal, bins: list[object]) -> tuple[str, str,
                     ctx.prec = 60
                     cumulative += _prob(member["probability"], "TP probability")
                 if u < cumulative:
-                    return _name(band["id"], "TP bin"), _name(member["event_id"], "TP EventID"), _int(
-                        member["source_order"], "TP order", 1, 1_000_000
+                    return (
+                        _name(band["id"], "TP bin"),
+                        _name(member["event_id"], "TP EventID"),
+                        _int(member["source_order"], "TP order", 1, 1_000_000),
                     )
     _fail("No eligible TP could be selected; no missing-pattern substitution")
+
 
 def select_temporal_pattern(plan: SamplePlan, aep_fraction: Decimal, uniform: Decimal) -> tuple[str, str, int]:
     """Select original TP EventID, with [lower, upper) bands and last upper inclusive."""
     if not aep_fraction.is_finite() or not uniform.is_finite() or not 0 <= uniform < 1:
         _fail("Invalid temporal-pattern selection inputs")
     return _tp_selection(aep_fraction, uniform, _list(plan.spec()["tp_bins"], "TP bins"))
-
 
 
 @dataclass(frozen=True, slots=True)
@@ -658,9 +676,9 @@ class SampleRecord:
             "tp_source_order": self.tp_source_order,
             "tp_uniform": str(self.tp_uniform),
             "loss_uniform": None if self.loss_uniform is None else str(self.loss_uniform),
-            "storm_il_ratio_to_median": None if self.storm_il_ratio_to_median is None else str(
-                self.storm_il_ratio_to_median
-            ),
+            "storm_il_ratio_to_median": None
+            if self.storm_il_ratio_to_median is None
+            else str(self.storm_il_ratio_to_median),
             "storm_initial_loss_mm": str(self.storm_initial_loss_mm),
         }
 
@@ -684,9 +702,9 @@ class SampleRecord:
             tp_source_order=_int(obj["tp_source_order"], "sample.tp_source_order", 1, 1_000_000),
             tp_uniform=_prob(obj["tp_uniform"], "sample.tp_uniform"),
             loss_uniform=None if obj[nullable[0]] is None else _prob(obj[nullable[0]], "sample.loss_uniform"),
-            storm_il_ratio_to_median=None if obj[nullable[1]] is None else _decimal(
-                obj[nullable[1]], "sample.storm_il_ratio_to_median"
-            ),
+            storm_il_ratio_to_median=None
+            if obj[nullable[1]] is None
+            else _decimal(obj[nullable[1]], "sample.storm_il_ratio_to_median"),
             storm_initial_loss_mm=_decimal(obj["storm_initial_loss_mm"], "sample.storm_initial_loss_mm"),
         )
 
@@ -820,7 +838,9 @@ def iter_validated_samples(
         _fail("Incomplete sample ledger: positive-weight planned records are missing")
 
 
-def validate_sample_records(plan: SamplePlan, records: Iterable[SampleRecord], *, require_complete: bool = True) -> None:
+def validate_sample_records(
+    plan: SamplePlan, records: Iterable[SampleRecord], *, require_complete: bool = True
+) -> None:
     """Check every sample and total allocated weight without invoking any RNG."""
     for _ in iter_validated_samples(plan, records, require_complete=require_complete):
         pass
@@ -855,10 +875,9 @@ def read_sample_plan(path: Path) -> SamplePlan:
     return SamplePlan.from_dict(_decode(path.read_text(encoding="utf-8")))
 
 
-def iter_saved_sample_records(
-    path: Path, plan: SamplePlan, *, require_complete: bool = True
-) -> Iterator[SampleRecord]:
+def iter_saved_sample_records(path: Path, plan: SamplePlan, *, require_complete: bool = True) -> Iterator[SampleRecord]:
     """Bounded streaming ledger verification and replay without sampling again."""
+
     def _records() -> Iterator[SampleRecord]:
         with path.open("r", encoding="utf-8") as handle:
             for i in range(MAX_SAMPLES + 1):
@@ -895,7 +914,6 @@ def normal_coordinate_strata(z_edges: tuple[float, ...], counts: tuple[int, ...]
         _fail("Normal-coordinate CDF endpoints must be distinct strictly interior AEP fractions")
     allocations = reversed(counts)
     return [
-        {"id": f"h{i:04d}", "aep_lower": str(a), "aep_upper": str(b),
-         "probability_mass": str(b - a), "count": n}
+        {"id": f"h{i:04d}", "aep_lower": str(a), "aep_upper": str(b), "probability_mass": str(b - a), "count": n}
         for i, (a, b, n) in enumerate(zip(probability_edges[:-1], probability_edges[1:], allocations, strict=True))
     ]

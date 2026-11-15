@@ -58,7 +58,8 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
             {"id": "h2", "aep_lower": "0.2", "aep_upper": "0.7", "probability_mass": "0.5", "count": 4},
         ],
         "ifd": {
-            "source_id": "exact BoM source labels", "interpolation": "z_linear_depth_v1",
+            "source_id": "exact BoM source labels",
+            "interpolation": "z_linear_depth_v1",
             "points": [
                 {"aep": "0.05", "depth_mm": "100"},
                 {"aep": "0.20", "depth_mm": "80"},
@@ -67,14 +68,18 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
         },
         "tp_bins": [
             {
-                "id": "rare", "aep_lower": "0.1", "aep_upper": "0.2",
+                "id": "rare",
+                "aep_lower": "0.1",
+                "aep_upper": "0.2",
                 "choices": [
                     {"event_id": "0001", "source_order": 7, "probability": "0.3"},
                     {"event_id": "0101", "source_order": 19, "probability": "0.7"},
                 ],
             },
             {
-                "id": "frequent", "aep_lower": "0.2", "aep_upper": "0.7",
+                "id": "frequent",
+                "aep_lower": "0.2",
+                "aep_upper": "0.7",
                 "choices": [{"event_id": "0201", "source_order": 10, "probability": "1"}],
             },
         ],
@@ -82,7 +87,8 @@ def _spec(*, seed: int = 12, loss: str = "empirical_scaled_storm_il") -> dict[st
             {"mode": "fixed_storm_il", "storm_il_mm": "20"}
             if loss == "fixed_storm_il"
             else {
-                "mode": "empirical_scaled_storm_il", "source_id": "synthetic inverse CDF",
+                "mode": "empirical_scaled_storm_il",
+                "source_id": "synthetic inverse CDF",
                 "median_storm_il_mm": "20",
                 "cdf_quantiles": [
                     {"nonexceedance": "0", "ratio_to_median": "0.2"},
@@ -294,20 +300,20 @@ def test_streamed_saved_samples_validate_without_buffering(tmp_path: Path) -> No
     ]
 
 
-
 def test_145_z_linear_rainfall_depth_is_not_linear_in_aep() -> None:
     spec = _spec()
     spec["ifd"]["points"] = [
         {"aep": "0.1", "depth_mm": "100"},
         {"aep": "0.5", "depth_mm": "50"},
     ]
-    spec["strata"] = [
-        {"id": "h1", "aep_lower": "0.1", "aep_upper": "0.5", "probability_mass": "0.4", "count": 8}
-    ]
+    spec["strata"] = [{"id": "h1", "aep_lower": "0.1", "aep_upper": "0.5", "probability_mass": "0.4", "count": 8}]
     spec["tp_bins"] = [
-        {"id": "frequent", "aep_lower": "0.1", "aep_upper": "0.5", "choices": [
-            {"event_id": "0001", "source_order": 1, "probability": "1"}
-        ]}
+        {
+            "id": "frequent",
+            "aep_lower": "0.1",
+            "aep_upper": "0.5",
+            "choices": [{"event_id": "0001", "source_order": 1, "probability": "1"}],
+        }
     ]
     plan = SamplePlan.create(spec)
     # Independent normal-quantile calculation: 50 + 50 * Phi^-1(0.7) / Phi^-1(0.9).
