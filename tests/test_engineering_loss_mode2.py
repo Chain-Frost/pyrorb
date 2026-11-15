@@ -59,7 +59,6 @@ def test_default_engine_mode_two_full_horizon_and_physical_source_volume(tmp_pat
     assert result.hydrographs[0].discharge_m3_s == run_model(model).prints[0].discharge_m3_s
 
 
-
 def test_explicit_python_dispatch_does_not_invoke_compatible_kernel(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
