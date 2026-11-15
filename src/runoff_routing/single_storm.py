@@ -1,6 +1,6 @@
 """Bounded, independent RORB-style single-storm calculation.
 
-Supports explicit DESIGN storms, one uniform pervious ISA, IL/CL, natural
+Supports explicit DESIGN storms, one uniform pervious ISA, IL/CL or IL/RoC, natural
 reaches and the stack control-vector subset 1/3/4/5/7. No native process,
 I/O, GIS, fitted constants or inferred print-site identities are involved.
 The first output sample is at t=0; rainfall in a bin enters at its END sample.
@@ -39,6 +39,7 @@ class Storm:
 class Losses:
     initial_mm: float
     continuing_mm_h: float
+    runoff_coefficient: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,15 +166,20 @@ def distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
 
 
 def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float) -> tuple[float, ...]:
-    """Apply CMD's discrete-bin pervious initial/continuing loss convention.
+    """Apply distinct CMD-referenced IL/CL or IL/RoC pervious loss rules.
 
-    After a bin strictly exhausts IL, charge the complete CL*dt allowance
-    against its remaining rainfall, even if IL was exhausted mid-bin.
-    At exact IL equality no runoff occurs, and CL is charged on the next
-    wet bin. IL persists over dry bins; unused CL does not carry forward.
+    For IL/CL, charge the full CL*dt allowance after IL is exceeded,
+    including the crossing bin. For IL/RoC, multiply rainfall after IL by
+    the dimensionless coefficient, without a continuing rate.
+    At exact IL equality no runoff occurs. IL persists over dry bins.
     """
     _check_finite_nonnegative(losses.initial_mm, "Initial loss")
     _check_finite_nonnegative(losses.continuing_mm_h, "Continuing loss")
+    if losses.runoff_coefficient is not None:
+        coefficient = losses.runoff_coefficient
+        if not math.isfinite(coefficient) or not 0.0 <= coefficient <= 1.0 or losses.continuing_mm_h != 0:
+            message = "IL/RoC needs a fractional runoff coefficient and no continuing loss rate."
+            raise RoutingDomainError(message)
     if not math.isfinite(timestep_hours) or timestep_hours <= 0:
         message = "Timestep must be finite and positive."
         raise RoutingDomainError(message)
@@ -190,9 +196,10 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
         post_initial_rain = rainfall - consumed
         if post_initial_rain <= 0.0:
             excess.append(0.0)
+        elif losses.runoff_coefficient is not None:
+            excess.append(post_initial_rain * losses.runoff_coefficient)
         else:
-            # CMD charges a full-bin CL allowance after initial loss is
-            # exceeded, including the first crossing bin. No carry-forward.
+            # Full-bin mode-1 CL after IL exhaustion; no allowance carry-over.
             excess.append(max(0.0, post_initial_rain - continuing_per_bin))
     return tuple(excess)
 
