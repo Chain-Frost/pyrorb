@@ -1,10 +1,11 @@
 # #141 — bounded portable CMD export implementation
 
-**Date:** 15 November 2026  
+**Date:** 15 November 2026 (implementation); 16 November 2026 (software merge closeout)  
 **Owner:** #141 native package/export; #138 shared effective settings, #139 edited CATG/STM writers, #140 PAR import/source bindings/CLI.  
-**Base inspected:** `main` at `0675d75b05dba7728b389fdd8af743060b4469b2`.  
-**Branch:** `feat/141-native-cmd-export` (stacked on #138 PR #157).  
-**Review/merge:** Review required; do not merge under this scope without owner instruction.
+**Initial base inspected:** `main` at `0675d75b05dba7728b389fdd8af743060b4469b2`.  
+**Final reviewed PR head:** `280aea19db8b9e52f8115d25f1975b68e537f8de`.  
+**Merged software revision:** `766b56a8ba6fe42785f05bb5d8df51a741a07e2c` ([PR #162](https://github.com/Chain-Frost/python-runoff-routing/pull/162), squash to `main`).  
+**Disposition:** Bounded software export merged after review; strict native executable/verbosity/numerical gates remain open in #141/#143.
 
 ## Delivered in isolated files
 
@@ -12,17 +13,19 @@
 - `tests/test_native_export.py`: source-authenticated retained original triplet, relocated package, actual emitted PAR and event semantics, kc/m/loss edits, verbosity 1/2/3, batch isolation, semantic storm writer, overwrite and partial-stage rejection, edited CATG rejection, project source corruption and text-file event-request CLI.
 - `docs/NATIVE_CMD_EXPORT.md`: API, standalone CLI, native invocation, evidence distinctions and handoffs.
 
-## Verification and non-acceptance
+## Verified current software revision
 
-GitHub Windows quality run `43728094889` passed on `d5f13a6639b78b4d3c40d7729b9be4331f9360bc` (Python 3.13) after correcting the reviewed signed negative-exit handling: source tests, Ruff, strict Pyright, original CMD source regression, wheel build, isolated-wheel tests and original CMD installed-wheel regression. This is a **historical exact-head receipt**; subsequent changes require a fresh head validation. Actual relocated native RORB CMD execution with the real executable remains **not run**.
+At exact PR #162 head `280aea19db8b9e52f8115d25f1975b68e537f8de`, [Windows quality #43746408987](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43746408987) completed **SUCCESS** using CPython 3.13.17: repository hygiene 527 files / 0 errors; pinned Ruff lint and format; strict Pyright; **1,198 source tests passed / three expected POSIX-only foreign-path skips**, including the actual PyRomb edited CATG and Windows launcher stub; both required original-source public CMD probe gates; isolated wheel built (SHA-256 `026fe63bebb14615f28f388899a7415c6787a51373c738327eeeba01d4f06b4f`); **177 selected installed-wheel tests passed**; full and partial CLI report/fail-closed controls; installed-wheel CMD probe passed. Both fresh public probes checked 50 original CMD cases with 48 reporting-scalar passes and two preserved incompletes, not a new native run.
 
-Each successful software export has an emitted-byte hash and in-process reparse, with manifest state `native_execution=not_run` and `numerical_equivalence=not_assessed`. No new RORB goldens, source reference bytes or numerical comparators are changed. No target output-name/verbosity-output availability claims have been admitted.
+The exact-head Codex review completed **without findings** and all historical inline findings were resolved. The PR contained only the four #141-owned files. No GUI, new numerical solver, reference mutation, licensed executable or native-output fabrication was introduced.
 
-## Integration gates / next actions
+## Outstanding independent acceptance
 
-1. The exporter consumes #138's public `resolve_effective_model`, #140's canonical staged `LegacyRunFiles`, persisted `LoadedProject.run` and serialized input binding provenance. #140 still owns shared project dispatcher delegation; PR #162 remains stacked on #138 PR #157 until the contract is reviewed and integrated.
-2. Edited CATG with an explicit validated `GeDrawing` now calls #139's PyRomb-backed `serialize_catg_with_drawing`, and reparses the result. Until #139 PR #166 is present with the reviewed PyRomb dependency, changes fail explicitly; unchanged originals are exact-copied without that dependency. Cross-branch integrated tests are still required.
-3. Run focused source tests, Ruff/Pyright, Windows quality CI, and installed-wheel checks on the **exact integrated head**; track exact revisions, skips and failures.
-4. On an authorised Windows machine, move the package, execute the *emitted* `model.par` (not S0 capture-generated PAR), hash it before/after, record executable version/SHA/cwd/argv and all actual output/verbosity observations. Only then assess numerical evidence via the existing comparator.
+- **Native CMD execution: NOT RUN.** On an authorised Windows system, relocate the generated package, run the *actual emitted* `events/NNN/model.par` with the reviewed RORB CMD 6.44 executable (not a capture-generated substituted PAR), and record exact executable identity/version/SHA-256, working directory, command, PAR hashes before/after and real generated output paths/hashes.
+- **Verbosity/output characterisation: NOT VERIFIED.** Run native verbosity 1, 2 and 3 without raising any requested setting, record outputs available for each, and distinguish optional outputs from required inputs. The existing tests verify serialized verbosity and launcher mechanics, not the native executor's output availability.
+- **Numerical equivalence: NOT ASSESSED.** When claimed, compare independently authenticated full matched outputs using the existing comparator; never infer parity from parser or wheel software tests. Native/physical site identity and scalar precision remain governed by #5/#143.
+- The PyRomb edited writer remains optional and pinned to the reviewed fork pending upstream admission. Unchanged CATG does not need it. No alternate local CATG renderer is introduced.
 
-The #141 issue remains open for integration and native acceptance; #7/#5 remain independently open. No CLI GUI, second CATG writer, new solver, broad forensic work or executable redistribution is part of this slice.
+**Next action:** #143/native acceptance owner should execute, authenticate and independently review a relocated emitted-PAR run under the correct CMD 6.44 executable and record precise gate verdicts. Keep #141 open only for those native acceptance decisions; #5/#7 remain separate until qualified.
+
+The #141 issue remains open for native acceptance; bounded software integration is merged. #7/#5 remain independently open. No CLI GUI, second CATG writer, new solver, broad forensic work or executable redistribution is part of this slice.
