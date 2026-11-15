@@ -533,9 +533,16 @@ def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_
     loaded = load_project(project_file)
     assert loaded.run == parsed
     assert loaded.file_hashes[1][1] == hashlib.sha256(original).hexdigest()
-    # S2 must not silently map nonzero fractions/code 2 to a pervious run.
-    with pytest.raises(ValueError, match="control code 2"):
-        to_s2_payload(parsed)
+    # The bounded S1-to-independent-S2 adapter must now preserve code-2 and
+    # FI without changing the immutable S1 source, print IDs or actual engine.
+    payload = to_s2_payload(parsed)
+    assert [code for code, _ in payload.controls] == [step.code for step in parsed.catchment.controls]
+    assert payload.impervious_fractions == tuple(float(area.impervious_fraction) for area in parsed.catchment.subareas)
+    computed = run_engine_project(project_file, selection=EngineSelection.for_engine("python"))
+    assert computed.status == "computed_unvalidated", computed.diagnostics
+    assert computed.effective_selection.engine == "python"
+    assert len(computed.hydrographs) == len(parsed.catchment.print_locations)
+    assert all(len(graph.discharge_m3_s) == 49 for graph in computed.hydrographs)
 
 
 @pytest.mark.parametrize(
@@ -591,12 +598,17 @@ def test_original_relative_weight_storms_preserve_source_and_import(
     )
     write_project(manifest, project)
     assert load_project(manifest).run == parsed_run
-    # Only python-cmd's existing stored-denominator path can execute these
-    # raw weights; improved python must not silently treat them as percents.
+    # The stored native-relative weights remain raw and explicitly typed.
+    # Both implementations now execute their separate numerical methods;
+    # their hydrographs are not asserted equivalent to authentic CMD output.
     compatible = run_engine_project(manifest, selection=EngineSelection.for_engine("python-cmd"))
     assert compatible.status == "computed_unvalidated"
     improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
-    assert improved.status == "unsupported_feature"
+    assert improved.status == "computed_unvalidated", improved.diagnostics
+    assert improved.effective_selection.engine == "python"
+    assert len(improved.hydrographs) == len(parsed_run.catchment.print_locations)
+    assert len(improved.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
+    assert improved.native_parity_status == "not_assessed"
 
 
 @pytest.mark.parametrize(
