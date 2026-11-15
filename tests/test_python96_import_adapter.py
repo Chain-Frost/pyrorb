@@ -38,7 +38,7 @@ def _imported_model(*, runoff_coefficient: bool = False) -> RunModel:
     assert isinstance(example, RunModel)
     storm = replace(
         example.storm,
-        title="Authored independent Python adapter control, not original CMD storm",
+        title="Authored independent Python adapter control not original CMD storm",
         timestep_hours=Decimal("0.25"),
         calculation_increments=40,
         subarea_ids=tuple(area.identifier for area in catchment.subareas),
