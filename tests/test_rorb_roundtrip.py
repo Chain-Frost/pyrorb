@@ -335,9 +335,7 @@ def test_n4_original_serial_and_nested_control_stack_roundtrip() -> None:
     assert original_bytes(parsed) == original
     assert len(model.subareas) == 6
     assert len(model.reaches) == 9
-    assert tuple(step.code for step in model.controls) == (
-        1, 1, 3, 1, 3, 1, 4, 5, 4, 5, 3, 1, 1, 4, 5, 7,
-    )
+    assert [step.code for step in model.controls] == [1, 1, 3, 1, 3, 1, 4, 5, 4, 5, 3, 1, 1, 4, 5, 7]
     assert tuple(step.subarea_id for step in model.controls if step.code == 1) == tuple(
         f"area_{index}" for index in range(1, 7)
     )
