@@ -142,6 +142,8 @@ def test_unproven_code_eleven_is_explicitly_rejected_not_inferred_from_code_seve
     [
         ("missing", "cmd_print_sites"),
         ("truncated", "cmd_print_sites"),
+        ("reversed", "cmd_print_order"),
+        ("duplicate_index", "cmd_print_order"),
         ("wrong_final", "cmd_final_print"),
     ],
 )
@@ -158,6 +160,10 @@ def test_cmd_omitted_truncated_or_wrong_print_never_returns_partial_output(
             changed = recorded[:-1]
         elif damage == "truncated":
             changed = (replace(recorded[0], q=recorded[0].q[:-1]), *recorded[1:])
+        elif damage == "reversed":
+            changed = recorded[::-1]
+        elif damage == "duplicate_index":
+            changed = (recorded[0], replace(recorded[1], control_index_one_based=recorded[0].control_index_one_based))
         else:
             final = recorded[-1]
             changed = (

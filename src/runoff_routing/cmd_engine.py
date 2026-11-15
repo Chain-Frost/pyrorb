@@ -167,6 +167,13 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
         raise CmdBoundaryError(
             _INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated"
         )
+    expected_print_positions = tuple(
+        index for index, step in enumerate(loaded.run.catchment.controls, start=1) if step.code == 7
+    )
+    if tuple(record.control_index_one_based for record in result.network.prints) != expected_print_positions:
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_order", "Computed prints no longer follow original code-7 control order"
+        )
     if result.network.prints[-1].q != result.network.outlet:
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_final_print", "Final print does not match connected outlet")
     reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
