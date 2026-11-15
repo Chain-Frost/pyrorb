@@ -9,8 +9,9 @@ from pathlib import Path
 
 import pytest
 from ryan_library.functions.RORB.reader_types import RorbDocument
-from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file
+from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file, read_rorb_table_file
 
+from runoff_routing.reference import _check_report
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
@@ -135,3 +136,29 @@ def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) ->
     assert changed.hydrographs is not None
     with pytest.raises(ValueError, match="unit/scale"):
         bind_report_metrics(invalid, changed.hydrographs)
+
+
+
+def test_native_capture_check_consumes_unverified_upstream_table(tmp_path: Path) -> None:
+    """A bare source is never promoted without an explicit print/horizon contract."""
+    path = tmp_path / "raw-table.out"
+    path.write_bytes(
+        b"Inc Time Hyd001 Hyd002\r\n1 0.00 0.000 0\r\n2 0.50 3.500000 0\r\nEnd\r\n"
+    )
+    raw = read_rorb_table_file(path)
+    assert raw.kind == "isolated_hydrograph_table"
+    assert raw.status == "partial"
+    assert any(d.code == "unverified_table_source" for d in raw.diagnostics)
+    actual, summary = _check_report(path, {"Hyd001": "verified outlet", "Hyd002": "verified other"}, 2)
+    assert actual == "success"
+    assert summary["columns"] == ["Inc", "Time", "Hyd001", "Hyd002"]
+    assert summary["rows"] == 2
+    assert summary["raw_time_labels"] == ["0.00", "0.50"]
+    unknown_horizon, _ = _check_report(path, {"Hyd001": "outlet", "Hyd002": "other"}, None)
+    assert unknown_horizon == "captured_unverified"
+    missing_site, _ = _check_report(path, {"Hyd001": "outlet"}, 2)
+    assert missing_site == "incomplete_output"
+    path.write_bytes(b"Inc Time Hyd001 Hyd002\n1 0 0 0\n2 0.5 nan 0\nEnd\n")
+    malformed, result = _check_report(path, {"Hyd001": "outlet", "Hyd002": "other"}, 2)
+    assert malformed == "incomplete_output"
+    assert "reader_errors" in result

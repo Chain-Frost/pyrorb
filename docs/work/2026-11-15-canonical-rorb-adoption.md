@@ -8,7 +8,7 @@ This branch replaces runoff's local Inc/Time grammar with an adapter that
 consumes ryan-tools' canonical reader. No runner, numerical solver, regression
 comparator, GUI or RORBwin saved-PAR feature is introduced.
 
-The chosen upstream candidate revision is `e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`, pinned
+The chosen upstream candidate revision is `9b136bcdc449e65a17c87a80650df314ca2b1eb1`, pinned
 by the immutable reviewed GitHub source-archive dependency on the reader-only distribution at
 `packaging/rorb-readers`. That wheel uses the six original upstream modules,
 not vendored or duplicated parser implementations. Its Python requirement is
@@ -63,7 +63,7 @@ in parser tests. Pip recursively fetched the unrelated ryan-tools test-data
 submodule during a `git+https` dependency checkout and hit Windows
 `Filename too long`. The dependency is now an **exact-commit GitHub source
 archive**, without submodule payload or Git checkout, pinned to upstream
-`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`. This is a packaging correction, not a numerical result. Re-run
+`9b136bcdc449e65a17c87a80650df314ca2b1eb1`. This is a packaging correction, not a numerical result. Re-run
 installed-wheel and regression checks for the new head.
 
 The frozen scalar binding now gets only generic original scalar and site
@@ -77,7 +77,7 @@ The first archive-based Windows 3.13 source install succeeded; Ruff and
 formatter checks passed after fixes. Strict Pyright then reported missing
 type stubs because the minimal wheel had omitted `ryan_library/py.typed`.
 Upstream revised focused setuptools packaging (reviewed candidate
-`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`) to carry the **existing** root PEP 561 marker with its six
+`9b136bcdc449e65a17c87a80650df314ca2b1eb1`) to carry the **existing** root PEP 561 marker with its six
 canonical reader modules, without broadening dependencies. A clean local
 package-layout wheel test verified the marker was included; hosted strict
 type checking and installed-wheel regressions must now rerun.
@@ -115,4 +115,20 @@ for malformed independent scalar records, but overall report status stays
 invalid and scalar qualification rejects it. The comparator's existing
 half-last-digit interval policy remains unchanged while D exponents are
 converted for exact Decimal evaluation. The amended pinned upstream is
-`e7421a18d97ca4b65447ac3f0cdb974ee2684b3a`; these findings require fresh current-head validation.
+`9b136bcdc449e65a17c87a80650df314ca2b1eb1`; these findings require fresh current-head validation.
+
+## Canonical native capture scan replacement
+
+The remaining `reference._check_report` independently parsed Inc/Time native
+capture fragments. It now invokes **upstream**
+`read_rorb_table_file`, a bounded explicit source snapshot through exactly
+the same canonical numeric/time grammar. Bare unversioned fragments stay
+`isolated_hydrograph_table` with the explicit unverified-source warning;
+ordinary report reading remains strict. Downstream still applies
+`expected_prints`, `expected_steps` and exact zero-flow classification,
+retains raw `Time` labels, and does not infer a physical site identity,
+scientific validity or a native executable. All local report lexical parsing
+has been removed from `reference._check_report`, `regression_metrics` and
+`rorb_out`. Existing capture-specific synthetic tests plus a new two-site
+bare-table/negative admission test are the acceptance gate. Current reviewed
+dependency revision: `9b136bcdc449e65a17c87a80650df314ca2b1eb1`.
