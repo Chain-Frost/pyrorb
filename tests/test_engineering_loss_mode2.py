@@ -59,6 +59,24 @@ def test_default_engine_mode_two_full_horizon_and_physical_source_volume(tmp_pat
     assert result.hydrographs[0].discharge_m3_s == run_model(model).prints[0].discharge_m3_s
 
 
+
+def test_explicit_python_dispatch_does_not_invoke_compatible_kernel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Guard against tests accidentally exercising the temporary default engine."""
+
+    def reject_cmd_dispatch(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Explicit python must not dispatch into python-cmd")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_cmd_model", reject_cmd_dispatch)
+    model = _mode_two_model()
+    outcome = run_engine_project(_project(tmp_path / "independent.json", model))
+    selected = EngineSelection.for_engine("python")
+    assert outcome.status == "computed_unvalidated", outcome.diagnostics
+    assert outcome.stored_selection == outcome.effective_selection == selected
+    assert outcome.hydrographs[0].discharge_m3_s == run_model(model).prints[0].discharge_m3_s
+
+
 @pytest.mark.parametrize(
     ("initial", "coefficient", "expected"),
     [

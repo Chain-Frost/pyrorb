@@ -100,6 +100,22 @@ def test_imported_code_two_fi_runs_independent_project_and_prepared_api(
     assert run_model(replace(model, catchment=no_fi)).numerical.rainfall_excess_mm != excesses
 
 
+def test_imported_independent_dispatch_does_not_use_compatible_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The typed code-2/FI project must use the independent solver, not CMD precision."""
+
+    def reject_cmd_dispatch(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Explicit python import must not call the CMD-compatible backend")
+
+    monkeypatch.setattr("runoff_routing.engine_execution.run_cmd_model", reject_cmd_dispatch)
+    model = _imported_model(runoff_coefficient=True)
+    outcome = run_engine_project(_project(tmp_path / "independent_import.json", model))
+    assert outcome.status == "computed_unvalidated", outcome.diagnostics
+    assert outcome.stored_selection == outcome.effective_selection == SELECTION
+    assert outcome.hydrographs[0].discharge_m3_s == run_model(model).prints[0].discharge_m3_s
+
+
 def test_fileback_catg_import_matches_explicit_embedded_python(tmp_path: Path) -> None:
     model = _imported_model()
     embedded = _project(tmp_path / "embedded.json", model)
