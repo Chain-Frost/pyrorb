@@ -111,6 +111,11 @@ def inspect_output(source: RorbSource) -> Inspection:
         return Inspection("output_report", "invalid", source, (Diagnostic("source_changed", str(exc), "error"),))
     except (OSError, UnicodeError, ValueError) as exc:
         return Inspection("output_report", "invalid", source, (Diagnostic("reader_error", str(exc), "error"),))
+    return _adapt_canonical_output(source, canonical)
+
+
+def _adapt_canonical_output(source: RorbSource, canonical: RorbDocument) -> Inspection:
+    """Keep generic parser outcomes distinct from downstream physical identity."""
     if canonical.kind != "standard_output":
         return Inspection(
             "output_report",
