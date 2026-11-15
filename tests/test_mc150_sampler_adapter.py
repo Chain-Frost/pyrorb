@@ -139,7 +139,7 @@ def test_independent_sampler_mass_tail_and_normal_coordinate_depth() -> None:
     # Linear in rainfall AEP would instead produce 75 mm (not the adopted v1 choice).
     z_linear = api.interpolate_ifd_depth(plan, Decimal("0.30"))
     assert abs(z_linear - Decimal("70.4595947134283")) < Decimal("0.0000001")
-    assert abs(z_linear - Decimal("75")) > Decimal("4")
+    assert abs(z_linear - Decimal(75)) > Decimal(4)
     with pytest.raises(api.SamplePlanError):
         api.interpolate_ifd_depth(plan, Decimal("0.01"))
 
@@ -156,12 +156,12 @@ def test_independent_sampler_mass_tail_and_normal_coordinate_depth() -> None:
 def test_independent_loss_inverse_and_tp_eligibility_edges() -> None:
     api = _sampler()
     plan = api.SamplePlan.create(_spec())
-    assert api.inverse_storm_loss(plan, Decimal("0")) == (Decimal("0"), Decimal("0"))
-    assert api.inverse_storm_loss(plan, Decimal("0.5")) == (Decimal("1"), Decimal("20"))
-    assert api.inverse_storm_loss(plan, Decimal("0.75")) == (Decimal("1.5"), Decimal("30"))
+    assert api.inverse_storm_loss(plan, Decimal(0)) == (Decimal(0), Decimal(0))
+    assert api.inverse_storm_loss(plan, Decimal("0.5")) == (Decimal(1), Decimal(20))
+    assert api.inverse_storm_loss(plan, Decimal("0.75")) == (Decimal("1.5"), Decimal(30))
     assert api.select_temporal_pattern(plan, Decimal("0.19"), Decimal("0.2499")) == ("rare", "0007", 7)
     assert api.select_temporal_pattern(plan, Decimal("0.19"), Decimal("0.25")) == ("rare", "0021", 21)
-    assert api.select_temporal_pattern(plan, Decimal("0.20"), Decimal("0")) == ("ordinary", "0099", 99)
+    assert api.select_temporal_pattern(plan, Decimal("0.20"), Decimal(0)) == ("ordinary", "0099", 99)
     with pytest.raises(api.SamplePlanError):
         api.select_temporal_pattern(plan, Decimal("0.75"), Decimal("0.5"))
 
