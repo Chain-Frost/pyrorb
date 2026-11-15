@@ -460,7 +460,8 @@ def test_pyromb_pr16_typed_stack_rejects_genuine_invalid_running_state() -> None
         replace(model, subareas=(replace(model.subareas[0], impervious_fraction=Decimal("1.01")), *model.subareas[1:]))
 
 
-def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_path: Path) -> None:
+@pytest.mark.parametrize("suffix", [".catg", ".cat"])
+def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_path: Path, suffix: str) -> None:
     original, register = _registered_pyromb_originals()
     root = Path(__file__).parent / "fixtures" / "regression-v1"
     historical = next(item for item in register["cases"] if item["case_id"] == "pyromb-pr2-full")
@@ -473,7 +474,7 @@ def test_pyromb_pr16_graphical_cat_suffix_loads_through_real_project_import(tmp_
         b"synthetic six-source storm\nDESIGN\n0.25,48,1,1,1,-99\n0,2\n"
         b"Temporal pattern (% of depth)\n40,60,-99\nC Sub-area rainfall depths\n40,40,40,40,40,40,-99\n"
     )
-    source_cat = tmp_path / "original.cat"
+    source_cat = tmp_path / f"original{suffix}"
     source_cat.write_bytes(original)
     p = tmp_path / "original.par"
     p.write_bytes(params)

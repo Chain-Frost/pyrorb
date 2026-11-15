@@ -99,12 +99,14 @@ class LegacyRunFiles:
     storm: SourceFile
 
     def __post_init__(self) -> None:
-        for reference, suffix in (
-            (self.parameters, ".par"),
-            (self.catchment, ".catg"),
-            (self.storm, ".stm"),
+        for reference, suffixes in (
+            (self.parameters, (".par",)),
+            (self.catchment, (".catg", ".cat")),
+            (self.storm, (".stm",)),
         ):
-            if not reference.path.lower().endswith(suffix):
+            # Graphical CATG bytes may carry the legacy .cat suffix.
+            # _resolve_run still uses the one fail-closed CATG decoder.
+            if not reference.path.lower().endswith(suffixes):
                 message = f"Unsupported RORB source format: {reference.path}"
                 raise ProjectError(message)
 

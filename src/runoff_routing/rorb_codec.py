@@ -413,14 +413,27 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
         label = ""
         if code in (1, 2, 5):
             if explicit_types:
-                if len(parts) != 4:
+                if len(parts) < 4:
                     message = "Explicit reach needs code, type, length and -99"
                     raise _problem(message, line_no)
                 reach_type = _integer(parts[1], line_no, minimum=1, maximum=4)
-                if reach_type != 1:
+                if reach_type in (2, 3):
+                    # The pinned PyRomb writer emits a separate slope for
+                    # these enums, but CMD 6.44 calculation is not qualified.
+                    if len(parts) != 5 or _number(parts[4], line_no) != -99:
+                        message = "Unlined/lined reach needs code, type, length, slope and -99"
+                        raise _problem(message, line_no)
+                    _number(parts[2], line_no)
+                    _number(parts[3], line_no)
                     message = f"Reach type {reach_type} requires independent numerical qualification"
                     raise _problem(message, line_no, unsupported=True)
-                if _number(parts[3], line_no) != -99:
+                if reach_type == 4:
+                    if len(parts) != 4 or _number(parts[3], line_no) != -99:
+                        message = "Drowned reach needs code, type, length and -99"
+                        raise _problem(message, line_no)
+                    message = "Reach type 4 requires independent numerical qualification"
+                    raise _problem(message, line_no, unsupported=True)
+                if len(parts) != 4 or _number(parts[3], line_no) != -99:
                     message = "Explicit natural reach must terminate with -99"
                     raise _problem(message, line_no)
                 length_token = parts[2]
