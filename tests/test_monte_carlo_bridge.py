@@ -132,6 +132,8 @@ def test_stored_b_record_materialises_without_a_new_draw(tmp_path: Path, monkeyp
         def read_sample_plan(self, _path: Path) -> SimpleNamespace:
             return SimpleNamespace(
                 plan_id=sample.plan_id,
+                population_id=hashlib.sha256(b"synthetic-population").hexdigest(),
+                parent_plan_id=None,
                 spec=lambda: spec,
                 to_dict=lambda: {"domain": domain},
             )
