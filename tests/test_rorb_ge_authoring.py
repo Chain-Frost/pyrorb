@@ -452,5 +452,6 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
 
     monkeypatch.setattr(importlib, "import_module", no_writer)
     assert parse_catg(original.source.data).model == original.model
-    with pytest.raises(ValueError, match=r"install .\\[catg\\]"):
+    with pytest.raises(ValueError, match="optional dependency") as caught:
         serialize_catg(model)
+    assert "install .[catg]" in str(caught.value)
