@@ -11,7 +11,6 @@ import pytest
 from ryan_library.functions.RORB.reader_types import RorbDocument
 from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file, read_rorb_table_file
 
-from runoff_routing.reference import _check_report
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
@@ -138,24 +137,24 @@ def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) ->
         bind_report_metrics(invalid, changed.hydrographs)
 
 
-def test_native_capture_check_consumes_unverified_upstream_table(tmp_path: Path) -> None:
-    """A bare source is never promoted without an explicit print/horizon contract."""
+def test_canonical_bare_table_preserves_exact_values_without_engine_claim(tmp_path: Path) -> None:
+    """Bare source inspection never establishes a verified report identity."""
     path = tmp_path / "raw-table.out"
     path.write_bytes(b"Inc Time Hyd001 Hyd002\r\n1 0.00 0.000 0\r\n2 0.50 3.500000 0\r\nEnd\r\n")
+    unqualified = read_rorb_file(path)
+    assert unqualified.kind == "unsupported"
     raw = read_rorb_table_file(path)
     assert raw.kind == "isolated_hydrograph_table"
     assert raw.status == "partial"
     assert any(d.code == "unverified_table_source" for d in raw.diagnostics)
-    actual, summary = _check_report(path, {"Hyd001": "verified outlet", "Hyd002": "verified other"}, 2)
-    assert actual == "success"
-    assert summary["columns"] == ["Inc", "Time", "Hyd001", "Hyd002"]
-    assert summary["rows"] == 2
-    assert summary["raw_time_labels"] == ["0.00", "0.50"]
-    unknown_horizon, _ = _check_report(path, {"Hyd001": "outlet", "Hyd002": "other"}, None)
-    assert unknown_horizon == "captured_unverified"
-    missing_site, _ = _check_report(path, {"Hyd001": "outlet"}, 2)
-    assert missing_site == "incomplete_output"
+    section = raw.section("hydrographs_1")
+    assert section.valid
+    assert section.columns[1:] == ["Inc", "Time", "Hyd001", "Hyd002"]
+    assert len(section.rows) == 2
+    assert section.increment_origin == 1
+    assert [r["Time"] for r in section.source_tokens] == ["0.00", "0.50"]
+    assert section.source_decimal(1, "Hyd001") == Decimal("3.500000")
     path.write_bytes(b"Inc Time Hyd001 Hyd002\n1 0 0 0\n2 0.5 nan 0\nEnd\n")
-    malformed, result = _check_report(path, {"Hyd001": "outlet", "Hyd002": "other"}, 2)
-    assert malformed == "incomplete_output"
-    assert "reader_errors" in result
+    malformed = read_rorb_table_file(path)
+    assert malformed.status == "invalid"
+    assert any(d.code == "output_record" for d in malformed.diagnostics)
