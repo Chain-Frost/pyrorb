@@ -202,7 +202,8 @@ def _outcome_index(
             _fail(f"Duplicate routed event: {identifier}")
         selected = _object(outcome.get("effective_selection"), "effective selection")
         if (selected.get("engine"), selected.get("numerical_profile")) != (
-            selection.get("engine"), selection.get("numerical_profile")
+            selection.get("engine"),
+            selection.get("numerical_profile"),
         ):
             _fail(f"Mixed engine or numerical method for {identifier}")
         if outcome.get("project_sha256") != project.get("sha256"):
@@ -266,15 +267,17 @@ def _rank_observed(rows: list[dict[str, Any]]) -> list[dict[str, object]]:
     for ordinal, row in enumerate(sorted_rows, start=1):
         peak = _finite(row["peak_m3_s"], "peak")
         rank = ranks[-1]["rank"] if ranks and ranks[-1]["peak_m3_s"] == peak else ordinal
-        ranks.append({
-            "rank": rank,
-            "peak_m3_s": peak,
-            "event_id": row["event_id"],
-            "original_tp_event_id": row["original_tp_event_id"],
-            "source_order": row["source_order"],
-            "ensemble_order": row["ensemble_order"],
-            "native_ordinal": None,
-        })
+        ranks.append(
+            {
+                "rank": rank,
+                "peak_m3_s": peak,
+                "event_id": row["event_id"],
+                "original_tp_event_id": row["original_tp_event_id"],
+                "source_order": row["source_order"],
+                "ensemble_order": row["ensemble_order"],
+                "native_ordinal": None,
+            }
+        )
     return ranks
 
 
@@ -283,13 +286,14 @@ def _site_summary(
 ) -> dict[str, Any]:
     complete = [row for row in rows if row["metric_status"] == "complete"]
     peaks = [_finite(row["peak_m3_s"], "peak") for row in complete]
-    signatures = {
-        (row["time_grid_sha256"], row["timestep_hours"], row.get("site_label")) for row in complete
-    }
+    signatures = {(row["time_grid_sha256"], row["timestep_hours"], row.get("site_label")) for row in complete}
     accepted_members = [row for row in rows if isinstance(row["event_id"], str)]
     eligible = (
-        cell.get("status") == "ready" and site is not None and len(accepted_members) == expected
-        and len(complete) == expected and len(signatures) == 1
+        cell.get("status") == "ready"
+        and site is not None
+        and len(accepted_members) == expected
+        and len(complete) == expected
+        and len(signatures) == 1
     )
     # Do not pool peaks from incompatible physical time grids or site labels.
     comparable = len(signatures) <= 1
@@ -344,10 +348,22 @@ class DeterministicSummary:
 
     def to_csv(self) -> str:
         columns = (
-            "duration_min", "aep_label", "site_id", "event_id", "original_tp_event_id",
-            "source_order", "ensemble_order", "native_ordinal", "input_status", "routing_status",
-            "metric_status", "peak_m3_s", "peak_time_hours", "physical_trapezoidal_volume_m3",
-            "diagnostic_peak_rank", "selection_status",
+            "duration_min",
+            "aep_label",
+            "site_id",
+            "event_id",
+            "original_tp_event_id",
+            "source_order",
+            "ensemble_order",
+            "native_ordinal",
+            "input_status",
+            "routing_status",
+            "metric_status",
+            "peak_m3_s",
+            "peak_time_hours",
+            "physical_trapezoidal_volume_m3",
+            "diagnostic_peak_rank",
+            "selection_status",
         )
         output = io.StringIO(newline="")
         writer = csv.writer(output, lineterminator="\n")
@@ -357,7 +373,8 @@ class DeterministicSummary:
             for member in cell["members"]:
                 fields = {
                     **member,
-                    "duration_min": cell["duration_min"], "aep_label": cell["aep_label"],
+                    "duration_min": cell["duration_min"],
+                    "aep_label": cell["aep_label"],
                     "diagnostic_peak_rank": ranks.get(member["event_id"]),
                     "selection_status": "unverified",
                 }
@@ -452,26 +469,29 @@ def _critical_duration_records(
     for aep in aeps:
         for site in sites or (None,):
             population = [row for row in summaries if row["aep_label"] == aep and row["site_id"] == site]
-            critical.append({
-                "aep_label": aep, "site_id": site,
-                "considered_durations_min": [row["duration_min"] for row in population],
-                "complete_comparable_within_each_duration": all(
-                    row["complete_comparable_population"] for row in population
-                ),
-                "comparable_across_durations": len(
-                    {row["time_grid_sha256"] for row in population if row["time_grid_sha256"] is not None}
-                ) == 1 and bool(population),
-                "duration_aggregation_rule": None,
-                "selected_duration_min": None,
-                "selection_status": "unverified",
-                "reason": "No qualified native duration-aggregation/representative rule or common-horizon policy",
-            })
+            critical.append(
+                {
+                    "aep_label": aep,
+                    "site_id": site,
+                    "considered_durations_min": [row["duration_min"] for row in population],
+                    "complete_comparable_within_each_duration": all(
+                        row["complete_comparable_population"] for row in population
+                    ),
+                    "comparable_across_durations": len(
+                        {row["time_grid_sha256"] for row in population if row["time_grid_sha256"] is not None}
+                    )
+                    == 1
+                    and bool(population),
+                    "duration_aggregation_rule": None,
+                    "selected_duration_min": None,
+                    "selection_status": "unverified",
+                    "reason": "No qualified native duration-aggregation/representative rule or common-horizon policy",
+                }
+            )
     return critical
 
 
-def summarize_deterministic_results(
-    effective: Mapping[str, Any], routed: Mapping[str, Any]
-) -> DeterministicSummary:
+def summarize_deterministic_results(effective: Mapping[str, Any], routed: Mapping[str, Any]) -> DeterministicSummary:
     """Summarise existing #136/#119 persisted structures without re-execution or native claims."""
     _format_check(effective, routed)
     selection = _object(effective.get("selection"), "selection")
@@ -487,36 +507,42 @@ def summarize_deterministic_results(
     for cell in cells:
         key = (cell["duration_min"], cell["aep_label"])
         for site in sites or (None,):
-            rows = [
-                _member_row(member, site, outcomes.get(member.get("event_id")), volumes)
-                for member in members[key]
-            ]
+            rows = [_member_row(member, site, outcomes.get(member.get("event_id")), volumes) for member in members[key]]
             summaries.append(_site_summary(cell, site, rows, _int(cell["expected_count"], "expected count")))
     critical = _critical_duration_records(aeps, sites, summaries)
     complete = bool(sites) and all(row["complete_comparable_population"] for row in summaries)
     software_execution_success = all(item.get("status") == "computed_unvalidated" for item in outcomes.values())
-    return DeterministicSummary({
-        "format": REPORT_FORMAT, "schema_version": REPORT_VERSION,
-        "source_effective_format": EFFECTIVE_FORMAT, "source_routed_format": ROUTED_FORMAT,
-        "method_profile": effective.get("method_profile"),
-        "engine": selection.get("engine"), "numerical_profile": selection.get("numerical_profile"),
-        "duration_axis_min": durations, "aep_label_axis": aeps,
-        "source_files": effective.get("source_files"),
-        "expected_population": effective["expected_population"],
-        "prepared_population": len(outcomes),
-        "physical_print_sites": list(sites),
-        "site_identity_status": "from_common_requested_print_ids" if sites else "unknown_no_routed_outcome",
-        "software_execution_success": software_execution_success,
-        "software_population_complete": complete,
-        "generated_input_reference_status": effective.get("generated_input_reference_status"),
-        "routed_native_reference_status": effective.get("routed_native_reference_status"),
-        "selection_qualification": "unverified",
-        "native_reference_profile_candidate": NATIVE_PROFILE_UNVERIFIED,
-        "site_population_count": len(summaries),
-        "cell_sites": summaries, "critical_durations": critical,
-        "routed_status_counts": dict(sorted(Counter(outcome.get("status") for outcome in outcomes.values()).items())),
-        "original_full_hydrographs_preserved_in": "input routed JSON; this report is non-destructive",
-    })
+    return DeterministicSummary(
+        {
+            "format": REPORT_FORMAT,
+            "schema_version": REPORT_VERSION,
+            "source_effective_format": EFFECTIVE_FORMAT,
+            "source_routed_format": ROUTED_FORMAT,
+            "method_profile": effective.get("method_profile"),
+            "engine": selection.get("engine"),
+            "numerical_profile": selection.get("numerical_profile"),
+            "duration_axis_min": durations,
+            "aep_label_axis": aeps,
+            "source_files": effective.get("source_files"),
+            "expected_population": effective["expected_population"],
+            "prepared_population": len(outcomes),
+            "physical_print_sites": list(sites),
+            "site_identity_status": "from_common_requested_print_ids" if sites else "unknown_no_routed_outcome",
+            "software_execution_success": software_execution_success,
+            "software_population_complete": complete,
+            "generated_input_reference_status": effective.get("generated_input_reference_status"),
+            "routed_native_reference_status": effective.get("routed_native_reference_status"),
+            "selection_qualification": "unverified",
+            "native_reference_profile_candidate": NATIVE_PROFILE_UNVERIFIED,
+            "site_population_count": len(summaries),
+            "cell_sites": summaries,
+            "critical_durations": critical,
+            "routed_status_counts": dict(
+                sorted(Counter(outcome.get("status") for outcome in outcomes.values()).items())
+            ),
+            "original_full_hydrographs_preserved_in": "input routed JSON; this report is non-destructive",
+        }
+    )
 
 
 def read_deterministic_results(effective_path: Path, routed_path: Path) -> DeterministicSummary:

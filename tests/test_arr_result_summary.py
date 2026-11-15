@@ -141,7 +141,7 @@ def test_multiple_physical_sites_remain_separate(sample: tuple[dict[str, Any], d
 
 
 def test_failed_member_remains_in_denominator_and_partial_ranking(
-    sample: tuple[dict[str, Any], dict[str, Any]]
+    sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
     effective, routed = _copy(sample)
     record = effective["members"][0]
@@ -165,22 +165,30 @@ def test_failed_member_remains_in_denominator_and_partial_ranking(
 
 
 def test_failed_input_cell_preserves_all_candidate_ids_and_missing_ten(
-    sample: tuple[dict[str, Any], dict[str, Any]]
+    sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
     effective, routed = _copy(sample)
     cell = effective["cells"][-1]
     records = effective["members"][-10:]
     discarded = {member["event_id"] for member in records}
-    cell.update({
-        "status": "input_error",
-        "ready_count": 0,
-        "unqualified_source_candidate_ids": [item["original_tp_id"] for item in records],
-        "unqualified_source_candidate_orders": [item["source_order"] for item in records],
-    })
-    effective["members"] = [*effective["members"][:-10], {
-        "duration_min": cell["duration_min"], "aep_label": cell["aep_label"],
-        "original_tp_id": None, "event_id": None, "status": "input_error",
-    }]
+    cell.update(
+        {
+            "status": "input_error",
+            "ready_count": 0,
+            "unqualified_source_candidate_ids": [item["original_tp_id"] for item in records],
+            "unqualified_source_candidate_orders": [item["source_order"] for item in records],
+        }
+    )
+    effective["members"] = [
+        *effective["members"][:-10],
+        {
+            "duration_min": cell["duration_min"],
+            "aep_label": cell["aep_label"],
+            "original_tp_id": None,
+            "event_id": None,
+            "status": "input_error",
+        },
+    ]
     effective["prepared_population"] = 30
     routed["outcomes"] = [outcome for outcome in routed["outcomes"] if outcome["event_id"] not in discarded]
     routed["volumes"] = [volume for volume in routed["volumes"] if volume["event_id"] not in discarded]
@@ -197,7 +205,7 @@ def test_failed_input_cell_preserves_all_candidate_ids_and_missing_ten(
 
 
 def test_zero_flow_tie_preserves_all_peak_samples_and_avoids_selection(
-    sample: tuple[dict[str, Any], dict[str, Any]]
+    sample: tuple[dict[str, Any], dict[str, Any]],
 ) -> None:
     effective, routed = _copy(sample)
     ids = {member["event_id"] for member in effective["members"][:10]}
@@ -218,9 +226,7 @@ def test_zero_flow_tie_preserves_all_peak_samples_and_avoids_selection(
     assert first["representative_selection"]["calculated_by_package"] is None
 
 
-def test_routed_order_is_not_used_as_pattern_or_filename_order(
-    sample: tuple[dict[str, Any], dict[str, Any]]
-) -> None:
+def test_routed_order_is_not_used_as_pattern_or_filename_order(sample: tuple[dict[str, Any], dict[str, Any]]) -> None:
     effective, routed = _copy(sample)
     routed["outcomes"].reverse()
     summary = summarize_deterministic_results(effective, routed)
@@ -230,9 +236,7 @@ def test_routed_order_is_not_used_as_pattern_or_filename_order(
 
 
 @pytest.mark.parametrize("changed", ["engine", "profile", "source", "loss", "site", "missing", "extra_graph"])
-def test_reject_mixed_or_unbound_populations(
-    sample: tuple[dict[str, Any], dict[str, Any]], changed: str
-) -> None:
+def test_reject_mixed_or_unbound_populations(sample: tuple[dict[str, Any], dict[str, Any]], changed: str) -> None:
     effective, routed = _copy(sample)
     outcome = routed["outcomes"][0]
     if changed == "engine":
@@ -254,9 +258,7 @@ def test_reject_mixed_or_unbound_populations(
         summarize_deterministic_results(effective, routed)
 
 
-def test_incompatible_within_cell_horizon_does_not_pool_or_rank(
-    sample: tuple[dict[str, Any], dict[str, Any]]
-) -> None:
+def test_incompatible_within_cell_horizon_does_not_pool_or_rank(sample: tuple[dict[str, Any], dict[str, Any]]) -> None:
     effective, routed = _copy(sample)
     outcome = routed["outcomes"][0]
     outcome["physical_time_hours"] = outcome["physical_time_hours"][:-1]
