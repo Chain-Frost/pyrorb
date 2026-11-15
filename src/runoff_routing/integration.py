@@ -19,6 +19,7 @@ from typing import Literal, cast
 from .parity_metrics import PrintedParity, assess_printed_parity
 from .reach_routing import RoutingDomainError, RoutingNumericalError
 from .rorb_codec import (
+    CatgWriterLossError,
     FormatProblem,
     ParsedDocument,
     parse_catg,
@@ -137,6 +138,10 @@ def canonical_run_bytes(model: RunModel) -> tuple[bytes, bytes, bytes]:
         par = serialize_cmd_par(model.parameters)
         catg = serialize_catg(model.catchment)
         stm = serialize_design_stm(model.storm)
+    except CatgWriterLossError as exc:
+        message = f"Canonical legacy files would discard typed labels or other model semantics: {exc}"
+        error = RunInputError("unsupported", "canonical_loss", message)
+        raise error from exc
     except ValueError as exc:
         error = RunInputError("unsupported", "canonical_unsupported", str(exc))
         raise error from exc

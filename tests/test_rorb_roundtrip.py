@@ -665,8 +665,10 @@ def test_original_102p10_is_reconciled_preburst_plus_full_burst_not_arbitrary_no
         assert original_bytes(parsed) == source
         assert len([field for field in parsed.source_map if field.field.startswith("preburst_")]) == 3
         assert from_json(to_json(parsed.model)) == parsed.model
-        with pytest.raises(ValueError, match="no verified canonical writer"):
-            serialize_design_stm(parsed.model)
+        authored = serialize_design_stm(parsed.model)
+        assert parse_design_stm(authored).model == parsed.model
+        assert b"C Export annotation: derived from typed combined storm" in authored
+        assert authored != source
     assert len(storms) == 1
 
 

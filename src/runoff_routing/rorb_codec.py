@@ -756,6 +756,10 @@ def serialize_cmd_par(model: ParameterSet) -> bytes:
     return ("\n".join([*lines, "# END", ""])).encode("utf-8")
 
 
+class CatgWriterLossError(ValueError):
+    """The PyRomb representation would not round-trip all typed CATG semantics."""
+
+
 # The writer's public ordered-record API is deliberately loaded only on export.
 # Ordinary source parsing and routing never import PyRomb or its GIS dependencies.
 _GraphNode = tuple[int, str, float, float, int, bool, bool, Decimal, Decimal]
@@ -809,7 +813,7 @@ def _render_catg(
         raise ValueError(message) from exc
     if restored != model:
         message = "PyRomb CATG export would lose source order, labels, physical lengths or output intent"
-        raise ValueError(message)
+        raise CatgWriterLossError(message)
     return output
 
 

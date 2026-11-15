@@ -4,6 +4,8 @@
 
 ## Current implementation / regression receipts
 
+- [PyRomb ordered CATG writer integration and retained semantic guard](2026-11-15-issue139-pyromb-writer.md) — staged #139 with pinned upstream PR16 derivative; source/wheel acceptance pending review.
+
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
 - [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
 - [Public reference dataset transfer and limits](2026-11-15-public-cmd-data.md) — merged #78/#82, approved source objects, authenticated historical snapshot and full index.
