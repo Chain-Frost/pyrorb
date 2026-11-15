@@ -56,9 +56,7 @@ def test_original_pyromb_catg_source_admits_code_two_and_fi_without_substitution
     assert tuple(step.code for step in event.controls) == (1, 3, 1, 4, 2, 3, 1, 2, 4, 5, 2, 7)
     assert event.source_count == 6
     assert event.reach_count == 7
-    assert tuple(value.lexeme for value in event.impervious) == (
-        "0", "0.50000", "0.20000", "0", "0", "0"
-    )
+    assert tuple(value.lexeme for value in event.impervious) == ("0", "0.50000", "0.20000", "0", "0", "0")
     assert tuple(value.stored for value in event.impervious) == (0.0, 0.5, 0.2, 0.0, 0.0, 0.0)
     assert len(event.weights) == 2
     assert tuple(value.stored for value in event.depths) == (20.0,) * 6
@@ -86,9 +84,7 @@ def test_public_cmd_bridge_executes_complete_authored_horizon(tmp_path: Path) ->
     assert result.python_diagnostics["ordered_source_ids"] == tuple(
         item.identifier for item in model.catchment.subareas
     )
-    assert result.python_diagnostics["ordered_reach_ids"] == tuple(
-        item.identifier for item in model.catchment.reaches
-    )
+    assert result.python_diagnostics["ordered_reach_ids"] == tuple(item.identifier for item in model.catchment.reaches)
     reaches = cast("list[dict[str, object]]", result.python_diagnostics["reaches"])
     assert len(reaches) == 7
 
