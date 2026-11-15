@@ -1,6 +1,6 @@
 # Independent verifier environment-equivalence handoff — 15 November 2026
 
-**Scope:** public CMD #5 / feature #90–96, not a new numerical solver or separate regression runner. **Source base:** public main `916636a8ae610f09b1174f1263d4c11d30799722`. **Status:** documentation/protocol proposal; independent acceptance of substantive comparator changes is still required separately. No tool or code change here.
+**Scope:** public CMD #5 / feature #90–96, not a new numerical solver or separate regression runner. **Source base:** originally pre-programme main `916636a8ae610f09b1174f1263d4c11d30799722`; merged with programme main `d90de041139998efafd2c7cbc97710d4a338f223` without overwriting its instructions. **Status:** documentation/protocol proposal; independent acceptance of substantive comparator changes is still required separately. No tool or code change here.
 
 ## Owner instruction reconciled
 
@@ -16,3 +16,7 @@ An offline execution VM must have a supplied authenticated public checkout/sourc
 - Separate draft comparator/status guard #122 head `7aac236b3c9b631258e38ef4ef6cf1f39b393b88`: [workflow 43684035694](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43684035694) passed negative Q/scalar/status controls and old 36/14 source/wheel outcomes; **this substantive comparator guard still needs independent review before used to qualify any engine**.
 
 No original CMD binary was launched in this environment; no goldens, site mappings, reporting/printed tolerance policies, data fixtures, unit tests, matrix, native adaptation, hosted automation or scientific gate was changed by this documentation proposal. Parent #5 remains OPEN. Programme owner maintains the single matrix; feature owners retain their original source/numerical obligations.
+
+## Independent review remediation and concurrent policy ownership
+
+Codex Code Review of the first ready-to-review head found that a failed source/wheel comparison in the portable shell procedure could be masked by a later successful full-index check. The shell block now begins with `set -eu`; any failed source/wheel probe, exact per-case JSON equality assertion or full-index preflight stops the procedure with a nonzero status. This branch also merges current post-#105 programme `main` as an additional parent, retaining every programme-source and MVP direction previously merged. Separate engine-selection policy PR #130 remains in its own review scope; integrate complementary instructions without weakening either and without force-pushing. No engine/comparator/native code, original register or frozen reference was changed, and no separate RORB numerical execution in this verifier VM is claimed.

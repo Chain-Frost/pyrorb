@@ -82,6 +82,8 @@ This is an alternative **installation/isolation procedure**, not another regress
 From the root of that public checkout, using a fresh wheel in `dist/` (replace the filename to match the actual artifact):
 
 ~~~sh
+set -eu
+
 REPO="$(pwd)"
 VERIFY="$(mktemp -d)"
 WHEEL="$REPO/dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl"
