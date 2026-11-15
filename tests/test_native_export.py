@@ -243,8 +243,10 @@ def test_json_event_request_cli_reuses_existing_override_derivation(
 
 def test_hash_mismatch_refuses_export(tmp_path: Path) -> None:
     project_path = _original_project(tmp_path)
-    original = project_path.parent / "original files" / "native original .catg"
-    original.write_bytes(original.read_bytes() + b"\n")
+    sources = load_project(project_path).project.model_source
+    assert isinstance(sources, LegacyRunFiles)
+    staged = project_path.parent / sources.catchment.path
+    staged.write_bytes(staged.read_bytes() + b"\n")
     destination = tmp_path / "not published"
     with pytest.raises(ValueError, match="SHA-256"):
         export_cmd_package(project_path, destination, target=NativeCmdExportTarget("cmd-6.44"))

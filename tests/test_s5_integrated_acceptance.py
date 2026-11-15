@@ -154,7 +154,7 @@ def test_invalid_override_and_unrepresentable_catchment_fail_closed(tmp_path: Pa
         resolve_effective_model(
             loaded.run, ProjectEvent("bad", losses={"continuing": "2", "continuing_loss_mm_h": "2"})
         )
-    with pytest.raises(ValueError, match="loss model"):
+    with pytest.raises(TypeError, match="loss model"):
         replace(loaded.run.parameters, loss_model=True)
     with pytest.raises(ValueError, match="ISA"):
         replace(loaded.run.parameters, num_isa=True)
