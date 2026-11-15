@@ -9,6 +9,7 @@ import math
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -89,8 +90,7 @@ def test_positive_exponents_execute_complete_events_on_both_selected_engines(tmp
 
         if engine == "python-cmd":
             assert result.python_diagnostics is not None
-            reaches = result.python_diagnostics["reaches"]
-            assert isinstance(reaches, list)
+            reaches = cast("list[dict[str, object]]", result.python_diagnostics["reaches"])
             assert len(reaches) == 1
             assert reaches[0]["linear_routing"] is (exponent == "1")
 
