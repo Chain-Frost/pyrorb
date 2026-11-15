@@ -459,7 +459,7 @@ def test_default_engine_reports_actual_numerical_failure_not_feature_gap(tmp_pat
     numerical_event = replace(original, parameters=parameters, storm=storm)
     source = tmp_path / "numerical-failure.json"
     write_project(source, Project("numerical_failure", "explicit", EmbeddedRun(numerical_event)))
-    result = run_engine_project(source)
+    result = run_engine_project(source, selection=EngineSelection.for_engine("python"))
     assert result.status == "numerical_error"
     assert result.hydrographs == ()
     assert result.diagnostics[0].code == "solver_numerical"
