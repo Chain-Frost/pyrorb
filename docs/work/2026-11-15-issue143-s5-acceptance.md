@@ -168,6 +168,57 @@ merged heads, or upstream private 420-pair reader association recheck.
 Do not relabel a green software CI or a stub native launcher as those
 missing observations.
 
+## Independent review of the combined tree — acceptance blockers
+
+A new, independently completed Codex review of the provisional
+[combined PR #172](https://github.com/Chain-Frost/python-runoff-routing/pull/172)
+identified a **P1 native effective-input attribution defect**:
+`native_cmd._make_spec` for explicitly selected `rorb-cmd` still passes
+**original staged CATG/STM paths** when #140's saved file-backed project
+contains a different `effective_run` storm/catchment. A depth-only edit
+with unchanged timestep/horizon/sites can bypass the original scalar
+preflight and produce outputs for the **old physical inputs** while being
+attributed to the edited model hash. This was reported with a specific
+fail-closed negative-test requirement to [#140 PR #159](https://github.com/Chain-Frost/python-runoff-routing/pull/159)
+and [#141 PR #162](https://github.com/Chain-Frost/python-runoff-routing/pull/162).
+Native execution must reject unrepresented effective catchment/storm edits
+**before launch**, or execute the independently authenticated
+effective emitted inputs. This is an **unresolved P1 native acceptance
+blocker**, not a printed-Q numerical tolerance or evidence from a native run.
+Do not silently substitute the original model or another engine.
+
+The same review identified **P2** legacy positional CMD import path
+semantics: original CWD-relative CATG/STM arguments were mistakenly treated
+as PAR-relative overrides in the earlier #140 source snapshot. The later
+#140 branch at `089baec88de8867ede2506ef43b7ebae5ef2dcd1`
+was independently inspected and converts only the legacy positional
+paths with `Path(...).absolute()`, retaining intentionally PAR-relative
+flag overrides; that is a **source-reviewed correction**, not a test
+receipt for the older combined CI head.
+
+Another **P2** noted the four integrated tests ran in the source suite
+but not the original combined installed-wheel test selection. A subsequent
+unverified test-only revision of PR #172 adds those four cases to the
+external-wheel suite along with an ordinary PyRomb 6.45 parameter-only
+export case. **No updated exact-head CI receipt exists for those later
+edits**; do not cite the earlier 168-wheel count as proof they ran
+from the installed wheel.
+
+**Final standalone acceptance PR quality receipt:** [Windows Actions
+#43733756206](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43733756206)
+completed successfully at exact head
+`893b6878ea29cfade238958bf28edfedc7383967`.
+CPython 3.13.17; repository hygiene **512 files/0 errors**, Ruff
+0.16.6 PASS, strict Pyright 1.1.414 **0 errors/warnings**,
+**1,111 source tests passed**, fresh original CMD source probe passed,
+**168 isolated-wheel tests passed** and final installed-wheel original
+CMD probe and CLI/negative controls passed.
+Wheel SHA-256:
+`9277fa5d20c9ffc6734467f8e52197645c15da4bd901525e46c21f0a5bfed861`.
+This exact code/document head is the verified source/wheel receipt for the
+reviewable #143 acceptance PR; no native RORB binary or full integrated owner
+release is included.
+
 ## Direct Windows-native portability procedure — outstanding
 
 1. Select a supported registered source and prepare a parameter-only edit, then supported structural/storm edits once #139 can write them. Record original hashes, source bindings and effective selected settings/overrides.

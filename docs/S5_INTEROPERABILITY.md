@@ -66,6 +66,17 @@ numeric proof. The demonstrated source/wheel evidence is linked in the
 | Inspect reports | Read-only bounded CMD .out parsing | Installed canonical ryan-tools .out/batch.out reader and consumer migration (#142) |
 | Execute | Explicit engine selection; optional local verified native CMD adapter | Direct execution of actual **emitted relocated PAR**, separately from numerical acceptance |
 
+**Native edited-source safety limit:** the provisional combined-code review
+found that selecting `rorb-cmd` directly on a file-backed project with
+edited effective storm depths or catchment geometry can still pass the
+**original staged source assets** to the native adapter. Until the
+#140/native-adapter owner fixes and tests this mismatch, such execution is
+**not qualified**: reject before launch or use a separately verified
+effective native package. A resulting native report must never be
+attributed to edits the executable did not actually receive.
+Independent [#143 review evidence](work/2026-11-15-issue143-s5-acceptance.md)
+records the P1 boundary.
+
 Unknown PAR dialects must be rejected rather than guessed from the suffix.
 RORBwin saved-PAR editing is deferred to #144; RORBwin-produced report reading
 is current #142. Old plain computational CAT and combined DAT are excluded.
