@@ -11,13 +11,14 @@ import math
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 
+from ._cmd644.geometry import Geometry, compute_geometry
 from ._cmd644.models import Control, Event, NumberInput
 from ._cmd644.native_diagnostics import DIAGNOSTIC_PROFILE, TargetOperands, target_diagnostic
 from ._cmd644.precision import UnsupportedNumericPath, store
 from ._cmd644.reporting import CONTRACT_ID, execute
 from .engine_types import EngineHydrograph, EngineStatus
 from .project_json import LoadedProject
-from .rorb_model import to_json
+from .rorb_model import CatchmentModel, RoutingValue, to_json
 
 CMD_PROFILE = "cmd-6.44"
 CANDIDATE_SOURCE = "fea9c80c521127325b779ea0ea87ddf77795b290"
@@ -44,6 +45,25 @@ class CmdComputed:
     hydrographs: tuple[EngineHydrograph, ...]
     physical_time_hours: tuple[str, ...]
     diagnostics: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCmdModel:
+    """One source/control/area/coefficient interpretation, not event hydraulic state."""
+
+    catchment: CatchmentModel
+    routing: tuple[RoutingValue, ...]
+    geometry: Geometry
+
+
+def prepare_cmd_model(loaded: LoadedProject) -> PreparedCmdModel:
+    """Precompute existing CMD geometry once for invariant CATG and kc/m."""
+    event = adapt_event(loaded)
+    try:
+        geometry = compute_geometry(event)
+    except UnsupportedNumericPath as exc:
+        raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
+    return PreparedCmdModel(loaded.run.catchment, loaded.run.parameters.routing, geometry)
 
 
 def _unsupported(code: str, description: str) -> None:
@@ -97,7 +117,7 @@ def _check_scope(loaded: LoadedProject) -> None:
         _unsupported("cmd_storages", "Special storages are not characterised")
     if len(catchment.print_locations) != 1 or sum(step.code == 7 for step in catchment.controls) != 1:
         _unsupported("cmd_print_sites", "Only a single final physical print location is characterised")
-    if catchment.controls[-1].code != 7 or any(step.code not in (1, 3, 4, 5, 7) for step in catchment.controls):
+    if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7) for step in catchment.controls):
         _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
     if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
         _unsupported("cmd_horizon", "Event calculation horizon does not include all rainfall bins")
@@ -111,7 +131,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
     control_values: list[Control] = []
     reach_index = 0
     for step in run.catchment.controls:
-        if step.code in (1, 5):
+        if step.code in (1, 2, 5):
             length = run.catchment.reaches[reach_index].length_km
             reach_index += 1
         else:
@@ -132,7 +152,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
         tuple(control_values),
         tuple(_number(item.area_km2) for item in run.catchment.subareas),
         tuple(_number(value) for value in run.storm.depths_mm),
-        tuple(_number(Decimal(0)) for _ in run.catchment.subareas),
+        tuple(_number(item.impervious_fraction) for item in run.catchment.subareas),
         weights,
         _number(run.storm.timestep_hours),
         _number(parameters.routing[0].kc),
@@ -143,12 +163,18 @@ def adapt_event(loaded: LoadedProject) -> Event:
     )
 
 
-def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdComputed:
-    """Calculate rainfall/losses, geometry and every reach with frozen CMD rules."""
+def run_cmd_model(
+    loaded: LoadedProject, implementation_revision: str, *, prepared: PreparedCmdModel | None = None
+) -> CmdComputed:
+    """Calculate each fresh CMD event with optional invariant prepared geometry."""
 
     event = adapt_event(loaded)
+    if prepared is not None and (
+        prepared.catchment != loaded.run.catchment or prepared.routing != loaded.run.parameters.routing
+    ):
+        raise CmdBoundaryError(_INVALID_INPUT, "prepared_mismatch", "Prepared CATG/routing parameters differ")
     try:
-        result = execute(event, implementation_revision)
+        result = execute(event, implementation_revision, geometry=prepared.geometry if prepared is not None else None)
     except UnsupportedNumericPath as exc:
         raise CmdBoundaryError(_NUMERICAL_ERROR, "cmd_arithmetic", str(exc)) from exc
     if len(result.network.outlet) != event.n + 1:

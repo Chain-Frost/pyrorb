@@ -14,18 +14,21 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from typing import Literal
 
-from .cmd_engine import CMD_PROFILE, CmdBoundaryError, run_cmd_model
+from .cmd_engine import CMD_PROFILE, CmdBoundaryError, PreparedCmdModel, run_cmd_model
 from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
 from .native_cmd import NativeBoundaryError, NativeConfiguration, run_native_cmd
 from .project_json import LoadedProject, load_project
 from .rorb_model import to_json
+from .single_storm import PreparedCatchment
 
 SelectionSource = Literal["project", "api_override", "cli_override"]
 
 
-def _base(loaded: LoadedProject, selection: EngineSelection, source: SelectionSource) -> EngineOutcome:
+def create_engine_outcome_base(
+    loaded: LoadedProject, selection: EngineSelection, source: SelectionSource
+) -> EngineOutcome:
     """Report source and effective choices, even for unsuccessful execution."""
     model = loaded.run
     settings: dict[str, str | int] = {
@@ -68,7 +71,7 @@ def _failure(
     )
 
 
-def _with_implementation_identity(base: EngineOutcome, wheel_artifact: Path | None) -> EngineOutcome:
+def attribute_engine_outcome(base: EngineOutcome, wheel_artifact: Path | None) -> EngineOutcome:
     """Bind exact package bytes and, when supplied, a source-matched wheel before dispatch."""
     try:
         identity = identify_implementation()
@@ -84,7 +87,7 @@ def _with_implementation_identity(base: EngineOutcome, wheel_artifact: Path | No
     return replace(attributed, verified_wheel_sha256=wheel_hash)
 
 
-def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
+def _python(loaded: LoadedProject, base: EngineOutcome, *, prepared: PreparedCatchment | None = None) -> EngineOutcome:
     if loaded.project.rainfall_profile == "arr-2026v1":
         return _failure(
             base,
@@ -100,7 +103,7 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
             "External rainfall, temporal pattern and curve assets are unprocessed",
         )
     try:
-        result = run_model(loaded.run)
+        result = run_model(loaded.run, prepared=prepared)
     except RunInputError as exc:
         state: EngineStatus = (
             "invalid_input"
@@ -125,7 +128,13 @@ def _python(loaded: LoadedProject, base: EngineOutcome) -> EngineOutcome:
     )
 
 
-def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: NativeConfiguration | None) -> EngineOutcome:
+def _python_cmd(
+    loaded: LoadedProject,
+    base: EngineOutcome,
+    native_config: NativeConfiguration | None,
+    *,
+    prepared: PreparedCmdModel | None = None,
+) -> EngineOutcome:
     """Run only the selected CMD profile; never reuse the improved engine."""
 
     if native_config is not None:
@@ -133,7 +142,7 @@ def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: Nativ
     if base.effective_selection.numerical_profile != CMD_PROFILE:
         return _failure(base, "unavailable_engine", "cmd_profile", "Only the cmd-6.44 Python profile is implemented")
     try:
-        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed")
+        computed = run_cmd_model(loaded, base.implementation_revision or "unattributed", prepared=prepared)
     except CmdBoundaryError as exc:
         return _failure(base, exc.status, exc.code, str(exc))
     return replace(
@@ -146,32 +155,30 @@ def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: Nativ
     )
 
 
-def run_engine_project(
-    project_path: Path,
+def execute_loaded_engine(
+    loaded: LoadedProject,
+    base: EngineOutcome,
     *,
-    selection: EngineSelection | None = None,
-    selection_source: SelectionSource = "api_override",
+    project_path: Path,
     native_config: NativeConfiguration | None = None,
-    wheel_artifact: Path | None = None,
+    prepared_python: PreparedCatchment | None = None,
+    prepared_cmd: PreparedCmdModel | None = None,
 ) -> EngineOutcome:
-    """Load verified project bytes, then dispatch exactly one selected engine.
+    """Dispatch an already verified, in-memory S1 event using its attributed outcome.
 
-    An explicit API/CLI selection overrides the stored project selection; both
-    are retained. Missing backends return typed failures and never substitute
-    the Python engineering solver.
+    The caller owns source validation and immutable per-event model construction.
+    This is the same dispatcher used by single-project and explicit-batch APIs.
+    The native adapter always receives the real original project path.
     """
-    loaded = load_project(project_path)
-    effective = loaded.project.engine if selection is None else selection
-    provenance: SelectionSource = "project" if selection is None else selection_source
-    base = _with_implementation_identity(_base(loaded, effective, provenance), wheel_artifact)
     if base.diagnostics:
         return base
+    effective = base.effective_selection
     if effective.engine == "python":
         if native_config is not None:
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
-        return _python(loaded, base)
+        return _python(loaded, base, prepared=prepared_python)
     if effective.engine == "python-cmd":
-        return _python_cmd(loaded, base, native_config)
+        return _python_cmd(loaded, base, native_config, prepared=prepared_cmd)
     if native_config is None:
         return _failure(
             base,
@@ -206,6 +213,26 @@ def run_engine_project(
         capture_manifest_path=observation.manifest_path,
         internal_quantities="native_unavailable",
     )
+
+
+def run_engine_project(
+    project_path: Path,
+    *,
+    selection: EngineSelection | None = None,
+    selection_source: SelectionSource = "api_override",
+    native_config: NativeConfiguration | None = None,
+    wheel_artifact: Path | None = None,
+) -> EngineOutcome:
+    """Verify a project once, then use the shared in-memory event dispatcher.
+
+    An explicit API/CLI selection overrides the stored project choice. The
+    original/effective choices remain visible and no engine is substituted.
+    """
+    loaded = load_project(project_path)
+    effective = loaded.project.engine if selection is None else selection
+    provenance: SelectionSource = "project" if selection is None else selection_source
+    base = attribute_engine_outcome(create_engine_outcome_base(loaded, effective, provenance), wheel_artifact)
+    return execute_loaded_engine(loaded, base, project_path=project_path, native_config=native_config)
 
 
 def write_engine_result(path: Path, outcome: EngineOutcome) -> None:
