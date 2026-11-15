@@ -13,7 +13,8 @@ from typing import cast
 
 from .rorb_codec import FormatProblem, parse_catg, parse_design_stm
 from .rorb_model import PatternBasis
-from .single_storm import Catchment, Control, ControlCode as S2ControlCode, Storm
+from .single_storm import Catchment, Control, Storm
+from .single_storm import ControlCode as S2ControlCode
 
 
 class LegacyInputError(ValueError):
