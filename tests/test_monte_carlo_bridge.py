@@ -169,4 +169,3 @@ def test_stored_b_record_materialises_without_a_new_draw(tmp_path: Path, monkeyp
     result = execute_mc_request(project, request, ledger)
     assert result.complete
     assert json.loads(ledger.read_text().splitlines()[1])["status"] == "computed_unvalidated"
-
