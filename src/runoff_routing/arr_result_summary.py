@@ -491,9 +491,7 @@ def _critical_duration_records(
     return critical
 
 
-def _bound_outcome(
-    member: Mapping[str, Any], outcomes: Mapping[str, dict[str, Any]]
-) -> dict[str, Any] | None:
+def _bound_outcome(member: Mapping[str, Any], outcomes: Mapping[str, dict[str, Any]]) -> dict[str, Any] | None:
     """An unprepared input candidate has no synthetic routing identity."""
     identifier = member.get("event_id")
     return outcomes.get(identifier) if isinstance(identifier, str) else None
