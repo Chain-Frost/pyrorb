@@ -2,6 +2,10 @@
 
 The existing [register](../tests/fixtures/regression-v1/register.json) and `runoff_routing.regression_dataset` CLI now serve **50 CMD cases** (44 archived and all six supplemental), **21 native gaps**, ten unchanged independent analytical controls and four authored gaps. Stable IDs, source/order/physical-site mappings, full horizons, units, original one-based increment/time tokens, scalar selectors and executable hashes are retained. No private checkout or RORB installation is needed. Tracks [#81](https://github.com/Chain-Frost/python-runoff-routing/issues/81).
 
+## Current CMD evidence status (15 November 2026)
+
+Merged #135 has an independently audited exact-head fresh 50-case source/isolated-wheel probe: **50/50 printed-Q passes across 19,550 ordinates, 48 scalar passes, and two incomplete undefined zero-flow peak times** (`fig67-zero`, `wheel-zero`). H2, N4 and `pyromb-novel-storm` stored h/dt now pass under the original source-hex contract; the older **45-pass/five-incomplete** results elsewhere in this document belong to their separately cited historical revisions. Current main `0675d75` has green [quality CI 43717183197](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43717183197); no new native launch is implied. [Evidence PR #133](https://github.com/Chain-Frost/python-runoff-routing/pull/133) preserves eight authenticated captures plus exact upstream PR16 producer bytes separately, **without promoting four studied original profiles** into the 50-case accepted scope. The corresponding [dated current disposition](work/2026-11-15-independent-native-closeout.md) records the four admission limits and the remaining four explicit unsupported/gap states.
+
 ## Evidence and limits
 
 Native references are original CMD 6.44 printed observations. The ten authored cases remain mathematical oracles. All 21 native gaps preserve individual reasons and CMD/RORBwin identities under `native-gaps`; their experimental files are excluded. `all` contains 85 records and intentionally returns non-success.
@@ -146,6 +150,12 @@ For final evidence, record the source SHA or authenticated archive identity, exa
 
 ## Authentication and curation
 
+The [15 November independent closeout](work/2026-11-15-independent-native-closeout.md) adds authenticated
+original input/report/source bindings for eight existing gap records and the exact pinned upstream PR16
+export. These records remain gaps pending review: **50 CMD-eligible / 21 native gaps / 85 total**.
+The current expanded index contains **254 files**. The original 227-file transfer and historical
+snapshot retain their original identities; this evidence-only curation does not grant new qualification.
+
 Source: private PR #65 at `78d257745e94cdca74d1fdcdc8a615d472a8bf9c`; original register SHA-256 `a9b74dafe5466491a3ed102a3649df72b992e38c915699934f47096a0228e6f7`. All **1,026** indexed originals authenticated before and after transfer, along with the independent custody receipt and all six supplemental original input/report/typed-event/source bindings. Only model, storm, effective controls, report, typed event and source binding are copied. Unrelated historical manifests/log dumps, empty streams, traces, executables, manuals and research implementations are excluded. Required original capture manifests remain only where they are the authenticated source binding. Historical permission text inside those immutable bindings is superseded prospectively by the 2026-11-15 owner approval.
 
 [provenance.json](../tests/fixtures/regression-v1/native-cmd/provenance.json) records original hash/size/name, published locator/hash/size, evidence class and every transform. Shared objects require identical original SHA-256 and file kind; each case retains explicit references. Different originals yielding the same sanitised payload retain separate original identities.
@@ -164,4 +174,4 @@ python3.13 -m runoff_routing.regression_dataset preflight tests/fixtures/regress
 python3.13 -m runoff_routing.regression_dataset compare tests/fixtures/regression-v1/register.json --set cmd-eligible --snapshot --output /tmp/cmd-snapshot.json
 ~~~
 
-Use fresh output names. The snapshot is a retained historical candidate run, not newly computed hydrology. Full-index preflight should pass 50 cases and verify **227** published native files. The cached scalar comparison intentionally exits **1** (48 case passes plus two incomplete zero-flow peak times), while preserving original 19,550 ordinate matches, 50 peak magnitudes and 50 reported inclusive volumes. An unrelated nonzero exit is not acceptable. See [cross-platform index correction](work/2026-11-15-cmd81-native-index-portability.md).
+Use fresh output names. The snapshot is a retained historical candidate run, not newly computed hydrology. Full-index preflight should pass 50 cases and verify **254** published native files. The cached scalar comparison intentionally exits **1** (48 case passes plus two incomplete zero-flow peak times), while preserving original 19,550 ordinate matches, 50 peak magnitudes and 50 reported inclusive volumes. An unrelated nonzero exit is not acceptable. See [cross-platform index correction](work/2026-11-15-cmd81-native-index-portability.md).
