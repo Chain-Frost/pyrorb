@@ -83,9 +83,7 @@ def exact_survival(response: Response, peak: float, *, lower_u: float = 0.0, upp
         offset = response.base + response.tp_bump * tp - peak
         x0 = (response.slope * lower_u + offset) / response.loss_width
         x1 = (response.slope * upper_u + offset) / response.loss_width
-        result += probability * response.loss_width / response.slope * (
-            _hinge_integral(x1) - _hinge_integral(x0)
-        )
+        result += probability * response.loss_width / response.slope * (_hinge_integral(x1) - _hinge_integral(x0))
     return max(0.0, min(upper_u - lower_u, result))
 
 
@@ -107,7 +105,9 @@ def exact_quantile(response: Response, aep: float) -> float:
     return (left + right) / 2.0
 
 
-def endpoint_quantile_bounds(response: Response, aep: float, *, covered_upper_u: float = 0.98) -> tuple[float, float | None]:
+def endpoint_quantile_bounds(
+    response: Response, aep: float, *, covered_upper_u: float = 0.98
+) -> tuple[float, float | None]:
     """Conservative quantile bounds when U in (covered_upper_u, 1] is entirely unknown.
 
     The lower bound assigns no exceedances to missing mass; the upper bound
@@ -144,7 +144,9 @@ def strata_edges(count: int) -> list[float]:
     return [0.0, *(normal.cdf(-3.5 + 7.0 * i / count) for i in range(1, count)), 1.0]
 
 
-def derive_seed(root: int, stage: str, replication: int, duration: str, strata: int, n: int, method: str, h: int) -> int:
+def derive_seed(
+    root: int, stage: str, replication: int, duration: str, strata: int, n: int, method: str, h: int
+) -> int:
     """Stable stream-per-cell derivation, independent of worker/traversal order."""
     key = f"{POLICY}|{root}|{stage}|{replication}|{duration}|{strata}|{n}|{method}|{h}"
     return int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:16], "big")
@@ -216,12 +218,19 @@ def trial_peaks(
     return peaks
 
 
-def one_trial(*, root: int, stage: str, replication: int, strata: int, n: int, tp_method: str, quantile_method: str) -> list[dict[str, Any]]:
+def one_trial(
+    *, root: int, stage: str, replication: int, strata: int, n: int, tp_method: str, quantile_method: str
+) -> list[dict[str, Any]]:
     """Produce every site/duration/AEP and their envelope, with complete mass."""
     measured: dict[tuple[str, str, float], float] = {}
     for duration in DURATIONS:
         for site, peak_weights in trial_peaks(
-            root=root, stage=stage, replication=replication, duration=duration, strata=strata, n=n,
+            root=root,
+            stage=stage,
+            replication=replication,
+            duration=duration,
+            strata=strata,
+            n=n,
             tp_method=tp_method,
         ).items():
             for aep in AEPS:
@@ -234,16 +243,28 @@ def one_trial(*, root: int, stage: str, replication: int, strata: int, n: int, t
             ref_duration = max(DURATIONS, key=lambda d: reference_by_duration[d])
             for duration in (*DURATIONS, "envelope"):
                 estimate = (
-                    measured[(site, chosen_duration, aep)] if duration == "envelope" else measured[(site, duration, aep)]
+                    measured[(site, chosen_duration, aep)]
+                    if duration == "envelope"
+                    else measured[(site, duration, aep)]
                 )
-                exact = reference_by_duration[ref_duration] if duration == "envelope" else reference_by_duration[duration]
-                rows.append({
-                    "site": site, "duration": duration, "aep": aep, "estimate": estimate, "exact": exact,
-                    "error": estimate - exact, "critical_duration": chosen_duration if duration == "envelope" else "",
-                    "exact_critical_duration": ref_duration if duration == "envelope" else "",
-                    "zero_probability": None if duration == "envelope"
-                    else 1.0 - exact_survival(response_by_duration[duration], 0.0),
-                })
+                exact = (
+                    reference_by_duration[ref_duration] if duration == "envelope" else reference_by_duration[duration]
+                )
+                rows.append(
+                    {
+                        "site": site,
+                        "duration": duration,
+                        "aep": aep,
+                        "estimate": estimate,
+                        "exact": exact,
+                        "error": estimate - exact,
+                        "critical_duration": chosen_duration if duration == "envelope" else "",
+                        "exact_critical_duration": ref_duration if duration == "envelope" else "",
+                        "zero_probability": None
+                        if duration == "envelope"
+                        else 1.0 - exact_survival(response_by_duration[duration], 0.0),
+                    }
+                )
     return rows
 
 
@@ -293,7 +314,6 @@ def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> 
     return (low + high) / 2
 
 
-
 def upper_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> float:
     """Exact one-sided Clopper-Pearson upper bound, for rejection of adequacy."""
     if not 0 <= successes <= trials or trials < 1 or not 0 < alpha < 1:
@@ -330,11 +350,14 @@ def sd_bootstrap_interval(values: list[float], seed_key: str, *, resamples: int 
     estimates.sort()
     return estimates[int(0.025 * resamples)], estimates[math.ceil(0.975 * resamples) - 1]
 
+
 def _variant_key(strata: int, n: int, tp_method: str, quantile_method: str) -> str:
     return f"h{strata}-n{n}-{tp_method}-{quantile_method}"
 
 
-def _run_stage(stage: str, root: int, replications: int, budget: int, wall_cap: float) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _run_stage(
+    stage: str, root: int, replications: int, budget: int, wall_cap: float
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     variants = STAGE_VARIANTS[stage]
     requested = sum(strata * n * len(DURATIONS) * replications for strata, n, _, _ in variants)
     if requested > budget:
@@ -353,17 +376,30 @@ def _run_stage(stage: str, root: int, replications: int, budget: int, wall_cap: 
                     raise TimeoutError(message)
                 tracemalloc.reset_peak()
                 t0 = time.perf_counter()
-                trial_rows = one_trial(root=root, stage=stage, replication=replication, strata=strata, n=n,
-                                       tp_method=tp_method, quantile_method=quantile_method)
+                trial_rows = one_trial(
+                    root=root,
+                    stage=stage,
+                    replication=replication,
+                    strata=strata,
+                    n=n,
+                    tp_method=tp_method,
+                    quantile_method=quantile_method,
+                )
                 elapsed = time.perf_counter() - t0
                 _, peak_bytes = tracemalloc.get_traced_memory()
-                timing.append({"variant": key, "replication": replication, "elapsed_seconds": elapsed,
-                               "peak_traced_mib": peak_bytes / (1024 * 1024), "evaluations": strata * n * 2})
+                timing.append(
+                    {
+                        "variant": key,
+                        "replication": replication,
+                        "elapsed_seconds": elapsed,
+                        "peak_traced_mib": peak_bytes / (1024 * 1024),
+                        "evaluations": strata * n * 2,
+                    }
+                )
                 raw.extend({"variant": key, "replication": replication, **row} for row in trial_rows)
     finally:
         tracemalloc.stop()
-    return raw, {"total_evaluations": requested, "wall_seconds": time.perf_counter() - start,
-                 "timing": timing}
+    return raw, {"total_evaluations": requested, "wall_seconds": time.perf_counter() - start, "timing": timing}
 
 
 def _summarise(raw: list[dict[str, Any]], timing: list[dict[str, Any]]) -> dict[str, Any]:
@@ -379,20 +415,30 @@ def _summarise(raw: list[dict[str, Any]], timing: list[dict[str, Any]]) -> dict[
         spread = statistics.stdev(estimates) if len(estimates) > 1 else 0.0
         sd_interval = sd_bootstrap_interval(estimates, f"{variant}|{site}|{duration}|{aep}")
         critical = {d: sum(row["critical_duration"] == d for row in rows) for d in DURATIONS}
-        metrics.append({
-            "variant": variant, "site": site, "duration": duration, "aep": aep, "exact": exact,
-            "mean": statistics.fmean(estimates), "sd_single_run": spread,
-            "sd_bootstrap_95pct_interval": sd_interval,
-            "cv_single_run": spread / abs(statistics.fmean(estimates)) if statistics.fmean(estimates) else None,
-            "mean_bias": statistics.fmean(errors), "max_abs_error": max(abs_errors),
-            "p90_abs_error": abs_errors[math.ceil(0.9 * len(abs_errors)) - 1],
-            "n_replications": len(rows),
-            "critical_duration_counts": critical if duration == "envelope" else {},
-            "critical_duration_long_probability_95pct_interval": [
-                lower_confidence_bound(critical["long"], len(rows), 0.025),
-                upper_confidence_bound(critical["long"], len(rows), 0.025),
-            ] if duration == "envelope" else None,
-        })
+        metrics.append(
+            {
+                "variant": variant,
+                "site": site,
+                "duration": duration,
+                "aep": aep,
+                "exact": exact,
+                "mean": statistics.fmean(estimates),
+                "sd_single_run": spread,
+                "sd_bootstrap_95pct_interval": sd_interval,
+                "cv_single_run": spread / abs(statistics.fmean(estimates)) if statistics.fmean(estimates) else None,
+                "mean_bias": statistics.fmean(errors),
+                "max_abs_error": max(abs_errors),
+                "p90_abs_error": abs_errors[math.ceil(0.9 * len(abs_errors)) - 1],
+                "n_replications": len(rows),
+                "critical_duration_counts": critical if duration == "envelope" else {},
+                "critical_duration_long_probability_95pct_interval": [
+                    lower_confidence_bound(critical["long"], len(rows), 0.025),
+                    upper_confidence_bound(critical["long"], len(rows), 0.025),
+                ]
+                if duration == "envelope"
+                else None,
+            }
+        )
     whole: list[dict[str, Any]] = []
     keys = sorted({row["variant"] for row in raw})
     for variant in keys:
@@ -405,18 +451,23 @@ def _summarise(raw: list[dict[str, Any]], timing: list[dict[str, Any]]) -> dict[
                 if all(abs(row["error"]) <= max(ABS_TOLERANCE, band * abs(row["exact"])) for row in rows):
                     passes[str(band)] += 1
         variant_times = [row for row in timing if row["variant"] == variant]
-        whole.append({"variant": variant, "replications": len(repls),
-                      "pass_count_by_band": passes,
-                      "pass_rate_by_band": {band: count / len(repls) for band, count in passes.items()},
-                      "one_sided_95pct_lower_by_band": {
-                          band: lower_confidence_bound(count, len(repls)) for band, count in passes.items()
-                      },
-                      "one_sided_95pct_upper_by_band": {
-                          band: upper_confidence_bound(count, len(repls)) for band, count in passes.items()
-                      },
-                      "mean_seconds_per_run": statistics.fmean(row["elapsed_seconds"] for row in variant_times),
-                      "peak_traced_mib": max(row["peak_traced_mib"] for row in variant_times),
-                      "evaluations_per_run": variant_times[0]["evaluations"]})
+        whole.append(
+            {
+                "variant": variant,
+                "replications": len(repls),
+                "pass_count_by_band": passes,
+                "pass_rate_by_band": {band: count / len(repls) for band, count in passes.items()},
+                "one_sided_95pct_lower_by_band": {
+                    band: lower_confidence_bound(count, len(repls)) for band, count in passes.items()
+                },
+                "one_sided_95pct_upper_by_band": {
+                    band: upper_confidence_bound(count, len(repls)) for band, count in passes.items()
+                },
+                "mean_seconds_per_run": statistics.fmean(row["elapsed_seconds"] for row in variant_times),
+                "peak_traced_mib": max(row["peak_traced_mib"] for row in variant_times),
+                "evaluations_per_run": variant_times[0]["evaluations"],
+            }
+        )
     return {"metrics": metrics, "whole_run": whole}
 
 
@@ -426,8 +477,16 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         f.write("\n")
 
 
-def run(stage: str, output: Path, *, root: int, replications: int | None,
-        max_evaluations: int, max_wall_seconds: float, opt_in: bool) -> None:
+def run(
+    stage: str,
+    output: Path,
+    *,
+    root: int,
+    replications: int | None,
+    max_evaluations: int,
+    max_wall_seconds: float,
+    opt_in: bool,
+) -> None:
     if stage != "smoke" and not opt_in:
         message = "non-smoke research stages require --opt-in"
         raise ValueError(message)
@@ -454,33 +513,66 @@ def run(stage: str, output: Path, *, root: int, replications: int | None,
         for duration, response in durations.items():
             for aep in AEPS:
                 low, high = endpoint_quantile_bounds(response, aep)
-                endpoints.append({"site": site, "duration": duration, "aep": aep,
-                                  "known_probability_mass": 0.98, "unmodelled_upper_probability_mass": 0.02,
-                                  "exact_complete_population_quantile": exact_quantile(response, aep),
-                                  "possible_quantile_lower": low, "possible_quantile_upper": high,
-                                  "status": "unresolved_missing_tail"})
-    _write_json(output / "endpoint_sensitivity.json", {"examples": endpoints,
-        "note": "Bounds assume unknown missing mass, not that the actual tail has zero flow."})
-    _write_json(output / "manifest.json", {
-        "policy": POLICY, "stage": stage, "variants": STAGE_VARIANTS[stage], "root_seed": root,
-        "replications_per_variant": count, "distinct_replicates_across_stages": True,
-        "stream_derivation": "SHA256(policy|root|stage|rep|duration|strata|n|tp_method|h) first 128 bits; MT19937 Python random.Random",
-        "events_per_duration_and_scenario": [h * n for h, n, _, _ in STAGE_VARIANTS[stage]],
-        "total_evaluations": performance["total_evaluations"],
-        "wall_seconds": performance["wall_seconds"], "traced_peak_mib": max(t["peak_traced_mib"] for t in performance["timing"]),
-        "absolute_tolerance": ABS_TOLERANCE, "relative_bands": BANDS,
-        "whole_result_outputs": "all 2 sites x 4 AEPs x (2 durations + duration envelope) = 24 estimates",
-        "required_pass_probability_study_setting": 0.95, "one_sided_confidence_study_setting": 0.95,
-        "interpolation": "weighted nearest rank except linear sensitivity",
-        "bin_boundaries": "equal standard-normal coordinate -3.5 to +3.5; outer bins extended to U=0 and U=1",
-        "zero_runoff": "retained", "failed_mass": 0.0, "missing_mass": 0.0, "modelled_mass": 1.0,
-        "response_parameters": {s: {d: asdict(r) for d, r in dd.items()} for s, dd in RESPONSES.items()},
-        "python": sys.version.split()[0], "platform": platform.platform(),
-        "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-        "note": "Synthetic dimensionless study only; not RORB or a rainfall AEP-to-flow mapping acceptance",
-    })
-    print(json.dumps({"stage": stage, "reps": count, "output": str(output),
-                      "evaluations": performance["total_evaluations"], "wall_seconds": performance["wall_seconds"]}))
+                endpoints.append(
+                    {
+                        "site": site,
+                        "duration": duration,
+                        "aep": aep,
+                        "known_probability_mass": 0.98,
+                        "unmodelled_upper_probability_mass": 0.02,
+                        "exact_complete_population_quantile": exact_quantile(response, aep),
+                        "possible_quantile_lower": low,
+                        "possible_quantile_upper": high,
+                        "status": "unresolved_missing_tail",
+                    }
+                )
+    _write_json(
+        output / "endpoint_sensitivity.json",
+        {"examples": endpoints, "note": "Bounds assume unknown missing mass, not that the actual tail has zero flow."},
+    )
+    _write_json(
+        output / "manifest.json",
+        {
+            "policy": POLICY,
+            "stage": stage,
+            "variants": STAGE_VARIANTS[stage],
+            "root_seed": root,
+            "replications_per_variant": count,
+            "distinct_replicates_across_stages": True,
+            "stream_derivation": "SHA256(policy|root|stage|rep|duration|strata|n|tp_method|h) first 128 bits; MT19937 Python random.Random",
+            "events_per_duration_and_scenario": [h * n for h, n, _, _ in STAGE_VARIANTS[stage]],
+            "total_evaluations": performance["total_evaluations"],
+            "wall_seconds": performance["wall_seconds"],
+            "traced_peak_mib": max(t["peak_traced_mib"] for t in performance["timing"]),
+            "absolute_tolerance": ABS_TOLERANCE,
+            "relative_bands": BANDS,
+            "whole_result_outputs": "all 2 sites x 4 AEPs x (2 durations + duration envelope) = 24 estimates",
+            "required_pass_probability_study_setting": 0.95,
+            "one_sided_confidence_study_setting": 0.95,
+            "interpolation": "weighted nearest rank except linear sensitivity",
+            "bin_boundaries": "equal standard-normal coordinate -3.5 to +3.5; outer bins extended to U=0 and U=1",
+            "zero_runoff": "retained",
+            "failed_mass": 0.0,
+            "missing_mass": 0.0,
+            "modelled_mass": 1.0,
+            "response_parameters": {s: {d: asdict(r) for d, r in dd.items()} for s, dd in RESPONSES.items()},
+            "python": sys.version.split()[0],
+            "platform": platform.platform(),
+            "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "note": "Synthetic dimensionless study only; not RORB or a rainfall AEP-to-flow mapping acceptance",
+        },
+    )
+    print(
+        json.dumps(
+            {
+                "stage": stage,
+                "reps": count,
+                "output": str(output),
+                "evaluations": performance["total_evaluations"],
+                "wall_seconds": performance["wall_seconds"],
+            }
+        )
+    )
 
 
 def main() -> None:
@@ -493,8 +585,15 @@ def main() -> None:
     parser.add_argument("--max-wall-seconds", type=float, default=180.0)
     parser.add_argument("--opt-in", action="store_true")
     args = parser.parse_args()
-    run(args.stage, args.output, root=args.root_seed, replications=args.replications,
-        max_evaluations=args.max_evaluations, max_wall_seconds=args.max_wall_seconds, opt_in=args.opt_in)
+    run(
+        args.stage,
+        args.output,
+        root=args.root_seed,
+        replications=args.replications,
+        max_evaluations=args.max_evaluations,
+        max_wall_seconds=args.max_wall_seconds,
+        opt_in=args.opt_in,
+    )
 
 
 if __name__ == "__main__":

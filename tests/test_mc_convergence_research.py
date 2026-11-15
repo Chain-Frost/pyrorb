@@ -78,26 +78,25 @@ def test_complete_unequal_strata_and_exact_finite_tp() -> None:
     assert edges[-1] == 1
     assert edges[1] - edges[0] != pytest.approx(edges[3] - edges[2])
     for method in ("random_tp", "paired_tp"):
-        peaks = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
-                                tp_method=method)
+        peaks = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method=method)
         assert set(peaks) == {"zero_atom", "near_tie"}
         assert all(len(values) == 20 for values in peaks.values())
         for values in peaks.values():
             assert sum(weight for _, weight in values) == pytest.approx(1.0)
-    first = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
-                            tp_method="random_tp")
-    repeat = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4,
-                             tp_method="random_tp")
-    changed = mc.trial_peaks(root=9, stage="test", replication=1, duration="short", strata=5, n=4,
-                              tp_method="random_tp")
+    first = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method="random_tp")
+    repeat = mc.trial_peaks(root=9, stage="test", replication=0, duration="short", strata=5, n=4, tp_method="random_tp")
+    changed = mc.trial_peaks(
+        root=9, stage="test", replication=1, duration="short", strata=5, n=4, tp_method="random_tp"
+    )
     assert first == repeat
     assert first != changed
 
 
 def test_envelope_uses_each_duration_and_all_sites() -> None:
     mc = _research()
-    rows = mc.one_trial(root=7, stage="test", replication=0, strata=5, n=4,
-                        tp_method="random_tp", quantile_method="rank")
+    rows = mc.one_trial(
+        root=7, stage="test", replication=0, strata=5, n=4, tp_method="random_tp", quantile_method="rank"
+    )
     assert len(rows) == 2 * 4 * 3
     for site in mc.RESPONSES:
         for aep in mc.AEPS:
@@ -121,8 +120,22 @@ def test_smoke_writes_immutable_replay_receipts(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError):
         mc.run("smoke", output, root=123, replications=2, max_evaluations=80, max_wall_seconds=30, opt_in=False)
     with pytest.raises(ValueError, match="require --opt-in"):
-        mc.run("pilot", tmp_path / "pilot", root=123, replications=2, max_evaluations=77000,
-               max_wall_seconds=30, opt_in=False)
+        mc.run(
+            "pilot",
+            tmp_path / "pilot",
+            root=123,
+            replications=2,
+            max_evaluations=77000,
+            max_wall_seconds=30,
+            opt_in=False,
+        )
     with pytest.raises(ValueError, match="exceeds"):
-        mc.run("smoke", tmp_path / "over-budget", root=123, replications=2, max_evaluations=79,
-               max_wall_seconds=30, opt_in=False)
+        mc.run(
+            "smoke",
+            tmp_path / "over-budget",
+            root=123,
+            replications=2,
+            max_evaluations=79,
+            max_wall_seconds=30,
+            opt_in=False,
+        )
