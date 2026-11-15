@@ -9,7 +9,6 @@ import runpy
 import shutil
 from collections import Counter
 from decimal import Decimal
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -231,12 +230,12 @@ def test_curated_one_case_and_timestep_snapshot_diagnosis(tmp_path: Path) -> Non
 
 @pytest.mark.parametrize(
     "case_id",
-    (
+    [
         "fig67-ilroc",
         "fig67-kc5-m1",
         "failure-m-above-one",
         "failure-m-below-one",
-    ),
+    ],
 )
 def test_original_feature_profile_q_study_retains_unadmitted_scalar_status(case_id: str) -> None:
     """Run the *existing* native-input/public-CMD comparator without promoting an original gap."""
@@ -281,7 +280,7 @@ def test_original_feature_profile_q_study_retains_unadmitted_scalar_status(case_
 
 @pytest.mark.parametrize(
     "case_id",
-    (
+    [
         "fig67-ilroc",
         "fig67-kc5-m1",
         "failure-m-above-one",
@@ -290,7 +289,7 @@ def test_original_feature_profile_q_study_retains_unadmitted_scalar_status(case_
         "failure-negative-reach",
         "failure-negative-reach-repeat",
         "fig67-code11",
-    ),
+    ],
 )
 def test_eight_original_capture_dispositions_remain_explicit_gaps(case_id: str) -> None:
     """Source preservation does not change membership in the 50-case numerical population."""
