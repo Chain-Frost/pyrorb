@@ -374,9 +374,9 @@ def test_original_pyromb_645_mode_zero_preserves_code2_impervious_and_graphical_
 
 def test_original_pyromb_and_pinned_pr16_export_differ_only_by_95_line_endings() -> None:
     historical, _register = _registered_pyromb_originals()
-    assert historical.count(b"\\r\\n") == 95
-    assert b"\\n" not in historical.replace(b"\\r\\n", b"")
-    recovered = historical.replace(b"\\r\\n", b"\\n")
+    assert historical.count(b"\r\n") == 95
+    assert b"\n" not in historical.replace(b"\r\n", b"")
+    recovered = historical.replace(b"\r\n", b"\n")
     assert len(recovered) == 2818
     assert hashlib.sha256(recovered).hexdigest() == (
         "67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815"
@@ -388,13 +388,13 @@ def test_original_pyromb_and_pinned_pr16_export_differ_only_by_95_line_endings()
 
 
 @pytest.mark.parametrize("section", ["#NODES", "#REACHES"])
-@pytest.mark.parametrize("padding", ["  ", "\\t"])
+@pytest.mark.parametrize("padding", ["  ", "\t"])
 def test_graphical_645_padded_section_marker_is_accepted_without_traceback(section: str, padding: str) -> None:
     historical, _register = _registered_pyromb_originals()
-    marker = f"C {section}\\r\\n"
+    marker = f"C {section}\r\n"
     source = historical.decode("utf-8")
     assert source.count(marker) == 1
-    changed = source.replace(marker, f"{padding}C {section}{padding}\\r\\n", 1).encode("utf-8")
+    changed = source.replace(marker, f"{padding}C {section}{padding}\r\n", 1).encode("utf-8")
     assert changed != historical
     parsed = parse_catg(changed)
     assert original_bytes(parsed) == changed
