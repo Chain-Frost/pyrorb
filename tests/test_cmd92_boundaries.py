@@ -61,7 +61,7 @@ def test_positive_nonunit_m_is_preserved_at_typed_cmd_boundary(tmp_path: Path, e
     # Typed source admission is distinct from executing and qualifying native CMD m>1.
 
 
-@pytest.mark.parametrize("length", [Decimal(0), Decimal("-1")])
+@pytest.mark.parametrize("length", [Decimal(0), Decimal(-1)])
 def test_nonpositive_reaches_rejected_by_s1_without_guessing_native_outcome(length: Decimal) -> None:
     with pytest.raises(ValueError, match="positive"):
         Reach("bad", length)
@@ -69,7 +69,7 @@ def test_nonpositive_reaches_rejected_by_s1_without_guessing_native_outcome(leng
 
 def test_zero_m_is_rejected_at_typed_domain_not_silently_routed() -> None:
     with pytest.raises(ValueError, match="positive"):
-        RoutingValue(1, Decimal("5"), Decimal(0))
+        RoutingValue(1, Decimal(5), Decimal(0))
 
 
 def test_default_zero_storage_is_not_equivalent_to_zero_exponent() -> None:
