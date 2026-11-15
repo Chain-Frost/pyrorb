@@ -117,8 +117,10 @@ def _check_scope(loaded: LoadedProject) -> None:
         _unsupported("cmd_storm", "Only one DESIGN pluviograph, ISA and burst is characterised")
     if catchment.storages:
         _unsupported("cmd_storages", "Special storages are not characterised")
-    if len(catchment.print_locations) != 1 or sum(step.code == 7 for step in catchment.controls) != 1:
-        _unsupported("cmd_print_sites", "Only a single final physical print location is characterised")
+    if not catchment.print_locations or sum(step.code == 7 for step in catchment.controls) != len(
+        catchment.print_locations
+    ):
+        _unsupported("cmd_print_sites", "Every code-7 print needs a distinct explicit physical site")
     if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7) for step in catchment.controls):
         _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
     if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
@@ -184,7 +186,26 @@ def run_cmd_model(
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_horizon", "CMD backend returned a truncated horizon")
     if len(result.network.reaches) != event.reach_count:
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_reach_count", "CMD backend omitted a physical reach")
-    print_location = loaded.run.catchment.print_locations[0]
+    print_locations = loaded.run.catchment.print_locations
+    if len(result.network.prints) != len(print_locations) or any(
+        len(record.q) != event.n + 1 for record in result.network.prints
+    ):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated"
+        )
+    if any(not math.isfinite(value) or value < 0 for record in result.network.prints for value in record.q):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_values", "Computed physical print contains non-finite or negative discharge"
+        )
+    expected_print_positions = tuple(
+        index for index, step in enumerate(loaded.run.catchment.controls, start=1) if step.code == 7
+    )
+    if tuple(record.control_index_one_based for record in result.network.prints) != expected_print_positions:
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_order", "Computed prints no longer follow original code-7 control order"
+        )
+    if result.network.prints[-1].q != result.network.outlet:
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_final_print", "Final print does not match connected outlet")
     reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
     per_reach: list[dict[str, object]] = []
     for reach, reach_id in zip(result.network.reaches, reach_ids, strict=True):
@@ -241,6 +262,17 @@ def run_cmd_model(
         "model_input_sha256": event.input_sha256,
         "ordered_source_ids": source_ids,
         "ordered_reach_ids": reach_ids,
+        "print_sites": tuple(
+            {
+                "print_id": location.identifier,
+                "label": location.label,
+                "control_index_one_based": record.control_index_one_based,
+                "source_membership_one_based": record.membership,
+                "source_membership_ids": tuple(source_ids[index - 1] for index in record.membership),
+                "Q_m3_s_stored": record.q,
+            }
+            for location, record in zip(print_locations, result.network.prints, strict=True)
+        ),
         "source_rainfall_mm_stored": result.preparation.rain,
         "source_rainfall_excess_mm_stored": result.preparation.excess,
         "source_inflow_m3_s_stored": result.preparation.hydrographs,
@@ -251,7 +283,10 @@ def run_cmd_model(
         "native_reporting_and_physical_conservation": "not_assessed_for_this_public_source_or_wheel",
     }
     return CmdComputed(
-        (EngineHydrograph(print_location.identifier, print_location.label, result.network.outlet),),
+        tuple(
+            EngineHydrograph(location.identifier, location.label, record.q)
+            for location, record in zip(print_locations, result.network.prints, strict=True)
+        ),
         tuple(str(index * loaded.run.storm.timestep_hours) for index in range(event.n + 1)),
         diagnostics,
     )

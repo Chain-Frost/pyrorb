@@ -157,9 +157,18 @@ def result_dict(result: CandidateResult) -> dict[str, Any]:
                 for c in prep.crossings
             ],
             "duration_seconds": _stored(prep.seconds),
-            "continuing_allowance_exact": _rational(prep.continuing_allowance),
+            "continuing_allowance_exact": _rational(prep.continuing_allowance) if event.loss_model == 1 else None,
+            "runoff_coefficient_stored": _stored(event.cl.stored) if event.loss_model == 2 else None,
         },
         "reaches": reach_results,
+        "prints": [
+            {
+                "control_index_one_based": recorded.control_index_one_based,
+                "source_membership_one_based": list(recorded.membership),
+                "Q": [_stored(value) for value in recorded.q],
+            }
+            for recorded in network.prints
+        ],
         "outlet": [_stored(x) for x in network.outlet],
         "unvalidated_native_metrics": ["exact-ties/subprint-time", "physical-conservation"],
     }
