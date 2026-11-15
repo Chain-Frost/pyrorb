@@ -106,7 +106,8 @@ def test_imported_independent_dispatch_does_not_use_compatible_backend(
     """The typed code-2/FI project must use the independent solver, not CMD precision."""
 
     def reject_cmd_dispatch(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("Explicit python import must not call the CMD-compatible backend")
+        message = "Explicit python import must not call the CMD-compatible backend"
+        raise AssertionError(message)
 
     monkeypatch.setattr("runoff_routing.engine_execution.run_cmd_model", reject_cmd_dispatch)
     model = _imported_model(runoff_coefficient=True)
