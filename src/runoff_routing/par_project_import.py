@@ -57,7 +57,7 @@ def _reference_path(token: str, *, role: InputRole, base: Path, override_flag: s
 def _selected_input(
     role: Literal["catchment", "storm"], declared: str, explicit: Path | None, base: Path
 ) -> SelectedSource:
-    from .project_json import ProjectError, _read_bounded  # noqa: PLC0415 -- filesystem adapter boundary
+    from .project_json import ProjectError, read_bounded_source_bytes  # noqa: PLC0415 -- filesystem adapter boundary
 
     selected = str(explicit) if explicit is not None else declared
     origin: InputOrigin = "override" if explicit is not None else "embedded"
@@ -70,7 +70,7 @@ def _selected_input(
         )
         raise ProjectError(message)
     try:
-        contents = _read_bounded(path)
+        contents = read_bounded_source_bytes(path)
     except ProjectError as exc:
         message = f"Cannot read {role} input: declared {declared!r}, selected {selected!r}; use {flag} FILE: {exc}"
         raise ProjectError(message) from exc
@@ -109,7 +109,7 @@ def _stage_selected(
         Project,
         SourceBinding,
         SourceFile,
-        _safe_relative,
+        validate_portable_source_path,
     )
 
     records: list[tuple[SelectedSource, SourceFile]] = []
@@ -117,7 +117,7 @@ def _stage_selected(
         role, _, _, _, path, raw = source
         suffix = ".par" if role == "parameters" else path.suffix.lower()
         relative = f"sources/{destination.stem}/{role}{suffix}"
-        _safe_relative(relative)
+        validate_portable_source_path(relative)
         pinned = SourceFile(relative, hashlib.sha256(raw).hexdigest())
         records.append((source, pinned))
 
@@ -151,7 +151,7 @@ def import_from_par(
     base_directory: Path | None,
 ) -> Project:
     """Inspect PAR, choose its complete input closure, then stage exact bytes."""
-    from .project_json import ProjectError, _read_bounded  # noqa: PLC0415 -- entrypoint defines project model
+    from .project_json import ProjectError, read_bounded_source_bytes  # noqa: PLC0415 -- entrypoint defines project model
 
     destination = target.absolute()
     root = destination.parent
@@ -161,7 +161,7 @@ def import_from_par(
     if destination.exists() or destination.is_symlink():
         raise FileExistsError(destination)
     par_path = parameters.absolute()
-    par_data = _read_bounded(par_path)
+    par_data = read_bounded_source_bytes(par_path)
     inspection = inspect_par_bytes(par_data, source_path=par_path)
     if inspection.status != "parsed" or inspection.parameters is None:
         diagnostic = inspection.diagnostics[0]

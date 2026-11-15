@@ -455,6 +455,16 @@ def _read_bounded(path: Path) -> bytes:
     return contents
 
 
+def read_bounded_source_bytes(path: Path) -> bytes:
+    """One shared bounded raw byte reader for PAR-led import; no parsing."""
+    return _read_bounded(path)
+
+
+def validate_portable_source_path(path: str) -> None:
+    """Reuse project portability and path rules at import/staging boundaries."""
+    _safe_relative(path)
+
+
 def _source_bytes(directory: Path, reference: SourceFile) -> bytes:
     """Resolve symlinks deliberately for containment; retain source spelling."""
     base = directory.resolve(strict=True)
