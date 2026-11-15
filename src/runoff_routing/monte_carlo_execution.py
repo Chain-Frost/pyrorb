@@ -103,10 +103,9 @@ def _fixed_parameters(record: EffectiveMCEvent, loaded: LoadedProject) -> None:
     if losses is None or storm is None:
         message = "Explicit storm and losses required"
         raise MCRunError(message)
-    if (
-        Decimal(cast("str", losses["continuing"])) != loaded.run.parameters.losses[0].continuing
-        or len(cast("list[object]", storm["depths_mm"])) != len(loaded.run.storm.subarea_ids)
-    ):
+    if Decimal(cast("str", losses["continuing"])) != loaded.run.parameters.losses[0].continuing or len(
+        cast("list[object]", storm["depths_mm"])
+    ) != len(loaded.run.storm.subarea_ids):
         message = "MC subset fixes continuing loss and pervious subarea source population"
         raise MCRunError(message)
 
@@ -149,8 +148,9 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
     status = result.status
     diagnostics = [{"code": item.code, "message": item.message} for item in result.diagnostics]
     if status == _STATUS_OK:
-        if (len(result.hydrographs) != len(result.requested_print_ids)
-            or {item.print_id for item in result.hydrographs} != set(result.requested_print_ids)):
+        if len(result.hydrographs) != len(result.requested_print_ids) or {
+            item.print_id for item in result.hydrographs
+        } != set(result.requested_print_ids):
             status = "incomplete_output"
             diagnostics.append({"code": "mc_missing_site", "message": "Missing or duplicate requested output site"})
         for graph in result.hydrographs:
@@ -275,11 +275,16 @@ def summarise_ledger(path: Path, request_path: Path, expected: dict[str, object]
             raise MCRunError(message)
         counts[status] += 1
         sites = record["sites"]
-        if status == _STATUS_OK and isinstance(sites, list) and sites and all(
-            isinstance(site, dict) and site.get("peak_m3_s") == 0 for site in sites
+        if (
+            status == _STATUS_OK
+            and isinstance(sites, list)
+            and sites
+            and all(isinstance(site, dict) and site.get("peak_m3_s") == 0 for site in sites)
         ):
             zeros += 1
-    return MCRunSummary(int(cast("int", expected["expected_event_count"])), completed, dict(sorted(counts.items())), zeros)
+    return MCRunSummary(
+        int(cast("int", expected["expected_event_count"])), completed, dict(sorted(counts.items())), zeros
+    )
 
 
 def execute_mc_request(
@@ -351,7 +356,9 @@ def replay_mc_event(
     loaded = load_project(project_path)
     _project_subset(loaded)
     selected = loaded.project.engine if selection is None else selection
-    expected = _header(loaded, request_hash, selection=selected, wheel_artifact=wheel_artifact, request_path=request_path)
+    expected = _header(
+        loaded, request_hash, selection=selected, wheel_artifact=wheel_artifact, request_path=request_path
+    )
     _existing_prefix(ledger_path, expected, request_path)
     match: EffectiveMCEvent | None = None
     for item in iter_effective_events(request_path):
@@ -416,20 +423,27 @@ def main(argv: list[str] | None = None) -> int:
         if args.numerical_profile is not None and args.engine is None:
             message = "--numerical-profile requires --engine"
             raise MCRunError(message)
-        selected = (
-            EngineSelection.for_engine(args.engine, args.numerical_profile) if args.engine is not None else None
-        )
+        selected = EngineSelection.for_engine(args.engine, args.numerical_profile) if args.engine is not None else None
         if args.command == "run":
             report = execute_mc_request(
-                args.project, args.request, args.ledger,
-                resume=args.resume, selection=selected, wheel_artifact=args.wheel_artifact,
+                args.project,
+                args.request,
+                args.ledger,
+                resume=args.resume,
+                selection=selected,
+                wheel_artifact=args.wheel_artifact,
             )
             print(report.to_text(), end="")
             return 0 if report.complete else 2
         if args.command == "replay":
             report = replay_mc_event(
-                args.project, args.request, args.ledger, args.sample_id, args.output_prefix,
-                selection=selected, wheel_artifact=args.wheel_artifact,
+                args.project,
+                args.request,
+                args.ledger,
+                args.sample_id,
+                args.output_prefix,
+                selection=selected,
+                wheel_artifact=args.wheel_artifact,
             )
             print(report.to_text(), end="")
             return 0 if report.succeeded else 2

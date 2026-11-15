@@ -102,9 +102,9 @@ def _line_json(raw: bytes) -> object:
 
 
 def _json_line(value: object) -> bytes:
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode(
-        "utf-8"
-    )
+    return (
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+    ).encode("utf-8")
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,8 +303,11 @@ def read_header(path: Path) -> MCRequestHeader:
         {"format", "schema_version", "plan_sha256", "policy_id", "source_files", "populations", "event_count"},
         "MC header",
     )
-    if (data["format"] != EFFECTIVE_FORMAT or type(data["schema_version"]) is not int
-        or data["schema_version"] != EFFECTIVE_VERSION):
+    if (
+        data["format"] != EFFECTIVE_FORMAT
+        or type(data["schema_version"]) is not int
+        or data["schema_version"] != EFFECTIVE_VERSION
+    ):
         _fail("Unknown MC effective-event schema/format")
     raw_sources = data["source_files"]
     raw_populations = data["populations"]
@@ -320,8 +323,12 @@ def read_header(path: Path) -> MCRequestHeader:
     populations = tuple(
         MCPopulation(
             _id(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"),
-            _int(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["duration_min"], "duration"),
-            _decimal(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["modelled_mass"], "mass"),
+            _int(
+                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["duration_min"], "duration"
+            ),
+            _decimal(
+                _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["modelled_mass"], "mass"
+            ),
         )
         for item in raw_populations
     )
@@ -336,9 +343,22 @@ def read_header(path: Path) -> MCRequestHeader:
 
 def _event_from_dict(raw: object) -> EffectiveMCEvent:
     keys = {
-        "sample_id", "scenario_id", "duration_min", "stratum_id", "stratum_mass", "stratum_size",
-        "probability_weight", "original_tp_id", "original_tp_order", "rainfall_aep_percent",
-        "gross_depth_mm", "arf_factor", "storm_initial_loss_mm", "preburst_depth_mm", "loss_policy", "event",
+        "sample_id",
+        "scenario_id",
+        "duration_min",
+        "stratum_id",
+        "stratum_mass",
+        "stratum_size",
+        "probability_weight",
+        "original_tp_id",
+        "original_tp_order",
+        "rainfall_aep_percent",
+        "gross_depth_mm",
+        "arf_factor",
+        "storm_initial_loss_mm",
+        "preburst_depth_mm",
+        "loss_policy",
+        "event",
     }
     item = _obj(raw, keys, "effective MC event")
     event = _obj(item["event"], {"event_id", "storm", "losses"}, "project event")
