@@ -1,0 +1,9 @@
+{
+  "format": "python-runoff-routing-explicit-events",
+  "schema_version": 1,
+  "events": [
+    {"event_id": "base"},
+    {"event_id": "unsupported_source_order", "storm": {"subarea_ids": ["another_area"]}},
+    {"event_id": "wet", "storm": {"depths_mm": ["25.0"]}}
+  ]
+}

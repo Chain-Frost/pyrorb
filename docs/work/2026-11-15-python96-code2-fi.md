@@ -31,3 +31,10 @@ The accepted old 36-case approximately 0.3% hydrograph/0.805% volume diagnostics
 **Remaining dependency:** C integrates explicit natural reach/control-2/FI and relative-weight STM source recognition; A later maps those typed S1 operands into the independent default S2 adapter **without borrowing** `_cmd644` precision kernels. The programme owner maintains only `docs/CMD_FEATURE_MATRIX.md`; B/E qualify original reports and any PR16 export fixtures under the one immutable public register. Keep #96/#5 open, no automatic merge, RORBwin work, release or publication.
 
 Exact-head Windows/Python 3.13 source + installed-wheel CI and independent review to be recorded only after checks actually run.
+
+
+## Reconciliation with current main (2026-11-15)
+
+- Reconcile the existing independent S2 code-2/FI implementation onto #110's current `python/engineering-v1` base. Main's merged #132 typed source, #119 immutable batch preparation, #130 temporary compatible default, #135 reporting fix, and #136 design preparation are retained rather than recreated.
+- Direct S2 kernel and authored tests are **software method controls**, not proof of imported-model execution or native numeric parity. A separate follow-on commit adds the narrow existing typed-S1-to-S2 admission and file-backed/batch tests. The old exact-head CI receipts above apply to the *historical* head, not this reconciliation.
+- Source/parser and common shared typed contracts remain owned by #96 and #138 respectively. No CMD stored-precision kernel import or change to default selection.

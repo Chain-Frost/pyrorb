@@ -31,7 +31,18 @@ from .rorb_codec import (
     write_new,
 )
 from .rorb_model import CatchmentModel, ParameterSet, RunModel, StormModel, from_json
-from .single_storm import Catchment, Control, ControlCode, Losses, Storm, StormResult, calculate_storm
+from .single_storm import (
+    Catchment,
+    Control,
+    ControlCode,
+    Losses,
+    PreparedCatchment,
+    Storm,
+    StormResult,
+    calculate_prepared_storm,
+    calculate_storm,
+    prepare_catchment,
+)
 
 InputStatus = Literal["invalid", "unsupported"]
 InputRole = Literal["parameters", "catchment", "storm", "run"]
@@ -238,7 +249,25 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
     return catchment, storm, losses, payload.kc, payload.m
 
 
-def run_model(model: RunModel) -> RunResult:
+def prepare_run_model(model: RunModel) -> PreparedCatchment:
+    """Resolve fixed S1 geometry and routing coefficients for in-memory event batches.
+
+    A prepared catchment is immutable. Event rainfall, losses, routing and
+    hydrograph state are never cached; supported event validation remains in
+    run_model, including when a prepared catchment is supplied.
+    """
+    catchment, _storm, _losses, kc, m = _validated_solver_inputs(model)
+    try:
+        return prepare_catchment(catchment, kc=kc, m=m)
+    except (RoutingNumericalError, ArithmeticError) as exc:
+        error = RunInputError("unsupported", "solver_numerical", str(exc))
+        raise error from exc
+    except (RoutingDomainError, ValueError) as exc:
+        error = RunInputError("unsupported", "solver_domain", str(exc))
+        raise error from exc
+
+
+def run_model(model: RunModel, *, prepared: PreparedCatchment | None = None) -> RunResult:
     """Execute only S1-validated, S2-supported models; no native engine or I/O.
 
     Unsupported configurations raise RunInputError *before* calculation.
@@ -246,8 +275,15 @@ def run_model(model: RunModel) -> RunResult:
     print-time offsets or hidden routing conventions are guessed.
     """
     catchment, storm, losses, kc, m = _validated_solver_inputs(model)
+    if prepared is not None and (prepared.catchment != catchment or prepared.kc != kc or prepared.m != m):
+        error = RunInputError("invalid", "prepared_mismatch", "Prepared geometry or routing parameters differ")
+        raise error
     try:
-        numerical = calculate_storm(catchment, storm, losses=losses, kc=kc, m=m)
+        numerical = (
+            calculate_storm(catchment, storm, losses=losses, kc=kc, m=m)
+            if prepared is None
+            else calculate_prepared_storm(prepared, storm, losses=losses)
+        )
     except (RoutingNumericalError, ArithmeticError) as exc:
         error = RunInputError("unsupported", "solver_numerical", str(exc))
         raise error from exc

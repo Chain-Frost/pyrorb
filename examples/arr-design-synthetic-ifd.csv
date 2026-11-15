@@ -1,0 +1,10 @@
+IFD Design Rainfall Depth (mm)
+Issued:,15 November 2026
+Location Label:,SYNTHETIC EXAMPLE ONLY
+Requested coordinate:,Latitude,-30.00500,Longitude,150.100
+Nearest grid cell:,Latitude,30.00500 (S),Longitude,150.100 (E)
+
+,,Annual Exceedance Probability (AEP)
+Duration,Duration in min,1%,2%
+1 hour,60,12,10
+2 hour,120,14,12

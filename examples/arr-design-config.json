@@ -1,0 +1,17 @@
+{
+  "format": "python-runoff-routing-arr2019-design",
+  "schema_version": 1,
+  "project": "../cmd-example-project.json",
+  "bom_ifd": "arr-design-synthetic-ifd.csv",
+  "temporal_patterns": "arr-design-synthetic-patterns.csv",
+  "pattern_kind": "point",
+  "temporal_region": "SyntheticPoint",
+  "arf_region": "South-West Western Australia",
+  "catchment_area_km2": "2",
+  "durations_min": [60, 120],
+  "aep_labels": ["1%", "2%"],
+  "dry_tail_min": 120,
+  "engine": "python-cmd",
+  "numerical_profile": "cmd-6.44",
+  "loss": {"mode": "project_il_cl"}
+}

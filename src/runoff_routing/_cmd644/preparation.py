@@ -1,9 +1,9 @@
-"""Per-source rainfall and IL/CL state transitions for the bounded start-zero event."""
+"""Per-source rainfall and distinct IL/CL or IL/RoC transitions."""
 
 from dataclasses import dataclass
 from fractions import Fraction
 
-from .models import Event
+from .models import Event, NumberInput
 from .precision import (
     UnsupportedNumericPath,
     add53,
@@ -39,6 +39,21 @@ class Preparation:
     continuing_allowance: Fraction
 
 
+def _pervious_fraction(value: NumberInput, source_id: int) -> Fraction:
+    """Reject impossible direct-kernel FI values before loss transitions."""
+    if not 0 <= value.stored <= 1:
+        message = f"source {source_id}: impervious fraction outside [0, 1]"
+        raise UnsupportedNumericPath(message)
+    return sub53(Fraction(1), fraction(value.stored))
+
+
+def _effective_excess(after: float, allowance: Fraction, coefficient: float, mode: int) -> float:
+    """Keep the two different loss formulations separate from the source loop."""
+    if mode == 2:
+        return store_rational(mul53(fraction(after), fraction(coefficient)))
+    return store_rational(max(Fraction(), sub53(fraction(after), allowance)))
+
+
 def prepare(event: Event) -> Preparation:
     """Apply C06-C10 with separately rounded p53 operations and source ownership."""
     total = Fraction()
@@ -53,7 +68,10 @@ def prepare(event: Event) -> Preparation:
         message = "stored timestep duration nonpositive"
         raise UnsupportedNumericPath(message)
     reciprocal_duration = div53(Fraction(1), fraction(duration))
-    allowance = mul53(fraction(event.cl.stored), fraction(event.h.stored))
+    if event.loss_model == 2 and not 0.0 <= event.cl.stored <= 1.0:
+        message = "runoff coefficient must be a fraction in [0, 1]"
+        raise UnsupportedNumericPath(message)
+    allowance = mul53(fraction(event.cl.stored), fraction(event.h.stored)) if event.loss_model == 1 else Fraction()
     all_rain: list[tuple[float, ...]] = []
     all_post: list[tuple[float, ...]] = []
     all_excess: list[tuple[float, ...]] = []
@@ -64,7 +82,7 @@ def prepare(event: Event) -> Preparation:
         zip(event.areas, event.depths, event.impervious, strict=True), 1
     ):
         flow_scale = mul53(mul53(Fraction(1000), fraction(area.stored)), reciprocal_duration)
-        pervious = sub53(Fraction(1), fraction(impervious.stored))
+        pervious = _pervious_fraction(impervious, source_index)
         remaining = mul53(pervious, fraction(event.il.stored))
         effective_allowance = mul53(allowance, pervious)
         crossed = False
@@ -92,7 +110,7 @@ def prepare(event: Event) -> Preparation:
                     if remaining == 0:
                         equality_bins.append(bin_index)
             post.append(after)
-            excess_amount = store_rational(max(Fraction(), sub53(fraction(after), effective_allowance)))
+            excess_amount = _effective_excess(after, effective_allowance, event.cl.stored, event.loss_model)
             excess.append(excess_amount)
             flow.append(store_rational(mul53(fraction(excess_amount), flow_scale)))
         flow.extend(0.0 for _ in range(event.n - len(event.weights)))

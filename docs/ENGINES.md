@@ -6,9 +6,11 @@ or launched for normal Python use, inspection, installation or CI.
 
 | Engine | Selection | Availability / numerical qualification | Supported inputs | Outputs |
 | --- | --- | --- | --- | --- |
-| `python` | Default; `engineering-v1` | Working S1/S2 single-event Python calculations; scientifically unaccepted pending #6 | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
-| `python-cmd` | Explicit; `cmd-6.44` | Bounded integrated candidate; **public source/wheel native acceptance outstanding** | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
+| `python` | Explicit for now; intended future default; `engineering-v1` | Accepted bounded method and explicit-event batches (#6 closed, #97/#99/#101/#102); deferred residual #103, not full scientific qualification | Embedded or original file-backed S1 model, explicit DESIGN storm, supported one-ISA/pervious domain | Full ordered discharge, model-elapsed physical hours (starting 0), available Python numerical diagnostics |
+| `python-cmd` | **Temporary default**; `cmd-6.44` | Merged bounded #79; independently verified #100 source/installed-wheel 36-case printed and scalar CMD comparison with 14 source exclusions; full feature/physical qualification #5 open | Typed explicit DESIGN storm, pervious IL/CL, lumped kc, one ISA/burst, one terminal print | Complete computed hydrograph and isolated CMD internal diagnostics; no full native equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
+
+The next supported common-model delivery is [CLI/text-file MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119), with the finite selected five-case original CMD reference seed in [the public backlog](BACKLOG.md). The current table states **implemented boundaries**, not a promise that batch-compatible `python-cmd`, full CSV/JSON/text CLI or PR16 code-2/impervious import is already qualified. Advanced #114–#118 are post-MVP; #96 is the current ordinary PyRomb target. No GUI or general native investigation is in scope.
 
 ## JSON schema and selection
 
@@ -16,11 +18,14 @@ Project **schema 2** adds a required top-level field independent of
 `rainfall_profile`:
 
 ```json
-"engine": {"id": "python", "numerical_profile": "engineering-v1"}
+"engine": {"id": "python-cmd", "numerical_profile": "cmd-6.44"}
 ```
 
-Schema-1 files lacking this field still load as `python/engineering-v1`; the next
-serialisation writes schema 2. An unknown engine, profile or field fails closed.
+Newly constructed schema-2 projects temporarily default to `python-cmd/cmd-6.44`.
+Schema-1 files without an engine preserve their historical implicit
+`python/engineering-v1` choice; migration does **not** silently change
+computation. The intended long-term default remains the improved `python` engine.
+The next serialisation writes schema 2. An unknown engine, profile or field fails closed.
 A project does not store an executable path.
 
 `run_engine_project(path)` honours the stored selection. Explicit
@@ -39,10 +44,10 @@ from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import CAPABILITIES, EngineSelection
 
 project_path = Path("project.json")
-result = run_engine_project(project_path)  # stored engine, python for migrated projects
+result = run_engine_project(project_path)  # stored engine, as recorded in this project
 other = run_engine_project(
     project_path,
-    selection=EngineSelection.for_engine("python-cmd", "cmd-6.44"),
+    selection=EngineSelection.for_engine("python", "engineering-v1"),
 )
 assert other.status == "computed_unvalidated"  # computation only; public native parity unassessed
 print(result.to_json(), [item.engine for item in CAPABILITIES])
@@ -82,8 +87,8 @@ assert len(cmd.hydrographs[0].discharge_m3_s) == 6
 ## CLI
 
 ```powershell
-py -3.14 -m runoff_routing.project_json run project.json python-result.json
-py -3.14 -m runoff_routing.project_json run project.json cmd-attempt.json --engine python-cmd --numerical-profile cmd-6.44
+py -3.14 -m runoff_routing.project_json run project.json cmd-result.json
+py -3.14 -m runoff_routing.project_json run project.json python-result.json --engine python --numerical-profile engineering-v1
 py -3.14 -m runoff_routing.project_json run project.json native-result.json --engine rorb-cmd --numerical-profile cmd-6.44 --native-config local-cmd.json
 py -3.14 -m runoff_routing.project_json run --help
 ```
@@ -206,11 +211,7 @@ observed native states. Exact ties/sub-print times and network conservation
 are not accepted by this integration.
 
 Contract/source tests use manufactured process stubs; ordinary tests, wheel
-checks, and hosted Windows CI **do not launch RORB**. An installed-wheel,
-real-Windows CMD 6.44 acceptance run remains a separate opt-in local gate.
+checks, and hosted Windows CI **do not launch RORB**. Fresh actual source and out-of-tree installed-wheel printed/scalar verification already passed through merged #100. New native CMD 6.44 observations require a separately scoped local check for a concrete unresolved feature; ordinary tests do not launch RORB.
 A real CMD success does not imply Python equivalence or prove print-site mapping.
 
-**Coordination:** #75 owns CMD source/wheel native replay and bounded event extensions;
-#6 owns engineering method/accuracy and batch optimisation; the offline
-regression owner owns case schema, native reference choices and comparison
-policies. Engine code does not redefine these policies or regenerate baselines.
+**Coordination:** bounded compatible #75/#79 and maintained regression #100 are delivered. Open CMD feature requirements are #90–#96 under #5; #103 retains deferred default physical/volume qualification after bounded #6 closure. The maintained regression owner controls case bindings, native references and frozen comparison policies. Engine code does not redefine these policies or regenerate baselines.
