@@ -42,7 +42,9 @@ def test_canonical_reader_preserves_native_bytes_and_one_based_report(tmp_path: 
     assert [row.increment for row in inspected.hydrographs.rows] == [1, 2, 3]
     assert [row.raw_time for row in inspected.hydrographs.rows] == ["0.50", "1.00", "1.50"]
     assert [row.time_hours for row in inspected.hydrographs.rows] == [
-        Decimal("0.50"), Decimal("1.00"), Decimal("1.50"),
+        Decimal("0.50"),
+        Decimal("1.00"),
+        Decimal("1.50"),
     ]
     assert inspected.hydrographs.rows[1].values[0] == Decimal("12.345000")
     assert inspected.hydrographs.time_increment_hours == Decimal("0.50")

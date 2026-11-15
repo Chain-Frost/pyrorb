@@ -129,8 +129,7 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
         message = "Canonical hydrograph scope differs from the selected report"
         raise ValueError(message)
     if len(hydrographs[0].rows) != len(report.rows) or any(
-        hydrographs[0].source_tokens[i]["Time"] != item.raw_time
-        for i, item in enumerate(report.rows)
+        hydrographs[0].source_tokens[i]["Time"] != item.raw_time for i, item in enumerate(report.rows)
     ):
         message = "Canonical report tokens differ from the selected hydrograph"
         raise ValueError(message)
@@ -138,10 +137,7 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
     if not site_section.valid:
         message = "Original site descriptions are invalid"
         raise ValueError(message)
-    labels = tuple(
-        (f"Hyd{int(str(row['id'])[3:]):03d}", str(row["description"]))
-        for row in site_section.rows
-    )
+    labels = tuple((f"Hyd{int(str(row['id'])[3:]):03d}", str(row["description"])) for row in site_section.rows)
     columns = tuple(f"Hyd{int(column[3:]):03d}" for column in report.columns)
     if tuple(name for name, _ in labels) != columns:
         message = "Native legend identity/order does not match actual table columns"

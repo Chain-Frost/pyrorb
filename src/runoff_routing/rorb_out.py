@@ -100,7 +100,10 @@ def inspect_output(source: RorbSource) -> Inspection:
             "output_report",
             "invalid",
             source,
-            (*diagnostics, Diagnostic("ambiguous_tables", "Multiple hydrograph tables need separate identities", "error")),
+            (
+                *diagnostics,
+                Diagnostic("ambiguous_tables", "Multiple hydrograph tables need separate identities", "error"),
+            ),
         )
     if canonical.status == "invalid" or not tables[0].valid:
         return Inspection("output_report", "invalid", source, tuple(diagnostics))
