@@ -256,7 +256,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         source_total = sum(model.storm.percentages, Decimal(0))
         for source, converted in zip(model.storm.percentages, payload.percentages, strict=True):
             source_share = source / source_total
-            converted_share = Decimal.from_float(converted / total_weights)
+            converted_share = Decimal(converted / total_weights)
             if source_share > 0 and abs(converted_share / source_share - 1) > Decimal("1e-12"):
                 message = "Relative storm weights lose their original proportions at the S2 float boundary"
                 error = RunInputError("unsupported", "storm_precision", message, role="storm")
