@@ -31,5 +31,13 @@
   "final_full_index": "254 files verified / 50 cases verified",
   "cached_snapshot": "expected exit 1; 48 pass / 2 incomplete, 19550 Q; unchanged historical candidate",
   "remote_refresh_before_publication": "e616d209ca363ca536fc026ba60d5a3caf1747ce; #128 merged concurrently; local calculation identities remain pinned above",
-  "installed_wheel_byte_verification": "verify_installed_wheel passed for both the baseline and #113 wheels"
+  "installed_wheel_byte_verification": "verify_installed_wheel passed for both the baseline and #113 wheels",
+  "prepared_main_plus_113_diagnostic": {
+    "main": "e616d209ca363ca536fc026ba60d5a3caf1747ce",
+    "feature_head": "ef8cb9afaa00476db26e0eb10fcbd4eda3f4a632",
+    "tree": "18c5e29fe9fa3280ec4f771f17e1f1b5a2be9d83",
+    "focused_tests": "66 passed / 8 failed",
+    "failure": "fault-injection damaged_execute/corrupted_execute wrappers reject new geometry keyword before intended negative controls",
+    "delivery": "local diagnostic tree only; implementation owner must reconcile wrappers and rerun exact combined-tree quality/source/wheel checks"
+  }
 }

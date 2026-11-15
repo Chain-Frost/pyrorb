@@ -188,6 +188,20 @@ or prepared-geometry implementation were changed. Integration of #113 and prepar
 multi-print/no-partial-output guards at the actual combined tree; no combined-tree acceptance is claimed.
 Default numerical work stays with #110/#125; compatible arithmetic was not copied into that engine.
 
+**Concrete prepared-geometry integration finding:** #113 still targets the stacked #108 branch,
+so its existing GitHub merge ref does not test the new MVP main. A local diagnostic-only
+`git merge-tree --write-tree` of `e616d209ca363ca536fc026ba60d5a3caf1747ce` and exact #113 produces
+tree **`18c5e29fe9fa3280ec4f771f17e1f1b5a2be9d83`** without textual conflicts. Its 74 focused tests
+give **66 pass / eight fail**. All eight failures are in #113's `damaged_execute` and
+`corrupted_execute` fault-injection wrappers: the retained prepared implementation calls
+`execute(..., geometry=...)`, but those wrappers accept only `(event, revision)` and raise
+`TypeError: unexpected keyword argument 'geometry'` before exercising their intended guards.
+This is a real integration-test blocker, not an observed hydrograph arithmetic failure.
+Numerical-owner action: accept and forward typed optional geometry in both wrappers, preserve all
+damage mutations and no-partial-Q/time assertions, then run the affected tests and exact combined
+source/wheel 50-case gate. Do not remove the new keyword, bypass the faults, or weaken the output guard.
+The local diagnostic tree was not pushed or merged into any implementation branch.
+
 Local quality before the two added evidence tests: Ruff 0.16.6, formatting, strict Pyright,
 **980 passed / one Windows symlink-capability skip**. Expanded fixture suite and final static checks
 are recorded in [validation.json](2026-11-15-native-closeout/validation.json).
