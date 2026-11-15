@@ -94,7 +94,7 @@ def _spec() -> dict[str, Any]:
         "fixed_parameters": [{"name": "kc", "value": "8", "unit": "model"}],
         "arf_policy": "fixed-catchment-one-application-by-execution-owner",
         "preburst_policy": "none-in-this-control",
-        "joint_policy": "conditional-TP-on-AEP; independent-storm-IL-for-synthetic-only",
+        "joint_policy": "conditional-tp-on-aep__independent-storm-il-v1",
     }
 
 
@@ -200,3 +200,12 @@ def test_independent_hmac_stream_and_immutable_extension() -> None:
     with pytest.raises(api.SamplePlanError):
         api.validate_sample_records(extended, first)
     api.validate_sample_records(extended, later)
+
+
+def test_unimplemented_correlated_initial_loss_is_rejected() -> None:
+    """A named but unimplemented conditional law must not fall back to independent losses."""
+    api = _sampler()
+    spec = _spec()
+    spec["joint_policy"] = "conditional-loss-from-rainfall-v1"
+    with pytest.raises(api.SamplePlanError, match="Unsupported joint_policy"):
+        api.SamplePlan.create(spec)
