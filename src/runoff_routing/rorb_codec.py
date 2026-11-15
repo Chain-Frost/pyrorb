@@ -226,20 +226,61 @@ def parse_cmd_par(data: bytes) -> ParsedDocument[ParameterSet]:
     return ParsedDocument("cmd_v2", source, model, spans)
 
 
+_GRAPHICAL_645_SECTIONS = (
+    "#FILE COMMENTS",
+    "#SUB-AREA AREA COMMENTS",
+    "#IMPERVIOUS FRACTION COMMENTS",
+    "#BACKGROUND IMAGE",
+    "#NODES",
+    "#REACHES",
+    "#STORAGES",
+    "#INFLOW/OUTFLOW",
+)
+
+
+def _validate_graphical_645(header: tuple[str, ...]) -> None:
+    """Recognise the original 6.45 *header only*; no numerical source inference."""
+    markers = tuple(line.strip()[2:] for line in header if line.strip().startswith("C #"))
+    if len(markers) != len(_GRAPHICAL_645_SECTIONS) or set(markers) != set(_GRAPHICAL_645_SECTIONS):
+        message = "Unknown, missing or repeated RORB_GE 6.45 graphical section"
+        raise _problem(message, unsupported=True)
+    for section in _GRAPHICAL_645_SECTIONS[:3]:
+        indices = [index for index, line in enumerate(header) if line.strip() == f"C {section}"]
+        if len(indices) != 1 or indices[0] + 1 >= len(header):
+            message = f"Missing graphical {section} count"
+            raise _problem(message)
+        location = indices[0] + 1
+        record = header[location].strip()
+        if not record.startswith("C "):
+            message = f"Malformed graphical {section} count"
+            raise _problem(message, location + 1)
+        if _integer(record[2:].strip(), location + 1) != 0:
+            message = f"Graphical {section} content is not characterised"
+            raise _problem(message, location + 1, unsupported=True)
+    index = next(i for i, line in enumerate(header) if line.strip() == "C #BACKGROUND IMAGE")
+    if index + 1 >= len(header) or re.fullmatch(r"C\s+T\s+F", header[index + 1].strip()) is None:
+        message = "Uncharacterised RORB_GE 6.45 background-image flags"
+        raise _problem(message, index + 2, unsupported=True)
+
+
 def _graphical(lines: tuple[str, ...]) -> tuple[int, tuple[str, ...]]:
-    """Validate marker/known nonzero storage features; never infer computational order from nodes."""
+    """Validate known graphical sections, never infer computational order from nodes."""
     versions = [
-        (index, line.strip()) for index, line in enumerate(lines) if re.fullmatch(r"C RORB_GE \d+", line.strip())
+        (index, line.strip())
+        for index, line in enumerate(lines)
+        if re.fullmatch(r"C RORB_GE \d+(?:\.\d+)?", line.strip())
     ]
     boundaries = [index for index, line in enumerate(lines) if line.strip() == "C END RORB_GE"]
-    if len(versions) != 1 or versions[0][1] != "C RORB_GE 002":
-        message = "Only a single RORB_GE 002 graphical header is characterised"
+    if len(versions) != 1 or versions[0][1] not in ("C RORB_GE 002", "C RORB_GE 6.45"):
+        message = "Only one RORB_GE 002 or original 6.45 graphical header is characterised"
         raise _problem(message, unsupported=True)
     if len(boundaries) != 1 or versions[0][0] >= boundaries[0]:
         message = "Missing or repeated RORB_GE completion marker"
         raise _problem(message)
     end = boundaries[0]
     header = lines[: end + 1]
+    if versions[0][1] == "C RORB_GE 6.45":
+        _validate_graphical_645(header)
     for section in ("#NODES", "#REACHES", "#STORAGES", "#INFLOW/OUTFLOW"):
         markers = [index for index, line in enumerate(header) if line.strip() == f"C {section}"]
         if len(markers) != 1 or markers[0] + 1 >= len(header):

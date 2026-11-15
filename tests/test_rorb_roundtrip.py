@@ -314,3 +314,58 @@ def test_code7_blank_physical_location_is_not_the_inline_annotation() -> None:
     assert parsed.model.controls[-1].label == "metadata only"
     assert b"7, metadata only\n\n0\n" in serialize_catg(parsed.model)
     assert parse_catg(serialize_catg(parsed.model)).model == parsed.model
+
+
+def _registered_pyromb_originals() -> tuple[bytes, dict[str, Any]]:
+    """Both PyRomb cases use one authenticated, unchanged original CATG."""
+    root = Path(__file__).parent / "fixtures" / "regression-v1"
+    register: dict[str, Any] = json.loads((root / "register.json").read_text(encoding="utf-8"))
+    cases = tuple(
+        next(item for item in register["cases"] if item["case_id"] == case_id)
+        for case_id in ("pyromb-pr2-full", "pyromb-novel-storm")
+    )
+    files = [
+        next(item for item in case["files"] if item["path"].endswith(".catg"))
+        for case in cases
+    ]
+    assert files[0] == files[1]
+    original = (root / files[0]["path"]).read_bytes()
+    assert hashlib.sha256(original).hexdigest() == files[0]["sha256"]
+    assert len(original) == files[0]["size_bytes"] == 2913
+    assert [case["clock"]["row_count"] for case in cases] == [49, 61]
+    return original, register
+
+
+def test_original_pyromb_graphical_header_is_recognised_but_code2_is_not_silently_admitted() -> None:
+    original, _register = _registered_pyromb_originals()
+    with pytest.raises(FormatProblem, match="natural reach-type header 1") as caught:
+        parse_catg(original)
+    # The original RORB_GE 6.45 header is recognised, but its *computational*
+    # reach-type 0, code-2 controls and nonzero impervious data still need
+    # typed-domain and numerical ownership review. Do not mark as computed.
+    assert caught.value.status == "unsupported"
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "status"),
+    [
+        ("C RORB_GE 6.45", "C RORB_GE 6.46", "unsupported"),
+        ("C RORB_GE 6.45", "C RORB_GE 6.45\\nC RORB_GE 6.45", "unsupported"),
+        ("C #NODES", "C #UNKNOWN SECTION\\nC 0\\nC #NODES", "unsupported"),
+        ("C #FILE COMMENTS", "C #FILE COMMENTS\\nC 0\\nC #FILE COMMENTS", "unsupported"),
+        ("C #STORAGES\\nC      0", "C #STORAGES\\nC      1", "unsupported"),
+        ("C #INFLOW/OUTFLOW\\nC      0", "C #INFLOW/OUTFLOW\\nC      1", "unsupported"),
+        ("C #BACKGROUND IMAGE\\nC  T  F", "C #BACKGROUND IMAGE\\nC  T  T", "unsupported"),
+        ("C END RORB_GE", "C END RORB_GE\\nC END RORB_GE", "invalid"),
+    ],
+)
+def test_pyromb_graphical_rejects_unrecognised_sections_without_source_mutation(
+    before: str, after: str, status: str
+) -> None:
+    original, _register = _registered_pyromb_originals()
+    text = original.decode("utf-8").replace("\r\n", "\n")
+    edited = text.replace(before.replace("\\n", "\n"), after.replace("\\n", "\n"))
+    assert text != edited
+    with pytest.raises(FormatProblem) as caught:
+        parse_catg(edited.encode("utf-8"))
+    assert caught.value.status == status
