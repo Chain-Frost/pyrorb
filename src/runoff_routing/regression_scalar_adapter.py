@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict
+from decimal import Decimal
 from fractions import Fraction
+from struct import error, pack, unpack
 from typing import Any
 
 from .regression_metrics import SiteMetrics, bind_report_metrics, compare_peak, compare_reported_volume
@@ -12,6 +14,27 @@ from .rorb_documents import RorbSource
 from .rorb_out import inspect_output
 
 POLICY = "cmd644-report-scalars-v1"
+
+
+def stored_cmd_reporting_clock(source_hours: Decimal) -> tuple[float, float]:
+    """Independently reconstruct the frozen CMD scalar clock, not the solver.
+
+    Store source h as binary32; multiply the stored h by 3600 in binary64
+    (one p53 operation); store the resulting seconds as binary32.
+    """
+    if not source_hours.is_finite() or source_hours <= 0:
+        message = "Positive finite CMD source timestep required"
+        raise ValueError(message)
+    try:
+        hours = unpack("<f", pack("<f", float(source_hours)))[0]
+        seconds = unpack("<f", pack("<f", hours * 3600.0))[0]
+    except (OverflowError, error) as exc:
+        message = "CMD scalar timestep is outside binary32 representation"
+        raise ValueError(message) from exc
+    if not math.isfinite(hours) or hours <= 0 or not math.isfinite(seconds) or seconds <= 0:
+        message = "CMD scalar timestep is not a positive finite stored value"
+        raise ValueError(message)
+    return hours, seconds
 
 
 def bind_scalars(source: RorbSource, binding: dict[str, Any]) -> SiteMetrics:

@@ -6,9 +6,10 @@
 
 > **Schema migration (14 November 2026):** The original schema 1 described
 > below remains readable. New writes use schema 2 with a required
-> `"engine": {"id": "python", "numerical_profile": "engineering-v1"}`
-> field. Schema-1 engine-less projects load as `python` without changing
-> source content. The `rainfall_profile` is independent of the numerical
+> `"engine": {"id": "python-cmd", "numerical_profile": "cmd-6.44"}`
+> field **for newly created schema-2 projects** during CMD-first development.
+> Engine-less schema-1 projects still load as their original implicit
+> `python/engineering-v1` choice without changing source content or execution semantics. The `rainfall_profile` is independent of the numerical
 > engine. See [the three-engine execution contract](ENGINES.md).
 
 ## Architecture and source identities
