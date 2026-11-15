@@ -424,8 +424,7 @@ def _figure67_original_cases() -> tuple[list[dict[str, Any]], Path]:
         "wheel-zero",
     )
     cases: list[dict[str, Any]] = [
-        next(case for case in register["cases"] if case["case_id"] == case_id)
-        for case_id in case_ids
+        next(case for case in register["cases"] if case["case_id"] == case_id) for case_id in case_ids
     ]
     assert len({item["reference"]["sha256"] for item in cases}) == 8
     return cases, root
@@ -509,9 +508,7 @@ def test_combined_preburst_typed_boundary_rejects_false_split() -> None:
         "wheel-zero",
     ],
 )
-def test_original_102p10_all_eight_three_file_imports_are_typed_without_rewriting(
-    case_id: str, tmp_path: Path
-) -> None:
+def test_original_102p10_all_eight_three_file_imports_are_typed_without_rewriting(case_id: str, tmp_path: Path) -> None:
     cases, root = _figure67_original_cases()
     case = next(c for c in cases if c["case_id"] == case_id)
     source_paths: dict[str, Path] = {}

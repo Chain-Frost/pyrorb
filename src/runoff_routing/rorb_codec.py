@@ -31,9 +31,7 @@ from .rorb_model import (
 )
 from .rorb_par import inspect_cmd_parameters
 
-Dialect = Literal[
-    "cmd_v2", "rorb_ge_002", "design_explicit", "design_relative_weights", "design_preburst_combined"
-]
+Dialect = Literal["cmd_v2", "rorb_ge_002", "design_explicit", "design_relative_weights", "design_preburst_combined"]
 Status = Literal["invalid", "unsupported"]
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eEdD][+-]?[0-9]+)?\Z")
 _AREA_NAME = re.compile(r"Sub-area\s+(\S+)", re.IGNORECASE)
@@ -383,7 +381,6 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
     except ValueError as exc:
         raise _problem(str(exc)) from exc
     return ParsedDocument("rorb_ge_002", source, model, tuple(spans), graphics)
-
 
 
 def _original_combined_preburst(
