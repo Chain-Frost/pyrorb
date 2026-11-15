@@ -766,7 +766,7 @@ _GraphNode = tuple[int, str, float, float, int, bool, bool, Decimal, Decimal]
 _GraphReach = tuple[int, str, int, int, float, float, Decimal]
 
 
-def _render_catg(
+def render_catg_with_graphics(
     model: CatchmentModel,
     *,
     node_records: tuple[_GraphNode, ...] = (),
@@ -823,7 +823,7 @@ def serialize_catg(model: CatchmentModel) -> bytes:
     Explicit-reach RORB_GE 6.45 needs validated graphical data supplied through
     serialize_catg_with_drawing(). No local CATG formatter or fallback exists.
     """
-    return _render_catg(model)
+    return render_catg_with_graphics(model)
 
 
 def serialize_design_stm(model: StormModel) -> bytes:

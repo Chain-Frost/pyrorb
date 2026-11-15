@@ -444,11 +444,11 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
     assert original.model.subareas[0].label == "A"
     real_import = importlib.import_module
 
-    def no_writer(name: str, *args: object, **kwargs: object) -> object:
+    def no_writer(name: str, package: str | None = None) -> object:
         if name == "pyromb.models.rorb":
             message = "optional PyRomb unavailable"
             raise ImportError(message)
-        return real_import(name, *args, **kwargs)
+        return real_import(name, package)
 
     monkeypatch.setattr(importlib, "import_module", no_writer)
     assert parse_catg(original.source.data).model == original.model

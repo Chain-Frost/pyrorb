@@ -13,7 +13,7 @@ from decimal import Decimal
 from itertools import pairwise
 from typing import Literal
 
-from .rorb_codec import _render_catg, parse_catg
+from .rorb_codec import parse_catg, render_catg_with_graphics
 from .rorb_model import CatchmentModel
 
 Point = tuple[float, float]
@@ -258,6 +258,10 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
     network = _network(drawing)
     _matches_model(model, drawing, network)
     node_numbers = {node.identifier: index for index, node in enumerate(drawing.nodes, start=1)}
+    downstream_numbers = {
+        node_id: node_numbers[downstream] if downstream is not None else 0
+        for node_id, downstream in network.downstream.items()
+    }
     areas = {area.identifier: area for area in model.subareas}
     physical_reaches = {reach.identifier: reach.length_km for reach in model.reaches}
     node_records = tuple(
@@ -266,7 +270,7 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
             node.display_label or node.identifier,
             node.x_m,
             node.y_m,
-            node_numbers[network.downstream[node.identifier]] if network.downstream[node.identifier] else 0,
+            downstream_numbers[node.identifier],
             node.subarea_id is not None,
             node.outlet,
             areas[node.subarea_id].area_km2 if node.subarea_id else Decimal(0),
@@ -289,7 +293,7 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
         )
         for index, reach in enumerate(model.reaches, start=1)
     )
-    data = _render_catg(model, node_records=node_records, reach_records=reach_records)
+    data = render_catg_with_graphics(model, node_records=node_records, reach_records=reach_records)
     if parse_catg(data).model != model:
         message = "Graphical metadata unexpectedly changed the computational model"
         raise ValueError(message)
