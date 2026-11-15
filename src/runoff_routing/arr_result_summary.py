@@ -503,7 +503,7 @@ def summarize_deterministic_results(
         "duration_axis_min": durations, "aep_label_axis": aeps,
         "source_files": effective.get("source_files"),
         "expected_population": effective["expected_population"],
-        "prepared_population": len(seen),
+        "prepared_population": len(outcomes),
         "physical_print_sites": list(sites),
         "site_identity_status": "from_common_requested_print_ids" if sites else "unknown_no_routed_outcome",
         "software_execution_success": software_execution_success,
