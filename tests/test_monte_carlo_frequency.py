@@ -25,11 +25,21 @@ def _scope(*, site: str = "site-A", duration: int = 60, scenario: str = "design"
 
 
 def _record(
-    scope: FrequencyScope, stratum: str, sample: str, peak: float | None,
-    *, status: PeakStatus = "valid", weight: float = 0.5,
+    scope: FrequencyScope,
+    stratum: str,
+    sample: str,
+    peak: float | None,
+    *,
+    status: PeakStatus = "valid",
+    weight: float = 0.5,
 ) -> PeakRecord:
     return PeakRecord(
-        scope, stratum, sample, weight, status, peak,
+        scope,
+        stratum,
+        sample,
+        weight,
+        status,
+        peak,
         f"event-{sample}" if status == "valid" else None,
         f"manifest-{sample}" if status == "valid" else None,
     )
@@ -41,8 +51,10 @@ def _four(*, scope: FrequencyScope | None = None) -> tuple[CurvePopulation, tupl
     # 0.75/2 = 0.375 for each h2 event.
     p = CurvePopulation(s, (StratumWeight("h1", 0.25, 2), StratumWeight("h2", 0.75, 2)))
     return p, (
-        _record(s, "h1", "a", 10, weight=0.125), _record(s, "h1", "b", 20, weight=0.125),
-        _record(s, "h2", "c", 30, weight=0.375), _record(s, "h2", "d", 40, weight=0.375),
+        _record(s, "h1", "a", 10, weight=0.125),
+        _record(s, "h1", "b", 20, weight=0.125),
+        _record(s, "h2", "c", 30, weight=0.375),
+        _record(s, "h2", "d", 40, weight=0.375),
     )
 
 
@@ -73,9 +85,7 @@ def test_exact_unequal_weight_exceedance_and_midpoint_inversion() -> None:
 def test_affine_monotone_transform_preserves_analytical_quantiles() -> None:
     population, records = _four()
     basic = build_frequency_curve(population, records)
-    transformed = tuple(
-        replace(item, peak_m3_s=float(item.peak_m3_s or 0) * 2 + 3) for item in records
-    )
+    transformed = tuple(replace(item, peak_m3_s=float(item.peak_m3_s or 0) * 2 + 3) for item in records)
     scaled = build_frequency_curve(population, transformed)
     for aep in (0.2, 0.3, 0.5, 0.8):
         q1 = basic.estimate(aep)
@@ -89,8 +99,10 @@ def test_zero_flow_atom_ties_and_representative_ties() -> None:
     s = _scope()
     p = CurvePopulation(s, (StratumWeight("dry", 0.4, 2), StratumWeight("wet", 0.6, 2)))
     rows = (
-        _record(s, "dry", "zero-b", 0, weight=0.2), _record(s, "wet", "wet-b", 20, weight=0.3),
-        _record(s, "wet", "wet-a", 20, weight=0.3), _record(s, "dry", "zero-a", 0, weight=0.2),
+        _record(s, "dry", "zero-b", 0, weight=0.2),
+        _record(s, "wet", "wet-b", 20, weight=0.3),
+        _record(s, "wet", "wet-a", 20, weight=0.3),
+        _record(s, "dry", "zero-a", 0, weight=0.2),
     )
     curve = build_frequency_curve(p, rows)
     assert curve.coverage.zero_mass == pytest.approx(0.4)
@@ -125,7 +137,8 @@ def test_no_extrapolation_at_sparse_probability_boundaries() -> None:
 def test_failed_missing_and_unmodelled_tails_remain_in_denominators() -> None:
     s = _scope()
     p = CurvePopulation(
-        s, (StratumWeight("first", 0.4, 2), StratumWeight("second", 0.4, 2)),
+        s,
+        (StratumWeight("first", 0.4, 2), StratumWeight("second", 0.4, 2)),
         UnmodelledTails(upper_rainfall_mass=0.2),
     )
     rows = (
@@ -158,7 +171,8 @@ def test_failed_missing_and_unmodelled_tails_remain_in_denominators() -> None:
 def test_unallocated_stratum_and_zero_weight_failures() -> None:
     s = _scope()
     p = CurvePopulation(
-        s, (StratumWeight("allocated", 0.8, 1), StratumWeight("unallocated", 0.2, 0)),
+        s,
+        (StratumWeight("allocated", 0.8, 1), StratumWeight("unallocated", 0.2, 0)),
     )
     curve = build_frequency_curve(p, (_record(s, "allocated", "live", 5, weight=0.8),))
     assert curve.coverage.unallocated_stratum_mass == pytest.approx(0.2)
@@ -167,7 +181,8 @@ def test_unallocated_stratum_and_zero_weight_failures() -> None:
     assert curve.exceedance(5).upper_probability == pytest.approx(0.2)
 
     zero_mass_population = CurvePopulation(
-        s, (StratumWeight("allocated", 1, 1), StratumWeight("unused", 0, 1)),
+        s,
+        (StratumWeight("allocated", 1, 1), StratumWeight("unused", 0, 1)),
     )
     with_zero_weight_failure = build_frequency_curve(
         zero_mass_population,
@@ -181,9 +196,13 @@ def test_unallocated_stratum_and_zero_weight_failures() -> None:
 def test_incomplete_quantile_bounds_with_known_zero_and_positive_peaks() -> None:
     s = _scope()
     p = CurvePopulation(s, (StratumWeight("interior", 0.8, 2),), UnmodelledTails(0.2, 0))
-    curve = build_frequency_curve(p, (
-        _record(s, "interior", "dry", 0, weight=0.4), _record(s, "interior", "wet", 20, weight=0.4),
-    ))
+    curve = build_frequency_curve(
+        p,
+        (
+            _record(s, "interior", "dry", 0, weight=0.4),
+            _record(s, "interior", "wet", 20, weight=0.4),
+        ),
+    )
     # F=0.1: all missing mass at zero OR at infinity still places target in zero atom.
     q = curve.estimate(0.9)
     assert q.status == "incomplete"
@@ -287,7 +306,8 @@ def test_exact_tie_chooses_shortest_duration_and_near_tie_stays_numeric() -> Non
     def _curve(d: int, upper: float) -> tuple[CurvePopulation, tuple[PeakRecord, ...]]:
         s = _scope(duration=d)
         return CurvePopulation(s, (StratumWeight("h", 1, 2),)), (
-            _record(s, "h", f"{d}-a", 10), _record(s, "h", f"{d}-b", upper),
+            _record(s, "h", f"{d}-a", 10),
+            _record(s, "h", f"{d}-b", upper),
         )
 
     p60, r60 = _curve(60, 30)

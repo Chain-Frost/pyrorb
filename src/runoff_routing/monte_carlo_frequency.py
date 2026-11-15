@@ -32,7 +32,12 @@ def _identifier(value: str, label: str) -> None:
 
 
 def _probability(value: float, label: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 1:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or not 0 <= value <= 1
+    ):
         _fail(f"{label} must be a finite probability in [0, 1]")
 
 
@@ -183,7 +188,13 @@ class ProbabilityCoverage:
     @property
     def unresolved_mass(self) -> float:
         return math.fsum(
-            (self.failed_mass, self.missing_mass, self.unsupported_mass, self.unallocated_stratum_mass, self.tails.total)
+            (
+                self.failed_mass,
+                self.missing_mass,
+                self.unsupported_mass,
+                self.unallocated_stratum_mass,
+                self.tails.total,
+            )
         )
 
     @property
@@ -256,7 +267,11 @@ class FrequencyCurve:
 
     def exceedance(self, threshold_m3_s: float) -> ExceedanceBounds:
         """Strict P(Q > q); unknown outcomes only widen the absolute bounds."""
-        if isinstance(threshold_m3_s, bool) or not isinstance(threshold_m3_s, (int, float)) or not math.isfinite(threshold_m3_s):
+        if (
+            isinstance(threshold_m3_s, bool)
+            or not isinstance(threshold_m3_s, (int, float))
+            or not math.isfinite(threshold_m3_s)
+        ):
             _fail("Exceedance threshold must be finite")
         if threshold_m3_s < 0:
             return ExceedanceBounds(threshold_m3_s, self.coverage.valid_mass, 1.0, 1.0, 0.0)
@@ -266,7 +281,10 @@ class FrequencyCurve:
             if item.record.peak_m3_s is not None and item.record.peak_m3_s > threshold_m3_s
         )
         return ExceedanceBounds(
-            threshold_m3_s, known, known, min(1.0, math.fsum((known, self.coverage.unresolved_mass))),
+            threshold_m3_s,
+            known,
+            known,
+            min(1.0, math.fsum((known, self.coverage.unresolved_mass))),
             self.coverage.unresolved_mass,
         )
 
@@ -324,13 +342,21 @@ class FrequencyCurve:
         selected = min(
             self.positive_weight_observations,
             key=lambda item: (
-                abs(float(item.record.peak_m3_s or 0) - peak), item.record.sample_id, item.record.event_id or ""
+                abs(float(item.record.peak_m3_s or 0) - peak),
+                item.record.sample_id,
+                item.record.event_id or "",
             ),
         ).record
         actual = float(selected.peak_m3_s or 0)
         representative = RepresentativeEvent(
-            selected.sample_id, selected.event_id or "", selected.effective_input_id or "", selected.stratum_id,
-            actual, peak, actual - peak, abs(actual - peak),
+            selected.sample_id,
+            selected.event_id or "",
+            selected.effective_input_id or "",
+            selected.stratum_id,
+            actual,
+            peak,
+            actual - peak,
+            abs(actual - peak),
         )
         return QuantileEstimate(aep, status, peak, None, None, representative, bracket, boundary, distance)
 
@@ -381,9 +407,7 @@ def _planned_records(population: CurvePopulation, records: Iterable[PeakRecord])
             seen_events.add(record.event_id)
         entry = strata[record.stratum_id]
         expected = entry.probability_mass / entry.planned_samples if entry.planned_samples else None
-        if expected is None or not math.isclose(
-            record.event_probability_weight, expected, rel_tol=1e-12, abs_tol=0.0
-        ):
+        if expected is None or not math.isclose(record.event_probability_weight, expected, rel_tol=1e-12, abs_tol=0.0):
             _fail("Stale or mixed plan-revision event weights; reaggregate using the complete current plan")
         by_stratum[record.stratum_id].append(record)
     return by_stratum
@@ -407,8 +431,10 @@ def _account_observations(
         unit = stratum.probability_mass / n if n else None
         if unit is None:
             unallocated.append(stratum.probability_mass)
-        counts = {status: sum(item.status == status for item in entries)
-                  for status in ("valid", "failed", "missing", "unsupported")}
+        counts = {
+            status: sum(item.status == status for item in entries)
+            for status in ("valid", "failed", "missing", "unsupported")
+        }
         absent = n - len(entries)
         valid = tuple(item for item in entries if item.status == "valid")
         valid_zeros = sum(item.peak_m3_s == 0 for item in valid)
@@ -419,14 +445,30 @@ def _account_observations(
             missing.append((counts["missing"] + absent) * unit)
             unsupported.append(counts["unsupported"] * unit)
         accounting.append(
-            StratumAccounting(stratum.stratum_id, stratum.probability_mass, n, len(entries), valid_zeros,
-                              valid_positive, counts["failed"], counts["missing"], absent, counts["unsupported"], unit)
+            StratumAccounting(
+                stratum.stratum_id,
+                stratum.probability_mass,
+                n,
+                len(entries),
+                valid_zeros,
+                valid_positive,
+                counts["failed"],
+                counts["missing"],
+                absent,
+                counts["unsupported"],
+                unit,
+            )
         )
     zero_mass = math.fsum(item.weight for item in weighted if item.record.peak_m3_s == 0)
     coverage = ProbabilityCoverage(
-        math.fsum(item.weight for item in weighted), zero_mass,
+        math.fsum(item.weight for item in weighted),
+        zero_mass,
         math.fsum(item.weight for item in weighted if item.record.peak_m3_s != 0),
-        math.fsum(failed), math.fsum(missing), math.fsum(unsupported), math.fsum(unallocated), population.tails,
+        math.fsum(failed),
+        math.fsum(missing),
+        math.fsum(unsupported),
+        math.fsum(unallocated),
+        population.tails,
     )
     return tuple(accounting), weighted, coverage
 
@@ -473,9 +515,15 @@ def build_frequency_curves(
         ledger[record.scope].append(record)
     return tuple(
         build_frequency_curve(population, ledger[scope])
-        for scope, population in sorted(by_scope.items(), key=lambda entry: (
-            entry[0].scenario_id, entry[0].output_site_id, entry[0].duration_minutes, entry[0].plan_id
-        ))
+        for scope, population in sorted(
+            by_scope.items(),
+            key=lambda entry: (
+                entry[0].scenario_id,
+                entry[0].output_site_id,
+                entry[0].duration_minutes,
+                entry[0].plan_id,
+            ),
+        )
     )
 
 
@@ -531,17 +579,46 @@ def duration_envelope(curves: Iterable[FrequencyCurve], aep: float) -> DurationE
         upper_candidates = [
             item.peak_m3_s if item.peak_m3_s is not None else item.upper_bound_m3_s for _, item in estimates
         ]
-        lower = max(float(value) for value in lower_candidates) if all(v is not None for v in lower_candidates) else None
-        upper = max(float(value) for value in upper_candidates) if all(v is not None for v in upper_candidates) else None
-        return DurationEnvelope(first.scenario_id, first.policy_id, first.policy_version, first.output_site_id, aep, state,
-                                None, None, None, lower, upper, None, (), estimates)
+        lower = (
+            max(float(value) for value in lower_candidates) if all(v is not None for v in lower_candidates) else None
+        )
+        upper = (
+            max(float(value) for value in upper_candidates) if all(v is not None for v in upper_candidates) else None
+        )
+        return DurationEnvelope(
+            first.scenario_id,
+            first.policy_id,
+            first.policy_version,
+            first.output_site_id,
+            aep,
+            state,
+            None,
+            None,
+            None,
+            lower,
+            upper,
+            None,
+            (),
+            estimates,
+        )
     ranked = sorted(available, key=lambda pair: (-float(pair[1].peak_m3_s or 0), pair[0]))
     selected_duration, selected = ranked[0]
     selected_peak = float(selected.peak_m3_s or 0)
     runner_up = float(ranked[1][1].peak_m3_s or 0) if len(ranked) > 1 else None
     tied = tuple(duration for duration, item in ranked if item.peak_m3_s == selected_peak)
     return DurationEnvelope(
-        first.scenario_id, first.policy_id, first.policy_version, first.output_site_id, aep, selected.status,
-        selected_peak, selected_duration, selected.representative, None, None,
-        selected_peak - runner_up if runner_up is not None else None, tied, estimates,
+        first.scenario_id,
+        first.policy_id,
+        first.policy_version,
+        first.output_site_id,
+        aep,
+        selected.status,
+        selected_peak,
+        selected_duration,
+        selected.representative,
+        None,
+        None,
+        selected_peak - runner_up if runner_up is not None else None,
+        tied,
+        estimates,
     )
