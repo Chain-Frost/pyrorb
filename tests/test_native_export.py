@@ -250,6 +250,7 @@ def test_hash_mismatch_refuses_export(tmp_path: Path) -> None:
         export_cmd_package(project_path, destination, target=NativeCmdExportTarget("cmd-6.44"))
     assert not destination.exists()
 
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Requires Windows cmd.exe / where.exe")
 def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp_path: Path) -> None:
     """A system where.exe stub proves cwd/argv; it is not native RORB execution."""
@@ -295,4 +296,3 @@ def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp
     assert failure.returncode != 0
     assert r"events\001\model.par" in failure.stdout.casefold()
     assert r"events\002\model.par" not in failure.stdout.casefold()
-
