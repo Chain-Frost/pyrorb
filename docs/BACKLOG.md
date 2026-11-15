@@ -1,6 +1,6 @@
 # Public backlog and ownership — 15 November 2026
 
-This is the current **navigation and disposition record** for [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5), reconciled against public main `f5a9c81f70f3` after merged #133 original CMD evidence and #137 archive preflight; dated historical receipts below retain their exact source identities rather than pretending every result occurred on current main. GitHub PR heads and implementation evidence can change; recheck the linked PRs before acting. A merged code slice does not satisfy its independently open numerical/release stage.
+This is the current **navigation and disposition record** for [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5), reconciled against public main `4d7c48a56292` after merged #133 CMD evidence and subsequent #137 actual source/wheel execution; dated historical receipts below retain their exact source identities rather than pretending every result occurred on current main. GitHub PR heads and implementation evidence can change; recheck the linked PRs before acting. A merged code slice does not satisfy its independently open numerical/release stage.
 
 ## Active work and gates — finite owners/next actions
 
@@ -13,8 +13,10 @@ This is the current **navigation and disposition record** for [roadmap #1](https
 | **D #110/#125:** independently review/integrate engineering-`python` mode-2 and stacked code-2/FI; compare eligible exact CMD-relative outputs without restarting closed #6 or activating deferred #103. |
 | **Completed #119/#128:** original files/JSON selected-engine single/event batches, prepared geometry, complete JSON/CSV/text no-clobber and failure isolation; five original CMD seeds / 1,805 ordinates. No new work assigned. |
 | **#7/#3 current:** #138 effective typed editing, #139 PyRomb **sole CATG renderer** plus local STM writing, retire duplicate CATG renderer, #140 PAR-led import/overrides, #141 standalone native CMD export, #142 import upstream canonical `.out`/`batch.out` reader from ryan-tools #240/PR #233, no duplicate parser, #143 independent source-exact/edit/native/report acceptance. |
-| **#8/#137:** #136 ARR/BoM deterministic software merged; independently match the 60 retained RORBwin 6.52 effective storm inputs in six ten-member cells before routed claims. |
-| **Deferred:** #103, #114–#118, #144, #9/#145/#146, #63 and #10 tracked but not auto-activated. Completed #75/#6/#76/#104 remain closed. No GUI. |
+| **#8/#137:** #136 ARR/BoM software merged; actual 60/60 source/wheel events and original archive authentication documented in [#137 receipt](work/2026-11-15-issue137-actual-execution.md), but 1,320/1,320 reconstructed native-written rainfall increments differ and zero native-routed common-effective cases are accepted. Next independently resolve native precision/loss/effective-input basis before a bounded routed comparison. |
+| **#8/#152:** report and select over persisted deterministic results; retain all TP/site/failed-member identities; do not claim a native representative rule without #137 input qualification and #142 report evidence. |
+| **#9 post-MVP staging:** #145 statistical-method issue completed; #146–#150 independently own reproducible plans, weighted estimates, convergence, execution/checkpointing and native/statistical qualification. Review on [staging PR #151](https://github.com/Chain-Frost/python-runoff-routing/pull/151), not automatically merge to `main`. |
+| **Deferred:** #103, #114–#118, #144, #63 and #10 tracked but not auto-activated. Completed #75/#6/#76/#104/#119/#145 remain closed. No GUI. |
 
 ## Finite CMD 6.44 applicability and original-gap assessment
 
@@ -32,7 +34,7 @@ C/#96 owns the complete graphical/source-domain import and `.catg`/`.cat` payloa
 
 [#119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) is **completed and merged via [#128](https://github.com/Chain-Frost/python-runoff-routing/pull/128)**. The fixed five-case/1,805-row original CMD MVP seed and negative/batch tests below are a **historical delivered acceptance contract**, not future implementation or full CMD replacement. The normal temporary default is `python-cmd/cmd-6.44`, explicit independent `python/engineering-v1` the intended long-term default, and `rorb-cmd` optional.
 
-Current useful product #138–#143 import/edit/write/export/report qualification and deterministic #136 rainfall software proceed without complete CMD #5. Current formats are modern graphical CATG, STM and CMD PAR, including characterised graphical content named `.cat`; **old plain computational CAT and combined DAT are excluded**. RORBwin saved-PAR #144 is deferred; reading its `.out`/`batch.out` is current #142. Advanced #114–#118, physical #103, Monte Carlo #9/#145/#146, optional #63 and release #10 remain tracked but not automatically activated. **No GUI work.**
+Current useful product #138–#143 import/edit/write/export/report qualification and deterministic #136 rainfall software proceed without complete CMD #5. Current formats are modern graphical CATG, STM and CMD PAR, including characterised graphical content named `.cat`; **old plain computational CAT and combined DAT are excluded**. RORBwin saved-PAR #144 is deferred; reading its `.out`/`batch.out` is current #142. Advanced #114–#118, physical #103, optional #63 and release #10 remain deferred. Monte Carlo #9/#146–#150 is separately staged after completed #145 on PR #151, not admitted to `main` or activated as a release gate; deterministic summary #152 remains an active bounded #8 workstream. **No GUI work.**
 
 ### Finite, version-pinned common-model MVP acceptance — authoritative #119 seed
 

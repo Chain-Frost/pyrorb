@@ -71,7 +71,7 @@ python -m runoff_routing.arr_design_batch examples/arr-design-config.json .local
 python -m runoff_routing.project_batch cmd-example-project.json .local/arr-replayed --events .local/arr-design.events.json --engine python-cmd
 ```
 
-Its synthetic source CSVs are **not** real design rainfall. Six generated artifacts preserve original source/effective precipitation, ten-member event IDs, statuses and complete routing reports; native effective-storm/routed scientific qualification and selection rules remain #137/#8. The separate [engineering explicit prepared-batch API](ENGINEERING_BATCHES.md) from completed #6/#99 remains available, but does not establish Monte Carlo or complete CMD physical acceptance.
+Its synthetic source CSVs are **not** real design rainfall. Six generated artifacts preserve original source/effective precipitation, ten-member event IDs, statuses and complete routing reports. The [actual 60-event #137 receipt](work/2026-11-15-issue137-actual-execution.md) demonstrates source/wheel execution, **not** accepted native-effective storm/routed parity; native precision/loss decisions remain #137/#8, and persisted deterministic summaries/representative selection are separately tracked by [#152](https://github.com/Chain-Frost/python-runoff-routing/issues/152). The separate [engineering explicit prepared-batch API](ENGINEERING_BATCHES.md) from completed #6/#99 remains available, but does not establish Monte Carlo or complete CMD physical acceptance.
 
 ## 5. Public cached regression and mathematical controls
 
