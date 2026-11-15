@@ -20,8 +20,17 @@
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
+- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
+
+## Planning receipts
+
+- [Monte Carlo #9 decomposition and statistical research plan](2026-11-15-issue9-scoping.md) — #145–#150 and the initial method note; no MC code, simulation results or native qualification claimed.
+
+- [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.
+
+- [#148 independent-seed simulation-budget convergence research](2026-11-15-issue148-convergence.md) — exact synthetic controls, negative and positive 100-seed confirmation, and separately pending real-catchment qualification.
 
 ## Retained diagnostic/reference evidence
 
@@ -32,3 +41,5 @@
 - [Source-level primary decision record](2026-11-11-computational-reference-guidance.md) and [historical parser/source verification](2026-11-11-s1-code7-serialization.md).
 
 Other retained dated records describe the exact historical source, experiment and constraints they were written for. They **do not** reopen obsolete PRs, replace the single CMD feature matrix or require the private workspace for product use. Unneeded first-agent handoffs, obsolete status snapshots and the former ten-PR backlog matrix were removed from the active tree and remain in ordinary Git history.
+
+- [Monte Carlo weighted peak-frequency result layer](2026-11-15-mc-weighted-frequency.md) — #147 staged statistical software and independent control handoff; not native flood-AEP acceptance.
