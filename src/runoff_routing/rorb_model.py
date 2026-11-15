@@ -41,6 +41,16 @@ class PatternBasis(StrEnum):
     COMBINED_PREBURST_PERCENT = "combined_preburst_percent"
 
 
+def _native_code[T: IntEnum](value: object, enum_type: type[T], label: str) -> T:
+    """Reject bool before native-code enum conversion (bool is an int subtype)."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(label)
+    try:
+        return enum_type(value)
+    except ValueError as exc:
+        raise ValueError(label) from exc
+
+
 def _finite(value: Decimal, label: str, *, positive: bool = False) -> None:
     if type(value) is not Decimal or not value.is_finite() or value < 0 or (positive and value == 0):
         message = f"{label} must be a finite {'positive' if positive else 'nonnegative'} Decimal"
@@ -150,14 +160,7 @@ class ParameterSet:
         if type(self.lumped_kc) is not bool or type(self.verbosity) is not int or self.verbosity not in (1, 2, 3):
             message = "Invalid CMD lumped flag or verbosity"
             raise ValueError(message)
-        if isinstance(self.loss_model, bool) or not isinstance(self.loss_model, int):
-            message = "Unsupported CMD loss model"
-            raise TypeError(message)
-        try:
-            mode = LossMode(self.loss_model)
-        except ValueError as exc:
-            message = "Unsupported CMD loss model"
-            raise ValueError(message) from exc
+        mode = _native_code(self.loss_model, LossMode, "Unsupported CMD loss model")
         object.__setattr__(self, "loss_model", mode)
         if (
             type(self.num_isa) is not int
@@ -271,14 +274,7 @@ class ControlStep:
     label: str = ""
 
     def __post_init__(self) -> None:
-        if isinstance(self.code, bool) or not isinstance(self.code, int):
-            message = "Unrecognised RORB computational control code"
-            raise TypeError(message)
-        try:
-            code = ControlCode(self.code)
-        except ValueError as exc:
-            message = "Unrecognised RORB computational control code"
-            raise ValueError(message) from exc
+        code = _native_code(self.code, ControlCode, "Unrecognised RORB computational control code")
         object.__setattr__(self, "code", code)
 
 

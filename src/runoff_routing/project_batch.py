@@ -422,7 +422,7 @@ def iter_project_events(
             continue
         seen.add(identifier)
         try:
-            resolved = resolve_effective_model(loaded.run, item)
+            resolved = resolve_effective_model(loaded.run, cast("ProjectEvent | dict[str, object]", item))
             model, override = resolved.run, resolved.override_label
         except EventConfigError as exc:
             yield _event_failure(event_base, exc.status, exc.code, str(exc))

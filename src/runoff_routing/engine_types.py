@@ -62,7 +62,7 @@ class EngineSelection:
         if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", self.numerical_profile) is None:
             message = "Numerical profile must be a nonempty, versioned ASCII identifier"
             raise ValueError(message)
-        if self.engine == "python" and self.numerical_profile != _DEFAULT_PROFILES["python"]:
+        if self.engine == "python" and self.numerical_profile != _DEFAULT_PROFILES[EngineKind.PYTHON]:
             message = "The current python backend implements only engineering-v1"
             raise ValueError(message)
         if self.engine != "python" and not self.numerical_profile.startswith("cmd-"):
