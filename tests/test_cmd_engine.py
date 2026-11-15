@@ -208,7 +208,7 @@ def test_nonlumped_profile_rejected_before_output(tmp_path: Path) -> None:
     assert not result.hydrographs
 
 
-def test_multisite_prints_explicitly_unsupported(tmp_path: Path) -> None:
+def test_two_code_seven_prints_without_intervening_reach_return_identical_full_outlets(tmp_path: Path) -> None:
     model = _model()
     catchment = model.catchment
     controls = (
@@ -223,8 +223,10 @@ def test_multisite_prints_explicitly_unsupported(tmp_path: Path) -> None:
     )
     project = _project(tmp_path, replace(model, catchment=extended))
     result = run_engine_project(project, selection=EngineSelection.for_engine("python-cmd"))
-    assert result.status == "unsupported_feature"
-    assert result.diagnostics[0].code == "cmd_print_sites"
+    assert result.status == "computed_unvalidated"
+    assert tuple(item.print_id for item in result.hydrographs) == ("internal", "print_1")
+    assert len(result.hydrographs[0].discharge_m3_s) == 6
+    assert result.hydrographs[0].discharge_m3_s == result.hydrographs[1].discharge_m3_s
 
 
 def test_delayed_rainfall_preserves_full_horizon(tmp_path: Path) -> None:
