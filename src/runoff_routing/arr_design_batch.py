@@ -35,7 +35,7 @@ from .arr_selection import TemporalPatternSelection, select_arr2019_ensemble
 from .arr_storm import storm_from_bom
 from .bom_ifd import BoMIFD, read_bom_ifd_csv
 from .engine_types import EngineSelection
-from .project_batch import ProjectBatchReport, ProjectEvent, REQUEST_FORMAT, REQUEST_VERSION, run_project_events
+from .project_batch import REQUEST_FORMAT, REQUEST_VERSION, ProjectBatchReport, ProjectEvent, run_project_events
 from .project_json import LoadedProject, load_project
 
 DESIGN_FORMAT = "python-runoff-routing-arr2019-design"
@@ -117,8 +117,8 @@ def _decimal(value: object, label: str) -> Decimal:
         _fail(f"{label} must be a decimal string (not a JSON floating-point number)")
     try:
         number = Decimal(value)
-    except InvalidOperation as exc:
-        raise DesignConfigError(f"Invalid decimal string for {label}") from exc
+    except InvalidOperation:
+        _fail(f"Invalid decimal string for {label}")
     if not number.is_finite() or not 0 < number <= 30000:
         _fail(f"{label} must be finite and in (0, 30000] km2")
     return number
@@ -140,6 +140,40 @@ def _axis(value: object, label: str, limit: int) -> list[object]:
     if not isinstance(value, list) or not 1 <= len(value) <= limit:
         _fail(f"{label} must contain between one and {limit} values")
     return cast("list[object]", value)
+
+
+def _read_loss_config(
+    config_path: Path, raw: object
+) -> tuple[
+    LossProfile,
+    Path | None,
+    Literal[10, 25, 50, 75, 90] | None,
+    Literal["reject", "clamp_burst_il_to_zero"] | None,
+]:
+    """Validate the method-specific source/preburst options separately from the axes."""
+    loss = _object(raw, "loss")
+    mode = _string(loss.get("mode"), "loss.mode")
+    if mode not in {"project_il_cl", "legacy_source_depth_burst_only", "legacy_ratio_areal_burst_only"}:
+        _fail("Unrecognised loss method; no automatic preburst convention")
+    legacy_path: Path | None = None
+    percentile: Literal[10, 25, 50, 75, 90] | None = None
+    excess_policy: Literal["reject", "clamp_burst_il_to_zero"] | None = None
+    if mode == "project_il_cl":
+        if set(loss) != {"mode"}:
+            _fail("project_il_cl may not include a preburst/legacy ARR source")
+    else:
+        if set(loss) != {"mode", "arr_txt", "percentile", "excess_policy"}:
+            _fail("Legacy burst-only requires arr_txt, percentile and excess_policy")
+        raw_percentile = loss["percentile"]
+        if type(raw_percentile) is not int or raw_percentile not in (10, 25, 50, 75, 90):
+            _fail("Preburst percentile must be an explicit supported 10/25/50/75/90")
+        raw_policy = loss["excess_policy"]
+        if raw_policy not in ("reject", "clamp_burst_il_to_zero"):
+            _fail("Unsupported excess-preburst policy")
+        percentile = cast("Literal[10, 25, 50, 75, 90]", raw_percentile)
+        excess_policy = cast("Literal['reject', 'clamp_burst_il_to_zero']", raw_policy)
+        legacy_path = _file(config_path, loss["arr_txt"], "loss.arr_txt")
+    return cast("LossProfile", mode), legacy_path, percentile, excess_policy
 
 
 def read_design_config(path: Path) -> DesignConfig:
@@ -173,28 +207,7 @@ def read_design_config(path: Path) -> DesignConfig:
     kind = _string(source["pattern_kind"], "pattern_kind")
     if kind not in ("point", "areal"):
         _fail("pattern_kind must explicitly be point or areal")
-    loss = _object(source["loss"], "loss")
-    mode = _string(loss.get("mode"), "loss.mode")
-    if mode not in {"project_il_cl", "legacy_source_depth_burst_only", "legacy_ratio_areal_burst_only"}:
-        _fail("Unrecognised loss method; no automatic preburst convention")
-    legacy_path: Path | None = None
-    percentile: Literal[10, 25, 50, 75, 90] | None = None
-    excess_policy: Literal["reject", "clamp_burst_il_to_zero"] | None = None
-    if mode == "project_il_cl":
-        if set(loss) != {"mode"}:
-            _fail("project_il_cl may not include a preburst/legacy ARR source")
-    else:
-        if set(loss) != {"mode", "arr_txt", "percentile", "excess_policy"}:
-            _fail("Legacy burst-only requires arr_txt, percentile and excess_policy")
-        raw_percentile = loss["percentile"]
-        if type(raw_percentile) is not int or raw_percentile not in (10, 25, 50, 75, 90):
-            _fail("Preburst percentile must be an explicit supported 10/25/50/75/90")
-        raw_policy = loss["excess_policy"]
-        if raw_policy not in ("reject", "clamp_burst_il_to_zero"):
-            _fail("Unsupported excess-preburst policy")
-        percentile = cast("Literal[10, 25, 50, 75, 90]", raw_percentile)
-        excess_policy = cast("Literal['reject', 'clamp_burst_il_to_zero']", raw_policy)
-        legacy_path = _file(path, loss["arr_txt"], "loss.arr_txt")
+    mode, legacy_path, percentile, excess_policy = _read_loss_config(path, source["loss"])
     selected = EngineSelection.for_engine(
         _string(source["engine"], "engine"), _string(source["numerical_profile"], "numerical_profile")
     )
@@ -286,7 +299,7 @@ def _loss_for_event(
         ),
         "source_sha256": selected.source_sha256,
         "policy_version": selected.policy_version,
-        "operations": list(selected.operations) + ["BURST_IL_CL_APPLIED_BY_ENGINE_ONCE"],
+        "operations": [*selected.operations, "BURST_IL_CL_APPLIED_BY_ENGINE_ONCE"],
     }
 
 
@@ -312,7 +325,8 @@ def _event(
     )
     areal = apply_arr2019_arf_to_bom_storm(gross, factor)
     if config.dry_tail_min % pattern.timestep_min:
-        raise ARRFormatError("Requested dry tail is not an integer number of selected temporal-pattern timesteps")
+        message = "Requested dry tail is not an integer number of selected temporal-pattern timesteps"
+        raise ARRFormatError(message)
     losses, loss_audit = _loss_for_event(
         config, bom, legacy, selection.duration_min, selection.aep_percent, areal, loaded
     )
@@ -386,7 +400,7 @@ def _prepare_cell(
     try:
         probability = bom.probability(aep_label)
         if probability.kind != "AEP_PERCENT":
-            raise ARRFormatError("Only original BoM percentage AEP labels are supported; EY/ARI are not converted")
+            _fail("Only original BoM percentage AEP labels are supported; EY/ARI are not converted")
         ensemble = select_arr2019_ensemble(
             patterns, catchment_area_km2=config.catchment_area_km2, duration_min=duration,
             aep_percent=probability.value, region=config.temporal_region,
@@ -541,9 +555,11 @@ def design_summary(result: DesignBatchResult) -> str:
         "Routed original-native parity: not assessed",
         "Critical duration/representative event: not selected (rule unverified)",
     ]
-    for cell in cast("list[dict[str, object]]", effective["cells"]):
-        if cell["status"] != "ready":
-            lines.append(f"FAILED {cell['duration_min']} min / {cell['aep_label']}: {cell['error']}")
+    lines.extend(
+        f"FAILED {cell['duration_min']} min / {cell['aep_label']}: {cell['error']}"
+        for cell in cast("list[dict[str, object]]", effective["cells"])
+        if cell["status"] != "ready"
+    )
     return "\n".join(lines) + "\n"
 
 

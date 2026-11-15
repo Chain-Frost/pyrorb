@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-from decimal import Decimal
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -75,7 +75,7 @@ def test_complete_duration_aep_tp_population_replays_through_common_api(tmp_path
         f"{value:04d}" for value in range(101, 111)
     ]
     assert [item["status"] for item in result.effective["cells"]] == ["ready"] * 4
-    assert len(set(outcome.event_id for outcome in result.routed.outcomes)) == 40
+    assert len({outcome.event_id for outcome in result.routed.outcomes}) == 40
     assert result.effective["generated_input_reference_status"] == "not_assessed"
     assert result.effective["critical_duration_rule"] == "not_selected_unverified"
     assert result.effective["representative_event_rule"] == "not_selected_unverified"
