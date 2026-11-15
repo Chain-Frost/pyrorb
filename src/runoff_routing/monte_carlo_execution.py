@@ -34,6 +34,7 @@ from .monte_carlo_effective import (
     encode_jsonl_line,
     iter_effective_events,
     parse_jsonl_line,
+    preparation_model_sha256,
     read_header,
     sha256_file,
     validate_effective_request,
@@ -49,7 +50,7 @@ from .project_batch import (
 from .project_json import LoadedProject, load_project
 
 LEDGER_FORMAT = "python-runoff-routing-mc-event-ledger"
-LEDGER_VERSION = 2
+LEDGER_VERSION = 3
 _STATUS_OK = "computed_unvalidated"
 _LEDGER_ROW_KEYS = {
     "sample_id",
@@ -151,11 +152,15 @@ def _header(
     identity = identify_implementation()
     wheel_sha256 = verify_installed_wheel(wheel_artifact) if wheel_artifact is not None else None
     header = read_header(request_path)
+    if header.preparation_model_sha256 != preparation_model_sha256(project.run):
+        message = "MC effective request was prepared for a different source model; reprepare before routing"
+        raise MCRunError(message)
     return {
         "format": LEDGER_FORMAT,
         "schema_version": LEDGER_VERSION,
         "request_sha256": input_sha256,
         "plan_sha256": header.plan_sha256,
+        "preparation_model_sha256": header.preparation_model_sha256,
         "sample_population_id": header.sample_population_id,
         "parent_plan_sha256": header.parent_plan_sha256,
         "policy_id": header.policy_id,
@@ -520,6 +525,7 @@ def _check_extended_plan(old: MCRequestHeader, new: MCRequestHeader) -> None:
         or new.parent_plan_sha256 != old.plan_sha256
         or old.plan_sha256 == new.plan_sha256
         or old.policy_id != new.policy_id
+        or old.preparation_model_sha256 != new.preparation_model_sha256
         or old.source_files != new.source_files
         or old.populations != new.populations
         or not old.strata

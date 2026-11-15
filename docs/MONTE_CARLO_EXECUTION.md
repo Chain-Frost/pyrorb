@@ -125,15 +125,21 @@ not native RORBwin behaviour or hydrological acceptance.
 
 ## Streaming effective event request (not B's plan)
 
-One newline-terminated JSON header record (schema v2) contains:
+One newline-terminated JSON header record (schema v3) contains:
 
-- format = python-runoff-routing-mc-effective-events; schema_version = 2
+- format = python-runoff-routing-mc-effective-events; schema_version = 3
 - plan_sha256: original immutable #146 plan content hash
 - policy_id: selected versioned statistical/materialisation policy
 - source_files: original input paths relative to this request and exact SHA-256
 - populations: each scenario_id, duration_min, modelled_mass and explicitly split rare/frequent missing-tail mass
 - strata: every planned scenario/duration/stratum, original probability mass and allocation count (including zero)
 - event_count: exact total expected source records
+- preparation_model_sha256: SHA-256 of the canonical complete RunModel
+  serialisation used to materialise the effective storms, including
+  catchment geometry/areas, fixed routing kc/m and loss parameters.
+  Execution validates this hash against the selected project **before
+  routing or opening a ledger**. Neither an engine choice nor an
+  otherwise compatible but altered project may silently replace it.
 
 #146's currently generated sample IDs contain colons, whereas the existing
 #119 event contract admits a narrower ASCII identifier. The execution adapter
@@ -187,7 +193,8 @@ selection performed under B.
 
 ## Compact checkpoint and resume
 
-The ledger JSONL header binds the full effective-request SHA-256, B plan
+The ledger JSONL header binds the full effective-request SHA-256, prepared
+canonical model identity, B plan
 SHA-256, policy ID, original sources, project JSON/original-file hashes,
 explicit engine/profile, running package-code fingerprint and optional
 exact installed-wheel SHA-256. Every event record retains both sample and engine-event identity,
@@ -197,7 +204,7 @@ site IDs and, on success, the peak, index and physical time for each site.
 A successful zero remains numeric zero; a failed/unsupported sample
 retains its probability weight but has no fabricated peak or hydrograph.
 
-**Ledger schema v2** includes a SHA-256 hash chain over *every* result
+**Ledger schema v3** includes a SHA-256 hash chain over *every* result
 record, starting from the versioned header digest and continuing through
 all site peaks, physical times, status, diagnostics, plan weights and
 TP/loss/ARF provenance. Resume, inspection and selected replay verify the
@@ -208,9 +215,17 @@ the chain. The CLI prints the complete-ledger SHA-256 for **independent
 external retention**. `inspect --expected-ledger-sha256 HASH` verifies such
 a separately retained SHA-256; independent scientific authenticity still
 requires actual input/output custody and selected deterministic replays.
-Earlier v1 ledgers cannot be silently read as v2 checkpoints.
+Earlier v1/v2 ledgers cannot be silently read as v3 checkpoints.
+Likewise, older effective requests without a preparation-model SHA must
+be re-prepared from their immutable B plans and original sources; the
+adapter does not infer the missing identity from the project supplied
+at execution.
 
-Every appended row is flushed/fsynced. Resume accepts **only a verified
+Every appended row is flushed/fsynced. The project must have the same
+canonical RunModel used at sample preparation: a change to kc, m, area,
+geometry, source storm or loss parameters invalidates run/resume/replay/
+extension and cannot silently reuse the previous ARF or routed peaks.
+Resume accepts **only a verified
 unchanged prefix** of the same request and engine implementation. It
 rejects changed plan/policy/source/engine code, mixed samples/weights,
 truncated JSONL and duplicate events. A changed/extended #146 plan needs

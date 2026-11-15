@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import cast
@@ -21,7 +22,7 @@ from runoff_routing.monte_carlo_effective import iter_effective_events, validate
 from runoff_routing.monte_carlo_execution import MCRunError, execute_mc_request, extend_mc_execution, main
 from runoff_routing.monte_carlo_plan import ifd_from_bom, read_sample_plan, write_sample_plan
 from runoff_routing.project_batch import run_project_events
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 EXAMPLES = Path(__file__).parents[1] / "examples"
@@ -102,6 +103,39 @@ def test_saved_b_to_e_request_is_decimal_context_independent(tmp_path: Path) -> 
             )
         outputs.append(request.read_bytes())
     assert outputs[0] == outputs[1] == outputs[2]
+
+
+@pytest.mark.parametrize("model_change", ["routing_kc", "catchment_area"])
+def test_changed_model_cannot_execute_saved_b_draws(tmp_path: Path, model_change: str) -> None:
+    project, config, ifd, patterns = _fixture(tmp_path)
+    prefix = tmp_path / "model-identity"
+    assert main(["plan", str(config), str(prefix)]) == 0
+    request = tmp_path / "model-effective.jsonl"
+    prepare_saved_sample_plan(
+        project,
+        prefix.with_suffix(".plan.json"),
+        prefix.with_suffix(".samples.jsonl"),
+        request,
+        ifd_path=ifd,
+        patterns_path=patterns,
+        arf_region="South-West Western Australia",
+        dry_tail_min=120,
+    )
+    source = load_project(project)
+    model = source.run
+    if model_change == "routing_kc":
+        params = replace(model.parameters, routing=(replace(model.parameters.routing[0], kc=Decimal(5)),))
+        changed = replace(model, parameters=params)
+    else:
+        areas = model.catchment.subareas
+        changed_areas = (replace(areas[0], area_km2=areas[0].area_km2 + 1), *areas[1:])
+        changed = replace(model, catchment=replace(model.catchment, subareas=changed_areas))
+    project.unlink()
+    write_project(project, replace(source.project, model_source=EmbeddedRun(changed)))
+    ledger = tmp_path / "rejected.jsonl"
+    with pytest.raises(MCRunError, match="prepared for a different source model"):
+        execute_mc_request(project, request, ledger)
+    assert not ledger.exists()
 
 
 def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:

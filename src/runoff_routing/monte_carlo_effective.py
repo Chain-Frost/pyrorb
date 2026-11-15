@@ -22,10 +22,10 @@ from .arr_patterns import PatternSet
 from .arr_storm import RawHyetograph
 from .project_batch import ProjectEvent
 from .project_json import SourceFile
-from .rorb_model import RunModel
+from .rorb_model import RunModel, to_json as model_to_json
 
 EFFECTIVE_FORMAT = "python-runoff-routing-mc-effective-events"
-EFFECTIVE_VERSION = 2
+EFFECTIVE_VERSION = 3
 MAX_LINE_BYTES = 64 * 1024
 MAX_EVENTS = 2_000_000
 _ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
@@ -76,6 +76,11 @@ def _name(value: object, label: str) -> str:
     if any(ord(char) < 32 for char in value):
         _fail(f"{label} cannot contain control characters")
     return value
+
+
+def preparation_model_sha256(model: RunModel) -> str:
+    """Hash the exact canonical routing, catchment, loss and storm source model."""
+    return hashlib.sha256(model_to_json(model).encode("utf-8")).hexdigest()
 
 
 def event_id_for_sample(sample_id: str) -> str:
@@ -247,12 +252,14 @@ class MCRequestHeader:
     source_files: tuple[SourceFile, ...]
     populations: tuple[MCPopulation, ...]
     event_count: int
+    preparation_model_sha256: str
     strata: tuple[MCAllocation, ...] = ()
     sample_population_id: str | None = None
     parent_plan_sha256: str | None = None
 
     def __post_init__(self) -> None:
         _sha(self.plan_sha256, "plan_sha256")
+        _sha(self.preparation_model_sha256, "preparation_model_sha256")
         if self.sample_population_id is not None:
             _sha(self.sample_population_id, "sample_population_id")
         if self.parent_plan_sha256 is not None:
@@ -281,6 +288,7 @@ class MCRequestHeader:
             "source_files": [{"path": item.path, "sha256": item.sha256} for item in self.source_files],
             "populations": [item.to_dict() for item in self.populations],
             "event_count": self.event_count,
+            "preparation_model_sha256": self.preparation_model_sha256,
             "strata": [item.to_dict() for item in self.strata],
             "sample_population_id": self.sample_population_id,
             "parent_plan_sha256": self.parent_plan_sha256,
@@ -508,6 +516,7 @@ def read_header(path: Path) -> MCRequestHeader:
             "source_files",
             "populations",
             "event_count",
+            "preparation_model_sha256",
             "strata",
             "sample_population_id",
             "parent_plan_sha256",
@@ -540,6 +549,7 @@ def read_header(path: Path) -> MCRequestHeader:
         source_files=sources,
         populations=populations,
         event_count=_int(data["event_count"], "event count"),
+        preparation_model_sha256=_sha(data["preparation_model_sha256"], "preparation model hash"),
         strata=allocations,
         sample_population_id=(
             None if data["sample_population_id"] is None else _sha(data["sample_population_id"], "population hash")

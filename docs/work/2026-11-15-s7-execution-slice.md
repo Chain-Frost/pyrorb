@@ -115,3 +115,28 @@ bounded execution adapter is present.
 - Exact-head source, installed-wheel and independent re-review must pass
   before staging #151 merge. Earlier CI and source review remain historical
   evidence, not approval of this further code change.
+
+## 16 November P2 independent review — bind source model before routing
+
+- New exact-head Codex review at `a158e0d` found a real
+  **prepare/run model-drift** vulnerability: changing the project's
+  fixed kc after preparing B samples allowed a software-complete E
+  ledger with a different peak, while ARF could also become stale
+  when catchment area changed.
+- Effective request schema **v3** now requires
+  `preparation_model_sha256`, calculated from the canonical complete
+  source `RunModel` serialisation on the *same in-memory model snapshot*
+  used for fixed-parameter checking and one-time storm/ARF
+  materialisation. Execution compares this against the selected
+  project's resolved model before creating or resuming a ledger.
+  Its sealed ledger schema advances to **v3** and retains the same
+  integrity chain, now with this preparation-model identity.
+- A deliberate original model change to either kc or catchment area
+  must produce an error without a routed result/ledger; tests cover
+  both. Extension also requires identical preparation-model identity.
+- Old v2 effective requests/ledgers lack this binding, so they cannot
+  be silently promoted: re-prepare immutable B plan draws against
+  original sources and run a new v3 ledger. Statistical/native F
+  qualifications remain separate from software acceptability.
+- Exact-head quality, source CMD regression, isolated installed-wheel
+  tests and independent review still determine staging merge readiness.

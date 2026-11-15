@@ -24,10 +24,12 @@ from .monte_carlo_effective import (
     MCPopulation,
     MCRequestHeader,
     materialise_arr_sample,
+    preparation_model_sha256,
     sha256_file,
     write_effective_request,
 )
 from .project_json import SourceFile, load_project
+from .rorb_model import RunModel
 
 MAX_SPEC_BYTES = 2 * 1024 * 1024
 _ADOPTED_ARF = "catchment-wide-once-after-sampling-by-event-owner"
@@ -168,9 +170,8 @@ def _source_files(spec: dict[str, object], request_path: Path, paths: Mapping[st
     return tuple(result)
 
 
-def _check_fixed(spec: dict[str, object], project_path: Path) -> None:
-    loaded = load_project(project_path)
-    parameters = loaded.run.parameters
+def _check_fixed(spec: dict[str, object], model: RunModel) -> None:
+    parameters = model.parameters
     if (
         not parameters.lumped_kc
         or len(parameters.routing) != 1
@@ -229,7 +230,7 @@ def _check_depth_source(api: _SampleApi, spec: dict[str, object], ifd_path: Path
 def _materialised(
     records: Iterable[SavedSampleView],
     *,
-    model_path: Path,
+    model: RunModel,
     patterns_path: Path,
     pattern_kind: str,
     strata: tuple[MCAllocation, ...],
@@ -237,7 +238,6 @@ def _materialised(
     arf_region: str,
     dry_tail_min: int,
 ) -> Iterator[EffectiveMCEvent]:
-    model = load_project(model_path).run
     if pattern_kind not in {"point", "areal"}:
         _fail("Unexpected pattern source kind")
     patterns = read_pattern_file(patterns_path, kind=cast("PatternKind", pattern_kind))
@@ -297,7 +297,10 @@ def prepare_saved_sample_plan(
     spec = plan.spec()
     if spec["arf_policy"] != _ADOPTED_ARF or spec["preburst_policy"] != _ADOPTED_PREBURST:
         _fail("Unrecognised plan ARF or storm/burst loss preparation policy")
-    _check_fixed(spec, project_path)
+    # Use one source-model snapshot to check plan-fixed kc/m, derive ARF
+    # and bind the prepared request to the routed computational model.
+    model = load_project(project_path).run
+    _check_fixed(spec, model)
     _check_depth_source(api, spec, ifd_path)
     original_paths: dict[str, Path] = {"ifd": ifd_path, "temporal_patterns": patterns_path}
     if loss_source_path is not None:
@@ -319,18 +322,18 @@ def prepare_saved_sample_plan(
         source_files=sources,
         populations=(MCPopulation(scenario, duration, modelled, lower, upper),),
         event_count=event_count,
+        preparation_model_sha256=preparation_model_sha256(model),
         strata=allocations,
         sample_population_id=plan.population_id,
         parent_plan_sha256=plan.parent_plan_id,
     )
-    model = load_project(project_path).run
     with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
         area_km2 = sum((s.area_km2 for s in model.catchment.subareas), Decimal(0))
     kind = "point" if area_km2 < 75 else "areal"
     records = api.iter_saved_sample_records(samples_path, plan)
     events = _materialised(
         records,
-        model_path=project_path,
+        model=model,
         patterns_path=patterns_path,
         pattern_kind=kind,
         strata=allocations,

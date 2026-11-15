@@ -22,6 +22,7 @@ from runoff_routing.monte_carlo_effective import (
     MCPopulation,
     MCRequestHeader,
     materialise_arr_sample,
+    preparation_model_sha256,
     read_header,
     validate_effective_request,
     write_effective_request,
@@ -103,6 +104,7 @@ def _input(
         source_files=(SourceFile("patterns.csv", hashlib.sha256(source.read_bytes()).hexdigest()),),
         populations=(MCPopulation("base", 60, Decimal(1)),),
         event_count=count,
+        preparation_model_sha256=preparation_model_sha256(model),
     )
     request = directory / "effective.jsonl"
     write_effective_request(request, header, events)
@@ -217,6 +219,7 @@ def test_probability_mass_accounting_ignores_callers_decimal_context() -> None:
             source_files=(),
             populations=(MCPopulation("base", 60, Decimal("0.123456789012345678901234567890")),),
             event_count=2,
+            preparation_model_sha256=hashlib.sha256(b"analytic-only-model").hexdigest(),
             strata=(
                 MCAllocation("base", 60, "h1", Decimal("0.061728394506172839450617283945"), 1),
                 MCAllocation("base", 60, "h2", Decimal("0.061728394506172839450617283945"), 1),
@@ -395,6 +398,7 @@ def test_zero_rainfall_is_valid_zero_peak_not_missing(tmp_path: Path) -> None:
         ),
         populations=(MCPopulation("base", 60, Decimal(1)),),
         event_count=1,
+        preparation_model_sha256=preparation_model_sha256(_source_model()),
     )
     zero_request = tmp_path / "zero-effective.jsonl"
     # Preserve complete allocation after removing the second sample.

@@ -25,6 +25,7 @@ from runoff_routing.monte_carlo_effective import (
     MCRequestHeader,
     iter_effective_events,
     materialise_arr_sample,
+    preparation_model_sha256,
     validate_effective_request,
     write_effective_request,
 )
@@ -71,6 +72,7 @@ def test_explicit_zero_count_stratum_is_preserved_in_header_and_verification(tmp
         (SourceFile("patterns.csv", hashlib.sha256(pattern.read_bytes()).hexdigest()),),
         (MCPopulation("control", 60, Decimal(1), Decimal(0), Decimal(0)),),
         1,
+        preparation_model_sha256(model),
         (
             MCAllocation("control", 60, "h1", Decimal("0.6"), 1),
             MCAllocation("control", 60, "h2", Decimal("0.4"), 0),
