@@ -368,19 +368,19 @@ def test_cached_preparation_once_per_invariant_model_and_fresh_state(
     if engine == "python":
         prepare_once = project_batch.prepare_run_model
 
-        def count_preparation(model: RunModel) -> object:
+        def count_python_preparation(model: RunModel) -> object:
             calls.append(str(model.parameters.routing[0].kc))
             return prepare_once(model)
 
-        monkeypatch.setattr("runoff_routing.project_batch.prepare_run_model", count_preparation)
+        monkeypatch.setattr("runoff_routing.project_batch.prepare_run_model", count_python_preparation)
     else:
         prepare_once_cmd = project_batch.prepare_cmd_model
 
-        def count_preparation(model: LoadedProject) -> object:
+        def count_cmd_preparation(model: LoadedProject) -> object:
             calls.append("cmd")
             return prepare_once_cmd(model)
 
-        monkeypatch.setattr("runoff_routing.project_batch.prepare_cmd_model", count_preparation)
+        monkeypatch.setattr("runoff_routing.project_batch.prepare_cmd_model", count_cmd_preparation)
 
     events = (
         ProjectEvent("first"),
