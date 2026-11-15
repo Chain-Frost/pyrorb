@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import replace
 from decimal import Decimal, localcontext
 from pathlib import Path
@@ -159,7 +160,7 @@ def test_routes_validated_model_snapshot_when_project_changes_at_checkpoint(
     baseline = tmp_path / "snapshot-baseline.jsonl"
     assert execute_mc_request(project, request, baseline).complete
 
-    original_new_ledger = mc_execution._new_ledger
+    original_new_ledger = cast("Callable[[Path, dict[str, object]], str]", getattr(mc_execution, "_new_ledger"))
 
     def mutate_after_identity_check(path: Path, header: dict[str, object]) -> str:
         previous = original_new_ledger(path, header)
