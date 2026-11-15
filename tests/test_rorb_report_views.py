@@ -100,7 +100,7 @@ def test_report_view_rejects_invalid_selection(tmp_path: Path, section: str, off
     path = tmp_path / "report.out"
     path.write_bytes(_batch())
     document = inspect_report(path)
-    with pytest.raises(ValueError, match="Report offset|Unknown report section"):
+    with pytest.raises(ValueError, match=r"Report offset|Unknown report section"):
         report_csv(document, section, offset=offset, limit=limit)
 
 
