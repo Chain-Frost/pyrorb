@@ -296,3 +296,19 @@ def test_windows_launcher_passes_actual_par_argument_and_propagates_failures(tmp
     assert failure.returncode != 0
     assert r"events\001\model.par" in failure.stdout.casefold()
     assert r"events\002\model.par" not in failure.stdout.casefold()
+    # Prove a *negative* Win32 exit status is also an event failure. Replace
+    # the two PARs with Python-only stubs AFTER checking the real native inputs;
+    # this altered package is not a valid RORB export.
+    (relocated / "events" / "001" / "model.par").write_text("raise SystemExit(0)\n", encoding="utf-8")
+    (relocated / "events" / "002" / "model.par").write_text(
+        "import os\nos._exit(-1073741819)\n", encoding="utf-8"
+    )
+    negative = subprocess.run(  # noqa: S603 -- explicit package script and test Python executable
+        [str(relocated / "run.cmd"), sys.executable],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert negative.returncode != 0

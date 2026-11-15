@@ -293,7 +293,7 @@ def _launcher(number_of_events: int) -> bytes:
         'set "FAILED=0"',
     ]
     for ordinal in range(1, number_of_events + 1):
-        lines.extend((f'call :run_case "events\\{ordinal:03d}"', 'if errorlevel 1 set "FAILED=1"'))
+        lines.extend((f'call :run_case "events\\{ordinal:03d}"', 'if not "%errorlevel%"=="0" set "FAILED=1"'))
     lines.extend(
         (
             "exit /b %FAILED%",
