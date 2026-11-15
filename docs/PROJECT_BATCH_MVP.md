@@ -13,9 +13,11 @@ one natural reach and one final code-7 print, one DESIGN pluviograph, one ISA
 and one burst, pervious IL/CL (loss model 1), lumped kc, explicit temporal
 pattern and depths, fixed computational control order and full N+1 model-elapsed
 samples. It is an **authored software control**, not native calibration data.
-For `python-cmd/cmd-6.44`, this is the intended reproducible MVP reference
-engine. `python/engineering-v1` remains the default, is separately computed,
-and must never masquerade as a CMD-compatible result.
+For `python-cmd/cmd-6.44`, this is the reproducible MVP reference engine
+and the **temporary project default** during CMD-first development.
+`python/engineering-v1` remains explicitly available and is the intended
+long-term default; it is separately computed and must never masquerade as a
+CMD-compatible result.
 
 The public original-input acceptance population includes existing maintained
 register IDs `review-design-baseline`, `review-ensemble-tp1`,
@@ -145,8 +147,8 @@ bitwise-value equality control. This is not a new numerical engine.
 Original CMD source reference case IDs `review-design-baseline`,
 `review-ensemble-tp1`, `timestep-design-baseline-f2`,
 `timestep-ensemble-tp3-f4`, `zero-loss-ensemble-tp9-f1` are tested
-through the **batch API and complete CSV/JSON/text reporting**, not merely
-through the pre-existing numerical probe. The required four-event sequence
+through the **batch API, direct CLI and complete CSV/JSON/text reporting**,
+not merely through the pre-existing numerical probe. The required four-event sequence
 contains baseline, TP1 with separately resolved storm/kc, a negative
 `mvp-invalid-control` with no fabricated Q, and an equivalent baseline
 under a *different* ID. `mvp-unsupported-storage` remains an explicitly
@@ -193,3 +195,14 @@ runner, private repository requirement, optimisation campaign or Monte Carlo.
 Advanced #114–#118, optional #63, residual #103 and Monte Carlo #9
 are **not** MVP gates. Full CMD gate #5 remains open for its broader
 original-input and numerical/scientific claims.
+
+## Validation after review (15 November 2026)
+
+All five authenticated original seed cases are exercised individually through
+both the original-source/embedded-JSON batch API and the **actual CLI entry point**
+with complete N+1 Q, time/site identity, full CSV/JSON/text reports and expected
+nonzero exit for an intervening invalid event. A malformed decimal percentage
+that overflows during source-event validation is retained as an `invalid_input`
+record, preserving the preceding and following computed events. Current new
+schema-2 project defaults select `python-cmd/cmd-6.44`, while explicit
+`--engine python` continues to run the independent improved engine.

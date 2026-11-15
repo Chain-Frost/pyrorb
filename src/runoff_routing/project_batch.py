@@ -265,7 +265,9 @@ def _validated_override[T](original: T, raw: object, converter: Callable[[T, obj
         return converter(original, raw)
     except EventConfigError:
         raise
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, ArithmeticError) as exc:
+        # Decimal Overflow/InvalidOperation from S1 validation is an event-local
+        # invalid input, not a reason to discard the remaining batch.
         raise EventConfigError(_INVALID_INPUT, code, str(exc)) from exc
 
 
@@ -285,7 +287,7 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
         changed.append("routing")
     try:
         return RunModel(parameters, current.catchment, storm), ",".join(changed) if changed else "none"
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, ArithmeticError) as exc:
         raise EventConfigError(_INVALID_INPUT, "event_model", str(exc)) from exc
 
 

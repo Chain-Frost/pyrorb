@@ -62,14 +62,14 @@ def test_single_source_typed_event_preserves_decimal_and_order(tmp_path: Path) -
 def test_public_cmd_runs_full_horizon_without_native_or_fallback(tmp_path: Path) -> None:
     source = _project(tmp_path, _model(), cmd_stored=True)
     cmd = run_engine_project(source)
-    default = run_engine_project(source, selection=EngineSelection())
-    assert cmd.status == default.status == "computed_unvalidated"
+    engineering = run_engine_project(source, selection=EngineSelection.for_engine("python"))
+    assert cmd.status == engineering.status == "computed_unvalidated"
     assert cmd.effective_selection.engine == "python-cmd"
-    assert default.effective_selection.engine == "python"
+    assert engineering.effective_selection.engine == "python"
     assert cmd.stored_selection.engine == "python-cmd"
     assert cmd.native_parity_status == "not_assessed"
     assert cmd.native_executable_sha256 is None
-    assert len(cmd.hydrographs) == len(default.hydrographs) == 1
+    assert len(cmd.hydrographs) == len(engineering.hydrographs) == 1
     assert len(cmd.hydrographs[0].discharge_m3_s) == 6
     assert cmd.physical_time_hours == ("0.0", "0.5", "1.0", "1.5", "2.0", "2.5")
     assert cmd.hydrographs[0].print_id == "print_1"

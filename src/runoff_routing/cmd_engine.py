@@ -57,7 +57,7 @@ class PreparedCmdModel:
 
 
 def prepare_cmd_model(loaded: LoadedProject) -> PreparedCmdModel:
-    """Precompute the existing CMD geometry once for invariant CATG and kc/m."""
+    """Precompute existing CMD geometry once for invariant CATG and kc/m."""
     event = adapt_event(loaded)
     try:
         geometry = compute_geometry(event)
@@ -117,7 +117,7 @@ def _check_scope(loaded: LoadedProject) -> None:
         _unsupported("cmd_storages", "Special storages are not characterised")
     if len(catchment.print_locations) != 1 or sum(step.code == 7 for step in catchment.controls) != 1:
         _unsupported("cmd_print_sites", "Only a single final physical print location is characterised")
-    if catchment.controls[-1].code != 7 or any(step.code not in (1, 3, 4, 5, 7) for step in catchment.controls):
+    if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7) for step in catchment.controls):
         _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
     if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
         _unsupported("cmd_horizon", "Event calculation horizon does not include all rainfall bins")
@@ -131,7 +131,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
     control_values: list[Control] = []
     reach_index = 0
     for step in run.catchment.controls:
-        if step.code in (1, 5):
+        if step.code in (1, 2, 5):
             length = run.catchment.reaches[reach_index].length_km
             reach_index += 1
         else:
@@ -152,7 +152,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
         tuple(control_values),
         tuple(_number(item.area_km2) for item in run.catchment.subareas),
         tuple(_number(value) for value in run.storm.depths_mm),
-        tuple(_number(Decimal(0)) for _ in run.catchment.subareas),
+        tuple(_number(item.impervious_fraction) for item in run.catchment.subareas),
         weights,
         _number(run.storm.timestep_hours),
         _number(parameters.routing[0].kc),
@@ -166,7 +166,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
 def run_cmd_model(
     loaded: LoadedProject, implementation_revision: str, *, prepared: PreparedCmdModel | None = None
 ) -> CmdComputed:
-    """Calculate one fresh CMD event with optional immutable prepared geometry."""
+    """Calculate each fresh CMD event with optional invariant prepared geometry."""
 
     event = adapt_event(loaded)
     if prepared is not None and (

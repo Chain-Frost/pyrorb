@@ -209,6 +209,62 @@ def test_event_request_json_and_cli_report_all_requested_failures(tmp_path: Path
     assert Path(f"{prefix}.json").read_text(encoding="utf-8").endswith("\n")
 
 
+@pytest.mark.parametrize("engine", ["python", "python-cmd"])
+def test_decimal_overflow_is_an_event_failure_not_a_batch_abort(tmp_path: Path, engine: str) -> None:
+    """Codex P2: malformed decimal arithmetic must not lose adjacent results."""
+    project = _project(tmp_path)
+    selection = EngineSelection.for_engine(engine)
+    requests: tuple[object, ...] = (
+        ProjectEvent("before"),
+        ProjectEvent("overflow", storm={"percentages": ["1e999999999"]}),
+        ProjectEvent("after"),
+    )
+    report = run_project_events(project, requests, selection=selection)
+    assert [item.status for item in report.outcomes] == [
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
+    ]
+    assert report.outcomes[1].diagnostics[0].code == "storm_model"
+    assert not report.outcomes[1].hydrographs
+    assert report.outcomes[0].hydrographs == report.outcomes[2].hydrographs
+    assert report.outcomes[0].python_diagnostics == report.outcomes[2].python_diagnostics
+    assert not report.succeeded
+
+    request_file = tmp_path / f"overflow-{engine}.json"
+    request_file.write_text(
+        json.dumps(
+            {
+                "format": "python-runoff-routing-explicit-events",
+                "schema_version": 1,
+                "events": [
+                    {"event_id": "before"},
+                    {"event_id": "overflow", "storm": {"percentages": ["1e999999999"]}},
+                    {"event_id": "after"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    prefix = tmp_path / f"overflow-{engine}-out"
+    assert main([str(project), str(prefix), "--events", str(request_file), "--engine", engine]) == 2
+    payload = json.loads(Path(f"{prefix}.json").read_text(encoding="utf-8"))
+    assert payload["requested_event_count"] == 3
+    assert payload["completed_event_count"] == 2
+    assert [item["status"] for item in payload["outcomes"]] == [
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
+    ]
+    assert payload["outcomes"][1]["diagnostics"][0]["code"] == "storm_model"
+    assert payload["outcomes"][1]["hydrographs"] == []
+    assert payload["outcomes"][0]["hydrographs"] == payload["outcomes"][2]["hydrographs"]
+    csv_rows = list(csv.DictReader(io.StringIO(Path(f"{prefix}.csv").read_text(encoding="utf-8"))))
+    assert sum(row["event_id"] == "overflow" for row in csv_rows) == 1
+    summary = Path(f"{prefix}.txt").read_text(encoding="utf-8")
+    assert "overflow: invalid_input" in summary
+
+
 def test_no_clobber_and_malformed_configuration_fail_without_artefacts(tmp_path: Path) -> None:
     project = _project(tmp_path)
     output = tmp_path / "existing"
@@ -238,13 +294,15 @@ def test_default_one_event_cli_creates_three_complete_outputs(tmp_path: Path) ->
     assert report["requested_event_count"] == 1
     outcome = report["outcomes"][0]
     assert outcome["event_id"] == "mvp_example"
-    assert outcome["effective_selection"]["engine"] == "python"
+    assert outcome["effective_selection"]["engine"] == "python-cmd"
+    assert outcome["stored_selection"]["engine"] == "python-cmd"
+    assert outcome["effective_selection"]["numerical_profile"] == "cmd-6.44"
     rows = list(csv.DictReader(io.StringIO(Path(f"{prefix}.csv").read_text(encoding="utf-8"))))
     assert len(rows) == 6
     assert [int(row["sample_index"]) for row in rows] == list(range(6))
     assert all(row["print_id"] == "print_1" for row in rows)
-    assert rows[0]["physical_time_hours"] == "0.0"
-    assert rows[-1]["physical_time_hours"] == "2.5"
+    assert float(rows[0]["physical_time_hours"]) == 0.0
+    assert float(rows[-1]["physical_time_hours"]) == 2.5
 
 
 def test_selected_native_fails_explicitly_without_using_python(tmp_path: Path) -> None:
@@ -344,6 +402,51 @@ def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, 
     equivalent = run_project_events(target_json, (ProjectEvent("equivalent"),)).outcomes[0]
     assert equivalent.hydrographs == single.hydrographs
     assert equivalent.physical_time_hours == single.physical_time_hours
+
+    # Exercise the actual installed-wheel-capable CLI entry point for EVERY
+    # pinned original case; the batch API alone does not check file I/O/exit.
+    requests_path = tmp_path / "original-events.json"
+    requests_path.write_text(
+        json.dumps(
+            {
+                "format": "python-runoff-routing-explicit-events",
+                "schema_version": 1,
+                "events": [
+                    {"event_id": "original"},
+                    {"event_id": "after", "storm": {"depths_mm": ["invalid"]}},
+                    {"event_id": "again"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    report_prefix = tmp_path / "original-cli"
+    assert main(
+        [str(project), str(report_prefix), "--events", str(requests_path), "--engine", "python-cmd"]
+    ) == 2
+    cli_payload = json.loads(Path(f"{report_prefix}.json").read_text(encoding="utf-8"))
+    assert cli_payload["requested_event_count"] == 3
+    assert cli_payload["completed_event_count"] == 2
+    assert [item["status"] for item in cli_payload["outcomes"]] == [
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
+    ]
+    assert [item["event_id"] for item in cli_payload["outcomes"]] == ["original", "after", "again"]
+    assert cli_payload["outcomes"][0]["hydrographs"] == cli_payload["outcomes"][2]["hydrographs"]
+    assert cli_payload["outcomes"][0]["source_file_hashes"] == [list(pair) for pair in single.source_file_hashes]
+    assert cli_payload["outcomes"][0]["effective_selection"]["engine"] == "python-cmd"
+    assert cli_payload["outcomes"][0]["physical_time_hours"] == list(single.physical_time_hours)
+    cli_rows = list(csv.DictReader(io.StringIO(Path(f"{report_prefix}.csv").read_text(encoding="utf-8"))))
+    assert len(cli_rows) == 2 * case["clock"]["row_count"] + 1
+    original_rows = [row for row in cli_rows if row["event_id"] == "original"]
+    assert len(original_rows) == case["clock"]["row_count"]
+    assert tuple(float(row["discharge_m3_s"]) for row in original_rows) == single.hydrographs[0].discharge_m3_s
+    assert all(row["print_id"] == case["sites"][0]["model_print_id"] for row in original_rows)
+    assert [int(row["sample_index"]) for row in original_rows] == list(range(case["clock"]["row_count"]))
+    assert all(row["engine"] == "python-cmd" for row in original_rows)
+    assert sum(row["event_id"] == "after" for row in cli_rows) == 1
+    assert "after: invalid_input" in Path(f"{report_prefix}.txt").read_text(encoding="utf-8")
 
 
 def _registered_original_files(root: Path, case_id: str) -> dict[str, Path]:
