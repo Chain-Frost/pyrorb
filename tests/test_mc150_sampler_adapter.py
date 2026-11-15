@@ -17,6 +17,16 @@ from typing import Any, Protocol, cast
 
 import pytest
 
+from runoff_routing.monte_carlo_frequency import (
+    CurvePopulation,
+    FrequencyScope,
+    PeakRecord,
+    PeakStatus,
+    StratumWeight,
+    UnmodelledTails,
+    build_frequency_curves,
+)
+
 
 class _SamplerAPI(Protocol):
     SamplePlan: Any
@@ -209,3 +219,79 @@ def test_unimplemented_correlated_initial_loss_is_rejected() -> None:
     spec["joint_policy"] = "conditional-loss-from-rainfall-v1"
     with pytest.raises(api.SamplePlanError, match="Unsupported joint_policy"):
         api.SamplePlan.create(spec)
+
+
+def test_independent_staged_sampler_to_two_site_frequency_population() -> None:
+    """B's actual saved-law draws must remain weighted in C, without routing claims."""
+    sampler = _sampler()
+    spec = _spec()
+    plan = sampler.SamplePlan.create(spec)
+    samples = tuple(sampler.iter_plan_samples(plan))
+    assert len(samples) == 6
+    assert len({row.sample_id for row in samples}) == 6
+
+    # Each synthetic physical site has a distinct *independently authored*
+    # response table. One positive-weight rare sample fails at both sites.
+    # These response values were not computed by any hydrological engine.
+    expected_flows = (
+        ("site-upstream", (5.0, 15.0, 0.0, 10.0, 20.0, 30.0)),
+        ("site-downstream", (7.0, 17.0, 0.0, 12.0, 22.0, 32.0)),
+    )
+    strata = tuple(
+        StratumWeight(row["id"], float(row["probability_mass"]), row["count"]) for row in spec["strata"]
+    )
+    # B's lower AEP tail is rarer/high-rainfall; its upper AEP tail is
+    # more frequent/low-rainfall. C identifies them by *rainfall* magnitude.
+    tails = UnmodelledTails(lower_rainfall_mass=0.5, upper_rainfall_mass=0.1)
+    populations: list[CurvePopulation] = []
+    records: list[PeakRecord] = []
+
+    for site, flows in expected_flows:
+        scope = FrequencyScope(
+            plan.plan_id,
+            spec["policy"]["id"],
+            spec["policy"]["version"],
+            spec["scenario_id"],
+            spec["duration_min"],
+            site,
+        )
+        populations.append(CurvePopulation(scope, strata, tails))
+        for sample, flow in zip(samples, flows, strict=True):
+            status: PeakStatus = "failed" if (sample.stratum_id, sample.index) == ("rare", 1) else "valid"
+            records.append(
+                PeakRecord(
+                    scope=scope,
+                    stratum_id=sample.stratum_id,
+                    sample_id=sample.sample_id,
+                    event_probability_weight=float(sample.event_probability_weight),
+                    status=status,
+                    peak_m3_s=None if status == "failed" else flow,
+                    event_id=f"synthetic-event-{sample.sample_id}" if status == "valid" else None,
+                    effective_input_id=f"synthetic-input-{sample.sample_id}" if status == "valid" else None,
+                )
+            )
+
+    curves = build_frequency_curves(populations, reversed(records))
+    by_site = {curve.scope.output_site_id: curve for curve in curves}
+    assert set(by_site) == {"site-upstream", "site-downstream"}
+
+    for site, expected_s10 in (("site-upstream", 0.15), ("site-downstream", 0.225)):
+        curve = by_site[site]
+        assert curve.coverage.valid_mass == pytest.approx(0.35)
+        assert curve.coverage.failed_mass == pytest.approx(0.05)
+        assert curve.coverage.zero_mass == pytest.approx(0.075)
+        assert curve.coverage.tails.lower_rainfall_mass == pytest.approx(0.5)
+        assert curve.coverage.tails.upper_rainfall_mass == pytest.approx(0.1)
+        assert curve.coverage.unresolved_mass == pytest.approx(0.65)
+        assert not curve.coverage.complete
+        assert curve.exceedance(0).known_exceedance_probability == pytest.approx(0.275)
+        at_ten = curve.exceedance(10)
+        assert at_ten.known_exceedance_probability == pytest.approx(expected_s10)
+        assert at_ten.lower_probability == pytest.approx(expected_s10)
+        assert at_ten.upper_probability == pytest.approx(expected_s10 + 0.65)
+        assert curve.estimate(0.2).status == "incomplete"
+        assert curve.estimate(0.2).peak_m3_s is None
+        assert curve.estimate(0.2).representative is None
+        assert {row.record.sample_id for row in curve.positive_weight_observations} <= {
+            sample.sample_id for sample in samples
+        }
