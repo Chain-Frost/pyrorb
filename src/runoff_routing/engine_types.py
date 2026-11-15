@@ -8,7 +8,25 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import asdict, dataclass
+from enum import StrEnum
 from typing import Literal
+
+
+class EngineKind(StrEnum):
+    PYTHON = "python"
+    PYTHON_CMD = "python-cmd"
+    RORB_CMD = "rorb-cmd"
+
+
+class ResultStatus(StrEnum):
+    COMPUTED_UNVALIDATED = "computed_unvalidated"
+    UNAVAILABLE_ENGINE = "unavailable_engine"
+    UNSUPPORTED_FEATURE = "unsupported_feature"
+    INVALID_INPUT = "invalid_input"
+    NUMERICAL_ERROR = "numerical_error"
+    INCOMPLETE_OUTPUT = "incomplete_output"
+    NATIVE_EXECUTION_FAILED = "native_execution_failed"
+
 
 EngineId = Literal["python", "python-cmd", "rorb-cmd"]
 EngineStatus = Literal[
@@ -20,10 +38,10 @@ EngineStatus = Literal[
     "incomplete_output",
     "native_execution_failed",
 ]
-_DEFAULT_PROFILES: dict[EngineId, str] = {
-    "python": "engineering-v1",
-    "python-cmd": "cmd-6.44",
-    "rorb-cmd": "cmd-6.44",
+_DEFAULT_PROFILES: dict[EngineKind, str] = {
+    EngineKind.PYTHON: "engineering-v1",
+    EngineKind.PYTHON_CMD: "cmd-6.44",
+    EngineKind.RORB_CMD: "cmd-6.44",
 }
 
 
@@ -31,17 +49,20 @@ _DEFAULT_PROFILES: dict[EngineId, str] = {
 class EngineSelection:
     """Engine identity and versioned arithmetic profile; independent of rainfall preparation."""
 
-    engine: EngineId = "python-cmd"
+    engine: EngineKind | EngineId = EngineKind.PYTHON_CMD
     numerical_profile: str = "cmd-6.44"
 
     def __post_init__(self) -> None:
-        if self.engine not in _DEFAULT_PROFILES:
+        try:
+            selected = EngineKind(self.engine)
+        except (TypeError, ValueError) as exc:
             message = f"Unknown computation engine: {self.engine}"
-            raise ValueError(message)
+            raise ValueError(message) from exc
+        object.__setattr__(self, "engine", selected)
         if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", self.numerical_profile) is None:
             message = "Numerical profile must be a nonempty, versioned ASCII identifier"
             raise ValueError(message)
-        if self.engine == "python" and self.numerical_profile != _DEFAULT_PROFILES["python"]:
+        if self.engine == "python" and self.numerical_profile != _DEFAULT_PROFILES[EngineKind.PYTHON]:
             message = "The current python backend implements only engineering-v1"
             raise ValueError(message)
         if self.engine != "python" and not self.numerical_profile.startswith("cmd-"):
@@ -51,10 +72,11 @@ class EngineSelection:
     @classmethod
     def for_engine(cls, engine: str, numerical_profile: str | None = None) -> EngineSelection:
         """Resolve a deliberate override without borrowing another engine's profile."""
-        if engine not in _DEFAULT_PROFILES:
+        try:
+            selected = EngineKind(engine)
+        except (TypeError, ValueError) as exc:
             message = f"Unknown computation engine: {engine}"
-            raise ValueError(message)
-        selected = engine
+            raise ValueError(message) from exc
         return cls(selected, numerical_profile if numerical_profile is not None else _DEFAULT_PROFILES[selected])
 
 
@@ -120,7 +142,7 @@ class EngineOutcome:
     stored_selection: EngineSelection
     effective_selection: EngineSelection
     selection_source: Literal["project", "api_override", "cli_override"]
-    status: EngineStatus
+    status: EngineStatus | ResultStatus
     event_id: str
     rainfall_profile: str
     requested_print_ids: tuple[str, ...]
@@ -144,10 +166,18 @@ class EngineOutcome:
     numerical_acceptance: Literal["unassessed"] = "unassessed"
     native_parity_status: Literal["not_assessed"] = "not_assessed"
 
+    def __post_init__(self) -> None:
+        try:
+            selected = ResultStatus(self.status)
+        except (TypeError, ValueError) as exc:
+            message = f"Unknown project result status: {self.status}"
+            raise ValueError(message) from exc
+        object.__setattr__(self, "status", selected)
+
     @property
-    def calculation_status(self) -> EngineStatus:
-        """Compatibility alias for the original project CLI summary."""
-        return self.status
+    def calculation_status(self) -> ResultStatus:
+        """Typed project status; JSON still writes the established native string."""
+        return ResultStatus(self.status)
 
     def to_json(self) -> str:
         """Full result with original native clock tokens and explicit nulls for missing internals."""

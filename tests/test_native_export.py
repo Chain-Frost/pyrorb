@@ -221,7 +221,7 @@ def test_json_event_request_cli_reuses_existing_override_derivation(
                 "schema_version": 1,
                 "events": [
                     {"event_id": "first", "routing": {"kc": "7.5"}},
-                    {"event_id": "second", "losses": {"initial_loss_mm": "19"}},
+                    {"event_id": "second", "losses": {"initial_loss_mm": "19", "continuing_loss_mm_h": "5"}},
                 ],
             }
         ),
@@ -233,6 +233,7 @@ def test_json_event_request_cli_reuses_existing_override_derivation(
     assert summary["event_ids"] == ["first", "second"]
     assert _model_from_emitted(destination / "events" / "001").parameters.routing[0].kc == Decimal("7.5")
     assert _model_from_emitted(destination / "events" / "002").parameters.losses[0].initial_loss_mm == Decimal(19)
+    assert _model_from_emitted(destination / "events" / "002").parameters.losses[0].continuing == Decimal(5)
     assert main([str(project_path), str(destination), "--target", "cmd-6.44"]) == 2
     assert "already exists" in capsys.readouterr().err
 

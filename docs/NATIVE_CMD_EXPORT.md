@@ -22,7 +22,7 @@ py -3.13 -m runoff_routing.native_export "C:\models\project.json" "C:\deliveries
 py -3.13 -m runoff_routing.native_export "C:\models\project.json" "C:\deliveries\selected batch" --target cmd-6.44 --events "C:\models\events.json"
 ```
 
-The second command accepts the existing `python-runoff-routing-explicit-events` schema-1 JSON request used by `project_batch`. The command-line entry point is isolated until #140 integrates a corresponding handler into the shared project dispatcher. A malformed or unsupported selected event fails the whole export rather than silently omitting the event.
+The second command accepts the existing `python-runoff-routing-explicit-events` schema-1 JSON request used by `project_batch`, with all event edits resolved through #138's shared `resolve_effective_model` function (including named continuing-loss input). The command-line entry point is isolated until #140 integrates a corresponding handler into the shared project dispatcher. A malformed or unsupported selected event fails the whole export rather than silently omitting the event.
 
 ## Python API
 
@@ -61,7 +61,7 @@ For acceptance record the native executable's original SHA-256 and observed vers
 
 ### Remaining dependencies and limits
 
-- #138 owns typed/enumerated editing and one effective-event model. The current command handler reuses #119's effective-event derivation; reconcile its imported helper against #138's public contract when the latter lands.
+- #138 owns typed/enumerated editing and one effective-event model. The CLI consumes `resolve_effective_model` from #138's typed editing branch (PR #157). This is a real branch dependency; merge/rebase the reviewed #138 contract before retargeting this PR to `main`.
 - #140 owns PAR-led path override bindings, persisted edited settings and integration into the shared project CLI. The exporter currently reads the existing immutable `LegacyRunFiles` bindings, and needs #140's final binding API to admit newly staged override-based inputs without losing provenance.
 - #139 owns PyRomb-backed CATG edits and expanded STM writer. The exporter must call those reviewed writer functions, not add a local CATG renderer.
 - Optional external rainfall/curve/temporal-pattern inputs cannot be inferred from metadata. Non-reference external assets currently fail closed rather than yield an incomplete native package. RORBwin saved PAR, plain computational CAT and DAT remain unsupported.

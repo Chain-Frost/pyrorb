@@ -3,7 +3,7 @@
 **Date:** 15 November 2026  
 **Owner:** #141 native package/export; #138 shared effective settings, #139 edited CATG/STM writers, #140 PAR import/source bindings/CLI.  
 **Base inspected:** `main` at `0675d75b05dba7728b389fdd8af743060b4469b2`.  
-**Branch:** `feat/141-native-cmd-export`.  
+**Branch:** `feat/141-native-cmd-export` (stacked on #138 PR #157).  
 **Review/merge:** Review required; do not merge under this scope without owner instruction.
 
 ## Delivered in isolated files
@@ -20,7 +20,7 @@ Each successful software export has an emitted-byte hash and in-process reparse,
 
 ## Integration gates / next actions
 
-1. #138/#140 should expose the selected effective `RunModel` and retained source-role bindings for run/save/native export, and wire the new command handler to their shared project dispatcher. The current standalone CLI reuses #119's event derivation rather than inventing an override grammar.
+1. #138/#140 should expose the selected effective `RunModel` and retained source-role bindings for run/save/native export, and wire the new command handler to their shared project dispatcher. The standalone CLI now imports #138's public `resolve_effective_model`, not private #119 helpers; PR #162 is stacked on #138 PR #157 until that shared contract merges.
 2. #139 should provide the reviewed PyRomb edited-CATG adapter; the exporter intentionally rejects changed catchments until an actual upstream writer can round-trip their order, physical lengths, FI and metadata.
 3. Run focused source tests, Ruff/Pyright, Windows quality CI, and installed-wheel checks on the **exact integrated head**; track exact revisions, skips and failures.
 4. On an authorised Windows machine, move the package, execute the *emitted* `model.par` (not S0 capture-generated PAR), hash it before/after, record executable version/SHA/cwd/argv and all actual output/verbosity observations. Only then assess numerical evidence via the existing comparator.

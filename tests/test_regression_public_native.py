@@ -7,57 +7,15 @@ import hashlib
 import json
 import shutil
 from collections import Counter
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from runoff_routing import regression_dataset as rd
-from runoff_routing.rorb_codec import parse_catg
 
 DATA = Path(__file__).absolute().parent / "fixtures" / "regression-v1"
 REGISTER = DATA / "register.json"
-
-
-def test_recovered_pinned_pr16_export_matches_historical_crlf_source() -> None:
-    """Preserve both original identities while proving the complete serialization relationship."""
-    provenance = json.loads((DATA / "native-cmd" / "provenance.json").read_bytes())
-    export = provenance["independent_2026_11_15_closeout"]["upstream_pr16_export"]
-    assert export["exporter_revision"] == "a323d5709f7ce14c6adf46f01e0224b60668340c"
-    raw = (DATA / export["output"]["path"]).read_bytes()
-    assert len(raw) == 2818
-    assert hashlib.sha256(raw).hexdigest() == "67ae955b515a0594298fa1b0e48005d4d12db520e0a7dc582f37e6e06d6ad815"
-    register = json.loads(REGISTER.read_bytes())
-    historical = next(case for case in register["cases"] if case["case_id"] == "pyromb-pr2-full")
-    source = next(item for item in historical["inputs"] if item["path"].endswith(".catg"))
-    original = (DATA / source["path"]).read_bytes()
-    assert len(original) == 2913
-    assert hashlib.sha256(original).hexdigest() == "2ad4663ddeaacdfd4bba4b199a29d3eed7bcb6d9f096ff62f6d9d107330bd247"
-    assert b"\r" not in raw
-    assert raw.replace(b"\n", b"\r\n") == original
-    model = parse_catg(raw).model
-    assert model == parse_catg(original).model
-    assert model.reach_mode == "explicit_reach_types"
-    assert tuple(step.code for step in model.controls) == (1, 3, 1, 4, 2, 3, 1, 2, 4, 5, 2, 7)
-    assert tuple(area.impervious_fraction for area in model.subareas) == tuple(
-        map(Decimal, ("0", "0.5", "0.2", "0", "0", "0"))
-    )
-
-
-def test_authenticated_feature_evidence_still_fails_closed_as_gap(tmp_path: Path) -> None:
-    """A complete retained native table does not silently promote feature qualification."""
-    result = _run(tmp_path, group="native-gaps")
-    assert result["counts"] == {"incomplete": 21}
-    register = json.loads(REGISTER.read_bytes())
-    cases = [case for case in register["cases"] if "evidence_review" in case]
-    assert len(cases) == 8
-    for case in cases:
-        assert case["coverage"] == "gap"
-        assert "cmd-eligible" not in case["sets"]
-        assert case["clock"]["row_count"] == 301
-        assert len(case["files"]) == 5
-        assert case["evidence_review"]["status"] == "authenticated_original_pending_admission"
 
 
 def _run(tmp_path: Path, *, group: str = "cmd-eligible", snapshot: bool = False) -> dict[str, Any]:

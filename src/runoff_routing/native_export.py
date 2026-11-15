@@ -15,7 +15,7 @@ import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, cast
 
 from .project_json import MAX_SOURCE_BYTES, LegacyRunFiles, LoadedProject, SourceFile, load_project
 from .rorb_codec import (
@@ -404,23 +404,29 @@ def export_cmd_package(
 
 
 def _requested_events(project_path: Path, requests: Path) -> tuple[NativeExportEvent, ...]:
-    """Consume the existing #119 event derivation, not an independent override grammar."""
-    from .project_batch import (  # noqa: PLC0415 -- CLI-only dependency; avoids project dispatcher import loops
-        _event_run,  # pyright: ignore[reportPrivateUsage] -- #138 will publish the shared effective-run boundary
-        _request_fields,  # pyright: ignore[reportPrivateUsage] -- same #119 event source/validation contract
+    """Consume #138's shared effective-event resolver, never a second override grammar."""
+    from .project_batch import (  # noqa: PLC0415 -- CLI-only import avoids project dispatcher import loops
+        ProjectEvent,
         load_event_request,
+        resolve_effective_model,
     )
 
     loaded = load_project(project_path)
     selected: list[NativeExportEvent] = []
     for item in load_event_request(requests):
-        fields = _request_fields(item)
-        identifier = fields.get("event_id")
-        if not isinstance(identifier, str):
-            message = "Every native export event must have an explicit event_id"
+        request: ProjectEvent | dict[str, object]
+        if isinstance(item, ProjectEvent):
+            request = item
+        elif isinstance(item, dict):
+            request = cast("dict[str, object]", item)
+        else:
+            message = "Native export requires valid explicit-event objects"
             raise NativeExportError(message)
-        effective_run, _ = _event_run(loaded, fields)
-        selected.append(NativeExportEvent(identifier, effective_run))
+        resolved = resolve_effective_model(loaded.run, request)
+        if resolved.event_id is None:
+            message = "Native export events require an explicit event_id"
+            raise NativeExportError(message)
+        selected.append(NativeExportEvent(resolved.event_id, resolved.run))
     return tuple(selected)
 
 
