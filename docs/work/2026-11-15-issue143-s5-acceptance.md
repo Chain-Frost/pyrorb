@@ -219,6 +219,36 @@ This exact code/document head is the verified source/wheel receipt for the
 reviewable #143 acceptance PR; no native RORB binary or full integrated owner
 release is included.
 
+## Windows-local execution handoff (16 November 2026)
+
+A copyable, bounded local agent prompt, example **PowerShell-only**
+direct execution, stop rules, exact native input/output hash expectations,
+and evidence-return schema are in
+[the Windows RORB CMD acceptance handoff](2026-11-16-issue143-windows-rorbcmd-handoff.md).
+The executable is deliberately not bundled or invoked in hosted CI.
+Native testing is still **not_run** until that handoff is actually executed.
+
+The earlier independent P1 native stale-input finding is **now fixed in
+the unmerged #140 branch**: [PR #159](https://github.com/Chain-Frost/python-runoff-routing/pull/159)
+head `089baec88de8867ede2506ef43b7ebae5ef2dcd1` implements
+`_guard_native_effective_sources`, comparing the hash-verified
+original CATG/STM typed model to the selected effective catchment/storm
+before any native launch. Its regression cases change storm depths and
+catchment area with all original timestep/horizon/site values intact,
+then assert unsupported_feature/native_effective_source_mismatch and
+**no external execution**. [Exact-head Windows quality
+#43733144711](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43733144711)
+completed successfully. This is a **reviewed branch software correction**,
+not proof the final merged adapter or the genuine executable has run.
+The historical P1 observation above remains attributed to the earlier
+synthetic integration snapshot; do not call the later #140 code unfixed.
+
+The current #143 acceptance PR head `54055138f5462bb5758e901babf2f38904f11c09` passed [Windows quality
+#43734550998](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43734550998)
+with all source/installed-wheel checks on that exact head; no native
+executable was invoked. This paragraph and the linked handoff are
+subsequent documentation-only work requiring their own link/CI review.
+
 ## Direct Windows-native portability procedure — outstanding
 
 1. Select a supported registered source and prepare a parameter-only edit, then supported structural/storm edits once #139 can write them. Record original hashes, source bindings and effective selected settings/overrides.
