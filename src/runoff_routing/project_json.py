@@ -608,12 +608,7 @@ def save_project_as(
         write_project(destination, project)
         return project
     _relocated_source_files(origin, target, project)
-    try:
-        write_project(destination, project)
-    except OSError:
-        # Keep hash-pinned sources for a retry only when destination write races.
-        # The JSON is still exclusive; no original data are ever overwritten.
-        raise
+    write_project(destination, project)
     return project
 
 
@@ -787,7 +782,7 @@ def _cli_import_rorb(args: list[str]) -> None:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command dispatcher, no CLI framework
     """Small Windows-friendly CLI without argparse, native calls or side effects."""
     args = sys.argv[1:] if argv is None else argv
     if args and args[0] == "run":

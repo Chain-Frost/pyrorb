@@ -53,7 +53,6 @@ def _reference_path(
     return local.absolute() if local.is_absolute() else (base / local).absolute()
 
 
-
 def _ensure_stage_within_project(stage_dir: Path, root: Path) -> None:
     from .project_json import ProjectError  # noqa: PLC0415 -- filesystem import adapter avoids cycle
 
@@ -102,7 +101,8 @@ def import_from_par(
     try:
         parameter_model = parse_cmd_par(par_data).model
     except FormatProblem as exc:
-        raise ProjectError(f"Cannot import supported CMD PAR: {exc}") from exc
+        message = f"Cannot import supported CMD PAR: {exc}"
+        raise ProjectError(message) from exc
 
     base = par_path.parent if base_directory is None else base_directory.absolute()
     if not base.is_dir():
@@ -131,19 +131,20 @@ def import_from_par(
             message = (
                 f"Cannot read {role} input: declared {declared!r}, selected {selected!r}; "
                 f"use {flag} FILE: {exc}"
-            ) from exc
+            )
+            raise ProjectError(message) from exc
         supported_suffixes = (".catg", ".cat") if role == "catchment" else (".stm",)
         if path.suffix.lower() not in supported_suffixes:
             message = (
                 f"Unsupported {role} input type {path.suffix!r}: {selected!r}; use {flag} FILE"
             )
             raise ProjectError(message)
-            raise ProjectError(message)
         chosen.append((role, declared, selected, origin, path, raw))
     try:
         RunModel(parameter_model, parse_catg(chosen[1][-1]).model, parse_design_stm(chosen[2][-1]).model)
     except (FormatProblem, TypeError, ValueError) as exc:
-        raise ProjectError(f"Selected PAR/CATG/STM inputs cannot form a supported run: {exc}") from exc
+        message = f"Selected PAR/CATG/STM inputs cannot form a supported run: {exc}"
+        raise ProjectError(message) from exc
 
     # Per-project subdirectory and role-prefixed names avoid source basename collisions.
     # The staged paths alone are authoritative after import; original locations are evidence.
