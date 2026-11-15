@@ -99,6 +99,75 @@ Refresh exact heads and verify corrections before clearing either gate.
 
 At the inspected baseline, [PyRomb PR #16](https://github.com/norman-tom/pyromb/pull/16) was open at **a323d5709f7ce14c6adf46f01e0224b60668340c** and [ryan-tools PR #233](https://github.com/Chain-Frost/ryan-tools/pull/233) was open. Neither is an installed dependency acceptance. Record later exact approved upstream revisions, distribution metadata, actual reader/writer entry-point provenance and the consumer wheel hash before marking the dependencies qualified. Do not treat a stub, vendored copy, local fallback or test mock as final.
 
+## Provisional full-workflow integration evidence (after incremental source review)
+
+The implementation owners #138–#142 remain separate and unmerged. To qualify
+their actual exposed APIs without overwriting their branches, [temporary
+**DO-NOT-MERGE** draft #172](https://github.com/Chain-Frost/python-runoff-routing/pull/172)
+assembled an isolated test-only tree on main
+`4d7c48a562920767ed00fa23b6da7a17089d201d`. The successful
+[Windows source + external-wheel run #43732524791](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43732524791)
+applies **only to provisional head**
+`5cfc5e114d83d62c568384a768e3676b45b26bde`.
+Actual outcome: CPython 3.13.17, Ruff 0.16.6, Pyright 1.1.414 (0 errors),
+repository hygiene, **1,151 source tests passed and 3 expected POSIX-only
+skips**, original CMD source/installed-wheel probes passed, **168
+isolated installed-wheel tests passed**, no native CMD launch.
+Verified wheel SHA-256:
+`14c59823a1d003a66b8ee2afecd7bd67ab776c201e9bd9615d635ddb8361d3ff`.
+
+The integrated acceptance file at that head independently passed for:
+PAR-only import via embedded references, role-distinct immutable staging,
+effective kc/loss/storm edit, durable save/reopen after deleting old source
+paths, single-event versus batch equivalence, subsequent **portable native
+CMD input packaging** and relocation with *emitted* PAR and its original
+CATG/edited STM fully reparsed; no-clobber/enum/invalid modes;
+actual external PyRomb writer invocation; original RORBwin 6.52
+ordinary **301-row** and batch **80-row/eight-reference** parsing by
+the real installed ryan-tools reader, preserving AEP labels including
+`50%`, `0.5EY`, `0.2EY`, repeated Run/TP and distinct report
+identities. That report is reader acceptance, **not generated native
+computation**. The integrated tests also exercise the installed writer
+and report reader outside the runoff package rather than a stub/vendor
+copy. Ordinary RORB GE 6.45 parameter-only source-copy coverage added to
+a **later test-only head** has not yet been admitted by that older CI
+receipt, and the synthetic tree itself is **not production integration**.
+
+The tested source overlay incorporates exact earlier owner heads
+#138 `576b4904d727124e6538bd58421cd05360595458`,
+#139 `eba65891ad8b81995684532c7eeac5c0bd6a0022`,
+#140 `4dcad73e39652d67355296ced7be45f3327eb98e`,
+#141 `d5f13a6639b78b4d3c40d7729b9be4331f9360bc`
+and #142 `a0e41a9077fa42d960a35199f832f40cede54fa1`.
+Pinned external dependency content at that snapshot:
+PyRomb commit `8653babdb544d400775d754b409c1571e773f7bb`
+and ryan-tools reader commit
+`9b136bcdc449e65a17c87a80650df314ca2b1eb1`.
+Files independently reconciled **in the test snapshot only** were
+`pyproject.toml` (both dependency pins),
+`rorb_codec.py` (typed storm enums and PyRomb adapter),
+`test_rorb_roundtrip.py` (typed loss tests and CATG tests) and
+navigation docs; those final product merge/ownership decisions remain
+with implementation owners.
+
+[Successful current #143 base software run #43732492046](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43732492046)
+at source head `15962fca6349c264d201c7ffa25244dcf6821fde`
+reported **1,111 source tests, 168 installed-wheel tests,
+Ruff/Pyright and both CMD probes passed**, with wheel SHA-256
+`053de830f85f0dccfeb2a85ae17d2329aa27b484ba834b65f06c5503a3645055`.
+This baseline run proves existing main-source behavior plus immutable
+6.52 report source bytes and is **distinct** from the combined snapshot.
+The independent Codex review on that base code head reported no major
+issues; it does not approve unmerged integrated code.
+
+What is **not** accepted: original Windows CMD 6.44 executing the
+relocated emitted PAR, actual produced .out or batch.out from that export,
+full #5 numerical equivalence, new executable-dependent verbosity/output
+behavior, final source/wheel equality of owners' eventual integrated
+merged heads, or upstream private 420-pair reader association recheck.
+Do not relabel a green software CI or a stub native launcher as those
+missing observations.
+
 ## Direct Windows-native portability procedure — outstanding
 
 1. Select a supported registered source and prepare a parameter-only edit, then supported structural/storm edits once #139 can write them. Record original hashes, source bindings and effective selected settings/overrides.
