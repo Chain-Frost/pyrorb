@@ -246,7 +246,7 @@ def test_selected_native_fails_explicitly_without_using_python(tmp_path: Path) -
 
 @pytest.mark.parametrize(
     "case_id",
-    ("review-design-baseline", "review-ensemble-tp1", "timestep-design-baseline-f2"),
+    ["review-design-baseline", "review-ensemble-tp1", "timestep-design-baseline-f2"],
 )
 def test_real_public_original_cmd_inputs_match_single_and_batch(tmp_path: Path, case_id: str) -> None:
     """Original retained inputs, not generated RORB substitutes or cached solver output."""

@@ -18,6 +18,7 @@ import sys
 from collections import Counter
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import asdict, dataclass, replace
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, cast
 
@@ -41,6 +42,8 @@ from .rorb_model import ParameterSet, RunModel, StormModel, from_dict, to_dict, 
 
 REQUEST_FORMAT = "python-runoff-routing-explicit-events"
 REQUEST_VERSION = 1
+_INVALID_INPUT: EngineStatus = "invalid_input"
+_UNSUPPORTED_FEATURE: EngineStatus = "unsupported_feature"
 REPORT_FORMAT = "python-runoff-routing-event-results"
 MAX_REQUEST_BYTES = 8 * 1024 * 1024
 _EVENT_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
@@ -134,10 +137,10 @@ def _request_fields(item: object) -> dict[str, object]:
             data["losses"] = dict(item.losses)
         return data
     if not isinstance(item, dict):
-        raise EventConfigError("invalid_input", "event_record", "Event must be a JSON object")
+        raise EventConfigError(_INVALID_INPUT, "event_record", "Event must be a JSON object")
     data = cast("dict[str, object]", item)
     if set(data) - {"event_id", "storm", "losses"}:
-        raise EventConfigError("invalid_input", "event_fields", "Unknown event fields")
+        raise EventConfigError(_INVALID_INPUT, "event_fields", "Unknown event fields")
     return data
 
 
@@ -155,10 +158,10 @@ def _identifier(item: object, ordinal: int) -> str:
 
 def _overlay(raw: object, allowed: set[str], label: str) -> dict[str, object]:
     if not isinstance(raw, dict):
-        raise EventConfigError("invalid_input", "event_overlay", f"{label} must be a JSON object")
+        raise EventConfigError(_INVALID_INPUT, "event_overlay", f"{label} must be a JSON object")
     data = cast("dict[str, object]", raw)
     if set(data) - allowed:
-        raise EventConfigError("unsupported_feature", f"{label}_fields", f"Unsupported {label} override fields")
+        raise EventConfigError(_UNSUPPORTED_FEATURE, f"{label}_fields", f"Unsupported {label} override fields")
     return data
 
 
@@ -170,14 +173,14 @@ def _derive_storm(original: StormModel, raw: object) -> StormModel:
     restored = from_dict(document)
     if not isinstance(restored, StormModel):
         message = "Storm override did not produce an S1 storm"
-        raise EventConfigError("invalid_input", "storm_model", message)
+        raise EventConfigError(_INVALID_INPUT, "storm_model", message)
     return restored
 
 
 def _derive_parameters(original: ParameterSet, raw: object) -> ParameterSet:
     if len(original.losses) != 1:
         raise EventConfigError(
-            "unsupported_feature", "loss_override_scope", "Only one-ISA explicit event losses can be overridden"
+            _UNSUPPORTED_FEATURE, "loss_override_scope", "Only one-ISA explicit event losses can be overridden"
         )
     patch = _overlay(raw, _LOSS_FIELDS, "losses")
     document = to_dict(original)
@@ -187,7 +190,7 @@ def _derive_parameters(original: ParameterSet, raw: object) -> ParameterSet:
     restored = from_dict(document)
     if not isinstance(restored, ParameterSet):
         message = "Loss override did not produce S1 parameters"
-        raise EventConfigError("invalid_input", "loss_model", message)
+        raise EventConfigError(_INVALID_INPUT, "loss_model", message)
     return restored
 
 
@@ -202,7 +205,7 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
         except (TypeError, ValueError) as exc:
             if isinstance(exc, EventConfigError):
                 raise
-            raise EventConfigError("invalid_input", "storm_model", str(exc)) from exc
+            raise EventConfigError(_INVALID_INPUT, "storm_model", str(exc)) from exc
         changed.append("storm")
     if "losses" in fields:
         try:
@@ -210,12 +213,12 @@ def _event_run(loaded: LoadedProject, fields: dict[str, object]) -> tuple[RunMod
         except (TypeError, ValueError) as exc:
             if isinstance(exc, EventConfigError):
                 raise
-            raise EventConfigError("invalid_input", "loss_model", str(exc)) from exc
+            raise EventConfigError(_INVALID_INPUT, "loss_model", str(exc)) from exc
         changed.append("losses")
     try:
         return RunModel(parameters, current.catchment, storm), ",".join(changed) if changed else "none"
     except (TypeError, ValueError) as exc:
-        raise EventConfigError("invalid_input", "event_model", str(exc)) from exc
+        raise EventConfigError(_INVALID_INPUT, "event_model", str(exc)) from exc
 
 
 def _event_failure(base: EngineOutcome, status: EngineStatus, code: str, message: str) -> EngineOutcome:
@@ -306,7 +309,7 @@ def _trapezoidal_volume(outcome: EngineOutcome, values: tuple[float, ...]) -> fl
         return None
     if not all(math.isfinite(value) for value in (*times, *values)):
         return None
-    if any(b <= a for a, b in zip(times, times[1:], strict=False)):
+    if any(b <= a for a, b in pairwise(times)):
         return None
     return 3600.0 * math.fsum(
         0.5 * (a + b) * (end - start)
