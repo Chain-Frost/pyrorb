@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from typing import Literal, Never
 
 PeakStatus = Literal["valid", "failed", "missing", "unsupported"]
-QuantileStatus = Literal["estimated", "zero_atom", "incomplete", "boundary_limited"]
-METHOD_PROFILE = "stratified-weighted-midpoint-v1"
+QuantileStatus = Literal["estimated", "zero_atom", "incomplete"]
+METHOD_PROFILE = "monte-carlo-statistics/1:weighted-step-inverse-v1"
 _MASS_ROUNDOFF = 1e-12  # Input binary floating-point summation tolerance, never an engineering error band.
 
 
@@ -32,12 +32,7 @@ def _identifier(value: str, label: str) -> None:
 
 
 def _probability(value: float, label: str) -> None:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, (int, float))
-        or not math.isfinite(value)
-        or not 0 <= value <= 1
-    ):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 1:
         _fail(f"{label} must be a finite probability in [0, 1]")
 
 
@@ -188,13 +183,7 @@ class ProbabilityCoverage:
     @property
     def unresolved_mass(self) -> float:
         return math.fsum(
-            (
-                self.failed_mass,
-                self.missing_mass,
-                self.unsupported_mass,
-                self.unallocated_stratum_mass,
-                self.tails.total,
-            )
+            (self.failed_mass, self.missing_mass, self.unsupported_mass, self.unallocated_stratum_mass, self.tails.total)
         )
 
     @property
@@ -210,12 +199,11 @@ class WeightedPeak:
 
 @dataclass(frozen=True, slots=True)
 class PeakGroup:
-    """Exact numeric peak ties are one weighted plotting-position knot."""
+    """One attained peak and its absolute probability mass (exact ties combined)."""
 
     peak_m3_s: float
     probability_mass: float
     cumulative_mass: float
-    midpoint_cdf: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,6 +213,8 @@ class ExceedanceBounds:
     lower_probability: float
     upper_probability: float
     unresolved_probability_mass: float
+    boundary_strata_known_exceedance_probability: float
+    boundary_strata_share_of_known_exceedance: float | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -247,9 +237,9 @@ class QuantileEstimate:
     lower_bound_m3_s: float | None
     upper_bound_m3_s: float | None
     representative: RepresentativeEvent | None
-    interpolation_peaks_m3_s: tuple[float, float] | None
-    boundary_influenced: bool
-    nearest_plotting_boundary_distance: float | None
+    boundary_strata_known_exceedance_probability: float | None
+    boundary_strata_share_of_known_exceedance: float | None
+    at_observed_support_edge: bool
     method: str = METHOD_PROFILE
     software_qualification: Literal["provisional"] = "provisional"
     statistical_qualification: Literal["not_assessed"] = "not_assessed"
@@ -266,107 +256,67 @@ class FrequencyCurve:
     method: str = METHOD_PROFILE
 
     def exceedance(self, threshold_m3_s: float) -> ExceedanceBounds:
-        """Strict P(Q > q); unknown outcomes only widen the absolute bounds."""
-        if (
-            isinstance(threshold_m3_s, bool)
-            or not isinstance(threshold_m3_s, (int, float))
-            or not math.isfinite(threshold_m3_s)
-        ):
+        """Absolute strict S(q) and unresolved/boundary-stratum contributions."""
+        if isinstance(threshold_m3_s, bool) or not isinstance(threshold_m3_s, (int, float)) or not math.isfinite(threshold_m3_s):
             _fail("Exceedance threshold must be finite")
         if threshold_m3_s < 0:
-            return ExceedanceBounds(threshold_m3_s, self.coverage.valid_mass, 1.0, 1.0, 0.0)
-        known = math.fsum(
-            item.weight
-            for item in self.positive_weight_observations
-            if item.record.peak_m3_s is not None and item.record.peak_m3_s > threshold_m3_s
-        )
+            active = self.positive_weight_observations
+            known = self.coverage.valid_mass
+            lower, upper = 1.0, 1.0  # All unsupported/unknown flow is also nonnegative.
+        else:
+            active = tuple(
+                item for item in self.positive_weight_observations
+                if item.record.peak_m3_s is not None and item.record.peak_m3_s > threshold_m3_s
+            )
+            known = math.fsum(item.weight for item in active)
+            lower, upper = known, min(1.0, math.fsum((known, self.coverage.unresolved_mass)))
+        boundary_ids = {self.accounting[0].stratum_id, self.accounting[-1].stratum_id}
+        boundary = math.fsum(item.weight for item in active if item.record.stratum_id in boundary_ids)
         return ExceedanceBounds(
-            threshold_m3_s,
-            known,
-            known,
-            min(1.0, math.fsum((known, self.coverage.unresolved_mass))),
-            self.coverage.unresolved_mass,
+            threshold_m3_s, known, lower, upper, self.coverage.unresolved_mass,
+            boundary, boundary / known if known else None,
         )
 
     def estimate(self, aep: float) -> QuantileEstimate:
-        """Invert weighted midpoint knots, with an exact zero-flow point mass.
+        """Adopted #145 weighted noninterpolating generalized inverse on attained peaks.
 
-        This is a stated smooth empirical estimator, NOT the inverse of the
-        step-valued strict exceedance function. Incomplete curves instead have
-        conservative nonnegative-support *empirical* quantile bounds; these are
-        neither confidence intervals nor guarantees about unsampled populations.
+        This is an empirical *finite-ledger* estimate. Unresolved mass returns
+        nonnegative-support bounds, never a renormalised conditional quantile.
+        No IID confidence interval or smooth/extrapolated quantile is implied.
         """
         _probability(aep, "AEP")
         if not 0 < aep < 1:
-            _fail("AEP must be strictly inside (0, 1); no endpoint extrapolation")
+            _fail("AEP must be strictly inside (0, 1)")
         nonexceedance = 1.0 - aep
         if not self.coverage.complete:
             lower, upper = _incomplete_bounds(self.groups, nonexceedance, self.coverage.unresolved_mass)
-            return QuantileEstimate(aep, "incomplete", None, lower, upper, None, None, False, None)
+            return QuantileEstimate(aep, "incomplete", None, lower, upper, None, None, None, False)
         if not self.groups:
             _fail("Complete populations must contain positive-weight observed peaks")
-        if len(self.groups) == 1:
-            peak = self.groups[0].peak_m3_s
-            status: QuantileStatus = "zero_atom" if peak == 0 else "estimated"
-            return self._result(aep, peak, status, (peak, peak), False, None)
-        if self.coverage.zero_mass > 0 and nonexceedance <= self.coverage.zero_mass:
-            return self._result(aep, 0.0, "zero_atom", (0.0, 0.0), False, None)
+        peak = _inverse_step(self.groups, nonexceedance)
+        if peak is None:
+            _fail("Probability mass and empirical curve are inconsistent")
+        at_edge = peak in (self.groups[0].peak_m3_s, self.groups[-1].peak_m3_s)
+        return self._result(aep, peak, "zero_atom" if peak == 0 else "estimated", at_edge)
 
-        anchors = _plotting_anchors(self.groups)
-        first_p, _ = anchors[0]
-        last_p, _ = anchors[-1]
-        if nonexceedance < first_p or nonexceedance > last_p:
-            return QuantileEstimate(aep, "boundary_limited", None, None, None, None, None, True, 0.0)
-        distance = min(nonexceedance - first_p, last_p - nonexceedance)
-        for index, (position, peak) in enumerate(anchors):
-            if nonexceedance == position:
-                boundary = index in (0, len(anchors) - 1)
-                return self._result(aep, peak, "estimated", (peak, peak), boundary, distance)
-            if nonexceedance < position:
-                left_p, left_q = anchors[index - 1]
-                fraction = (nonexceedance - left_p) / (position - left_p)
-                result = left_q + fraction * (peak - left_q)
-                boundary = index == 1 or index == len(anchors) - 1
-                return self._result(aep, result, "estimated", (left_q, peak), boundary, distance)
-        _fail("Internal frequency plotting-position inconsistency")
-
-    def _result(
-        self,
-        aep: float,
-        peak: float,
-        status: QuantileStatus,
-        bracket: tuple[float, float],
-        boundary: bool,
-        distance: float | None,
-    ) -> QuantileEstimate:
+    def _result(self, aep: float, peak: float, status: QuantileStatus, at_edge: bool) -> QuantileEstimate:
         selected = min(
             self.positive_weight_observations,
             key=lambda item: (
-                abs(float(item.record.peak_m3_s or 0) - peak),
-                item.record.sample_id,
-                item.record.event_id or "",
+                abs(float(item.record.peak_m3_s or 0) - peak), item.record.sample_id, item.record.event_id or ""
             ),
         ).record
         actual = float(selected.peak_m3_s or 0)
         representative = RepresentativeEvent(
-            selected.sample_id,
-            selected.event_id or "",
-            selected.effective_input_id or "",
-            selected.stratum_id,
-            actual,
-            peak,
-            actual - peak,
-            abs(actual - peak),
+            selected.sample_id, selected.event_id or "", selected.effective_input_id or "", selected.stratum_id,
+            actual, peak, actual - peak, abs(actual - peak),
         )
-        return QuantileEstimate(aep, status, peak, None, None, representative, bracket, boundary, distance)
-
-
-def _plotting_anchors(groups: tuple[PeakGroup, ...]) -> tuple[tuple[float, float], ...]:
-    anchors: list[tuple[float, float]] = []
-    if groups[0].peak_m3_s == 0:
-        anchors.append((groups[0].cumulative_mass, 0.0))
-    anchors.extend((group.midpoint_cdf, group.peak_m3_s) for group in groups if group.peak_m3_s > 0)
-    return tuple(anchors)
+        evidence = self.exceedance(peak)
+        return QuantileEstimate(
+            aep, status, peak, None, None, representative,
+            evidence.boundary_strata_known_exceedance_probability,
+            evidence.boundary_strata_share_of_known_exceedance, at_edge,
+        )
 
 
 def _inverse_step(groups: tuple[PeakGroup, ...], probability: float) -> float | None:
@@ -407,7 +357,9 @@ def _planned_records(population: CurvePopulation, records: Iterable[PeakRecord])
             seen_events.add(record.event_id)
         entry = strata[record.stratum_id]
         expected = entry.probability_mass / entry.planned_samples if entry.planned_samples else None
-        if expected is None or not math.isclose(record.event_probability_weight, expected, rel_tol=1e-12, abs_tol=0.0):
+        if expected is None or not math.isclose(
+            record.event_probability_weight, expected, rel_tol=1e-12, abs_tol=0.0
+        ):
             _fail("Stale or mixed plan-revision event weights; reaggregate using the complete current plan")
         by_stratum[record.stratum_id].append(record)
     return by_stratum
@@ -431,10 +383,8 @@ def _account_observations(
         unit = stratum.probability_mass / n if n else None
         if unit is None:
             unallocated.append(stratum.probability_mass)
-        counts = {
-            status: sum(item.status == status for item in entries)
-            for status in ("valid", "failed", "missing", "unsupported")
-        }
+        counts = {status: sum(item.status == status for item in entries)
+                  for status in ("valid", "failed", "missing", "unsupported")}
         absent = n - len(entries)
         valid = tuple(item for item in entries if item.status == "valid")
         valid_zeros = sum(item.peak_m3_s == 0 for item in valid)
@@ -445,30 +395,14 @@ def _account_observations(
             missing.append((counts["missing"] + absent) * unit)
             unsupported.append(counts["unsupported"] * unit)
         accounting.append(
-            StratumAccounting(
-                stratum.stratum_id,
-                stratum.probability_mass,
-                n,
-                len(entries),
-                valid_zeros,
-                valid_positive,
-                counts["failed"],
-                counts["missing"],
-                absent,
-                counts["unsupported"],
-                unit,
-            )
+            StratumAccounting(stratum.stratum_id, stratum.probability_mass, n, len(entries), valid_zeros,
+                              valid_positive, counts["failed"], counts["missing"], absent, counts["unsupported"], unit)
         )
     zero_mass = math.fsum(item.weight for item in weighted if item.record.peak_m3_s == 0)
     coverage = ProbabilityCoverage(
-        math.fsum(item.weight for item in weighted),
-        zero_mass,
+        math.fsum(item.weight for item in weighted), zero_mass,
         math.fsum(item.weight for item in weighted if item.record.peak_m3_s != 0),
-        math.fsum(failed),
-        math.fsum(missing),
-        math.fsum(unsupported),
-        math.fsum(unallocated),
-        population.tails,
+        math.fsum(failed), math.fsum(missing), math.fsum(unsupported), math.fsum(unallocated), population.tails,
     )
     return tuple(accounting), weighted, coverage
 
@@ -486,7 +420,7 @@ def _group_peaks(weighted: list[WeightedPeak]) -> tuple[PeakGroup, ...]:
             end += 1
         mass = math.fsum(item.weight for item in weighted[position:end])
         new_total = math.fsum((total, mass))
-        groups.append(PeakGroup(peak, mass, new_total, math.fsum((total, mass / 2))))
+        groups.append(PeakGroup(peak, mass, new_total))
         total = new_total
         position = end
     return tuple(groups)
@@ -515,15 +449,9 @@ def build_frequency_curves(
         ledger[record.scope].append(record)
     return tuple(
         build_frequency_curve(population, ledger[scope])
-        for scope, population in sorted(
-            by_scope.items(),
-            key=lambda entry: (
-                entry[0].scenario_id,
-                entry[0].output_site_id,
-                entry[0].duration_minutes,
-                entry[0].plan_id,
-            ),
-        )
+        for scope, population in sorted(by_scope.items(), key=lambda entry: (
+            entry[0].scenario_id, entry[0].output_site_id, entry[0].duration_minutes, entry[0].plan_id
+        ))
     )
 
 
@@ -549,7 +477,7 @@ class DurationEnvelope:
 
 
 def duration_envelope(curves: Iterable[FrequencyCurve], aep: float) -> DurationEnvelope:
-    """Maximum of *separate* duration quantiles; smallest duration breaks exact ties."""
+    """Maximum of separate duration quantiles; requested order breaks exact ties."""
     source = tuple(curves)
     if not source:
         _fail("Duration envelope needs at least one curve")
@@ -564,61 +492,27 @@ def duration_envelope(curves: Iterable[FrequencyCurve], aep: float) -> DurationE
         _fail("Duration envelope must not combine different scenarios, policies or sites")
     if len({item.scope.duration_minutes for item in source}) != len(source):
         _fail("Duplicate duration in duration envelope")
-    estimates = tuple(
-        (curve.scope.duration_minutes, curve.estimate(aep))
-        for curve in sorted(source, key=lambda item: item.scope.duration_minutes)
-    )
+    estimates = tuple((curve.scope.duration_minutes, curve.estimate(aep)) for curve in source)
     available = [(duration, estimate) for duration, estimate in estimates if estimate.peak_m3_s is not None]
     if len(available) != len(estimates):
-        state: QuantileStatus = (
-            "incomplete" if any(item.status == "incomplete" for _, item in estimates) else "boundary_limited"
-        )
+        state: QuantileStatus = "incomplete"
         lower_candidates = [
             item.peak_m3_s if item.peak_m3_s is not None else item.lower_bound_m3_s for _, item in estimates
         ]
         upper_candidates = [
             item.peak_m3_s if item.peak_m3_s is not None else item.upper_bound_m3_s for _, item in estimates
         ]
-        lower = (
-            max(float(value) for value in lower_candidates) if all(v is not None for v in lower_candidates) else None
-        )
-        upper = (
-            max(float(value) for value in upper_candidates) if all(v is not None for v in upper_candidates) else None
-        )
-        return DurationEnvelope(
-            first.scenario_id,
-            first.policy_id,
-            first.policy_version,
-            first.output_site_id,
-            aep,
-            state,
-            None,
-            None,
-            None,
-            lower,
-            upper,
-            None,
-            (),
-            estimates,
-        )
-    ranked = sorted(available, key=lambda pair: (-float(pair[1].peak_m3_s or 0), pair[0]))
-    selected_duration, selected = ranked[0]
+        lower = max(float(value) for value in lower_candidates) if all(v is not None for v in lower_candidates) else None
+        upper = max(float(value) for value in upper_candidates) if all(v is not None for v in upper_candidates) else None
+        return DurationEnvelope(first.scenario_id, first.policy_id, first.policy_version, first.output_site_id, aep, state,
+                                None, None, None, lower, upper, None, (), estimates)
+    ranked = sorted(enumerate(available), key=lambda pair: (-float(pair[1][1].peak_m3_s or 0), pair[0]))
+    selected_duration, selected = ranked[0][1]
     selected_peak = float(selected.peak_m3_s or 0)
-    runner_up = float(ranked[1][1].peak_m3_s or 0) if len(ranked) > 1 else None
-    tied = tuple(duration for duration, item in ranked if item.peak_m3_s == selected_peak)
+    runner_up = float(ranked[1][1][1].peak_m3_s or 0) if len(ranked) > 1 else None
+    tied = tuple(duration for duration, item in available if item.peak_m3_s == selected_peak)
     return DurationEnvelope(
-        first.scenario_id,
-        first.policy_id,
-        first.policy_version,
-        first.output_site_id,
-        aep,
-        selected.status,
-        selected_peak,
-        selected_duration,
-        selected.representative,
-        None,
-        None,
-        selected_peak - runner_up if runner_up is not None else None,
-        tied,
-        estimates,
+        first.scenario_id, first.policy_id, first.policy_version, first.output_site_id, aep, selected.status,
+        selected_peak, selected_duration, selected.representative, None, None,
+        selected_peak - runner_up if runner_up is not None else None, tied, estimates,
     )

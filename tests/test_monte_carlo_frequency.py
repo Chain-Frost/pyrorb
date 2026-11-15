@@ -25,21 +25,11 @@ def _scope(*, site: str = "site-A", duration: int = 60, scenario: str = "design"
 
 
 def _record(
-    scope: FrequencyScope,
-    stratum: str,
-    sample: str,
-    peak: float | None,
-    *,
-    status: PeakStatus = "valid",
-    weight: float = 0.5,
+    scope: FrequencyScope, stratum: str, sample: str, peak: float | None,
+    *, status: PeakStatus = "valid", weight: float = 0.5,
 ) -> PeakRecord:
     return PeakRecord(
-        scope,
-        stratum,
-        sample,
-        weight,
-        status,
-        peak,
+        scope, stratum, sample, weight, status, peak,
         f"event-{sample}" if status == "valid" else None,
         f"manifest-{sample}" if status == "valid" else None,
     )
@@ -51,14 +41,12 @@ def _four(*, scope: FrequencyScope | None = None) -> tuple[CurvePopulation, tupl
     # 0.75/2 = 0.375 for each h2 event.
     p = CurvePopulation(s, (StratumWeight("h1", 0.25, 2), StratumWeight("h2", 0.75, 2)))
     return p, (
-        _record(s, "h1", "a", 10, weight=0.125),
-        _record(s, "h1", "b", 20, weight=0.125),
-        _record(s, "h2", "c", 30, weight=0.375),
-        _record(s, "h2", "d", 40, weight=0.375),
+        _record(s, "h1", "a", 10, weight=0.125), _record(s, "h1", "b", 20, weight=0.125),
+        _record(s, "h2", "c", 30, weight=0.375), _record(s, "h2", "d", 40, weight=0.375),
     )
 
 
-def test_exact_unequal_weight_exceedance_and_midpoint_inversion() -> None:
+def test_exact_unequal_weight_exceedance_and_adopted_step_inverse() -> None:
     population, records = _four()
     curve = build_frequency_curve(population, records)
     assert curve.coverage.valid_mass == 1
@@ -67,17 +55,17 @@ def test_exact_unequal_weight_exceedance_and_midpoint_inversion() -> None:
     assert curve.exceedance(30).upper_probability == pytest.approx(0.375)
     assert curve.exceedance(0).lower_probability == 1
     assert curve.exceedance(40).upper_probability == 0
-    assert curve.groups[2].midpoint_cdf == pytest.approx(0.4375)
-    assert curve.groups[3].midpoint_cdf == pytest.approx(0.8125)
+    assert curve.groups[2].cumulative_mass == pytest.approx(0.625)
+    assert curve.groups[3].cumulative_mass == pytest.approx(1.0)
     q = curve.estimate(0.5)
     assert q.status == "estimated"
-    # At nonexceedance 0.5: 30 + 10*(0.5-0.4375)/(0.8125-0.4375).
-    assert q.peak_m3_s == pytest.approx(31 + 2 / 3)
+    # At F=0.5 the first attained peak with cumulative mass >= 0.5 is 30.
+    assert q.peak_m3_s == 30
     assert q.representative is not None
     assert q.representative.sample_id == "c"
     assert q.representative.event_id == "event-c"
     assert q.representative.effective_input_id == "manifest-c"
-    assert q.representative.signed_mismatch_m3_s == pytest.approx(-5 / 3)
+    assert q.representative.signed_mismatch_m3_s == 0
     assert q.native_equivalence == "not_assessed"
     assert q.statistical_qualification == "not_assessed"
 
@@ -85,7 +73,9 @@ def test_exact_unequal_weight_exceedance_and_midpoint_inversion() -> None:
 def test_affine_monotone_transform_preserves_analytical_quantiles() -> None:
     population, records = _four()
     basic = build_frequency_curve(population, records)
-    transformed = tuple(replace(item, peak_m3_s=float(item.peak_m3_s or 0) * 2 + 3) for item in records)
+    transformed = tuple(
+        replace(item, peak_m3_s=float(item.peak_m3_s or 0) * 2 + 3) for item in records
+    )
     scaled = build_frequency_curve(population, transformed)
     for aep in (0.2, 0.3, 0.5, 0.8):
         q1 = basic.estimate(aep)
@@ -99,10 +89,8 @@ def test_zero_flow_atom_ties_and_representative_ties() -> None:
     s = _scope()
     p = CurvePopulation(s, (StratumWeight("dry", 0.4, 2), StratumWeight("wet", 0.6, 2)))
     rows = (
-        _record(s, "dry", "zero-b", 0, weight=0.2),
-        _record(s, "wet", "wet-b", 20, weight=0.3),
-        _record(s, "wet", "wet-a", 20, weight=0.3),
-        _record(s, "dry", "zero-a", 0, weight=0.2),
+        _record(s, "dry", "zero-b", 0, weight=0.2), _record(s, "wet", "wet-b", 20, weight=0.3),
+        _record(s, "wet", "wet-a", 20, weight=0.3), _record(s, "dry", "zero-a", 0, weight=0.2),
     )
     curve = build_frequency_curve(p, rows)
     assert curve.coverage.zero_mass == pytest.approx(0.4)
@@ -113,21 +101,22 @@ def test_zero_flow_atom_ties_and_representative_ties() -> None:
     assert zero.peak_m3_s == 0
     assert zero.representative is not None
     assert zero.representative.sample_id == "zero-a"  # independent of input order
-    middle = curve.estimate(0.45)  # 1-AEP = 0.55; between (0.4,0) and (0.7,20)
-    assert middle.peak_m3_s == pytest.approx(10)
+    middle = curve.estimate(0.45)  # F=0.55 selects attained 20, never interpolated 10.
+    assert middle.peak_m3_s == 20
     assert middle.representative is not None
-    assert middle.representative.sample_id == "wet-a"  # 0 and 20 equally near 10, stable lexical ID
+    assert middle.representative.sample_id == "wet-a"  # exact 20-peak tie, stable lexical ID
     assert build_frequency_curve(p, reversed(rows)).estimate(0.45) == middle
 
 
-def test_no_extrapolation_at_sparse_probability_boundaries() -> None:
+def test_noninterpolating_step_inverse_on_attained_support_and_endpoint_rejection() -> None:
     population, rows = _four()
     curve = build_frequency_curve(population, rows)
-    assert curve.estimate(0.01).status == "boundary_limited"  # target above top midpoint 0.8125
-    assert curve.estimate(0.99).status == "boundary_limited"  # target below bottom midpoint 0.0625
+    assert curve.estimate(0.01).peak_m3_s == 40  # empirical maximum, not extrapolated
+    assert curve.estimate(0.99).peak_m3_s == 10  # empirical minimum, not extrapolated
     assert curve.estimate(0.1875).peak_m3_s == 40  # exactly on highest midpoint
     assert curve.estimate(0.9375).peak_m3_s == 10  # exactly on lowest midpoint
-    assert curve.estimate(0.1875).boundary_influenced
+    assert curve.estimate(0.1875).at_observed_support_edge
+    assert not curve.estimate(0.5).at_observed_support_edge
     with pytest.raises(FrequencyInputError, match="strictly inside"):
         curve.estimate(0)
     with pytest.raises(FrequencyInputError, match="strictly inside"):
@@ -137,8 +126,7 @@ def test_no_extrapolation_at_sparse_probability_boundaries() -> None:
 def test_failed_missing_and_unmodelled_tails_remain_in_denominators() -> None:
     s = _scope()
     p = CurvePopulation(
-        s,
-        (StratumWeight("first", 0.4, 2), StratumWeight("second", 0.4, 2)),
+        s, (StratumWeight("first", 0.4, 2), StratumWeight("second", 0.4, 2)),
         UnmodelledTails(upper_rainfall_mass=0.2),
     )
     rows = (
@@ -171,8 +159,7 @@ def test_failed_missing_and_unmodelled_tails_remain_in_denominators() -> None:
 def test_unallocated_stratum_and_zero_weight_failures() -> None:
     s = _scope()
     p = CurvePopulation(
-        s,
-        (StratumWeight("allocated", 0.8, 1), StratumWeight("unallocated", 0.2, 0)),
+        s, (StratumWeight("allocated", 0.8, 1), StratumWeight("unallocated", 0.2, 0)),
     )
     curve = build_frequency_curve(p, (_record(s, "allocated", "live", 5, weight=0.8),))
     assert curve.coverage.unallocated_stratum_mass == pytest.approx(0.2)
@@ -181,8 +168,7 @@ def test_unallocated_stratum_and_zero_weight_failures() -> None:
     assert curve.exceedance(5).upper_probability == pytest.approx(0.2)
 
     zero_mass_population = CurvePopulation(
-        s,
-        (StratumWeight("allocated", 1, 1), StratumWeight("unused", 0, 1)),
+        s, (StratumWeight("allocated", 1, 1), StratumWeight("unused", 0, 1)),
     )
     with_zero_weight_failure = build_frequency_curve(
         zero_mass_population,
@@ -196,13 +182,9 @@ def test_unallocated_stratum_and_zero_weight_failures() -> None:
 def test_incomplete_quantile_bounds_with_known_zero_and_positive_peaks() -> None:
     s = _scope()
     p = CurvePopulation(s, (StratumWeight("interior", 0.8, 2),), UnmodelledTails(0.2, 0))
-    curve = build_frequency_curve(
-        p,
-        (
-            _record(s, "interior", "dry", 0, weight=0.4),
-            _record(s, "interior", "wet", 20, weight=0.4),
-        ),
-    )
+    curve = build_frequency_curve(p, (
+        _record(s, "interior", "dry", 0, weight=0.4), _record(s, "interior", "wet", 20, weight=0.4),
+    ))
     # F=0.1: all missing mass at zero OR at infinity still places target in zero atom.
     q = curve.estimate(0.9)
     assert q.status == "incomplete"
@@ -287,11 +269,11 @@ def test_multiple_physical_sites_and_durations_do_not_pool() -> None:
     curves = build_frequency_curves(pops, reversed(records))
     assert len(curves) == 3
     by_scope = {curve.scope: curve for curve in curves}
-    assert by_scope[s_b].estimate(0.5).peak_m3_s == pytest.approx(1.5)
-    assert by_scope[s_a].estimate(0.5).peak_m3_s == pytest.approx(15)
-    assert by_scope[s_c].estimate(0.5).peak_m3_s == pytest.approx(25)
+    assert by_scope[s_b].estimate(0.5).peak_m3_s == 1
+    assert by_scope[s_a].estimate(0.5).peak_m3_s == 10
+    assert by_scope[s_c].estimate(0.5).peak_m3_s == 20
     envelope = duration_envelope((by_scope[s_a], by_scope[s_c]), 0.5)
-    assert envelope.peak_m3_s == pytest.approx(25)
+    assert envelope.peak_m3_s == 20
     assert envelope.critical_duration_minutes == 120
     assert envelope.margin_to_second_m3_s == pytest.approx(10)
     assert envelope.representative is not None
@@ -302,24 +284,23 @@ def test_multiple_physical_sites_and_durations_do_not_pool() -> None:
         duration_envelope((by_scope[s_a], by_scope[s_a]), 0.5)
 
 
-def test_exact_tie_chooses_shortest_duration_and_near_tie_stays_numeric() -> None:
+def test_exact_tie_chooses_requested_duration_order_and_near_tie_stays_numeric() -> None:
     def _curve(d: int, upper: float) -> tuple[CurvePopulation, tuple[PeakRecord, ...]]:
         s = _scope(duration=d)
         return CurvePopulation(s, (StratumWeight("h", 1, 2),)), (
-            _record(s, "h", f"{d}-a", 10),
-            _record(s, "h", f"{d}-b", upper),
+            _record(s, "h", f"{d}-a", 10), _record(s, "h", f"{d}-b", upper),
         )
 
     p60, r60 = _curve(60, 30)
     p120, r120 = _curve(120, 30)
     p180, r180 = _curve(180, 30.00000002)
-    tied = duration_envelope((build_frequency_curve(p120, r120), build_frequency_curve(p60, r60)), 0.5)
-    assert tied.critical_duration_minutes == 60
-    assert tied.tied_critical_durations_minutes == (60, 120)
+    tied = duration_envelope((build_frequency_curve(p120, r120), build_frequency_curve(p60, r60)), 0.2)
+    assert tied.critical_duration_minutes == 120
+    assert tied.tied_critical_durations_minutes == (120, 60)
     assert tied.margin_to_second_m3_s == 0
-    near = duration_envelope((build_frequency_curve(p60, r60), build_frequency_curve(p180, r180)), 0.5)
+    near = duration_envelope((build_frequency_curve(p60, r60), build_frequency_curve(p180, r180)), 0.2)
     assert near.critical_duration_minutes == 180
-    assert near.margin_to_second_m3_s == pytest.approx(1e-8)
+    assert near.margin_to_second_m3_s == pytest.approx(2e-8)
 
 
 def test_unqualified_duration_blocks_envelope_and_preserves_bounds() -> None:
@@ -334,3 +315,45 @@ def test_unqualified_duration_blocks_envelope_and_preserves_bounds() -> None:
     assert env.representative is None
     assert env.critical_duration_minutes is None
     assert env.upper_bound_m3_s == 20  # finite bound from known observed mass
+
+
+def test_adopted_a_two_stratum_zero_tie_exact_mixture() -> None:
+    """Independent literal #145 example: masses .2/.8, peaks 0/20/10/10."""
+    s = _scope()
+    population = CurvePopulation(s, (StratumWeight("dry", 0.2, 2), StratumWeight("wet", 0.8, 2)))
+    rows = (
+        _record(s, "dry", "a", 0, weight=0.1),
+        _record(s, "dry", "b", 20, weight=0.1),
+        _record(s, "wet", "c", 10, weight=0.4),
+        _record(s, "wet", "d", 10, weight=0.4),
+    )
+    curve = build_frequency_curve(population, rows)
+    assert curve.exceedance(0).known_exceedance_probability == pytest.approx(0.9)
+    assert curve.exceedance(10).known_exceedance_probability == pytest.approx(0.1)
+    assert curve.exceedance(20).known_exceedance_probability == 0
+    assert curve.estimate(0.2).peak_m3_s == 10
+    assert curve.estimate(0.2).representative is not None
+    assert curve.estimate(0.2).representative.sample_id == "c"
+    failed = build_frequency_curve(population, (*rows[:3], replace(rows[3], status="failed", peak_m3_s=None,
+                                           event_id=None, effective_input_id=None)))
+    assert failed.exceedance(10).lower_probability == pytest.approx(0.1)
+    assert failed.exceedance(10).upper_probability == pytest.approx(0.5)
+    assert failed.estimate(0.2).status == "incomplete"
+
+
+def test_boundary_stratum_exceedance_contribution_without_native_warning() -> None:
+    s = _scope()
+    population = CurvePopulation(
+        s, (StratumWeight("frequent", 0.2, 1), StratumWeight("middle", 0.6, 1), StratumWeight("rare", 0.2, 1))
+    )
+    curve = build_frequency_curve(population, (
+        _record(s, "frequent", "a", 10, weight=0.2),
+        _record(s, "middle", "b", 20, weight=0.6),
+        _record(s, "rare", "c", 30, weight=0.2),
+    ))
+    x = curve.exceedance(15)
+    assert x.known_exceedance_probability == pytest.approx(0.8)
+    assert x.boundary_strata_known_exceedance_probability == pytest.approx(0.2)
+    assert x.boundary_strata_share_of_known_exceedance == pytest.approx(0.25)
+    assert curve.estimate(0.3).peak_m3_s == 20
+    assert curve.estimate(0.3).boundary_strata_known_exceedance_probability == pytest.approx(0.2)
