@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,16 @@ import pytest
 
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import canonical_run_bytes, read_run_json, run_model
-from runoff_routing.project_json import LegacyRunFiles, Project, ProjectError, SourceFile, main, write_project
+from runoff_routing.project_json import (
+    LegacyRunFiles,
+    Project,
+    ProjectError,
+    SourceFile,
+    load_project,
+    main,
+    save_project_as,
+    write_project,
+)
 from runoff_routing.project_native_review import review_project_native_capture, write_native_review_json
 from runoff_routing.rorb_inspect import inspect_file
 
@@ -333,3 +343,37 @@ def test_native_review_rejects_zero_based_cmd_row_identity(tmp_path: Path) -> No
             model_print_id="print_1",
             native_column_id="Hyd001",
         )
+
+
+
+@pytest.mark.parametrize("changed_source", ["catchment", "storm"])
+def test_recorded_native_review_rejects_edited_effective_original_mismatch(
+    tmp_path: Path, changed_source: str
+) -> None:
+    """No native evidence may be attributed to altered CATG or STM semantics."""
+    project_path, manifest_path, digest = _synthetic_case(tmp_path)
+    original = load_project(project_path)
+    run = original.run
+    if changed_source == "storm":
+        storm = replace(run.storm, depths_mm=tuple(depth * 2 for depth in run.storm.depths_mm))
+        edited = replace(run, storm=storm)
+    else:
+        subarea = run.catchment.subareas[0]
+        catchment = replace(
+            run.catchment,
+            subareas=(replace(subarea, area_km2=subarea.area_km2 * 2), *run.catchment.subareas[1:]),
+        )
+        edited = replace(run, catchment=catchment)
+    saved = project_path.with_name("edited-source.json")
+    save_project_as(project_path, saved, effective_run=edited)
+    assert load_project(saved).run == edited
+    with pytest.raises(ProjectError, match="Recorded native CATG/STM source evidence"):
+        review_project_native_capture(
+            saved,
+            manifest_path,
+            manifest_sha256=digest,
+            engine_executable_sha256=ENGINE_SHA,
+            model_print_id="print_1",
+            native_column_id="Hyd001",
+        )
+    assert manifest_path.read_bytes() == (manifest_path.parent / "manifest.json").read_bytes()

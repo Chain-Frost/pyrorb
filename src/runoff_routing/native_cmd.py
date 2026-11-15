@@ -161,7 +161,7 @@ def _guard_native_effective_sources(loaded: LoadedProject) -> None:
     if original is None:
         message = "Native CMD requires the independently verified original source model"
         raise NativeBoundaryError(message, status="unsupported_feature", code="native_source_model_unknown")
-    if model.catchment != original.catchment or model.storm != original.storm:
+    if not loaded.original_inputs_match_effective():
         message = (
             "Native capture cannot execute edited catchment/storm inputs from immutable source files. "
             "Use python-cmd or export a separately validated native package."

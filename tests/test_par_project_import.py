@@ -380,3 +380,31 @@ def test_shared_native_package_command_is_delegated(monkeypatch: pytest.MonkeyPa
     monkeypatch.setitem(sys.modules, "runoff_routing.native_export", module)
     assert main(["export-native", *sample]) == 0
     assert forwarded == sample
+
+
+
+def test_relocation_symlink_is_rejected_before_external_directory_creation(tmp_path: Path) -> None:
+    par, _, _, _ = _inputs(tmp_path / "source")
+    existing_root = tmp_path / "existing"
+    existing_root.mkdir()
+    source = existing_root / "hydrology.json"
+    _import(source, par)
+
+    destination_root = tmp_path / "destination"
+    destination_root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "untouched.txt"
+    sentinel.write_text("unchanged", encoding="utf-8")
+    link = destination_root / "sources"
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Directory symlinks are unavailable on this filesystem")
+
+    destination = destination_root / "edited.json"
+    with pytest.raises(ProjectError, match="symlink"):
+        save_project_as(source, destination)
+    assert not destination.exists()
+    assert tuple(outside.iterdir()) == (sentinel,)
+    assert sentinel.read_text(encoding="utf-8") == "unchanged"

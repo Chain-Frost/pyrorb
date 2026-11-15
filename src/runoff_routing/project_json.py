@@ -211,6 +211,14 @@ class LoadedProject:
     validation_status: Literal["structural_only"] = "structural_only"
     original_run: RunModel | None = None
 
+    def original_inputs_match_effective(self) -> bool:
+        """Whether the current typed CATG/STM match hash-verified immutable source models."""
+        return (
+            self.original_run is not None
+            and self.run.catchment == self.original_run.catchment
+            and self.run.storm == self.original_run.storm
+        )
+
 
 def _object(raw: object, fields: set[str], label: str) -> dict[str, object]:
     if not isinstance(raw, dict):
@@ -578,11 +586,10 @@ def _relocated_source_files(source: Path, target: Path, project: Project) -> Non
     written: list[Path] = []
     try:
         for output, raw in planned:
-            output.parent.mkdir(parents=True, exist_ok=True)
             _ensure_relocation_directory(output.parent, target)
             with output.open("xb") as stream:
+                written.append(output)
                 stream.write(raw)
-            written.append(output)
     except (OSError, ProjectError):
         for output in written:
             output.unlink(missing_ok=True)
@@ -590,9 +597,28 @@ def _relocated_source_files(source: Path, target: Path, project: Project) -> Non
 
 
 def _ensure_relocation_directory(directory: Path, target: Path) -> None:
-    if not directory.resolve(strict=True).is_relative_to(target.resolve(strict=True)):
-        message = f"Relocated source directory escapes destination: {directory}"
-        raise ProjectError(message)
+    """Never mkdir through an existing symlink before checking containment."""
+    root = target.resolve(strict=True)
+    current = target
+    try:
+        components = directory.relative_to(target).parts
+    except ValueError as exc:
+        message = f"Relocated source directory is not under project root: {directory}"
+        raise ProjectError(message) from exc
+    for component in components:
+        current = current / component
+        if current.is_symlink():
+            message = f"Relocated source directory contains a symlink: {current}"
+            raise ProjectError(message)
+        if current.exists():
+            if not current.is_dir():
+                message = f"Relocated source parent is not a directory: {current}"
+                raise ProjectError(message)
+        else:
+            current.mkdir()
+        if not current.resolve(strict=True).is_relative_to(root):
+            message = f"Relocated source directory escapes destination: {current}"
+            raise ProjectError(message)
 
 
 def save_project_as(source: Path, destination: Path, *, effective_run: RunModel | None = None) -> Project:
