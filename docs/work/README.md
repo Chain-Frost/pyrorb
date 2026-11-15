@@ -19,6 +19,7 @@
 - [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
+- [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
 
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
 
