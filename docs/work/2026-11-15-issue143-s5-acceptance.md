@@ -39,6 +39,48 @@ python -m build --wheel
 
 **Initial receipt:** this GitHub-only workspace had no local checkout, installed wheel or native Windows executable. Personally executed source tests, Ruff, strict Pyright, isolated-wheel tests and direct Windows CMD run are **not run**, not reported as passes. Add the exact PR head, CI job URL, compiler/tool versions, test counts, source/wheel hashes and observed outcomes after the hosted quality run. A CI result is a reviewed receipt, not a claim that this session ran its commands locally.
 
+**Hosted Windows quality evidence, completed for tested code head `0971223c7de9b7749e330d1f31dbd0eff445896e`:**
+[workflow #43725532603](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43725532603),
+job `windows-python-313` **success** on CPython **3.13.17**.
+The existing `check_local.py` gate reported repository hygiene **505 files/0 errors**,
+Ruff **0.16.6** passed, strict Pyright **1.1.414** reported
+**0 errors, 0 warnings**, and the source test suite reported
+**1,097 passed** (including all 13 new #143 tests). The fresh source
+36-case CMD probe passed. The wheel was built, copied outside the checkout and
+imported from the separate target (not source). Its SHA-256 was
+`f4c210bd8c95a04ed646f5c7596d251697b4f4490563621241b6e1171126b7b1`.
+External installed-wheel pytest reported **154 passed**, including the same
+13 #143 acceptance tests; the installed-wheel native regression probe and
+existing CLI/provenance/negative-control smokes all passed. The maintained
+CMD probe reported 50 `printed_pass` classifications; this is existing
+computed-vs-retained CMD qualification, not an execution of a native CMD binary
+or of the new PyRomb/ryan-tools dependencies. The original Windows quality
+[run #43725349868](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43725349868)
+had **1,092 passed and five new tests failed** because they incorrectly required
+`parsed` rather than the current reader's deliberate `partial` status for
+unverified physical print identity. That expectation was fixed in the tested
+`0971223c` commit; it was not changed to imply native physical identity.
+These results apply to that **exact tested code head and wheel**, not to
+later commits or upstream integration.
+
+**Incremental cross-PR review, separately from this tested branch:**
+at #138 [PR #157](https://github.com/Chain-Frost/python-runoff-routing/pull/157)
+head `74b051f7b055a2e669eb9aaba37317f938432603` the public
+`resolve_effective_model` was introduced. At #140
+[PR #159](https://github.com/Chain-Frost/python-runoff-routing/pull/159)
+head `904d11bc6a3560a6d72e1e05b7ee3fb810612f51`,
+the new `par_project_import.py` had an invalid `message = (...) from exc`
+assignment and an adjacent duplicated raise; this specific compile blocker
+was reported to that owner. At #141
+[PR #162](https://github.com/Chain-Frost/python-runoff-routing/pull/162)
+head `a8f8116fe563cfa7703b1f5053cecdeb2cb9d54b`, native export's
+private `_event_run(loaded, fields)` caller was incompatible with #138's
+new `_event_run(current: RunModel, fields)` signature. The owner was asked
+to consume the public resolver and add a separate Windows stub-launcher
+smoke for directory, arguments and error propagation. These observations
+were **source reviews only**, not tests against an integrated build.
+Refresh exact heads and verify corrections before clearing either gate.
+
 At the inspected baseline, [PyRomb PR #16](https://github.com/norman-tom/pyromb/pull/16) was open at **a323d5709f7ce14c6adf46f01e0224b60668340c** and [ryan-tools PR #233](https://github.com/Chain-Frost/ryan-tools/pull/233) was open. Neither is an installed dependency acceptance. Record later exact approved upstream revisions, distribution metadata, actual reader/writer entry-point provenance and the consumer wheel hash before marking the dependencies qualified. Do not treat a stub, vendored copy, local fallback or test mock as final.
 
 ## Direct Windows-native portability procedure — outstanding
