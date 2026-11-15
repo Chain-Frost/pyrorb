@@ -298,7 +298,9 @@ def project_from_json(text: str) -> Project:
     fields = {"format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"}
     data = _object(header, fields if version == 1 else fields | {"engine"}, "project")
     if version == 1:
-        engine = EngineSelection()
+        # Schema 1 had an implicit Python engineering engine. Preserve its
+        # historical meaning when the temporary schema-2 default changes.
+        engine = EngineSelection.for_engine("python")
     else:
         raw_engine = _object(data["engine"], {"id", "numerical_profile"}, "engine selection")
         try:
