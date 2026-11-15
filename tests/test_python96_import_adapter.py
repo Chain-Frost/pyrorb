@@ -72,7 +72,12 @@ def test_imported_code_two_fi_runs_independent_project_and_prepared_api(
     assert len(model.catchment.subareas) == 6
     assert len(model.catchment.reaches) == 7
     assert tuple(area.impervious_fraction for area in model.catchment.subareas) == (
-        Decimal(0), Decimal("0.5"), Decimal("0.2"), Decimal(0), Decimal(0), Decimal(0)
+        Decimal(0),
+        Decimal("0.5"),
+        Decimal("0.2"),
+        Decimal(0),
+        Decimal(0),
+        Decimal(0),
     )
     assert len(outcome.hydrographs) == 1
     assert len(outcome.hydrographs[0].discharge_m3_s) == 41
@@ -133,7 +138,9 @@ def test_imported_code_two_fi_event_batch_keeps_fresh_state_and_failures(tmp_pat
     )
     report = run_project_events(project, requests, selection=SELECTION)
     assert [item.status for item in report.outcomes] == [
-        "computed_unvalidated", "invalid_input", "computed_unvalidated"
+        "computed_unvalidated",
+        "invalid_input",
+        "computed_unvalidated",
     ]
     first, invalid, last = report.outcomes
     assert first.effective_selection == invalid.effective_selection == last.effective_selection == SELECTION
