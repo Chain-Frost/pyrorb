@@ -146,26 +146,22 @@ def _python_cmd(loaded: LoadedProject, base: EngineOutcome, native_config: Nativ
     )
 
 
-def run_engine_project(
-    project_path: Path,
+def execute_loaded_engine(
+    loaded: LoadedProject,
+    base: EngineOutcome,
     *,
-    selection: EngineSelection | None = None,
-    selection_source: SelectionSource = "api_override",
+    project_path: Path,
     native_config: NativeConfiguration | None = None,
-    wheel_artifact: Path | None = None,
 ) -> EngineOutcome:
-    """Load verified project bytes, then dispatch exactly one selected engine.
+    """Dispatch an already verified, in-memory S1 event using its attributed outcome.
 
-    An explicit API/CLI selection overrides the stored project selection; both
-    are retained. Missing backends return typed failures and never substitute
-    the Python engineering solver.
+    The caller owns source validation and immutable per-event model construction.
+    This is the same dispatcher used by single-project and explicit-batch APIs.
+    The native adapter always receives the real original project path.
     """
-    loaded = load_project(project_path)
-    effective = loaded.project.engine if selection is None else selection
-    provenance: SelectionSource = "project" if selection is None else selection_source
-    base = _with_implementation_identity(_base(loaded, effective, provenance), wheel_artifact)
     if base.diagnostics:
         return base
+    effective = base.effective_selection
     if effective.engine == "python":
         if native_config is not None:
             return _failure(base, "invalid_input", "unused_native_config", "Native configuration requires rorb-cmd")
@@ -206,6 +202,26 @@ def run_engine_project(
         capture_manifest_path=observation.manifest_path,
         internal_quantities="native_unavailable",
     )
+
+
+def run_engine_project(
+    project_path: Path,
+    *,
+    selection: EngineSelection | None = None,
+    selection_source: SelectionSource = "api_override",
+    native_config: NativeConfiguration | None = None,
+    wheel_artifact: Path | None = None,
+) -> EngineOutcome:
+    """Verify a project once, then use the shared in-memory event dispatcher.
+
+    An explicit API/CLI selection overrides the stored project choice. The
+    original/effective choices remain visible and no engine is substituted.
+    """
+    loaded = load_project(project_path)
+    effective = loaded.project.engine if selection is None else selection
+    provenance: SelectionSource = "project" if selection is None else selection_source
+    base = _with_implementation_identity(_base(loaded, effective, provenance), wheel_artifact)
+    return execute_loaded_engine(loaded, base, project_path=project_path, native_config=native_config)
 
 
 def write_engine_result(path: Path, outcome: EngineOutcome) -> None:
