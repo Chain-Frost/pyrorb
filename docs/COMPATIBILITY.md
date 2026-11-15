@@ -8,13 +8,17 @@ Use an engine profile keyed by engine kind (RORB_CMD or RORBwin), executable SHA
 
 Keep separate expected outputs when GUI and CMD disagree. Do not average them, select whichever is easier to match or silently normalise a numerical difference. A mismatch record must identify whether it is input preparation, file interpretation, numerical computation, reporting, an upstream defect or unresolved. Compatibility exceptions require a named profile, fixture, rationale and owner review.
 
-## Initial probe matrix
+## Historical source/compatibility leads — not active GUI/native tasks
+
+The matrix below records source-derived questions for named CMD version profiles. **It does not authorise** a RORBwin GUI test campaign, save/reload probes, ProcMon, binary inspection, or speculative native experiments. The current deliverable is [CLI/text-file MVP #119](https://github.com/Chain-Frost/python-runoff-routing/issues/119). Broad [issue #16](https://github.com/Chain-Frost/python-runoff-routing/issues/16) is **closed as superseded**; explicitly named native CMD applicability remains under #5 and must be bounded to one evidence-backed unanswered question. RORBwin-only and advanced DCIA/ICIA features are post-MVP #118; ordinary PyRomb per-source impervious/code-2 requirements remain active #96.
+
+## Historical probe matrix
 
 | Concern | Source evidence | Required treatment |
 | --- | --- | --- |
 | CMD parameter dialect | R2: fixed parameter order; values begin at column 11 except begin/end flags. | Preserve raw values and source locations; distinguish GUI .par files. |
 | Loss-model flag | R2 maps 1 to IL/CL and 2 to IL/runoff coefficient; supplied example uses flag 2 with values 20,2. | Treat the example as ambiguous, not a valid hydrological default. Probe both flags with distinguishable losses and inspect echoed parameters; do not swap flags to make a case pass. |
-| GUI-only impervious features | R3 section 1.7 describes DCIA/ICIA; R4 reports CMD lacks this functionality. | Start with pervious MVP; version-specific GUI tests are required for these features. The historic forum statement is not proof for every future CMD build. |
+| GUI-only impervious features | R3 section 1.7 describes DCIA/ICIA; R4 reports CMD lacks this functionality. | Start with the supported pervious MVP. GUI/DCIA/ICIA studies are post-MVP and not scheduled by this evidence note. The historic forum statement is not proof for every future CMD build. |
 | Rainfall-excess print code 11 | R3 section 1.8 records a CMD bug fix. | Capture actual supported behaviour and error handling; do not assume the fix from the filename. |
 | Time labels | R3 section 1.8 records text/CSV timestep corrections. | Retain raw time labels and a documented version-aware interpretation. Never silently shift a series to improve agreement. |
 | Names and calculation order | R1 sections 6.1/6.10; R3 sections 1.4/1.6. | Match stable computational IDs plus raw labels; preserve imported traversal, subarea, gauge and ISA ordering. Duplicate labels are not unique IDs. |
