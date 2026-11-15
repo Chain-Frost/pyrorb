@@ -122,6 +122,11 @@ def test_original_cmd_comparison_reports_unaccepted_engineering_differences(
         "original_full_cmd_q_m3_s": original_q,
         "computed_full_python_q_m3_s": computed_q,
         "deviations": asdict(comparison),
+        "peak_difference_absolute_m3_s": abs(comparison.peak_difference_m3_s),
+        "physical_trapezoidal_volume_difference_absolute_m3": abs(comparison.volume_difference_m3),
+        "physical_trapezoidal_volume_difference_absolute_pct_cmd": (
+            abs(comparison.volume_difference_pct) if comparison.volume_difference_pct is not None else None
+        ),
         "numerical_acceptance": "unassessed",
         "zero_cmd_denominator_percentage": "undefined_not_zero",
         "comparison_class": "direct_original_diagnostic_not_parity_certification",
