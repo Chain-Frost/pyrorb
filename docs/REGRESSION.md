@@ -10,6 +10,12 @@
 
 These layers are complementary. A native engine is a compatibility oracle, not proof of hydrological correctness. Synthetic labels applied to one event are not independent native simulations.
 
+## Current offline CMD-first development oracle
+
+For the current feature and source-admission campaign, the calculation under test is **explicit `python-cmd`**. The numerical reference is the *separately captured original RORB-CMD 6.44 output* for the exact retained native source files. [`cmd_public_probe.py`](../repo-scripts/cmd_public_probe.py) and the one maintained public dataset/comparator implement the routine **fresh-source and externally installed-wheel** check without running RORB_CMD, accessing the private investigation repository or requiring a Windows agent. A passing comparison reports evidence for that tested CMD-compatible profile only; it does not change the product default from the independent `python` engine or qualify its own hydrology.
+
+Keep three different classes of evidence explicit: **(a)** authored synthetic/analytical tests that exercise invariants and edge cases but have no native golden; **(b)** actual current `python-cmd` computations compared against authenticated old native CMD inputs/results; and **(c)** any separately authorised new native CMD capture for a missing reference. Do not use the earlier cached, unvalidated candidate `--snapshot` as an expected result for a new engine, generate a golden from the same `python-cmd` run, silently renormalise original storm weights, or turn an unsupported/incomplete scalar into a pass. A manufactured synthetic case may only be labelled CMD-equivalent after a real native reference has been admitted and independently compared.
+
 ## Current development platform rule
 
 Per the owner decision of 2026-11-15, **Linux and Windows with Python 3.13 or 3.14 are equivalent verification environments for pure-Python work at this stage**. One complete platform run is enough for deterministic source tests, lint/type checks, pure-Python numerical checks, cached native regressions and an installed-wheel test on the chosen OS. Do not require both operating systems or repeat a passing Linux run under Windows merely for development signoff. Record which OS, interpreter and installed artifact actually ran; do not claim Windows-specific execution from Linux results. A later cross-platform test campaign is deferred.

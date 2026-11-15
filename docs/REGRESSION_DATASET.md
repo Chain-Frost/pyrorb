@@ -46,6 +46,29 @@ The same **frozen `cmd644-report-scalars-v1`** comparator now evaluates actual n
 
 For an independently installed public wheel, build and install it outside the checkout as in the next section. With an isolated interpreter and the copied public checkout/fixture scaffold, execute that **same** `repo-scripts/cmd_public_probe.py` using the installed wheel. Check `runoff_routing.__file__` resolves to external site-packages, record both exact source commit and wheel SHA-256, and compare the 50 full per-case/field results with the source run. No second runner, catalogue, export or reference regeneration is needed.
 
+### Linux/Python 3.13 or 3.14 — independent source and installed-wheel CMD smoke
+
+No native RORB, QGIS, Windows agent or private repository is required. This uses the same original 50-case corpus and the same existing public probe; it is **not** another runner or a new reference dataset. Run from a clean public checkout with `build` installed (substitute `python3.14` for `python3.13` if desired):
+
+```sh
+set -eu
+python3.13 repo-scripts/check_local.py
+verify="$(mktemp -d)"
+python3.13 -m build --wheel --outdir "$verify/dist"
+python3.13 repo-scripts/cmd_public_probe.py > "$verify/source.json"
+python3.13 -m venv "$verify/venv"
+"$verify/venv/bin/python" -m pip install "$verify"/dist/*.whl
+mkdir -p "$verify/copy/repo-scripts" "$verify/copy/tests/fixtures"
+cp repo-scripts/cmd_public_probe.py "$verify/copy/repo-scripts/"
+cp -R tests/fixtures/regression-v1 "$verify/copy/tests/fixtures/"
+"$verify/venv/bin/python" -I -c 'import runoff_routing; print(runoff_routing.__file__)'
+"$verify/venv/bin/python" -I "$verify/copy/repo-scripts/cmd_public_probe.py" > "$verify/wheel.json"
+cmp "$verify/source.json" "$verify/wheel.json"
+sha256sum "$verify"/dist/*.whl
+```
+
+Verify that the wheel import path points into `$verify/venv` rather than the source checkout, and retain the two complete JSON reports. The probe's existing old 36-case Q/scalar gates are backward-compatibility controls; examine the **actual full 50-case statuses and every scalar classification**, not just the shell exit status. Newly admitted case regressions, mismatches or unsupported demotions require separate B/#100 independent review and fail-closed policy; they are not accepted by an older subset-only gate. Zero-flow undefined peak times and unqualified stored-time mappings remain `incomplete`, never manufactured. Run full-index preflight against the same public fixture checkout when qualifying an exact revision. For other platforms or broader wheel pytest coverage, use the existing procedure below.
+
 ### Installed comparator wheel and complete tests
 
 Use a fresh external directory. Copy test scaffolding; isolated mode and import verification ensure the installed package executes, even where scaffold tests inspect source-file existence. Clear any source PYTHONPATH in the shell before these commands.
