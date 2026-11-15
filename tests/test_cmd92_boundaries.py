@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from runoff_routing._cmd644.geometry import ReachGeometry
+from runoff_routing._cmd644.precision import store
 from runoff_routing._cmd644.routing import route_reach as route_cmd_reach
 from runoff_routing.cmd_engine import adapt_event
 from runoff_routing.project_json import EmbeddedRun, Project, load_project, write_project
@@ -57,7 +58,7 @@ def test_positive_nonunit_m_is_preserved_at_typed_cmd_boundary(tmp_path: Path, e
     write_project(source, Project("m_bound", "explicit", EmbeddedRun(model)))
     event = adapt_event(load_project(source))
     assert event.m.lexeme == exponent
-    assert event.m.stored == float(exponent)
+    assert event.m.stored == store(float(exponent))
     # Typed source admission is distinct from executing and qualifying native CMD m>1.
 
 
