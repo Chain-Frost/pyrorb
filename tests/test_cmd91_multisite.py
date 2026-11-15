@@ -304,6 +304,7 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
     assert result.native_raw_time_tokens == ("0.50", "1.00", "1.50", "2.00", "2.50", "3.00")
     assert result.physical_time_hours == result.native_raw_time_tokens
 
+
 def _synthetic_number(value: float) -> NumberInput:
     return NumberInput(str(value), value, store(value))
 
@@ -352,4 +353,3 @@ def test_code_two_and_impervious_fraction_preserve_ordered_multiple_prints(loss_
     assert candidate.preparation.excess[1] != unmodified.preparation.excess[1]
     assert print_records[0].q != unmodified.network.prints[0].q
     assert print_records[1].q != unmodified.network.prints[1].q
-
