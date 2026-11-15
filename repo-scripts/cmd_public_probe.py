@@ -7,6 +7,7 @@ classes are NOT scientific acceptance or proof of full CMD support.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sys
@@ -201,18 +202,42 @@ def _nonretained_case_failures(
         if (
             status != "printed_pass"
             or outcome.get("rows") != case["clock"]["row_count"]
-            or _fresh_reporting_classification(outcome) in ("fail", "invalid")
+            or _fresh_reporting_classification(outcome) not in ("pass", "incomplete")
         ):
             failed.append(case_id)
     return failed
 
 
-def main() -> int:
-    """Return success for a complete diagnostic inventory, not a numerical pass claim."""
+
+def _required_case_results(
+    required: tuple[str, ...], by_id: dict[str, dict[str, Any]], rows: dict[str, int]
+) -> tuple[list[str], list[str]]:
+    """Require specifically named source admissions without inventing scalar passes."""
+    failures: list[str] = []
+    incomplete: list[str] = []
+    for case_id in required:
+        item = by_id[case_id]
+        scalar = _fresh_reporting_classification(item)
+        if item["status"] != "printed_pass" or item.get("rows") != rows[case_id] or scalar not in (
+            "pass",
+            "incomplete",
+        ):
+            failures.append(case_id)
+        elif scalar == "incomplete":
+            incomplete.append(case_id)
+    return failures, incomplete
+
+
+def main(required_cases: tuple[str, ...] = ()) -> int:
+    """Run the existing CMD comparator with optional exact required-case coverage."""
     register = json.loads(REGISTER.read_text(encoding="utf-8"))
     cases = [item for item in register["cases"] if "cmd-eligible" in item["sets"]]
     if len(cases) != 50 or len({item["case_id"] for item in cases}) != len(cases):
         print("CMD probe: invalid selected case register", file=sys.stderr)
+        return 2
+    selected_ids = {str(case["case_id"]): int(case["clock"]["row_count"]) for case in cases}
+    if len(required_cases) != len(set(required_cases)) or any(case_id not in selected_ids for case_id in required_cases):
+        print("CMD probe: --require-case must name distinct registered CMD-eligible case IDs", file=sys.stderr)
         return 2
     outcomes = [_one(case) for case in cases]
     counts = dict(sorted(Counter(str(item["status"]) for item in outcomes).items()))
@@ -228,6 +253,7 @@ def main() -> int:
     scalar_failures = _retained_scalar_failures(expected, observed)
     scalar_gate_ok = gate_ok and not scalar_failures
     nonretained_failures = _nonretained_case_failures(cases, observed, set(expected))
+    required_failures, required_incomplete = _required_case_results(required_cases, observed, selected_ids)
     scalar_statuses = dict(sorted(Counter(_fresh_reporting_classification(item) for item in outcomes).items()))
     full_scalar_status = (
         "fail"
@@ -246,6 +272,10 @@ def main() -> int:
                 "retained_scalar_baseline_failures": scalar_failures,
                 "nonretained_case_diagnostic_failures": nonretained_failures,
                 "nonretained_case_failure_gate": "pass" if not nonretained_failures else "fail",
+                "required_case_ids": list(required_cases),
+                "required_case_diagnostic_failures": required_failures,
+                "required_case_scalar_incomplete": required_incomplete,
+                "required_case_gate": "pass" if not required_failures else "fail",
                 "fresh_reporting_acceptance": "unassessed_pending_independent_review",
                 "cases_checked": len(outcomes),
                 "status_counts": counts,
@@ -263,8 +293,17 @@ def main() -> int:
             allow_nan=False,
         )
     )
-    return 0 if scalar_gate_ok and not nonretained_failures else 1
+    return 0 if scalar_gate_ok and not nonretained_failures and not required_failures else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description="Fresh original CMD public source/wheel applicability probe")
+    parser.add_argument(
+        "--require-case",
+        action="append",
+        default=[],
+        metavar="CASE_ID",
+        help="Require the named original case to compute complete printed Q with pass/incomplete scalar evidence",
+    )
+    arguments = parser.parse_args()
+    sys.exit(main(tuple(arguments.require_case)))
