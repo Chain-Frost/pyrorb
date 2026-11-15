@@ -138,13 +138,10 @@ def test_canonical_scalar_records_bind_exact_legacy_selectors(tmp_path: Path) ->
         bind_report_metrics(invalid, changed.hydrographs)
 
 
-
 def test_native_capture_check_consumes_unverified_upstream_table(tmp_path: Path) -> None:
     """A bare source is never promoted without an explicit print/horizon contract."""
     path = tmp_path / "raw-table.out"
-    path.write_bytes(
-        b"Inc Time Hyd001 Hyd002\r\n1 0.00 0.000 0\r\n2 0.50 3.500000 0\r\nEnd\r\n"
-    )
+    path.write_bytes(b"Inc Time Hyd001 Hyd002\r\n1 0.00 0.000 0\r\n2 0.50 3.500000 0\r\nEnd\r\n")
     raw = read_rorb_table_file(path)
     assert raw.kind == "isolated_hydrograph_table"
     assert raw.status == "partial"

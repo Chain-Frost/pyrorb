@@ -234,7 +234,9 @@ def _check_report(
     }
     if document.status in {"invalid", "unsupported"} or not table.valid or len(table.source_tokens) != len(table.rows):
         summary["reason"] = "Canonical report rejected the native hydrograph table"
-        summary["reader_errors"] = [diagnostic.code for diagnostic in document.diagnostics if diagnostic.severity == "error"]
+        summary["reader_errors"] = [
+            diagnostic.code for diagnostic in document.diagnostics if diagnostic.severity == "error"
+        ]
         return "incomplete_output", summary
     if not table.rows or (expected_steps is not None and len(table.rows) != expected_steps):
         summary["reason"] = "Empty/incomplete hydrograph table or unexpected horizon"
@@ -246,6 +248,7 @@ def _check_report(
     if all(table.source_decimal(i, column) == 0 for i in range(len(table.rows)) for column in names[2:]):
         return "zero_runoff", summary
     return "success", summary
+
 
 def _diagnostics(paths: list[Path]) -> dict[str, list[str]]:
     errors: list[str] = []
