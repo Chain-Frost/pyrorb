@@ -52,6 +52,7 @@ def _input(
     count: int = 2,
     bad: bool = False,
     extension: bool = False,
+    b_ids: bool = False,
 ) -> tuple[Path, Path, list[EffectiveMCEvent]]:
     model = _source_model()
     project = directory / "project.json"
@@ -65,7 +66,7 @@ def _input(
             model=model,
             pattern_set=patterns,
             pattern_source_order=1 + index % 2,
-            sample_id=f"sample-{index + 1}",
+            sample_id=f"mc:0123456789abcdef:h1:{index:08d}" if b_ids else f"sample-{index + 1}",
             scenario_id="base",
             stratum_id="h1",
             stratum_mass=Decimal(1),
@@ -94,7 +95,7 @@ def _input(
         )
     header = MCRequestHeader(
         plan_sha256=hashlib.sha256(b"extended" if extension else b"initial").hexdigest(),
-        policy_id="authored_control_v1",
+        policy_id="monte-carlo-statistics/1" if b_ids else "authored_control_v1",
         source_files=(SourceFile("patterns.csv", hashlib.sha256(source.read_bytes()).hexdigest()),),
         populations=(MCPopulation("base", 60, Decimal(1)),),
         event_count=count,
@@ -132,6 +133,23 @@ def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Pat
     assert (tmp_path / "selected.json").is_file()
     assert (tmp_path / "selected.csv").is_file()
     assert (tmp_path / "selected.txt").is_file()
+
+
+def test_b_plan_colon_sample_id_is_preserved_and_engine_id_is_stable(tmp_path: Path) -> None:
+    project, request, events = _input(tmp_path, b_ids=True)
+    sample = events[0]
+    assert sample.sample_id.startswith("mc:")
+    assert sample.event.event_id == "mc-" + hashlib.sha256(sample.sample_id.encode("utf-8")).hexdigest()
+    assert sample.event.event_id != sample.sample_id
+    ledger = tmp_path / "b-ledger.jsonl"
+    summary = execute_mc_request(project, request, ledger)
+    assert summary.complete
+    rows = _rows(ledger)
+    assert rows[0]["policy_id"] == "monte-carlo-statistics/1"
+    assert rows[1]["sample_id"] == sample.sample_id
+    assert rows[1]["event_id"] == sample.event.event_id
+    replay = replay_mc_event(project, request, ledger, sample.sample_id, tmp_path / "b-replay")
+    assert replay.outcomes[0].event_id == sample.event.event_id
 
 
 def test_resume_exact_prefix_without_rerouting_or_weight_change(tmp_path: Path) -> None:

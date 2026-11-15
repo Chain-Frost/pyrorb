@@ -45,6 +45,17 @@ One newline-terminated JSON header record contains:
 - populations: each scenario_id, duration_min, modelled_mass decimal string
 - event_count: exact total expected source records
 
+#146's currently generated sample IDs contain colons, whereas the existing
+#119 event contract admits a narrower ASCII identifier. The execution adapter
+preserves the **original B sample_id verbatim** and uses a separate stable
+ProjectEvent event_id: an already-legal sample ID can be used unchanged;
+otherwise the engine ID is mc- followed by the SHA-256 of the UTF-8 sample ID.
+The checkpoint stores **both IDs**. No sampling identity, source TP EventID,
+physical print_id or source ordinal is substituted, and plan extensions
+preserve both logical and engine IDs for unchanged samples. Human-readable
+policy/scenario/stratum IDs may include separators such as / or : and
+remain bounded trimmed/control-free text.
+
 Each following newline-terminated JSON record contains sample_id, scenario_id,
 duration_min, stratum_id, stratum_mass, stratum_size,
 probability_weight, original_tp_id, original_tp_order,
@@ -78,7 +89,7 @@ selection performed under B.
 The ledger JSONL header binds the full effective-request SHA-256, B plan
 SHA-256, policy ID, original sources, project JSON/original-file hashes,
 explicit engine/profile, running package-code fingerprint and optional
-exact installed-wheel SHA-256. Every event record retains sample identity,
+exact installed-wheel SHA-256. Every event record retains both sample and engine-event identity,
 scenario/duration/stratum and **original weight**, effective-event hash,
 effective-model hash, typed success/error diagnostics, all requested output
 site IDs and, on success, the peak, index and physical time for each site.

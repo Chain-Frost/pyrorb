@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path
 from typing import Literal, Never, cast
 
@@ -58,6 +58,31 @@ def _id(value: object, label: str) -> str:
     if not isinstance(value, str) or _ID.fullmatch(value) is None:
         _fail(f"{label} must be a stable ASCII identifier")
     return value
+
+
+def _name(value: object, label: str) -> str:
+    """#146 plan/sample/policy identifiers need not be legal #119 event IDs."""
+    if not isinstance(value, str) or not 1 <= len(value) <= 128 or value != value.strip():
+        _fail(f"{label} must be nonempty, bounded, trimmed text")
+    if any(ord(char) < 32 for char in value):
+        _fail(f"{label} cannot contain control characters")
+    return value
+
+
+def event_id_for_sample(sample_id: str) -> str:
+    """Preserve legal IDs; deterministically map #146 colon IDs into the #119 ID alphabet."""
+    _name(sample_id, "sample_id")
+    if _ID.fullmatch(sample_id) is not None:
+        return sample_id
+    digest = hashlib.sha256(sample_id.encode("utf-8")).hexdigest()
+    return f"mc-{digest}"
+
+
+def _event_weight(mass: Decimal, size: int) -> Decimal:
+    """Match #146's 60-digit decimal precision for w_h/n_h on extended plans."""
+    with localcontext() as ctx:
+        ctx.prec = 60
+        return mass / size
 
 
 def _int(value: object, label: str, *, max_value: int = MAX_EVENTS) -> int:
@@ -119,7 +144,7 @@ class MCPopulation:
     modelled_mass: Decimal
 
     def __post_init__(self) -> None:
-        _id(self.scenario_id, "scenario_id")
+        _name(self.scenario_id, "scenario_id")
         _int(self.duration_min, "duration_min", max_value=10080)
         if not self.modelled_mass.is_finite() or not 0 < self.modelled_mass <= 1:
             _fail("modelled_mass must be in (0, 1]; unmodelled tails are never normalised away")
@@ -144,7 +169,7 @@ class MCRequestHeader:
 
     def __post_init__(self) -> None:
         _sha(self.plan_sha256, "plan_sha256")
-        _id(self.policy_id, "policy_id")
+        _name(self.policy_id, "policy_id")
         _int(self.event_count, "event_count")
         if not self.populations:
             _fail("At least one declared duration/scenario population is required")
@@ -200,13 +225,13 @@ class EffectiveMCEvent:
             (self.scenario_id, "scenario_id"),
             (self.stratum_id, "stratum_id"),
         ):
-            _id(value, label)
+            _name(value, label)
         _int(self.duration_min, "duration_min", max_value=10080)
         _int(self.stratum_size, "stratum_size")
         _int(self.original_tp_order, "original_tp_order")
         if not self.original_tp_id or any(ord(char) < 32 for char in self.original_tp_id):
             _fail("An original TP source identifier is mandatory")
-        if self.event.event_id != self.sample_id or self.event.routing is not None:
+        if self.event.event_id != event_id_for_sample(self.sample_id) or self.event.routing is not None:
             _fail("MC event ID must equal its sample ID; routing coefficients remain fixed")
 
     def _validate_probabilities(self) -> None:
@@ -225,7 +250,7 @@ class EffectiveMCEvent:
             )
             or not 0 < self.stratum_mass <= 1
             or not 0 < self.probability_weight <= 1
-            or self.probability_weight != self.stratum_mass / self.stratum_size
+            or self.probability_weight != _event_weight(self.stratum_mass, self.stratum_size)
             or not 1 <= self.rainfall_aep_percent <= 50
             or self.gross_depth_mm < 0
             or not 0 <= self.arf_factor <= 1
@@ -289,7 +314,7 @@ class EffectiveMCEvent:
             "preburst_depth_mm": str(self.preburst_depth_mm),
             "loss_policy": self.loss_policy,
             "event": {
-                "event_id": self.sample_id,
+                "event_id": self.event.event_id,
                 "storm": dict(self.event.storm or {}),
                 "losses": dict(self.event.losses or {}),
             },
@@ -329,7 +354,7 @@ def read_header(path: Path) -> MCRequestHeader:
     )
     populations = tuple(
         MCPopulation(
-            _id(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"),
+            _name(_obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["scenario_id"], "scenario"),
             _int(
                 _obj(item, {"scenario_id", "duration_min", "modelled_mass"}, "population")["duration_min"], "duration"
             ),
@@ -341,7 +366,7 @@ def read_header(path: Path) -> MCRequestHeader:
     )
     return MCRequestHeader(
         plan_sha256=_sha(data["plan_sha256"], "plan hash"),
-        policy_id=_id(data["policy_id"], "policy_id"),
+        policy_id=_name(data["policy_id"], "policy_id"),
         source_files=sources,
         populations=populations,
         event_count=_int(data["event_count"], "event count"),
@@ -379,10 +404,10 @@ def _event_from_dict(raw: object) -> EffectiveMCEvent:
     if not isinstance(item["original_tp_id"], str):
         _fail("Temporal pattern source ID must be text")
     return EffectiveMCEvent(
-        sample_id=_id(item["sample_id"], "sample_id"),
-        scenario_id=_id(item["scenario_id"], "scenario_id"),
+        sample_id=_name(item["sample_id"], "sample_id"),
+        scenario_id=_name(item["scenario_id"], "scenario_id"),
         duration_min=_int(item["duration_min"], "duration_min", max_value=10080),
-        stratum_id=_id(item["stratum_id"], "stratum_id"),
+        stratum_id=_name(item["stratum_id"], "stratum_id"),
         stratum_mass=_decimal(item["stratum_mass"], "stratum mass", positive=True),
         stratum_size=_int(item["stratum_size"], "stratum size"),
         probability_weight=_decimal(item["probability_weight"], "sample weight", positive=True),
@@ -573,7 +598,7 @@ def materialise_arr_sample(
         stratum_id=stratum_id,
         stratum_mass=stratum_mass,
         stratum_size=stratum_size,
-        probability_weight=stratum_mass / stratum_size,
+        probability_weight=_event_weight(stratum_mass, stratum_size),
         original_tp_id=pattern.event_id,
         original_tp_order=pattern_source_order,
         rainfall_aep_percent=rainfall_aep_percent,
@@ -583,7 +608,7 @@ def materialise_arr_sample(
         preburst_depth_mm=preburst_depth_mm,
         loss_policy=preburst_policy,
         event=ProjectEvent(
-            sample_id,
+            event_id_for_sample(sample_id),
             storm=override,
             losses={
                 "initial_loss_mm": str(burst_initial_loss),

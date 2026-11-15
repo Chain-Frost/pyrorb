@@ -41,6 +41,7 @@ LEDGER_VERSION = 1
 _STATUS_OK = "computed_unvalidated"
 _LEDGER_ROW_KEYS = {
     "sample_id",
+    "event_id",
     "scenario_id",
     "duration_min",
     "stratum_id",
@@ -176,6 +177,7 @@ def _event_row(event: EffectiveMCEvent, result: EngineOutcome) -> dict[str, obje
             sites = []
     return {
         "sample_id": event.sample_id,
+        "event_id": event.event.event_id,
         "scenario_id": event.scenario_id,
         "duration_min": event.duration_min,
         "stratum_id": event.stratum_id,
@@ -232,6 +234,7 @@ def _existing_prefix(path: Path, expected: dict[str, object], request_path: Path
             raise MCRunError(message)
         if (
             row["sample_id"] != candidate.sample_id
+            or row["event_id"] != candidate.event.event_id
             or row["scenario_id"] != candidate.scenario_id
             or row["duration_min"] != candidate.duration_min
             or row["stratum_id"] != candidate.stratum_id
@@ -340,7 +343,7 @@ def execute_mc_request(
     )
     for record, outcome in zip(remaining, outcomes, strict=True):
         _fixed_parameters(record, loaded)
-        if outcome.event_id != record.sample_id:
+        if outcome.event_id != record.event.event_id:
             message = "Existing runner returned an outcome with a different event ID"
             raise MCRunError(message)
         _append_ledger(ledger_path, _event_row(record, outcome))
