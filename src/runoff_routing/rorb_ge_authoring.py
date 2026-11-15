@@ -281,10 +281,10 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
             reach.identifier,
             node_numbers[network.edge_nodes[reach.identifier][0]],
             node_numbers[network.edge_nodes[reach.identifier][1]],
-            (drawing_reaches[reach.identifier].vertices_m[0][0]
-             + drawing_reaches[reach.identifier].vertices_m[-1][0]) / 2,
-            (drawing_reaches[reach.identifier].vertices_m[0][1]
-             + drawing_reaches[reach.identifier].vertices_m[-1][1]) / 2,
+            (drawing_reaches[reach.identifier].vertices_m[0][0] + drawing_reaches[reach.identifier].vertices_m[-1][0])
+            / 2,
+            (drawing_reaches[reach.identifier].vertices_m[0][1] + drawing_reaches[reach.identifier].vertices_m[-1][1])
+            / 2,
             physical_reaches[reach.identifier],
         )
         for index, reach in enumerate(model.reaches, start=1)
