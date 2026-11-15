@@ -253,10 +253,10 @@ class EffectiveMCEvent:
         depths = storm["depths_mm"]
         if not isinstance(percentages, list) or not percentages or not isinstance(depths, list) or not depths:
             _fail("Effective rainfall increments and subarea depths must be nonempty arrays")
-        if sum((_decimal(v, "pattern percentage") for v in percentages), Decimal(0)) != 100:
-            _fail("Original pattern percentages must total exactly 100, without renormalisation")
         percentages = cast("list[object]", percentages)
         depths = cast("list[object]", depths)
+        if sum((_decimal(v, "pattern percentage") for v in percentages), Decimal(0)) != 100:
+            _fail("Original pattern percentages must total exactly 100, without renormalisation")
         total = self.gross_depth_mm * self.arf_factor
         if any(_decimal(v, "areal rainfall") != total for v in depths):
             _fail("Every pervious subarea needs gross rainfall multiplied by ARF exactly once")
