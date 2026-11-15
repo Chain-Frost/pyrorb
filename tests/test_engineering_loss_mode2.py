@@ -31,7 +31,7 @@ def _mode_two_model(*, initial: str = "5", coefficient: str = "0.5") -> RunModel
 
 
 def _project(path: Path, model: RunModel) -> Path:
-    write_project(path, Project("engineering_ilroc", "explicit", EmbeddedRun(model), engine=EngineSelection()))
+    write_project(path, Project("engineering_ilroc", "explicit", EmbeddedRun(model), engine=EngineSelection.for_engine("python")))
     return path
 
 
@@ -40,7 +40,8 @@ def test_default_engine_mode_two_full_horizon_and_physical_source_volume(tmp_pat
     source = _project(tmp_path / "run.json", model)
     result = run_engine_project(source)
     assert result.status == "computed_unvalidated"
-    assert result.effective_selection.engine == "python"
+    assert result.effective_selection == EngineSelection.for_engine("python")
+    assert result.stored_selection == EngineSelection.for_engine("python")
     assert result.native_parity_status == "not_assessed"
     assert result.native_raw_time_tokens == ()
     assert result.python_diagnostics is not None

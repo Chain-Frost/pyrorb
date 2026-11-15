@@ -31,8 +31,8 @@ _DEFAULT_PROFILES: dict[EngineId, str] = {
 class EngineSelection:
     """Engine identity and versioned arithmetic profile; independent of rainfall preparation."""
 
-    engine: EngineId = "python"
-    numerical_profile: str = "engineering-v1"
+    engine: EngineId = "python-cmd"
+    numerical_profile: str = "cmd-6.44"
 
     def __post_init__(self) -> None:
         if self.engine not in _DEFAULT_PROFILES:
@@ -79,7 +79,7 @@ CAPABILITIES: tuple[EngineCapability, ...] = (
     EngineCapability(
         "python-cmd",
         "installed bounded cmd-6.44 event backend; public native replay outstanding",
-        "One explicit DESIGN pluviograph, pervious ISA/burst, lumped kc, IL/CL, one terminal print",
+        "One explicit DESIGN pluviograph, pervious ISA/burst, lumped kc, IL/CL or IL/RoC, multiple code-7 prints",
         "Full computed hydrograph with separate CMD states/diagnostics; public native parity unaccepted",
     ),
     EngineCapability(

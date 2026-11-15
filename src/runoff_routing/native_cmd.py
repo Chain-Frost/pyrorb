@@ -303,6 +303,7 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
         or report.reported_duration_increments != loaded.run.storm.calculation_increments
         or len(report.rows) != expected_rows
         or set(report.columns) != required_columns
+        or len(report.columns) != len(required_columns)
     ):
         message = "Native output timestep, duration, columns or complete horizon failed S1 inspection"
         raise NativeBoundaryError(

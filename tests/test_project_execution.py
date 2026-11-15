@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import canonical_run_bytes, run_model
 from runoff_routing.project_execution import (
     compare_routed_projects,
@@ -23,6 +24,7 @@ from runoff_routing.project_json import (
     LegacyRunFiles,
     Project,
     ProjectError,
+    RainfallProfile,
     SourceFile,
     main,
     write_project,
@@ -38,6 +40,16 @@ def _model() -> RunModel:
     return restored
 
 
+def _python_project(
+    identifier: str,
+    rainfall_profile: RainfallProfile,
+    model_source: EmbeddedRun | LegacyRunFiles,
+    assets: tuple[ExternalAsset, ...] = (),
+) -> Project:
+    """Exercise the legacy Python-only S5 execution API with explicit selection."""
+    return Project(identifier, rainfall_profile, model_source, assets, EngineSelection.for_engine("python"))
+
+
 def _embedded(root: Path, *, profile: str = "explicit") -> Path:
     path = root / "embedded.json"
     if profile == "explicit":
@@ -46,7 +58,7 @@ def _embedded(root: Path, *, profile: str = "explicit") -> Path:
         selected = "legacy-rorb"
     else:
         selected = "arr-2026v1"
-    write_project(path, Project("example", selected, EmbeddedRun(_model())))
+    write_project(path, _python_project("example", selected, EmbeddedRun(_model())))
     return path
 
 
@@ -63,7 +75,7 @@ def _legacy(root: Path) -> Path:
     manifest = root / "legacy.json"
     write_project(
         manifest,
-        Project("imported-legacy", "legacy-rorb", LegacyRunFiles(references[0], references[1], references[2])),
+        _python_project("imported-legacy", "legacy-rorb", LegacyRunFiles(references[0], references[1], references[2])),
     )
     return manifest
 
@@ -89,7 +101,7 @@ def test_execute_embedded_json_calls_existing_s2_reference_exactly(tmp_path: Pat
 def test_file_backed_rorb_and_embedded_json_produce_identical_python_ordinates(tmp_path: Path) -> None:
     source = _legacy(tmp_path)
     embedded = tmp_path / "same-model.json"
-    write_project(embedded, Project("same-computation", "legacy-rorb", EmbeddedRun(_model())))
+    write_project(embedded, _python_project("same-computation", "legacy-rorb", EmbeddedRun(_model())))
     a, b = run_project(source), run_project(embedded)
     assert a.source_kind == "rorb-files"
     assert b.source_kind == "embedded-run"
@@ -111,10 +123,10 @@ def test_exact_python_output_differences_are_reported_without_tolerance(tmp_path
     original = tmp_path / "original.json"
     edited = tmp_path / "edited.json"
     model = _model()
-    write_project(original, Project("original", "explicit", EmbeddedRun(model)))
+    write_project(original, _python_project("original", "explicit", EmbeddedRun(model)))
     new_routing = replace(model.parameters.routing[0], kc=Decimal(2))
     new_parameters = replace(model.parameters, routing=(new_routing,))
-    write_project(edited, Project("edited", "explicit", EmbeddedRun(replace(model, parameters=new_parameters))))
+    write_project(edited, _python_project("edited", "explicit", EmbeddedRun(replace(model, parameters=new_parameters))))
     result = compare_routed_projects(original, edited)
     assert not result.identical
     assert not result.same_typed_model
@@ -128,7 +140,7 @@ def test_exact_python_output_differences_are_reported_without_tolerance(tmp_path
 def test_cross_method_arr_and_legacy_profiles_fail_closed(tmp_path: Path) -> None:
     original = _embedded(tmp_path)
     modern = tmp_path / "arr.json"
-    write_project(modern, Project("modern", "arr-2026v1", EmbeddedRun(_model())))
+    write_project(modern, _python_project("modern", "arr-2026v1", EmbeddedRun(_model())))
     with pytest.raises(ProjectError, match="S6 event adapter"):
         run_project(modern)
     with pytest.raises(ProjectError, match="cross-method"):
@@ -145,7 +157,7 @@ def test_unprocessed_rainfall_asset_is_not_ignored_in_solver(tmp_path: Path) -> 
         SourceFile(asset_path.name, hashlib.sha256(asset_path.read_bytes()).hexdigest()),
     )
     source = tmp_path / "project.json"
-    write_project(source, Project("example", "legacy-rorb", EmbeddedRun(_model()), (asset,)))
+    write_project(source, _python_project("example", "legacy-rorb", EmbeddedRun(_model()), (asset,)))
     with pytest.raises(ProjectError, match="unprocessed"):
         run_project(source)
 
@@ -160,7 +172,7 @@ def test_reference_only_external_evidence_is_hash_verified(tmp_path: Path) -> No
         SourceFile(asset_path.name, hashlib.sha256(asset_path.read_bytes()).hexdigest()),
     )
     source = tmp_path / "project.json"
-    write_project(source, Project("example", "explicit", EmbeddedRun(_model()), (asset,)))
+    write_project(source, _python_project("example", "explicit", EmbeddedRun(_model()), (asset,)))
     result = run_project(source)
     assert len(result.source_file_hashes) == 1
     assert result.calculation_status == "computed_unvalidated"
@@ -174,7 +186,7 @@ def test_invalid_mode_two_coefficient_rejected_before_producing_output(tmp_path:
     bad_loss = replace(model.parameters.losses[0], continuing=Decimal("1.2"))
     unsupported = replace(model, parameters=replace(model.parameters, loss_model=2, losses=(bad_loss,)))
     source = tmp_path / "unsupported.json"
-    write_project(source, Project("unsupported", "explicit", EmbeddedRun(unsupported)))
+    write_project(source, _python_project("unsupported", "explicit", EmbeddedRun(unsupported)))
     target = tmp_path / "report.json"
     with pytest.raises(ProjectError, match="Unsupported S1/S2"):
         write_execution_json(target, run_project(source))
@@ -197,10 +209,10 @@ def test_write_execution_report_is_no_clobber_and_retains_provenance(tmp_path: P
 def test_compare_routed_print_locations_requires_explicit_identity(tmp_path: Path) -> None:
     a, b = tmp_path / "a.json", tmp_path / "b.json"
     run = _model()
-    write_project(a, Project("original", "explicit", EmbeddedRun(run)))
+    write_project(a, _python_project("original", "explicit", EmbeddedRun(run)))
     new_location = replace(run.catchment.print_locations[0], label="Different output location")
     new_catchment = replace(run.catchment, print_locations=(new_location,))
-    write_project(b, Project("relabelled", "explicit", EmbeddedRun(replace(run, catchment=new_catchment))))
+    write_project(b, _python_project("relabelled", "explicit", EmbeddedRun(replace(run, catchment=new_catchment))))
     result = compare_routed_projects(a, b)
     assert not result.same_print_locations
     assert not result.same_typed_model
@@ -213,7 +225,7 @@ def test_run_and_compare_routed_cli_have_explicit_status_and_exit_codes(
 ) -> None:
     a = _embedded(tmp_path)
     b = tmp_path / "same.json"
-    write_project(b, Project("other-id", "explicit", EmbeddedRun(_model())))
+    write_project(b, _python_project("other-id", "explicit", EmbeddedRun(_model())))
     target = tmp_path / "calculation.json"
     assert main(["run", str(a), str(target)]) == 0
     receipt = json.loads(capsys.readouterr().out)
@@ -227,7 +239,7 @@ def test_run_and_compare_routed_cli_have_explicit_status_and_exit_codes(
     assert same["same_computed_ordinates"]
     assert same["native_parity_status"] == "not_assessed"
     modern = tmp_path / "modern.json"
-    write_project(modern, Project("modern", "arr-2026v1", EmbeddedRun(_model())))
+    write_project(modern, _python_project("modern", "arr-2026v1", EmbeddedRun(_model())))
     assert main(["compare-runs", str(a), str(modern)]) == 2
 
 
@@ -253,8 +265,8 @@ def test_same_reference_asset_hash_after_relocation_keeps_python_run_comparable(
     right_asset = ExternalAsset("native", "reference", "synthetic", SourceFile("renamed capture.out", digest))
     left = a / "project.json"
     right = b / "project.json"
-    write_project(left, Project("left", "explicit", EmbeddedRun(_model()), (left_asset,)))
-    write_project(right, Project("right", "explicit", EmbeddedRun(_model()), (right_asset,)))
+    write_project(left, _python_project("left", "explicit", EmbeddedRun(_model()), (left_asset,)))
+    write_project(right, _python_project("right", "explicit", EmbeddedRun(_model()), (right_asset,)))
     comparison = compare_routed_projects(left, right)
     assert comparison.same_typed_model
     assert comparison.same_external_assets
