@@ -192,6 +192,37 @@ def test_relative_weight_denominator_overflow_is_an_isolated_event_failure(tmp_p
     assert first.physical_time_hours == last.physical_time_hours
 
 
+def test_subnormal_relative_weights_preserve_original_rainfall_and_fresh_batch_q(tmp_path: Path) -> None:
+    model = _imported_model()
+    storm = replace(
+        model.storm,
+        pattern_basis="relative_weights",
+        percentages=(Decimal(1), Decimal(1)),
+        depths_mm=(Decimal("0.1"),) * len(model.catchment.subareas),
+    )
+    losses = replace(model.parameters.losses[0], initial_loss_mm=Decimal(0), continuing=Decimal(0))
+    parameters = replace(model.parameters, losses=(losses,))
+    project = _project(tmp_path / "subnormal.json", replace(model, storm=storm, parameters=parameters))
+    report = run_project_events(
+        project,
+        (
+            ProjectEvent("normal"),
+            ProjectEvent("subnormal", storm={"percentages": ["1e-323", "1e-323"]}),
+            ProjectEvent("normal-again"),
+        ),
+        selection=SELECTION,
+    )
+    first, subnormal, repeated = report.outcomes
+    assert [item.status for item in report.outcomes] == ["computed_unvalidated"] * 3
+    assert all(item.effective_selection == SELECTION for item in report.outcomes)
+    assert first.hydrographs == subnormal.hydrographs == repeated.hydrographs
+    assert first.physical_time_hours == subnormal.physical_time_hours == repeated.physical_time_hours
+    assert any(q > 0 for q in first.hydrographs[0].discharge_m3_s)
+    assert first.python_diagnostics is not None
+    excess = cast("tuple[tuple[float, ...], ...]", first.python_diagnostics["rainfall_excess_mm"])
+    assert excess[0] == pytest.approx((0.05, 0.05))
+
+
 def test_relative_weights_are_explicit_and_not_substituted_for_percentages(tmp_path: Path) -> None:
     model = _imported_model()
     relative = replace(model.storm, pattern_basis="relative_weights", percentages=(Decimal(3), Decimal(1)))

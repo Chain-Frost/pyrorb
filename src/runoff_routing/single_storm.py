@@ -292,17 +292,37 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     elif storm.pattern_basis != "relative_weights":
         message = "Unsupported temporal basis: only explicit percentages or distinct relative weights are admitted."
         raise RoutingDomainError(message)
-    # In both explicit cases rainfall depth is apportioned by its original
-    # total denominator. Never relabel relative raw source weights as 100% data.
+    # Percent-of-depth storms keep their original arithmetic. Relative weights
+    # use a dimensionless scaled ratio before multiplying by source depth, so
+    # subnormal but equal nonzero weights cannot silently lose all rainfall.
+    relative_shares: tuple[float, ...] = ()
+    if storm.pattern_basis == "relative_weights":
+        maximum = max(storm.percentages)
+        scaled = tuple(value / maximum for value in storm.percentages)
+        scaled_total = math.fsum(scaled)
+        relative_shares = tuple(value / scaled_total for value in scaled)
+        if any(value > 0 and share == 0 for value, share in zip(storm.percentages, relative_shares, strict=True)):
+            message = "Relative storm weight ratios underflow to zero."
+            raise RoutingDomainError(message)
+    rainfalls = tuple(
+        (
+            tuple(share * depth for share in relative_shares)
+            if relative_shares
+            else tuple(percent * depth / total_percent for percent in storm.percentages)
+        )
+        for depth in storm.depths_mm
+    )
+    if relative_shares and any(
+        depth > 0 and share > 0 and rainfall == 0
+        for depth, bins in zip(storm.depths_mm, rainfalls, strict=True)
+        for share, rainfall in zip(relative_shares, bins, strict=True)
+    ):
+        message = "Relative storm depth contribution underflows to zero."
+        raise RoutingDomainError(message)
     fractions = catchment.impervious_fractions or (0.0,) * len(catchment.areas_km2)
     excesses = tuple(
-        rainfall_excess(
-            tuple(percent * depth / total_percent for percent in storm.percentages),
-            losses=losses,
-            timestep_hours=storm.timestep_hours,
-            impervious_fraction=fi,
-        )
-        for depth, fi in zip(storm.depths_mm, fractions, strict=True)
+        rainfall_excess(rainfall, losses=losses, timestep_hours=storm.timestep_hours, impervious_fraction=fi)
+        for rainfall, fi in zip(rainfalls, fractions, strict=True)
     )
     count = storm.calculation_increments + 1
     sources = tuple(

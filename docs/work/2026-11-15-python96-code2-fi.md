@@ -70,3 +70,10 @@ A focused original-CMD diagnostic test reads SHA/byte-verified historical 2,913-
 - New tests: direct S2 domain rejection and an explicit-`python` three-member original-PyRomb project batch with baseline → individually finite but total-overflowing relative weights → repeated baseline. Require `computed_unvalidated/unsupported_feature/computed_unvalidated`, `storm_precision`, no failed event Q and identical before/after full Q/time.
 - No changes to original sources/reports, case register, tolerance, default engine, external #138 types, CLI schema, private evidence or native golden. The exact-head quality and fresh independent review must be rerun after this correction; prior receipts remain attributed to their tested heads.
 
+## Second independent review finding: relative-weight underflow — 15 November 2026
+
+- New Codex review of `cc6db28a844d48896f7cc1527ef48d099bc33d5d` identified a second P2 boundary defect: individually representable subnormal weights (e.g. `1e-323, 1e-323`) could each be multiplied by a 0.1 mm depth and round to zero before dividing by the tiny total, returning `computed_unvalidated` with false zero rain/Q.
+- Relative-weight input now uses a dimensionless ratio: divide each finite source weight by the largest, sum scaled weights, divide by that sum, and only then multiply by source depth. Reject any nonzero relative weight ratio or nonzero rain-bin contribution that would underflow to zero rather than silently dropping it. Continue explicit typed denial of a raw denominator whose original float sum overflows. Ordinary percent-of-depth arithmetic remains unchanged.
+- New controls compare equal subnormal vs ordinary relative weights in direct S2 and in an imported six-source project three-event batch, including nonzero rainfall excess, full Q, print/time equality, stored selection and repeated-event state. A separate extreme-ratio control proves fail-closed behaviour.
+- These are independent engineering precision guards, not a new CMD native observation or numerical tolerance change. Exact-head quality and independent review must be repeated on the corrected head.
+
