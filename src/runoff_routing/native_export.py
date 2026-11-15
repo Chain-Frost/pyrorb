@@ -413,7 +413,7 @@ def export_cmd_package(
         persisted_bindings: object = project_to_dict(project.project).get("source_bindings")
         selected_bindings: list[dict[str, object]] = []
         if isinstance(persisted_bindings, list):
-            for raw_binding in persisted_bindings:
+            for raw_binding in cast("list[object]", persisted_bindings):
                 if not isinstance(raw_binding, dict):
                     message = "Invalid selected source binding in imported project"
                     raise NativeExportError(message)
