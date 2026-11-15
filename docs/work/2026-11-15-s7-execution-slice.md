@@ -96,3 +96,22 @@ bounded execution adapter is present.
   passed at `609cf3c5faef47919a90a587e843e3cf08769bfb`. This review-hardening
   revision needs its own CI and proportionate independent review before
   staged merge; it adds no new RORBwin/native scientific acceptance.
+
+## 16 November P2 independent review — exact-context safety
+
+- Independent Codex review of `51e8fbb` identified that `localcontext()`
+  with precision alone inherits caller-selected rounding and decimal traps.
+  This was a real remaining failure for otherwise unchanged saved requests
+  under ROUND_DOWN/ROUND_UP and enabled Inexact trapping.
+- Replaced every E-owned ambient Decimal context for source materialisation,
+  ARF/burst IL, derived AEP percentage and probability/weight checks with
+  explicit `Context` templates. The 28-digit ARR and 60-digit B-derived
+  contexts now pin ROUND_HALF_EVEN and standard traps, insulated from the
+  caller's current Decimal context.
+- Expanded direct E materialisation and saved-request-validation regressions
+  to exercise ROUND_DOWN/ROUND_UP and Inexact traps as well as precision.
+  These correct the E boundary without altering B's underlying stochastic
+  probability law, C's quantile method or the solver.
+- Exact-head source, installed-wheel and independent re-review must pass
+  before staging #151 merge. Earlier CI and source review remain historical
+  evidence, not approval of this further code change.

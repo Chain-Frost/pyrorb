@@ -13,7 +13,7 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, DivisionByZero, InvalidOperation, Overflow, localcontext
 from pathlib import Path
 from typing import Literal, Never, cast
 
@@ -31,6 +31,15 @@ MAX_EVENTS = 2_000_000
 _ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,127}\Z")
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 LossPolicy = Literal["none", "subtract_reject", "subtract_clamp"]
+
+# Explicit contexts, rather than ambient-context copies with only prec changed:
+# a Python API caller may use directed rounding or enable Inexact traps.
+MC_ARR_DECIMAL_CONTEXT = Context(prec=28, rounding=ROUND_HALF_EVEN, traps=[InvalidOperation, DivisionByZero, Overflow])
+MC_SAMPLE_DECIMAL_CONTEXT = Context(
+    prec=60,
+    rounding=ROUND_HALF_EVEN,
+    traps=[InvalidOperation, DivisionByZero, Overflow],
+)
 
 
 class MCInputError(ValueError):
@@ -80,15 +89,13 @@ def event_id_for_sample(sample_id: str) -> str:
 
 def _event_weight(mass: Decimal, size: int) -> Decimal:
     """Match #146's 60-digit decimal precision for w_h/n_h on extended plans."""
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
         return mass / size
 
 
 def _sum_precise(values: Iterable[Decimal]) -> Decimal:
     """Account for #146's 60-digit probability masses regardless of caller context."""
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
         return sum(values, Decimal(0))
 
 
@@ -388,15 +395,13 @@ class EffectiveMCEvent:
             _fail("Original pattern percentages must total exactly 100, without renormalisation")
         # Match #136's Decimal-28 increment -> ARF -> sum operation order,
         # independent of the calling application's Decimal context.
-        with localcontext() as ctx:
-            ctx.prec = 28
+        with localcontext(MC_ARR_DECIMAL_CONTEXT):
             gross_increments = (self.gross_depth_mm * _decimal(v, "pattern percentage") / 100 for v in percentages)
             total = sum((increment * self.arf_factor for increment in gross_increments), Decimal(0))
         if any(_decimal(v, "areal rainfall") != total for v in depths):
             _fail("Every pervious subarea needs gross rainfall multiplied by ARF exactly once")
         timestep = _decimal(storm["timestep_hours"], "timestep_hours", positive=True)
-        with localcontext() as ctx:
-            ctx.prec = 28
+        with localcontext(MC_ARR_DECIMAL_CONTEXT):
             # 2/60 and 20/60 hours cannot be represented exactly by Decimal.
             minute_error = abs(timestep * len(percentages) * 60 - self.duration_min)
         if minute_error > Decimal("1e-12"):
@@ -404,8 +409,7 @@ class EffectiveMCEvent:
         _int(storm["calculation_increments"], "calculation_increments")
         if cast("int", storm["calculation_increments"]) < len(percentages):
             _fail("Routing horizon must include the full storm")
-        with localcontext() as ctx:
-            ctx.prec = 60
+        with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
             burst = max(Decimal(0), self.storm_initial_loss_mm - self.preburst_depth_mm)
         if _decimal(losses.get("initial_loss_mm"), "effective burst IL") != burst:
             _fail("Effective loss must be sampled storm IL minus preburst exactly once")
@@ -774,8 +778,7 @@ def materialise_arr_sample(
     if not gross_depth_mm.is_finite() or gross_depth_mm < 0:
         _fail("B-sampled gross depth is not finite and nonnegative mm")
     # Pin the established #136 ARR arithmetic independently of caller context.
-    with localcontext() as ctx:
-        ctx.prec = 28
+    with localcontext(MC_ARR_DECIMAL_CONTEXT):
         gross = RawHyetograph(
             duration_min=pattern.duration_min,
             timestep_min=pattern.timestep_min,
@@ -805,8 +808,7 @@ def materialise_arr_sample(
         _fail("No-preburst policy cannot subtract a positive preburst")
     if preburst_policy == "subtract_reject" and preburst_depth_mm > storm_initial_loss_mm:
         _fail("Preburst exceeds sampled storm IL; explicit clamp policy required")
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
         burst_initial_loss = max(Decimal(0), storm_initial_loss_mm - preburst_depth_mm)
     override: dict[str, object] = {
         "title": f"MC {pattern.duration_min} min {rainfall_aep_percent}% TP {pattern.event_id}",

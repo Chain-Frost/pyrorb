@@ -7,7 +7,7 @@ import json
 import time
 import tracemalloc
 from dataclasses import replace
-from decimal import Decimal, localcontext
+from decimal import ROUND_DOWN, ROUND_HALF_EVEN, ROUND_UP, Decimal, Inexact, localcontext
 from pathlib import Path
 from typing import cast
 
@@ -156,9 +156,19 @@ def test_effective_materialisation_is_independent_of_decimal_context(tmp_path: P
     source.write_bytes(SOURCE_PATTERNS.read_bytes())
     patterns = read_pattern_file(source, kind="point")
     requests: list[dict[str, object]] = []
-    for precision in (12, 28, 80):
+    # Include directed rounding and traps: setting prec alone is insufficient.
+    scenarios = (
+        (12, ROUND_HALF_EVEN, False),
+        (28, ROUND_DOWN, False),
+        (80, ROUND_UP, False),
+        (12, ROUND_DOWN, True),
+        (80, ROUND_UP, True),
+    )
+    for precision, rounding, trap_inexact in scenarios:
         with localcontext() as ctx:
             ctx.prec = precision
+            ctx.rounding = rounding
+            ctx.traps[Inexact] = trap_inexact
             event = materialise_arr_sample(
                 model=model,
                 pattern_set=patterns,
@@ -178,12 +188,27 @@ def test_effective_materialisation_is_independent_of_decimal_context(tmp_path: P
                 dry_tail_min=120,
             )
             requests.append(event.to_dict())
-    assert requests[0] == requests[1] == requests[2]
+    assert all(request == requests[0] for request in requests[1:])
+
+
+def test_saved_effective_request_validation_is_independent_of_rounding_and_traps(tmp_path: Path) -> None:
+    _project, request, _events = _input(tmp_path, count=3, b_ids=True)
+    expected, digest = validate_effective_request(request)
+    for rounding in (ROUND_DOWN, ROUND_UP):
+        with localcontext() as ctx:
+            ctx.prec = 12
+            ctx.rounding = rounding
+            ctx.traps[Inexact] = True
+            checked, current_digest = validate_effective_request(request)
+        assert checked == expected
+        assert current_digest == digest
 
 
 def test_probability_mass_accounting_ignores_callers_decimal_context() -> None:
     with localcontext() as ctx:
         ctx.prec = 8
+        ctx.rounding = ROUND_UP
+        ctx.traps[Inexact] = True
         with pytest.raises(MCInputError, match="probability mass must equal one"):
             MCPopulation("base", 60, Decimal("0.5"), Decimal("0.25"), Decimal("0.250000000000000000000000000001"))
         header = MCRequestHeader(

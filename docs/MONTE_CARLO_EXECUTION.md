@@ -254,7 +254,11 @@ or the full CMD gate [#5](https://github.com/Chain-Frost/python-runoff-routing/i
 ### Deterministic Decimal context
 
 The E adapter preserves #136's Decimal-28 gross-increment, ARR ARF and
-once-only adjusted-increment summation. B sampled AEP conversion, 60-digit
-sample/stratum mass and storm/burst IL arithmetic use a pinned Decimal-60
-context. Persisted effective inputs and probability-mass checks therefore
-do not depend on a Python API caller's current Decimal precision.
+once-only adjusted-increment summation. B-sampled AEP conversion, 60-digit
+sample/stratum mass and storm/burst IL arithmetic use a separate explicit
+Decimal-60 context. Both contexts pin ROUND_HALF_EVEN and standard
+InvalidOperation/DivisionByZero/Overflow traps, rather than inheriting
+the caller's rounding or Inexact trap. Saved effective inputs and
+mass/weight/once-only transformation checks therefore do not depend on
+the Python API caller's Decimal context. Source tests cover deliberately
+changed precision, ROUND_DOWN/ROUND_UP and enabled Inexact traps.

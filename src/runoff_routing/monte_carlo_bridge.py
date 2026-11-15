@@ -22,6 +22,7 @@ from .monte_carlo_effective import (
     MCInputError,
     MCPopulation,
     MCRequestHeader,
+    MC_SAMPLE_DECIMAL_CONTEXT,
     materialise_arr_sample,
     sha256_file,
     write_effective_request,
@@ -251,8 +252,7 @@ def _materialised(
             or planned.planned_samples <= 0
         ):
             _fail("Sample scenario/duration/stratum allocation differs from its plan")
-        with localcontext() as ctx:
-            ctx.prec = 60
+        with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
             aep_percent = record.aep_fraction * 100
         event = materialise_arr_sample(
             model=model,
@@ -324,8 +324,7 @@ def prepare_saved_sample_plan(
         parent_plan_sha256=plan.parent_plan_id,
     )
     model = load_project(project_path).run
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(MC_SAMPLE_DECIMAL_CONTEXT):
         area_km2 = sum((s.area_km2 for s in model.catchment.subareas), Decimal(0))
     kind = "point" if area_km2 < 75 else "areal"
     records = api.iter_saved_sample_records(samples_path, plan)
