@@ -165,8 +165,8 @@ def test_selected_batch_is_isolated_and_storm_edit_is_semantic(tmp_path: Path) -
     ).read_bytes()
     assert _model_from_emitted(package / "events" / "002").storm == changed_storm
     launcher = (package / "run.cmd").read_bytes()
-    assert b'events\\001' in launcher
-    assert b'events\\002' in launcher
+    assert b"events\\001" in launcher
+    assert b"events\\002" in launcher
 
 
 def test_failures_leave_no_misleading_partial_output(tmp_path: Path) -> None:
@@ -209,7 +209,9 @@ def test_refuse_overwrite_and_unsupported_target(tmp_path: Path) -> None:
         NativeCmdExportTarget("cmd-6.45")
 
 
-def test_json_event_request_cli_reuses_existing_override_derivation(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_json_event_request_cli_reuses_existing_override_derivation(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     project_path = _original_project(tmp_path)
     requests = tmp_path / "events.json"
     requests.write_text(

@@ -30,9 +30,7 @@ The second command accepts the existing `python-runoff-routing-explicit-events` 
 from pathlib import Path
 from dataclasses import replace
 from decimal import Decimal
-from runoff_routing.native_export import (
-    NativeCmdExportTarget, NativeExportEvent, export_cmd_package
-)
+from runoff_routing.native_export import NativeCmdExportTarget, NativeExportEvent, export_cmd_package
 from runoff_routing.project_json import load_project
 
 project = Path("project.json")

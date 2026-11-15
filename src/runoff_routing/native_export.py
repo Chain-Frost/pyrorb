@@ -186,9 +186,7 @@ def _role_record(
     }
 
 
-def _reparse_staged(
-    event_dir: Path, cat_name: str, intended: RunModel
-) -> None:
+def _reparse_staged(event_dir: Path, cat_name: str, intended: RunModel) -> None:
     """Prove the actual staged PAR/CATG/STM recover the selected effective model."""
     try:
         recovered = RunModel(
@@ -204,9 +202,7 @@ def _reparse_staged(
         raise NativeExportError(message)
 
 
-def _stage_event(
-    root: Path, ordinal: int, event: NativeExportEvent, source: _OriginalInputs
-) -> dict[str, Any]:
+def _stage_event(root: Path, ordinal: int, event: NativeExportEvent, source: _OriginalInputs) -> dict[str, Any]:
     model = event.run
     if model.catchment != source.run.catchment:
         message = (
@@ -257,7 +253,9 @@ def _stage_event(
             "calculation_increments": model.storm.calculation_increments,
         },
         "inputs": {
-            "parameters": _role_record(source.files.parameters, source.parameters, par_output, par_data, mode="rebound"),
+            "parameters": _role_record(
+                source.files.parameters, source.parameters, par_output, par_data, mode="rebound"
+            ),
             "catchment": _role_record(
                 source.files.catchment, source.catchment, cat_output, source.catchment, mode="source_exact"
             ),
@@ -334,7 +332,9 @@ def _readme(target: NativeCmdExportTarget, selected: tuple[NativeExportEvent, ..
         "",
         "Event folders in stable request order:",
     ]
-    lines.extend(f"  events/{ordinal:03d}  event_id={event.event_id}" for ordinal, event in enumerate(selected, start=1))
+    lines.extend(
+        f"  events/{ordinal:03d}  event_id={event.event_id}" for ordinal, event in enumerate(selected, start=1)
+    )
     lines.extend(
         (
             "",
