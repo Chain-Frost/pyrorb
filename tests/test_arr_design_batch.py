@@ -206,9 +206,7 @@ def test_ratio_excess_policy_checks_applied_depth_not_source_depth(
     fixture = LEGACY.read_text(encoding="utf-8")
     original = "60 (1.0),2.0 (0.010),7.00 (1.020),"
     assert fixture.count(original) == 1
-    source.write_text(
-        fixture.replace(original, f"60 (1.0),2.0 (0.010),30.00 ({ratio}),"), encoding="utf-8"
-    )
+    source.write_text(fixture.replace(original, f"60 (1.0),2.0 (0.010),30.00 ({ratio}),"), encoding="utf-8")
     config, data = _config(tmp_path)
     data["aep_labels"] = ["1%"]
     data["durations_min"] = [60]
