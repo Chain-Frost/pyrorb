@@ -533,8 +533,7 @@ def _check_extended_plan(old: MCRequestHeader, new: MCRequestHeader) -> None:
         message = "Extended plan changed its original rainfall strata"
         raise MCRunError(message)
     if any(
-        current[key].probability_mass != row.probability_mass
-        or current[key].planned_samples < row.planned_samples
+        current[key].probability_mass != row.probability_mass or current[key].planned_samples < row.planned_samples
         for key, row in prior.items()
     ) or not any(current[key].planned_samples > row.planned_samples for key, row in prior.items()):
         message = "Plan extension must increase allocations while preserving each stratum probability mass"
@@ -650,9 +649,7 @@ def extend_mc_execution(
             wheel_artifact=wheel_artifact,
         )
         for event in iter_effective_events(new_request_path):
-            matched = db.execute(
-                "SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)
-            ).fetchone()
+            matched = db.execute("SELECT outcome_json FROM cached WHERE sample_id = ?", (event.sample_id,)).fetchone()
             if matched is None:
                 routed = next(outcomes)
                 if routed.event_id != event.event.event_id:

@@ -174,9 +174,12 @@ def test_extended_plan_reuses_identical_computations_with_new_stratum_weights(tm
         arf_region="South-West Western Australia",
         dry_tail_min=120,
     )
-    assert main(
-        ["extend", str(project), str(old_request), str(old_ledger), str(new_request), str(tmp_path / "reuse.jsonl")]
-    ) == 0
+    assert (
+        main(
+            ["extend", str(project), str(old_request), str(old_ledger), str(new_request), str(tmp_path / "reuse.jsonl")]
+        )
+        == 0
+    )
     reused = (tmp_path / "reuse.jsonl").read_bytes()
     assert len(reused.splitlines()) == 5
     old_samples = tuple(iter_effective_events(old_request))
@@ -189,7 +192,5 @@ def test_extended_plan_reuses_identical_computations_with_new_stratum_weights(tm
     assert (tmp_path / "original-ledger.jsonl").is_file()
 
     with pytest.raises(MCRunError, match="parent"):
-        extend_mc_execution(
-            project, old_request, old_ledger, old_request, tmp_path / "not-an-extension.jsonl"
-        )
+        extend_mc_execution(project, old_request, old_ledger, old_request, tmp_path / "not-an-extension.jsonl")
     assert not (tmp_path / "not-an-extension.jsonl").exists()
