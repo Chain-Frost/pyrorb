@@ -10,8 +10,9 @@
 - [Cached-regression index portability](2026-11-15-cmd81-native-index-portability.md) — merged #83, Linux checkout byte-preservation.
 - [CMD scalar metric transfer](2026-11-15-cmd56-public-scalar-transfer.md) and [scalar adapter record](2026-11-15-cmd56-scalar-adapter.md) — merged #80, existing original two incomplete peak times.
 - [CMD phase-A inventory completion](2026-11-15-cmd-phase-a-completion.md) — merged #84 matrix; full CMD acceptance remains open.
-- [Improved default-engine phase-one method and independent controls](2026-11-15-issue6-engineering.md) — merged #97; full engineering/batch acceptance remains open.
-- [Issue #76 cleanup inventory and validation](2026-11-15-issue76-cleanup.md) — proposed public removal/migration, excludes numerical changes.
+- [Improved default-engine method and CMD deviation record](2026-11-15-issue6-engineering.md) — merged #97/#101/#102; wider engineering accuracy remains open.
+- [Explicit-event batches and verification](2026-11-15-issue6-batches.md) with [bounded measured performance](2026-11-15-issue6-batch-performance.md) — merged #99, not full Monte Carlo or physical acceptance.
+- [Issue #76 completed cleanup inventory, PR/issue closures and validation](2026-11-15-issue76-cleanup.md) — former duplicate runners retired without changing the maintained numerical engines or canonical references.
 
 ## Retained diagnostic/reference evidence
 

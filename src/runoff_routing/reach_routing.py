@@ -13,6 +13,10 @@ class RoutingDomainError(ValueError):
     """Inputs or a timestep do not permit a finite nonnegative routed flow."""
 
 
+class RoutingNumericalError(RoutingDomainError):
+    """A finite input reached an unstable/nonconvergent numerical operation."""
+
+
 def storage_volume(discharge_m3_s: float, *, coefficient_k: float, exponent_m: float) -> float:
     """Return reach storage in m³ under S = 3600 k Q**m.
 
@@ -24,7 +28,7 @@ def storage_volume(discharge_m3_s: float, *, coefficient_k: float, exponent_m: f
     storage = 3600.0 * _storage_term(discharge_m3_s, coefficient_k, exponent_m)
     if not math.isfinite(storage):
         message = "The storage-discharge relation overflowed."
-        raise RoutingDomainError(message)
+        raise RoutingNumericalError(message)
     return storage
 
 
@@ -46,10 +50,10 @@ def _storage_term(discharge: float, coefficient_k: float, exponent_m: float) -> 
         value = coefficient_k * discharge**exponent_m
     except OverflowError as exc:
         message = "The storage-discharge relation overflowed."
-        raise RoutingDomainError(message) from exc
+        raise RoutingNumericalError(message) from exc
     if not math.isfinite(value):
         message = "The storage-discharge relation returned a non-finite value."
-        raise RoutingDomainError(message)
+        raise RoutingNumericalError(message)
     return value
 
 
@@ -76,12 +80,12 @@ def _bracket_upper_bound(
         )
         if not math.isfinite(residual):
             message = "Non-finite residual while bracketing a routed discharge."
-            raise RoutingDomainError(message)
+            raise RoutingNumericalError(message)
         if residual >= 0.0:
             return upper
         upper *= 2.0
     message = "Unable to bracket a nonnegative routed discharge."
-    raise RoutingDomainError(message)
+    raise RoutingNumericalError(message)
 
 
 def _nonlinear_root(
@@ -135,7 +139,7 @@ def _nonlinear_root(
                 f_lower *= 0.5
             side = 1
     message = "Nonlinear reach routing did not converge within the iteration limit."
-    raise RoutingDomainError(message)
+    raise RoutingNumericalError(message)
 
 
 def _next_outflow(
@@ -152,7 +156,7 @@ def _next_outflow(
     )
     if not math.isfinite(target) or target < 0.0:
         message = "The timestep produces an invalid negative/non-finite routing target; reduce the timestep."
-        raise RoutingDomainError(message)
+        raise RoutingNumericalError(message)
     if target == 0.0:
         return 0.0
     if exponent_m == 1.0:

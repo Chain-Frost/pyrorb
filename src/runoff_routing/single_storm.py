@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from runoff_routing.reach_routing import RoutingDomainError, route_reach
+from runoff_routing.reach_routing import RoutingDomainError, RoutingNumericalError, route_reach
 
 ControlCode = Literal[1, 3, 4, 5, 7]
 
@@ -59,6 +59,22 @@ class StormResult:
     average_distance_km: float
     route_factors: tuple[float, ...]
     dt_hours: float
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCatchment:
+    """Only immutable event-independent geometry, ordering and coefficients.
+
+    Rainfall, losses, source, routing, branch stack and output state are
+    recomputed for every event. Construct through prepare_catchment.
+    """
+
+    catchment: Catchment
+    kc: float
+    m: float
+    average_distance_km: float
+    route_factors: tuple[float, ...]
+    reach_coefficients: tuple[float, ...]
 
 
 def _check_finite_nonnegative(value: float, label: str) -> None:
@@ -149,11 +165,12 @@ def distance_analysis(catchment: Catchment) -> tuple[float, tuple[float, ...]]:
 
 
 def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_hours: float) -> tuple[float, ...]:
-    """Apply pervious initial then continuing loss at uniform within-bin intensity.
+    """Apply CMD's discrete-bin pervious initial/continuing loss convention.
 
-    CL acts only during the fraction of a bin after IL is exhausted. At exact
-    equality this fraction is zero. IL persists over dry bins; unused CL does
-    not carry to later bins. This is the engineering-v1 method, not CMD parity.
+    After a bin strictly exhausts IL, charge the complete CL*dt allowance
+    against its remaining rainfall, even if IL was exhausted mid-bin.
+    At exact IL equality no runoff occurs, and CL is charged on the next
+    wet bin. IL persists over dry bins; unused CL does not carry forward.
     """
     _check_finite_nonnegative(losses.initial_mm, "Initial loss")
     _check_finite_nonnegative(losses.continuing_mm_h, "Continuing loss")
@@ -174,28 +191,52 @@ def rainfall_excess(rainfall_mm: Sequence[float], *, losses: Losses, timestep_ho
         if post_initial_rain <= 0.0:
             excess.append(0.0)
         else:
-            # Uniform rainfall rate: CL operates only after the IL crossing.
-            post_initial_fraction = post_initial_rain / rainfall
-            excess.append(max(0.0, post_initial_rain - continuing_per_bin * post_initial_fraction))
+            # CMD charges a full-bin CL allowance after initial loss is
+            # exceeded, including the first crossing bin. No carry-forward.
+            excess.append(max(0.0, post_initial_rain - continuing_per_bin))
     return tuple(excess)
 
 
-def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: float, m: float) -> StormResult:  # noqa: C901 -- control vector
-    """Route one storm through the control vector using the S2 reference kernel.
-
-    Supported source convention is Q[0]=0 then 1 sample per rainfall bin;
-    all remaining calculation increments have zero source rainfall. Models
-    requiring a different phase, multiple ISAs, non-natural reaches, lateral
-    inflows or special storage are not supported by this API.
-    """
+def prepare_catchment(catchment: Catchment, *, kc: float, m: float) -> PreparedCatchment:
+    """Validate and compute event-independent natural-reach coefficients once."""
     _check_finite_nonnegative(kc, "kc")
     if not math.isfinite(m) or m <= 0:
         message = "m must be finite and positive."
         raise RoutingDomainError(message)
+    dav, factors = _distance_analysis(catchment)
+    coefficients = tuple(kc * factor for factor in factors)
+    if any(not math.isfinite(value) or value < 0.0 for value in coefficients):
+        message = "Prepared reach coefficient overflowed or became negative."
+        raise RoutingDomainError(message)
+    return PreparedCatchment(catchment, kc, m, dav, factors, coefficients)
+
+
+def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: float, m: float) -> StormResult:
+    """Readable single-event path; perform fresh preparation and fresh routing."""
+    return calculate_prepared_storm(prepare_catchment(catchment, kc=kc, m=m), storm, losses=losses)
+
+
+def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
+    prepared: PreparedCatchment, storm: Storm, *, losses: Losses
+) -> StormResult:
+    """Execute a supported event with immutable geometry and fresh local state.
+
+    Q[0]=0, and rainfall-bin source enters at its end sample. No rainfall,
+    loss or routing state is cached between events. This is also the readable
+    reference path for engineering-v1: no acceleration or fast-math.
+    """
+    catchment = prepared.catchment
+    m = prepared.m
+    dav, factors = prepared.average_distance_km, prepared.route_factors
+    coefficients = prepared.reach_coefficients
     if not math.isfinite(storm.timestep_hours) or storm.timestep_hours <= 0:
         message = "Timestep must be finite and positive."
         raise RoutingDomainError(message)
-    if storm.calculation_increments < len(storm.percentages) or storm.calculation_increments <= 0:
+    if (
+        type(storm.calculation_increments) is not int
+        or storm.calculation_increments < len(storm.percentages)
+        or not 0 < storm.calculation_increments <= 1_000_000
+    ):
         message = "Calculation horizon must cover all rainfall bins."
         raise RoutingDomainError(message)
     if len(storm.depths_mm) != len(catchment.areas_km2):
@@ -205,13 +246,13 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
         _check_finite_nonnegative(depth, "Rainfall depth")
     for percent in storm.percentages:
         _check_finite_nonnegative(percent, "Temporal percentage")
-    if not math.isclose(math.fsum(storm.percentages), 100, rel_tol=0, abs_tol=0.01):
+    total_percent = math.fsum(storm.percentages)
+    if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
         message = "Temporal pattern percentages must total 100 within printed precision."
         raise RoutingDomainError(message)
-    dav, factors = _distance_analysis(catchment)
     excesses = tuple(
         rainfall_excess(
-            tuple(percent * depth / 100 for percent in storm.percentages),
+            tuple(percent * depth / total_percent for percent in storm.percentages),
             losses=losses,
             timestep_hours=storm.timestep_hours,
         )
@@ -236,7 +277,7 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
             case 1:
                 routed = route_reach(
                     sources[source_index],
-                    coefficient_k=kc * factors[factor_index],
+                    coefficient_k=coefficients[factor_index],
                     exponent_m=m,
                     time_step_hours=storm.timestep_hours,
                 )
@@ -255,14 +296,14 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
                 routed = tuple(a + b for a, b in zip(previous, routed, strict=True))
                 if any(not math.isfinite(value) for value in routed):
                     message = "Confluence discharge overflowed."
-                    raise RoutingDomainError(message)
+                    raise RoutingNumericalError(message)
             case 5:
                 if routed is None:
                     message = "No running hydrograph to route."
                     raise RoutingDomainError(message)
                 routed = route_reach(
                     routed,
-                    coefficient_k=kc * factors[factor_index],
+                    coefficient_k=coefficients[factor_index],
                     exponent_m=m,
                     time_step_hours=storm.timestep_hours,
                 )

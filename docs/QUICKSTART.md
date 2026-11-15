@@ -48,7 +48,7 @@ Use new result names; exclusive-create refuses overwrites. Native `rorb-cmd` sti
 
 ## 4. Explicit-event batches
 
-The product's `python` engine is not disposable test code. However, **accepted in-memory batch execution, state isolation and performance are still in [issue #6](https://github.com/Chain-Frost/python-runoff-routing/issues/6)**. Current supported single-event calls may be repeated from independent explicit inputs, but do not advertise a batch/Monte Carlo API or benchmark result until that work lands and is verified. Do not use the unmerged rainfall ensemble draft as a completed computation engine.
+The default `python/engineering-v1` engine now has a **supported bounded, non-accelerated explicit-event batch API** from [merged PR #99](https://github.com/Chain-Frost/python-runoff-routing/pull/99). Use `prepare_catchment(...)` once, then `run_explicit_batch(prepared, events)` or stream with `iter_explicit_events(...)` for bounded memory. Each `ExplicitEvent` provides a stable ID, explicit Storm and per-event Losses; outcomes independently identify computed/invalid/numerical failures without cross-event state leaks. Full examples, limitations and measured workload are in [ENGINEERING_BATCHES.md](ENGINEERING_BATCHES.md). This is **not** generated ARR rainfall, Monte Carlo or complete engineering/native CMD acceptance; [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6) retains wider accuracy and physical-accounting gates.
 
 ## 5. Public cached regression and mathematical controls
 

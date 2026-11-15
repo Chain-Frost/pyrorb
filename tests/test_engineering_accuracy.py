@@ -1,4 +1,4 @@
-"""Prospective engineering-v1 mathematics, not calibrated CMD token tolerances."""
+"""Mathematical safety controls and CMD-compatible loss-preparation tests."""
 
 from __future__ import annotations
 
@@ -100,7 +100,7 @@ def test_independent_nonlinear_manufactured_refinement() -> None:
 
 def test_within_bin_loss_crossing_equality_and_dry_carry() -> None:
     losses = Losses(initial_mm=5.0, continuing_mm_h=2.0)
-    assert rainfall_excess((10.0,), losses=losses, timestep_hours=1.0) == pytest.approx((4.0,))
+    assert rainfall_excess((10.0,), losses=losses, timestep_hours=1.0) == (3.0,)
     assert rainfall_excess((5.0, 10.0), losses=losses, timestep_hours=1.0) == (0.0, 8.0)
     assert rainfall_excess((3.0, 0.0, 2.0, 10.0), losses=losses, timestep_hours=1.0) == (
         0.0,
@@ -109,6 +109,23 @@ def test_within_bin_loss_crossing_equality_and_dry_carry() -> None:
         8.0,
     )
     assert rainfall_excess((10.0,), losses=Losses(0.0, 2.0), timestep_hours=1.0) == (8.0,)
+
+    # When IL is exhausted inside a bin, CMD charges the full CL allowance,
+    # including when the first crossing bin has only a small positive remainder.
+    assert rainfall_excess((6.0, 6.0), losses=losses, timestep_hours=1.0) == (0.0, 4.0)
+    assert rainfall_excess((5.0, 5.0), losses=losses, timestep_hours=1.0) == (0.0, 3.0)
+    assert rainfall_excess((5.0, 0.0, 10.0), losses=losses, timestep_hours=1.0) == (0.0, 0.0, 8.0)
+    assert rainfall_excess((10.0,), losses=Losses(5.0, 10.0), timestep_hours=1.0) == (0.0,)
+
+
+def test_valid_near_100_percent_storm_weights_are_normalised_like_cmd() -> None:
+    # Imported native printed weights need not add to exactly 100.0: CMD
+    # divides by their actual sum before rainfall and IL/CL preparation.
+    catchment = Catchment((Control(1, 3.0), Control(7)), (1.0,))
+    event = Storm(1.0, 4, (49.995, 50.0), (10.0,))
+    result = calculate_storm(catchment, event, losses=Losses(0.0, 0.0), kc=0.0, m=0.8)
+    assert math.fsum(result.rainfall_excess_mm[0]) == pytest.approx(10.0, rel=1e-12)
+    assert result.rainfall_excess_mm[0][0] == pytest.approx(10.0 * 49.995 / 99.995, rel=1e-12)
 
 
 def test_branched_network_mass_accounts_for_remaining_reach_storage() -> None:
