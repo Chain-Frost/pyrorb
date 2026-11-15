@@ -4,6 +4,8 @@
 
 ## Current implementation / regression receipts
 
+- [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — distinct source bindings and effective settings; portable native export remains #141.
+
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
 - [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
 - [Public reference dataset transfer and limits](2026-11-15-public-cmd-data.md) — merged #78/#82, approved source objects, authenticated historical snapshot and full index.
