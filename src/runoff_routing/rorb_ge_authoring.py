@@ -257,7 +257,14 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
     model.__post_init__()
     network = _network(drawing)
     _matches_model(model, drawing, network)
-    node_numbers = {node.identifier: index for index, node in enumerate(drawing.nodes, start=1)}
+    # Display rows must follow the native computational source order, even
+    # when the original GIS layer has nodes in a different feature order.
+    source_nodes = {node.subarea_id: node for node in drawing.nodes if node.subarea_id is not None}
+    ordered_nodes = (
+        *(source_nodes[area.identifier] for area in model.subareas),
+        *(node for node in drawing.nodes if node.subarea_id is None),
+    )
+    node_numbers = {node.identifier: index for index, node in enumerate(ordered_nodes, start=1)}
     downstream_numbers = {
         node_id: node_numbers[downstream] if downstream is not None else 0
         for node_id, downstream in network.downstream.items()
@@ -267,7 +274,7 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
     node_records = tuple(
         (
             node_numbers[node.identifier],
-            node.display_label or node.identifier,
+            node.display_label or str(node_numbers[node.identifier]),
             node.x_m,
             node.y_m,
             downstream_numbers[node.identifier],
@@ -276,22 +283,27 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
             areas[node.subarea_id].area_km2 if node.subarea_id else Decimal(0),
             areas[node.subarea_id].impervious_fraction if node.subarea_id else Decimal(0),
         )
-        for node in drawing.nodes
+        for node in ordered_nodes
     )
     drawing_reaches = {reach.identifier: reach for reach in drawing.reaches}
+    control_reach_ids = tuple(
+        step.reach_id for step in model.controls if step.code in (1, 2, 5)
+    )
+    if any(reach_id is None for reach_id in control_reach_ids):
+        message = "Every graphical route control requires an explicit physical reach identity"
+        raise ValueError(message)
     reach_records = tuple(
         (
             index,
-            reach.identifier,
-            node_numbers[network.edge_nodes[reach.identifier][0]],
-            node_numbers[network.edge_nodes[reach.identifier][1]],
-            (drawing_reaches[reach.identifier].vertices_m[0][0] + drawing_reaches[reach.identifier].vertices_m[-1][0])
-            / 2,
-            (drawing_reaches[reach.identifier].vertices_m[0][1] + drawing_reaches[reach.identifier].vertices_m[-1][1])
-            / 2,
-            physical_reaches[reach.identifier],
+            reach_id,
+            node_numbers[network.edge_nodes[reach_id][0]],
+            node_numbers[network.edge_nodes[reach_id][1]],
+            (drawing_reaches[reach_id].vertices_m[0][0] + drawing_reaches[reach_id].vertices_m[-1][0]) / 2,
+            (drawing_reaches[reach_id].vertices_m[0][1] + drawing_reaches[reach_id].vertices_m[-1][1]) / 2,
+            physical_reaches[reach_id],
         )
-        for index, reach in enumerate(model.reaches, start=1)
+        for index, reach_id in enumerate(control_reach_ids, start=1)
+        if reach_id is not None
     )
     data = render_catg_with_graphics(model, node_records=node_records, reach_records=reach_records)
     if parse_catg(data).model != model:

@@ -455,3 +455,11 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
     with pytest.raises(ValueError, match="optional dependency") as caught:
         serialize_catg(model)
     assert "install .[catg]" in str(caught.value)
+
+
+def test_graphical_node_name_overwidth_fails_without_truncation() -> None:
+    model, drawing = _modern_model_and_drawing()
+    explicit_name = replace(drawing.nodes[-1], display_label="Outlet")
+    edited = replace(drawing, nodes=(*drawing.nodes[:-1], explicit_name))
+    with pytest.raises(ValueError, match="Graphical node name"):
+        serialize_catg_with_drawing(model, edited)
