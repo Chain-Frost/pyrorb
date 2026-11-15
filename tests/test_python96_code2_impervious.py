@@ -47,9 +47,7 @@ def test_default_code_two_adds_new_source_before_second_reach() -> None:
 
 def test_default_code_two_preserves_multiple_prints_and_complete_times() -> None:
     controls = (Control(1, 2), Control(7), Control(2, 3), Control(7))
-    result = calculate_storm(
-        Catchment(controls, (1.0, 2.0), (0.5, 0.2)), STORM, losses=Losses(2, 0.5), kc=3, m=1
-    )
+    result = calculate_storm(Catchment(controls, (1.0, 2.0), (0.5, 0.2)), STORM, losses=Losses(2, 0.5), kc=3, m=1)
     assert len(result.outlets_m3_s) == 2
     assert all(len(series) == 13 for series in result.outlets_m3_s)
     assert result.outlets_m3_s[0] != result.outlets_m3_s[1]
@@ -60,12 +58,12 @@ def test_default_fi_with_runoff_coefficient_does_not_reuse_continuing_loss() -> 
     assert rainfall_excess(
         rain, losses=Losses(2.0, 0.0, 0.6), timestep_hours=0.5, impervious_fraction=0.5
     ) == pytest.approx((2.4, 3.0, 0.0))
-    assert rainfall_excess(
-        rain, losses=Losses(2.0, 0.5), timestep_hours=0.5, impervious_fraction=0.5
-    ) == pytest.approx((3.875, 4.875, 0.0))
-    assert rainfall_excess(
-        rain, losses=Losses(2.0, 0.5), timestep_hours=0.5, impervious_fraction=0.0
-    ) == pytest.approx((2.75, 4.75, 0.0))
+    assert rainfall_excess(rain, losses=Losses(2.0, 0.5), timestep_hours=0.5, impervious_fraction=0.5) == pytest.approx(
+        (3.875, 4.875, 0.0)
+    )
+    assert rainfall_excess(rain, losses=Losses(2.0, 0.5), timestep_hours=0.5, impervious_fraction=0.0) == pytest.approx(
+        (2.75, 4.75, 0.0)
+    )
 
 
 @pytest.mark.parametrize("fractions", [(1.2, 0.0), (-0.01, 0.0), (math.nan, 0.0), (0.2,)])
