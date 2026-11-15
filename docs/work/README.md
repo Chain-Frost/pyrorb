@@ -7,6 +7,8 @@
 ## Current implementation / regression receipts
 
 - [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — #139 implementation complete, owner-accepted pinned dependency, independently reviewed and quality-checked; PR #166 unmerged.
+- [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — distinct source bindings and effective settings; portable native package exporter belongs to #141.
+
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
