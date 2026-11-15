@@ -144,12 +144,11 @@ def test_mode_two_dry_event_and_no_crossing(tmp_path: Path) -> None:
     assert set(outcome.hydrographs[0].discharge_m3_s) == {0.0}
 
 
-def test_mode_two_rejects_nonfractional_coefficient_before_calculation(tmp_path: Path) -> None:
-    source = _project(tmp_path, _mode_two_model(coefficient="1.01"), cmd_stored=True)
-    outcome = run_engine_project(source)
-    assert outcome.status == "invalid_input"
-    assert outcome.diagnostics[0].code == "cmd_runoff_coefficient"
-    assert outcome.hydrographs == ()
+def test_mode_two_rejects_nonfractional_coefficient_before_calculation() -> None:
+    # The typed S1 boundary now rejects an impossible coefficient before
+    # project persistence or computational adapter execution.
+    with pytest.raises(ValueError, match="Runoff coefficient"):
+        _mode_two_model(coefficient="1.01")
 
 
 def test_public_cmd_runs_full_horizon_without_native_or_fallback(tmp_path: Path) -> None:
