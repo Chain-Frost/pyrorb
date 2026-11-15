@@ -229,11 +229,7 @@ def _mock_native(monkeypatch: pytest.MonkeyPatch, *, invalid: str | None = None)
                 header = "Inc Time Hyd002"
             (root / "native.out").write_text(
                 "Time increment (hours)= 0.5\n"
-                "Duration of calculations: 5\n"
-                + header
-                + "\n"
-                + "\n".join(rows)
-                + "\nEnd\n",
+                "Duration of calculations: 5\n" + header + "\n" + "\n".join(rows) + "\nEnd\n",
                 encoding="utf-8",
             )
         return subprocess.CompletedProcess(["mock"], 0, b"", b"")

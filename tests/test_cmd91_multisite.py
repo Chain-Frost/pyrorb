@@ -67,7 +67,8 @@ def test_cmd_reports_all_requested_sites_with_full_horizon_and_original_control_
     assert outcome.requested_print_ids == ("interior", "print_1")
     assert tuple(item.print_id for item in outcome.hydrographs) == outcome.requested_print_ids
     assert tuple(item.label for item in outcome.hydrographs) == (
-        "Before downstream reach", model.catchment.print_locations[-1].label
+        "Before downstream reach",
+        model.catchment.print_locations[-1].label,
     )
     assert len(outcome.physical_time_hours) == 6
     assert all(len(item.discharge_m3_s) == 6 for item in outcome.hydrographs)

@@ -164,7 +164,9 @@ def run_cmd_model(loaded: LoadedProject, implementation_revision: str) -> CmdCom
     if len(result.network.prints) != len(print_locations) or any(
         len(record.q) != event.n + 1 for record in result.network.prints
     ):
-        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated")
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_print_sites", "One or more requested prints are absent or truncated"
+        )
     if result.network.prints[-1].q != result.network.outlet:
         raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_final_print", "Final print does not match connected outlet")
     reach_ids = tuple(item.identifier for item in loaded.run.catchment.reaches)
