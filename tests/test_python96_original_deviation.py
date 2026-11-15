@@ -90,7 +90,7 @@ def test_original_cmd_comparison_reports_unaccepted_engineering_differences(
     assert len(outcome.physical_time_hours) == case["clock"]["row_count"]
     # Reuse the maintained original reference reader for original one-based
     # clock and HydNNN ordinates; never parse the report independently.
-    columns, rows = regression_dataset._reference(ROOT, case)  # noqa: SLF001 -- maintained reader
+    columns, rows = regression_dataset._reference(ROOT, case)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
     original_column = columns.index(str(site["native_column_id"]))
     original_q = tuple(float(row[original_column]) for row in rows)
     computed_q = outcome.hydrographs[0].discharge_m3_s
