@@ -83,7 +83,8 @@ def test_mode_two_round_trip_and_source_level_proportional_excess(tmp_path: Path
     assert prepared.after_initial[0] == (7.0, 8.0)
     assert prepared.excess[0] == (3.5, 4.0)
     assert prepared.crossings[0].bin_one_based == 1
-    assert sum(prepared.hydrographs[0][1:]) * prepared.seconds == pytest.approx(7500, abs=0.02)
+    expected_volume = float(model.catchment.subareas[0].area_km2) * sum(prepared.excess[0]) * 1000
+    assert sum(prepared.hydrographs[0][1:]) * prepared.seconds == pytest.approx(expected_volume, abs=0.02)
 
     result = run_engine_project(source)
     assert result.status == "computed_unvalidated"
