@@ -10,7 +10,9 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field, replace
+from importlib import import_module
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, cast
 
@@ -800,13 +802,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- fixed command d
 
         return run_cli(args[1:])
     if args and args[0] == "export-native":
+        # #141 owns this leaf module on a separate PR; load at the command
+        # boundary without a static import that breaks independent #140 checks.
         try:
-            from .native_export import main as export_native_cli  # noqa: PLC0415 -- #141 owns native package code
+            module = import_module(".native_export", package=__package__)
         except ModuleNotFoundError as exc:
             if exc.name != "runoff_routing.native_export":
                 raise
             print("Native CMD package export requires integration of #141 native_export", file=sys.stderr)
             return 2
+        export_native_cli = cast("Callable[[list[str]], int]", module.__dict__["main"])
         return export_native_cli(args[1:])
     try:
         if len(args) == 8 and args[0] == "review-native":
