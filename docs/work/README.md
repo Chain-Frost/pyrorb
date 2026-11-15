@@ -25,6 +25,7 @@
 
 ## Retained diagnostic/reference evidence
 
+- [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.
 - [S2 reporting-convention audit](2026-11-11-s2-reporting-conventions.md), [integrated print review](2026-11-12-integrated-print-review.md) and [nonlinear onset audit](2026-11-12-s2-onset-audit.md) — do not infer a numerical routing fix.
 - [S6 reconciliation](2026-11-14-s6-reconciliation.md), [RORBwin N4 completion review](2026-11-14-s6-n4-completion-review.md), [N4 native result](2026-11-14-s6-n4-native-result.md) and [controlled loss experiment](2026-11-14-s6-controlled-loss-kernel.md) — preserve failed and incomplete native precision/physical claims. CMD-first rules defer new RORBwin campaigns.
