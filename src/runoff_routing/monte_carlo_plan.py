@@ -12,7 +12,7 @@ import hmac
 import json
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import Context, Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
 from itertools import pairwise
 from math import isfinite
 from pathlib import Path
@@ -32,6 +32,9 @@ MAX_STRATA = 1000
 if TYPE_CHECKING:
     from runoff_routing.arr_data import IFDDataset
     from runoff_routing.bom_ifd import BoMIFD
+# Pinned computation policy: isolated from callers' Decimal precision, rounding,
+# traps and exponent limits. localcontext() must never inherit caller settings.
+_SAMPLER_CONTEXT = Context(prec=60, rounding=ROUND_HALF_EVEN)
 _MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 _MAX_SAMPLE_LINE_BYTES = 16 * 1024
 _DIGEST_LENGTH = 64
@@ -141,8 +144,7 @@ def _normal_z(p: Decimal) -> Decimal:
     """Finite standard-normal nonexceedance coordinate, with explicit numeric domain."""
     if not 0 < p < 1:
         _fail("AEP probability must be strictly interior for normal-coordinate interpolation")
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
         q = float(Decimal(1) - p)
     if not 0 < q < 1:
         _fail("Source AEP is outside representable normal-coordinate probability support")
@@ -231,7 +233,9 @@ def _check_strata(spec: dict[str, object]) -> list[object]:
         hi = _prob(item["aep_upper"], "stratum.aep_upper")
         if not lo < hi or hi == 1 or (previous is not None and previous != lo):
             _fail("Strata must be ascending, disjoint and contiguous; interior gaps/overlap are invalid")
-        if _prob(item["probability_mass"], "stratum.probability_mass") != hi - lo:
+        with localcontext(_SAMPLER_CONTEXT):
+            width = hi - lo
+        if _prob(item["probability_mass"], "stratum.probability_mass") != width:
             _fail("Stratum mass must equal its AEP interval width")
         allocated += _int(item["count"], "stratum.count", 0, MAX_SAMPLES)
         previous = hi
@@ -288,8 +292,7 @@ def _check_tp_choices(choices: list[object]) -> None:
             _fail("Duplicate TP source order in conditional population")
         orders.add(source_order)
         weight = _prob(member["probability"], "TP conditional probability")
-        with localcontext() as ctx:
-            ctx.prec = 60
+        with localcontext(_SAMPLER_CONTEXT):
             total += weight
     if total != 1:
         _fail("TP conditional probabilities must sum to exactly one")
@@ -388,8 +391,7 @@ def ifd_from_bom(source: BoMIFD, duration_min: int) -> dict[str, object]:
     points: list[dict[str, str]] = []
     for probability in source.probabilities:
         if probability.kind == "AEP_PERCENT":
-            with localcontext() as ctx:
-                ctx.prec = 60
+            with localcontext(_SAMPLER_CONTEXT):
                 aep_fraction = probability.value / Decimal(100)
             points.append({"aep": str(aep_fraction), "depth_mm": str(source.depth_mm_at(duration_min, probability))})
     points.sort(key=lambda p: Decimal(p["aep"]))
@@ -406,10 +408,11 @@ def ifd_from_arr(table: IFDDataset, duration_min: int) -> dict[str, object]:
         index = table.durations_min.index(duration_min)
     except ValueError:
         _fail("Requested duration absent from ARR source table")
-    points = [
-        {"aep": str(aep / Decimal(100)), "depth_mm": str(depth)}
-        for aep, depth in zip(table.aep_percent, table.depths_mm[index], strict=True)
-    ]
+    with localcontext(_SAMPLER_CONTEXT):
+        points = [
+            {"aep": str(aep / Decimal(100)), "depth_mm": str(depth)}
+            for aep, depth in zip(table.aep_percent, table.depths_mm[index], strict=True)
+        ]
     points.sort(key=lambda p: Decimal(p["aep"]))
     return {"source_id": table.name, "interpolation": "z_linear_depth_v1", "points": points}
 
@@ -425,16 +428,15 @@ def _domain(spec: dict[str, object]) -> dict[str, str]:
     strata = _list(spec["strata"], "strata")
     lo = _prob(_obj(strata[0], "stratum")["aep_lower"], "stratum.aep_lower")
     hi = _prob(_obj(strata[-1], "stratum")["aep_upper"], "stratum.aep_upper")
-    unallocated = sum(
-        (
-            _prob(item["probability_mass"], "stratum.mass")
-            for item in (_obj(row, "stratum") for row in strata)
-            if item["count"] == 0
-        ),
-        Decimal(0),
-    )
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
+        unallocated = sum(
+            (
+                _prob(item["probability_mass"], "stratum.mass")
+                for item in (_obj(row, "stratum") for row in strata)
+                if item["count"] == 0
+            ),
+            Decimal(0),
+        )
         return {
             "convention": "AEP_FRACTION",
             "endpoint_rule": "[lower,upper); final upper closed; inverse draws strictly interior",
@@ -544,8 +546,7 @@ def _draw(
     }
     digest = hmac.new(seed.to_bytes(8, "big"), _json(payload).encode("utf-8"), hashlib.sha256).digest()
     bits = int.from_bytes(digest[:8], "big") >> 11
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
         return Decimal(2 * bits + 1) / Decimal(2**54)
 
 
@@ -554,8 +555,7 @@ def _linear_table(x: Decimal, points: list[tuple[Decimal, Decimal]], *, descendi
         _fail("Requested probability is outside explicit table support; no extrapolation")
     for (x0, y0), (x1, y1) in pairwise(points):
         if x <= x1:
-            with localcontext() as ctx:
-                ctx.prec = 60
+            with localcontext(_SAMPLER_CONTEXT):
                 result = y0 + (x - x0) * (y1 - y0) / (x1 - x0)
             if result < 0 or (descending and result > y0):
                 _fail("Invalid interpolated table value")
@@ -582,8 +582,7 @@ def _ifd_depth(p: Decimal, ifd: dict[str, object]) -> Decimal:
             z = _normal_z(p)
             z0 = _normal_z(p0)
             z1 = _normal_z(p1)
-            with localcontext() as ctx:
-                ctx.prec = 60
+            with localcontext(_SAMPLER_CONTEXT):
                 result = d0 + (d1 - d0) * (z - z0) / (z1 - z0)
             if result < 0:
                 _fail("Negative IFD depth after z interpolation")
@@ -609,8 +608,7 @@ def _loss_value(u: Decimal, loss: dict[str, object]) -> tuple[Decimal | None, De
         for pt in (_obj(x, "loss quantile") for x in _list(loss["cdf_quantiles"], "loss quantiles"))
     ]
     ratio = _linear_table(u, quantiles)
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
         mm = ratio * _decimal(loss["median_storm_il_mm"], "median storm IL")
     return ratio, mm
 
@@ -631,8 +629,7 @@ def _tp_selection(p: Decimal, u: Decimal, bins: list[object]) -> tuple[str, str,
             cumulative = Decimal(0)
             for choice in _list(band["choices"], "TP choices"):
                 member = _obj(choice, "TP choice")
-                with localcontext() as ctx:
-                    ctx.prec = 60
+                with localcontext(_SAMPLER_CONTEXT):
                     cumulative += _prob(member["probability"], "TP probability")
                 if u < cumulative:
                     return (
@@ -745,8 +742,7 @@ def iter_stratum_samples(
     _int(start, "start", 0, end)
     lo = _prob(row["aep_lower"], "stratum lower")
     mass = _prob(row["probability_mass"], "stratum mass")
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
         weight = mass / count
     bins = _list(spec["tp_bins"], "TP bins")
     ifd = _obj(spec["ifd"], "IFD")
@@ -754,8 +750,7 @@ def iter_stratum_samples(
     seed = _int(_obj(spec["rng"], "rng")["root_seed"], "root seed", 0, 2**64 - 1)
     for index in range(start, end):
         sample_id = _sample_id(plan, stratum_id, index)
-        with localcontext() as ctx:
-            ctx.prec = 60
+        with localcontext(_SAMPLER_CONTEXT):
             aep = lo + mass * _draw(seed, plan, spec, row, index, "rainfall")
         tp_u = _draw(seed, plan, spec, row, index, "tp")
         tp_bin_id, event_id, source_order = _tp_selection(aep, tp_u, bins)
@@ -790,8 +785,7 @@ def iter_plan_samples(plan: SamplePlan) -> Iterator[SampleRecord]:
 def _validate_sample_identity(
     plan: SamplePlan, spec: dict[str, object], sample: SampleRecord, row: dict[str, object], count: int
 ) -> None:
-    with localcontext() as ctx:
-        ctx.prec = 60
+    with localcontext(_SAMPLER_CONTEXT):
         expected_weight = _prob(row["probability_mass"], "mass") / count
     lo = _prob(row["aep_lower"], "lower")
     hi = _prob(row["aep_upper"], "upper")
@@ -865,8 +859,13 @@ def write_sample_plan(prefix: Path, plan: SamplePlan) -> tuple[Path, Path]:
     ledger = prefix.with_suffix(".samples.jsonl")
     if manifest.exists() or ledger.exists():
         _fail("Sample-plan path already exists; do not overwrite an immutable revision")
+    # The reader's bound applies to exact encoded bytes. Reject before either
+    # file is created; writing an unreadable immutable plan is not permitted.
+    manifest_content = json.dumps(plan.to_dict(), indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+    if len(manifest_content.encode("utf-8")) > _MAX_MANIFEST_BYTES:
+        _fail("Sample-plan manifest exceeds size limit; no files created")
     with manifest.open("x", encoding="utf-8", newline="\n") as handle:
-        handle.write(json.dumps(plan.to_dict(), indent=2, ensure_ascii=False, allow_nan=False) + "\n")
+        handle.write(manifest_content)
     created_ledger = False
     try:
         with ledger.open("x", encoding="utf-8", newline="\n") as handle:
@@ -926,7 +925,8 @@ def normal_coordinate_strata(z_edges: tuple[float, ...], counts: tuple[int, ...]
     if any(a >= b or a <= 0 or b >= 1 for a, b in pairwise(probability_edges)):
         _fail("Normal-coordinate CDF endpoints must be distinct strictly interior AEP fractions")
     allocations = reversed(counts)
-    return [
-        {"id": f"h{i:04d}", "aep_lower": str(a), "aep_upper": str(b), "probability_mass": str(b - a), "count": n}
-        for i, (a, b, n) in enumerate(zip(probability_edges[:-1], probability_edges[1:], allocations, strict=True))
-    ]
+    with localcontext(_SAMPLER_CONTEXT):
+        return [
+            {"id": f"h{i:04d}", "aep_lower": str(a), "aep_upper": str(b), "probability_mass": str(b - a), "count": n}
+            for i, (a, b, n) in enumerate(zip(probability_edges[:-1], probability_edges[1:], allocations, strict=True))
+        ]
