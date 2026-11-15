@@ -139,9 +139,7 @@ def create_saved_sample_plan(spec_path: Path, prefix: Path) -> tuple[Path, Path]
     if not content or len(content) > MAX_SPEC_BYTES:
         _fail("Empty or oversized sample-plan config")
     try:
-        raw: object = json.loads(
-            content.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_bad_constant
-        )
+        raw: object = json.loads(content.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_bad_constant)
     except (UnicodeError, TypeError, ValueError) as exc:
         message = "Malformed sample-plan JSON"
         raise MCInputError(message) from exc
@@ -149,9 +147,7 @@ def create_saved_sample_plan(spec_path: Path, prefix: Path) -> tuple[Path, Path]
     return _sample_api().write_sample_plan(prefix, plan)
 
 
-def _source_files(
-    spec: dict[str, object], request_path: Path, paths: Mapping[str, Path]
-) -> tuple[SourceFile, ...]:
+def _source_files(spec: dict[str, object], request_path: Path, paths: Mapping[str, Path]) -> tuple[SourceFile, ...]:
     hashed = _obj(spec["sources"], "sources")
     if set(paths) != set(hashed):
         _fail("All and only original plan source roles must have explicit file paths")

@@ -333,6 +333,7 @@ def test_engine_selection_and_simple_cli(tmp_path: Path) -> None:
     assert main(["run", str(project), str(request), str(ledger), "--resume"]) == 0
     assert main(["replay", str(project), str(request), str(ledger), "sample-1", str(tmp_path / "cli-replay")]) == 0
 
+
 def test_bounded_64_event_streaming_memory_receipt(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     project, request, _events = _input(tmp_path, count=64)
     ledger = tmp_path / "bounded-ledger.jsonl"

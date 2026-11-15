@@ -444,9 +444,7 @@ def iter_verified_mc_results(
     loaded = load_project(project_path)
     _project_subset(loaded)
     selected = loaded.project.engine if selection is None else selection
-    header = _header(
-        loaded, request_sha, selection=selected, wheel_artifact=wheel_artifact, request_path=request_path
-    )
+    header = _header(loaded, request_sha, selection=selected, wheel_artifact=wheel_artifact, request_path=request_path)
     _existing_prefix(ledger_path, header, request_path)
     before = sha256_file(ledger_path)
     rows = _read_ledger(ledger_path)

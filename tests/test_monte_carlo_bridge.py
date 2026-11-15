@@ -113,9 +113,7 @@ def test_stored_b_record_materialises_without_a_new_draw(tmp_path: Path, monkeyp
             "ifd": hashlib.sha256(ifd.read_bytes()).hexdigest(),
             "temporal_patterns": hashlib.sha256(pattern.read_bytes()).hexdigest(),
         },
-        "strata": [
-            {"id": "h1", "aep_lower": "0.01", "aep_upper": "0.5", "probability_mass": "0.49", "count": 1}
-        ],
+        "strata": [{"id": "h1", "aep_lower": "0.01", "aep_upper": "0.5", "probability_mass": "0.49", "count": 1}],
         "ifd": {},
         "fixed_parameters": [
             {"name": "kc", "value": "0.5", "unit": "model"},
@@ -171,5 +169,4 @@ def test_stored_b_record_materialises_without_a_new_draw(tmp_path: Path, monkeyp
     result = execute_mc_request(project, request, ledger)
     assert result.complete
     assert json.loads(ledger.read_text().splitlines()[1])["status"] == "computed_unvalidated"
-
 

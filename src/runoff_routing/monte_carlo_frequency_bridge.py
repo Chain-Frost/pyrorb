@@ -83,7 +83,8 @@ def _policy_identity(identifier: str) -> tuple[str, str]:
 
 def _strata_for(population: MCPopulation, all_strata: tuple[MCAllocation, ...]) -> tuple[MCAllocation, ...]:
     return tuple(
-        item for item in all_strata
+        item
+        for item in all_strata
         if (item.scenario_id, item.duration_min) == (population.scenario_id, population.duration_min)
     )
 
@@ -134,11 +135,17 @@ def _sample_records(
 
 
 def _curve_population(
-    api: _FrequencyApi, header_plan_id: str, header_policy_id: str,
-    population: MCPopulation, site_id: str, all_strata: tuple[MCAllocation, ...]
+    api: _FrequencyApi,
+    header_plan_id: str,
+    header_policy_id: str,
+    population: MCPopulation,
+    site_id: str,
+    all_strata: tuple[MCAllocation, ...],
 ) -> tuple[object, object]:
     policy, version = _policy_identity(header_policy_id)
-    scope = api.FrequencyScope(header_plan_id, policy, version, population.scenario_id, population.duration_min, site_id)
+    scope = api.FrequencyScope(
+        header_plan_id, policy, version, population.scenario_id, population.duration_min, site_id
+    )
     weights = tuple(
         api.StratumWeight(item.stratum_id, float(item.probability_mass), item.planned_samples)
         for item in _strata_for(population, all_strata)
@@ -184,9 +191,7 @@ def _report(
     if not sites:
         _fail("A frequency output needs at least one physical site in the existing model")
     api = _frequency_api()
-    csv_writer.writerow(
-        ("plan_id", "scenario_id", "duration_min", "print_id", "peak_m3_s", "mass", "cumulative_mass")
-    )
+    csv_writer.writerow(("plan_id", "scenario_id", "duration_min", "print_id", "peak_m3_s", "mass", "cumulative_mass"))
     summaries: list[dict[str, object]] = []
     text_lines: list[str] = []
     all_complete = True
@@ -197,35 +202,46 @@ def _report(
             )
             rows = read_rows(project, request, ledger, selection=selection, wheel_artifact=wheel_artifact)
             relevant = _sample_records(
-                rows, scenario_id=population.scenario_id, duration_min=population.duration_min,
-                site_id=site_id, scope=scope, api=api,
+                rows,
+                scenario_id=population.scenario_id,
+                duration_min=population.duration_min,
+                site_id=site_id,
+                scope=scope,
+                api=api,
             )
             curve = api.build_frequency_curve(planned, relevant)
             for group in curve.groups:
                 body = cast("dict[str, Any]", asdict(cast("Any", group)))
                 csv_writer.writerow(
                     (
-                        header.plan_sha256, population.scenario_id, population.duration_min, site_id,
-                        body["peak_m3_s"], body["probability_mass"], body["cumulative_mass"],
+                        header.plan_sha256,
+                        population.scenario_id,
+                        population.duration_min,
+                        site_id,
+                        body["peak_m3_s"],
+                        body["probability_mass"],
+                        body["cumulative_mass"],
                     )
                 )
             estimates = [cast("dict[str, object]", asdict(cast("Any", curve.estimate(aep)))) for aep in targets]
             coverage = cast("dict[str, object]", asdict(cast("Any", curve.coverage)))
-            good = bool(coverage["complete"]) if "complete" in coverage else (
-                cast("Any", curve.coverage).complete is True
+            good = (
+                bool(coverage["complete"]) if "complete" in coverage else (cast("Any", curve.coverage).complete is True)
             )
             if any(item.get("status") not in {"estimated", "zero_atom"} for item in estimates):
                 good = False
             all_complete &= good
-            summaries.append({
-                "plan_id": header.plan_sha256,
-                "scenario_id": population.scenario_id,
-                "duration_min": population.duration_min,
-                "physical_site_id": site_id,
-                "coverage": coverage,
-                "targets": estimates,
-                "software_result_complete": good,
-            })
+            summaries.append(
+                {
+                    "plan_id": header.plan_sha256,
+                    "scenario_id": population.scenario_id,
+                    "duration_min": population.duration_min,
+                    "physical_site_id": site_id,
+                    "coverage": coverage,
+                    "targets": estimates,
+                    "software_result_complete": good,
+                }
+            )
             text_lines.append(
                 f"{population.scenario_id} {population.duration_min} min {site_id}: "
                 f"{'complete' if good else 'incomplete'}"

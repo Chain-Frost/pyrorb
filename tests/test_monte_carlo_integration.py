@@ -85,23 +85,26 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     ledger = tmp_path / "computed.jsonl"
     report = tmp_path / "frequency"
     assert main(["plan", str(config), str(prefix)]) == 0
-    assert main(
-        [
-            "prepare",
-            str(project),
-            str(tmp_path / "study.plan.json"),
-            str(tmp_path / "study.samples.jsonl"),
-            str(request),
-            "--ifd",
-            str(ifd),
-            "--patterns",
-            str(patterns),
-            "--arf-region",
-            "South-West Western Australia",
-            "--dry-tail-min",
-            "120",
-        ]
-    ) == 0
+    assert (
+        main(
+            [
+                "prepare",
+                str(project),
+                str(tmp_path / "study.plan.json"),
+                str(tmp_path / "study.samples.jsonl"),
+                str(request),
+                "--ifd",
+                str(ifd),
+                "--patterns",
+                str(patterns),
+                "--arf-region",
+                "South-West Western Australia",
+                "--dry-tail-min",
+                "120",
+            ]
+        )
+        == 0
+    )
     header, _ = validate_effective_request(request)
     assert header.event_count == 2
     assert header.strata[0].planned_samples == 2
@@ -117,9 +120,7 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     for event in events:
         direct = run_project_events(project, (event.event,)).outcomes[0]
         assert direct.status == "computed_unvalidated"
-    assert main(
-        ["frequency", str(project), str(request), str(ledger), str(report), "--aep", "0.01"]
-    ) == 2
+    assert main(["frequency", str(project), str(request), str(ledger), str(report), "--aep", "0.01"]) == 2
     body = json.loads((tmp_path / "frequency.json").read_text(encoding="utf-8"))
     assert body["point_results_complete"] is False
     scopes = cast("list[dict[str, object]]", body["frequency_scopes"])
@@ -130,9 +131,7 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     assert targets[0]["peak_m3_s"] is None
     assert (tmp_path / "frequency.csv").is_file()
     first = events[0]
-    assert main(
-        ["replay", str(project), str(request), str(ledger), first.sample_id, str(tmp_path / "selected")]
-    ) == 0
+    assert main(["replay", str(project), str(request), str(ledger), first.sample_id, str(tmp_path / "selected")]) == 0
     replayed = json.loads((tmp_path / "selected.json").read_text(encoding="utf-8"))
     outcomes = cast("list[dict[str, object]]", replayed["outcomes"])
     assert outcomes[0]["event_id"] == first.event.event_id

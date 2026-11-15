@@ -170,9 +170,7 @@ class MCPopulation:
             "scenario_id": self.scenario_id,
             "duration_min": self.duration_min,
             "modelled_mass": str(self.modelled_mass),
-            "rare_unmodelled_mass": (
-                str(self.rare_unmodelled_mass) if self.rare_unmodelled_mass is not None else None
-            ),
+            "rare_unmodelled_mass": (str(self.rare_unmodelled_mass) if self.rare_unmodelled_mass is not None else None),
             "frequent_unmodelled_mass": (
                 str(self.frequent_unmodelled_mass) if self.frequent_unmodelled_mass is not None else None
             ),
@@ -430,7 +428,8 @@ def _optional_population_mass(raw: object, key: str) -> Decimal | None:
 
 def _read_allocation(raw: object) -> MCAllocation:
     data = _obj(
-        raw, {"scenario_id", "duration_min", "stratum_id", "probability_mass", "planned_samples"},
+        raw,
+        {"scenario_id", "duration_min", "stratum_id", "probability_mass", "planned_samples"},
         "original stratum allocation",
     )
     count = data["planned_samples"]
@@ -465,7 +464,16 @@ def read_header(path: Path) -> MCRequestHeader:
         raw = stream.readline(MAX_LINE_BYTES + 1)
     data = _obj(
         parse_jsonl_line(raw),
-        {"format", "schema_version", "plan_sha256", "policy_id", "source_files", "populations", "event_count", "strata"},
+        {
+            "format",
+            "schema_version",
+            "plan_sha256",
+            "policy_id",
+            "source_files",
+            "populations",
+            "event_count",
+            "strata",
+        },
         "MC header",
     )
     if (
