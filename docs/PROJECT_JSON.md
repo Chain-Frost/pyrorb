@@ -14,10 +14,12 @@
 
 > **PAR-led imports (#140, schema 3):** importing an original CMD PAR can now discover its embedded CATG/STM references, accept per-role file overrides and stage all three original byte streams under the destination project directory. The source-bound manifest records selected bindings separately from an optional editable effective S1 run. An old schema-1 or schema-2 project retains its existing interpretation. See [PAR import workflow](PAR_PROJECTS.md).
 
+**Current note (15 November 2026):** merged [#119 CLI/text-file MVP](PROJECT_BATCH_MVP.md) delivers selected-engine original/JSON event batches. The reviewed #138–#143 typed edits/PAR-led import/native export/report reading PRs extend the **same** project; source/manifest schema-1 paragraphs below are dated S5-P0 background. Current files are modern graphical CATG/STM and CMD PAR including characterised graphical `.cat`; old plain computational CAT and combined DAT excluded; saved RORBwin PAR deferred #144. 
+
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
-- S5 adds a separate version-1 JSON *project manifest*. Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
+- S5 adds a versioned JSON *project manifest* (historical schema 1; new ordinary projects schema 2 and source-bound edited projects schema 3). Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
 - Both source modes validate into the same S1 RunModel. Legacy schema-1/2 file-backed projects load their explicit hash-pinned paths and never follow embedded PAR references. **Only the opt-in PAR-led importer** reads and selects embedded paths at import time, stages exact bytes, and records its explicit overrides. Once staged, reopen does not follow original or embedded paths. No graphical-to-computational reordering or source rewriting.
 - The project selects an explicit `rainfall_profile`: `explicit`, `legacy-rorb`, or `arr-2026v1`. This records a method boundary, **not** proof of a historical/modern calculation or a default selection of rainfall guidance.
 - External rainfall, temporal patterns, curves and reference evidence can be catalogued with an independent data-profile ID, relative path and hash. Original assets are read only for verification and are otherwise opaque to S5; the S6 rainfall workpack performs semantic processing. A single project may catalogue modern and legacy data for comparison, but does not silently combine them.
