@@ -1,0 +1,60 @@
+# Issue #137: independent archived RORBwin design-ensemble qualification
+
+**Scope:** #137 under #8, following merged [#136](https://github.com/Chain-Frost/python-runoff-routing/pull/136) (`0675d75b05dba7728b389fdd8af743060b4469b2`) and merged CLI/text-file MVP #119. **Date:** 15 November 2026. **Public source at audit:** `main@0675d75b05dba7728b389fdd8af743060b4469b2`. **Verdict:** archived reference authenticity and native printed-storm preflight **passed**; direct merged-#136 effective-input qualification and routed numerical comparison **not run / incomplete**. This is a bounded reference audit, **not** a generator, comparator, solver, new source parser or claim of RORBwin numerical parity.
+
+The original files have **local-only redistribution** status. Detailed per-event/private SHA-256 and original-source receipts are reviewable by authorised collaborators in [private investigations PR #80](https://github.com/Chain-Frost/runoff-routing-investigations/pull/80), including its [60-event record](https://github.com/Chain-Frost/runoff-routing-investigations/blob/audit/issue137-retained-60-rorbwin-20261115/evidence/issue137/multiduration-60-native-preflight.json) and [auxiliary ten-event record](https://github.com/Chain-Frost/runoff-routing-investigations/blob/audit/issue137-retained-60-rorbwin-20261115/evidence/issue137/repeated-24h-ten-native-preflight.json). **They are not public fixtures, a runtime dependency, or a second CMD regression catalogue.** No private original source bytes, native reports, original manifests, executable or new generated golden was copied into this repository.
+
+## Authenticated native source/custody
+
+The fixed original RORBwin **6.52** population is **60** events: **12, 18, 24 h × 5%, 2% AEP × ten original areal temporal patterns**; the extra **24 h / 5% ten-event** capture repeats those ten source members and is a **cross-check only**. Both original manifests explicitly declare `RORBwin`, observed banner `Program version 6.52 (last updated 1st June 2023)`, and an executable identity. The executable's manifest digest is *recorded provenance*; the executable was **not itself fetched/rehashed**. All 60 native reports independently include the expected version banner.
+
+Read-only independent SHA-256 re-evaluated the **actual complete archived file contents** against their manifest SHA-256 and original byte size. Byte-level preservation included CRLF and source superscript-unit characters; this was not a comparison of only Git blob SHA-1s. Results:
+
+| Archived population | Original inputs (BoM IFD, ARR TXT, areal TP CSV, CATG, native saved PAR) | Native `.stm/.out/.csv` | Auxiliary outputs | Verified total |
+| --- | ---: | ---: | ---: | ---: |
+| Six-cell 60-event original | 5/5 | 180/180 | 2/2 | **187/187** |
+| 24 h / 5% repeat reference | 5/5 | 30/30 | 2/2 | **37/37** |
+| **Archived file paths** | **10/10** | **210/210** | **4/4** | **224/224** |
+
+The two input archives share source content, so these are counts of authenticated archive-relative paths, **not** 224 independent sources or 70 distinct events. No missing, mismatched, rebuilt or redacted file was treated as accepted. Existing private original SHA-256 records and data bytes were not rewritten.
+
+## Complete original-source and native *printed* preflight
+
+Each of the 60 events passed all of these **original-source/native self-consistency** checks: original source EventID distinct from native ordinal and AEP; original ten-member order; every original two-decimal TP percentage; percentage total of exactly 100%; original source timestep; original BoM gross IFD source depth; independently recalculated published ARR Book 2 v4.1 ARF; native `.stm` adjusted **printed 0.01 mm** depth; equal adjusted native depth over all **five** subareas; report IL = **24 mm**, CL = **5 mm/h** and no represented preburst; original `.out` rainfall/excess tables; **201** raw-clock/printed-Q records in both report and CSV, with matching identities and values. The five subareas total **158 km²** (30+28+25+35+40), use the same **200 km² areal TP bin**, and receive one ARF based on **total catchment area**: **no per-print-site ARF is required or proposed**. The original Data Hub long-duration SW WA coefficients agree with the published Book 2 coefficient values for this specific capture, including `e = 3.85E-06`; different source profiles must still be kept distinct elsewhere.
+
+| AEP | Duration | Original gross BoM (mm) | Independent published ARF (double-precision diagnostic) | Native written adjusted total (mm) | Native source/print preflight |
+| --- | --- | ---: | ---: | ---: | --- |
+| 5% | 12 h | 81.20 | 0.914759275701 | 74.28 | 10/10 |
+| 5% | 18 h | 91.50 | 0.929370614484 | 85.04 | 10/10 |
+| 5% | 24 h | 99.40 | 0.943981953267 | 93.83 | 10/10 |
+| 2% | 12 h | 95.00 | 0.908331637457 | 86.29 | 10/10 |
+| 2% | 18 h | 107.00 | 0.924443427504 | 98.92 | 10/10 |
+| 2% | 24 h | 116.00 | 0.940555217552 | 109.10 | 10/10 |
+
+Full original TP vectors and the native-storm source binding were checked for **60/60** events; this does **not** constitute 60 generated-`#136` full-precision event comparisons. The six rows' ARFs are **independent IEEE-754 arithmetic diagnostics**, not byte-identical `Decimal` results emitted by #136. For each forcing row, the native `.out` **0.1 mm printed rainfall** also lies within its unmodified **0.05 mm half-unit print allowance** relative to the original TP and the *native written* areal depth. A single 0.01 mm storm-total match does **not** prove its internal rainfall/excess quantisation, loss-crossing rule, or any true 1e-6 mm precision. The original `.out` printed excess is also 0.1 mm and **cannot** substitute for a full-precision native excess series.
+
+Native horizon/clock/site facts retained from the original documents:
+
+- 12-hour cells: 24 original half-hour rainfall increments; **200** computation increments and **201** Q records, original raw `Inc=0..200` / `Time=0..100 h`.
+- 18-hour cells: 18 original one-hour rainfall increments; **200** computation increments and **201** Q records, original raw `Inc=0..200` / `Time=0..200 h`.
+- 24-hour cells: 24 original one-hour rainfall increments; same 200-increment/201-row one-hour computation horizon.
+- Original printed discharge column/site token `Hyd0001` and native control-code print reference `7.0` are retained. A label alone does **not** establish its physical node identity for a CMD cross-engine comparator.
+- In the **separate** 24 h/5% archived capture, all ten original native CSVs are pairwise identical to the matching members of the main 60-event archive for **every raw clock and all 201 Q tokens** (**10/10**, 2,010 matching rows). This is **native-vs-native capture repeatability**, not a Python-vs-native routed result.
+
+## Qualification classification and exact pending actions
+
+| Independent gate | Outcome | Reason or next evidence |
+| --- | --- | --- |
+| Original archived input/native-output byte custody | **Passed: 224/224 archive-relative files** | Original manifest SHA-256 plus byte length independently checked; private receipts in PR #80 |
+| Native storm source IDs, TP %, BoM gross, once-applied ARF, written adjusted depth, 201-row native Q consistency | **Passed: 60/60 source/native printed preflights** | Per-cell/per-event private source records; printed rounding bounds separate |
+| Merged #136 event generation on the original source/model and `.effective.json/.events.json` | **Not run** | This connector-backed audit had access to authenticated private repository text but **not** an executable source checkout/staged private input tree for Python; historical PR #136 green synthetic CI is not this event population |
+| Actual full-precision native excess/effective IL-CL and generated full-adjusted increment comparison | **Incomplete / not accepted** | No archived high-precision native excess; `.stm` total and rounded `.out` tables cannot prove strict loss/quantisation behaviour. Retain original R1/N4, R2–R7 failed/unaccepted residuals |
+| Selected `python-cmd/cmd-6.44` complete 60-event source-versus-isolated-wheel replay | **Not run** | No matched working checkout and original source staging. [#136 exact-head CI](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43715030370) passed Ruff/Pyright/source tests, source CMD regression and installed-wheel software checks for a **different bounded population**; do not relabel those as new native design-event results |
+| Full-horizon routed comparison with maintained #100 comparator | **Not run / no accepted eligible 60-event pairs yet** | Original RORBwin and CMD arithmetic are distinct; effective input, full horizon, original physical/raw clocks, Q/peaks/times/reported and trapezoidal volumes must first be matched and recorded |
+| **Issue #137 full strict numerical qualification** | **INCOMPLETE — NOT ACCEPTED** | A truthful bounded outcome, not a 60/60 native solver claim |
+
+The current [#136 contract](../ARR_DESIGN_BATCH.md) limits `dry_tail_min` to **10,080** minutes and computes each event's `calculation_increments = original TP length + dry-tail steps`. Replaying the original **200** native computation increments would need **5,280** dry-tail minutes for 12 h (within the cap), **10,920** for 18 h (over cap), and **10,560** for 24 h (over cap). Hence no unmodified #136 config can represent the **18/24 h original 200-increment full routed horizon**, even if the forcing pattern matches. A separately labelled #119 explicitly extended event replay may be possible; that would be a **different route-horizon recipe**, not evidence that the unmodified #136 generator reproduced the complete native event. Do not edit native reference clocks or quietly truncate routed observations.
+
+**Exact handoff:** prepare a supported model/event from the original `CATG` and explicitly selected modern effective run settings **without treating the original saved RORBwin PAR as CMD PAR**. Verify imported control/subarea order with source owners [#96](https://github.com/Chain-Frost/python-runoff-routing/issues/96), [#138](https://github.com/Chain-Frost/python-runoff-routing/issues/138), [#139](https://github.com/Chain-Frost/python-runoff-routing/issues/139), [#140](https://github.com/Chain-Frost/python-runoff-routing/issues/140) and [#141](https://github.com/Chain-Frost/python-runoff-routing/issues/141), with no automatic file-dialect substitution. Execute the **already merged** [#136 CLI](../ARR_DESIGN_BATCH.md) on the **exact private inputs** with `python-cmd/cmd-6.44`; retain `.effective.json` and `.events.json` privately. Bind all 60 exact EventIDs/source orders, TP/ARF/IL/CL, full adjusted increments, raw and generated clocks before admitting a routed comparison. Use the [single maintained #100 comparator](../REGRESSION_DATASET.md) only on accepted common-effective events; get report semantics from [#142](https://github.com/Chain-Frost/python-runoff-routing/issues/142), and numerical meaning from [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) / #90–#92. Report partial and unsupported executions, and keep original RORBwin versus CMD engine identities separate. No new report reader, native run, GUI, additional method, representative-event selection, new comparator, test-data redistribution or runtime dependency is warranted by this receipt.
+
+**Review disposition:** the source/reference **preflight is ready for independent review**; the strict effective-event and routed equivalence gates remain expressly incomplete. **Keep #137 open** for those bounded residuals and keep broader [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8) and [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) open for their independent scientific coverage.
