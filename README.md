@@ -1,6 +1,6 @@
 # Python runoff routing
 
-An **in-development**, standard-library-runtime Python package for selected RORB rainfall–runoff procedures. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
+An **in-development** Python package for selected RORB rainfall–runoff procedures, with a canonical report-reader dependency maintained in ryan-tools. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
 
 ## Install and execute a supplied storm
 
@@ -22,27 +22,27 @@ result = run_model(model)
 print(result.to_csv())
 ```
 
-This executes a supported default-engine single storm. It is a **software smoke example, not unrestricted native/engineering-accuracy acceptance**. The same default engine also has [immutable prepared explicit-event batches](docs/ENGINEERING_BATCHES.md), with separate numerical and performance limits. See the [quickstart](docs/QUICKSTART.md) for JSON projects, engine selection, local native execution, batches, installed wheels and reproducible offline regression.
+This executes the supported direct S2 engineering API. Schema-based project and CLI execution uses the temporary `python-cmd` default described below. The example is a software smoke check, not unrestricted native/engineering-accuracy acceptance. See the [quickstart](docs/QUICKSTART.md) for projects, explicit engine selection, batches, installed wheels and reproducible offline regression.
 
 ## Three selectable product engines
 
-| Engine ID | Role | Current `main` availability |
+| Engine ID | Role | Current main availability |
 | --- | --- | --- |
-| `python` | **Default** maintained improved engineering implementation | Accepted bounded explicit DESIGN method and batches through closed [#6](https://github.com/Chain-Frost/python-runoff-routing/issues/6); deferred volume/continuity [#103](https://github.com/Chain-Frost/python-runoff-routing/issues/103), full features [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) |
-| `python-cmd` | Explicit CMD 6.44 numerical-compatibility implementation | **Integrated bounded computation** via [merged PR #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79). Independent fresh source/isolated-wheel 36-case printed/scalar checks are delivered by [merged #100](https://github.com/Chain-Frost/python-runoff-routing/pull/100). Bounded #75 port is complete; complete CMD feature and physical acceptance stays open under [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) |
-| `rorb-cmd` | Explicit, optional user-installed native CMD adapter | Available with a verified local executable/config and supported original inputs; no fallback or bundled binary |
+| `python-cmd` | **Temporary project/CLI default**, CMD 6.44 compatible arithmetic | Bounded computation and original-source regression; full feature/physical qualification remains under #5. |
+| `python` | Explicit independent engineering implementation; **intended long-term default** | Supported event/batch method, including merged #110/#125 mode-2 and code-2/impervious counterparts; broader accuracy remains separately qualified. |
+| `rorb-cmd` | Explicit optional user-installed native CMD adapter | Verified local executable/configuration and supported inputs; no bundled binary or engine fallback. |
 
-Project schema 2 records the engine/profile separately from rainfall source and method. Schema-1 projects without a selector migrate to `python`. Use the [engine contract](docs/ENGINES.md) for supported subsets, explicit failure/report semantics and source/wheel identity. Do not interpret successful dispatch, a native executable run or a cached snapshot as proof of full CMD equivalence.
+Projects preserve the engine/profile separately from rainfall source and method. Historical engine-less schema-1 projects retain `python`; explicitly stored choices never migrate silently. See the [engine contract](docs/ENGINES.md) and [current status](docs/STATUS.md) for supported subsets and acceptance limits.
 
 ## Development priority
 
-The next delivery target is the explicitly supported **CLI/text-file MVP** in [#119](https://github.com/Chain-Frost/python-runoff-routing/issues/119), with bounded JSON projects, explicit event/batch execution and full CSV/JSON/text outcomes. Advanced feature children [#114–#118](https://github.com/Chain-Frost/python-runoff-routing/issues/114) are deferred until after that MVP; ordinary PyRomb code-2/per-source impervious source admission #96 and already selected feature work remain active. [Full CMD replacement #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) is a separate, later claim and does not block the selected MVP. **There is no graphical-interface deliverable or GUI design work in this programme stage.**
+The CLI/text-file MVP #119, deterministic rainfall preparation #136/#175, reporting #155 and the import/edit/export/reader programme #138–#143 are **delivered on main**. Current work covers their separately tracked scientific qualifications and the Monte Carlo package staged only in [draft PR #151](https://github.com/Chain-Frost/python-runoff-routing/pull/151). [Current status](docs/STATUS.md) and [the backlog](docs/BACKLOG.md) identify remaining work. Advanced #114–#118 and saved RORBwin PAR #144 remain deferred. Deliverables are CLI, Python API and text files; no graphical-interface implementation, design or planning is included.
 
 ## Regression and outstanding acceptance
 
-The [self-contained public regression guide](docs/REGRESSION_DATASET.md) uses the **one maintained register and CLI** in `runoff_routing.regression_dataset`. Authenticated CMD originals, 50 cached case comparisons, ten independent mathematical controls and 21 individually recorded native gaps are available without the private workspace. The `--snapshot` mode compares historical **unvalidated candidate output**; it does **not** execute the currently installed engine. The two zero-flow peak times remain incomplete. Separately, merged [#79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) and independently checked [#100](https://github.com/Chain-Frost/python-runoff-routing/pull/100) establish **36 original CMD cases / 16,836 original full printed ordinates**, with **14 explicit original source exclusions**. The 36 admitted fresh source and installed-wheel cases passed Q, peak, uniquely defined peak time and native inclusive reported-volume comparisons; the 14 are not silently treated as computed. This is **bounded** evidence, not full CMD/native hidden-state/physical equivalence or general default-engine acceptance. See the [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md).
+The [self-contained public regression guide](docs/REGRESSION_DATASET.md) uses one maintained register and comparator. Current bounded original-CMD evidence is **50/50 printed Q cases / 19,550 ordinates**, **48 reporting-scalar passes and two undefined all-zero peak-time incompletes**. The former 14 source exclusions were admitted by #132; 36-case results are historical. Original native gaps, authored controls and unresolved feature/site/physical qualifications remain explicit. `--snapshot` compares historical candidate outputs and does not execute the installed engine. Exact source/wheel receipts are linked from [current status](docs/STATUS.md).
 
-The [default-engine method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [explicit batch contract](docs/ENGINEERING_BATCHES.md) and current [backlog and owners](docs/BACKLOG.md), [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and [capability status](docs/STATUS.md) distinguish completed source work from open numerical/full-feature gates. The [single CMD feature inventory](docs/CMD_FEATURE_MATRIX.md) is now merged via [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84), but the actual [CMD completion gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) remains open. CMD completion precedes expansion of RORBwin-specific features. Monte Carlo, release automation and publication remain deferred.
+The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [batch contract](docs/ENGINEERING_BATCHES.md), [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md) and open [CMD gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) distinguish delivered software from scientific acceptance. Monte Carlo development remains on its own staging branch; release automation and publication remain outside this delivery.
 
 ## Documentation and source custody
 
