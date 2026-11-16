@@ -317,8 +317,6 @@ def one_trial(
     return rows
 
 
-
-
 def _optional_scipy_binomial_tail(k: int, n: int, p: float) -> float | None:
     """Research-only regularized beta tail; None when the extra is absent."""
     try:
@@ -329,6 +327,7 @@ def _optional_scipy_binomial_tail(k: int, n: int, p: float) -> float | None:
         return None
     beta_tail = cast("Callable[[float, float, float], float]", special.betainc)
     return float(beta_tail(k, n - k + 1, p))
+
 
 def binomial_upper_tail(k: int, n: int, p: float) -> float:
     """P(Binomial(n,p)>=k) without underflow at high replication counts.
