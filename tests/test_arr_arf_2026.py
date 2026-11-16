@@ -63,9 +63,7 @@ def test_v42_published_arf_table_matches_existing_versioned_policy(region: str, 
         ("100", 10080, "5", "LONG_DURATION_EQ_2_4_2"),
     ],
 )
-def test_v42_arfs_still_use_existing_method_steps(
-    area: str, duration: int, aep: str, expected_operation: str
-) -> None:
+def test_v42_arfs_still_use_existing_method_steps(area: str, duration: int, aep: str, expected_operation: str) -> None:
     result = calculate_arr2019_arf(
         catchment_area_km2=Decimal(area),
         duration_min=duration,
@@ -98,7 +96,7 @@ def test_2026_recifd_baselines_are_explicit_unadjusted_by_arf(baseline: str, exp
     document = parse_arr_json(ARR2026_SYNTHETIC.read_bytes())
     dataset = next(table for table in document.ifd_datasets if table.baseline == baseline)
     patterns, pattern = _point_patterns()
-    event = storm_from_arr_2026(document, dataset, Decimal("1"), patterns, pattern)
+    event = storm_from_arr_2026(document, dataset, Decimal(1), patterns, pattern)
     assert event.total_mm == expected_depth
     assert event.source_label == dataset.name
     assert event.source_sha256 == document.source.sha256
@@ -111,7 +109,20 @@ def test_2026_arf_lookup_and_outlet_are_not_an_implicit_method_selection() -> No
     location = cast("dict[str, Any]", original["input_data"])
     location.update({"Outlet Latitude": -30.125, "Outlet Longitude": 150.125})
     layers = cast("dict[str, Any]", original["layers"])
-    layers["ARFParams"] = {"unreviewed_2026_example": "not a numerical coefficient source"}
+    # The field spelling follows the witnessed public 2026v1 API export; this
+    # unparsed layer must not be silently promoted to an admitted method.
+    layers["ARFParams"] = {
+        "Zone": "East Coast North",
+        "a": "0.327",
+        "b": "0.241",
+        "c": "0.448",
+        "d": "0.36",
+        "e": "0.00096",
+        "f": "0.48",
+        "g": "-0.21",
+        "h": "0.012",
+        "i": "-0.0013",
+    }
     layers["CCAdjIFDDatasets"] = {"unreviewed_2026_example": "not a usable IFD table"}
     raw = json.dumps(original).encode("utf-8")
     document = parse_arr_json(raw)
@@ -129,14 +140,12 @@ def test_2026_arf_lookup_and_outlet_are_not_an_implicit_method_selection() -> No
     current = next(table for table in document.ifd_datasets if table.baseline == "current_2030")
     assert current.release_year is None  # No provider/release-year assumption from JSON.
     patterns, pattern = _point_patterns()
-    event = storm_from_arr_2026(document, current, Decimal("1"), patterns, pattern)
+    event = storm_from_arr_2026(document, current, Decimal(1), patterns, pattern)
     assert event.total_mm == Decimal("70.000")
     assert event.increments_mm == (Decimal("17.500"), Decimal("52.500"))
 
     # The old BoM-specific ARF applicator cannot silently reinterpret a Data Hub
     # current/historical/native IFD or accidentally add another ARF/climate step.
-    arf = calculate_arr2019_arf(
-        catchment_area_km2=Decimal(100), duration_min=60, aep_percent=Decimal(1)
-    )
+    arf = calculate_arr2019_arf(catchment_area_km2=Decimal(100), duration_min=60, aep_percent=Decimal(1))
     with pytest.raises(ARRFormatError, match="unadjusted gross BoM source"):
         apply_arr2019_arf_to_bom_storm(event, arf)
