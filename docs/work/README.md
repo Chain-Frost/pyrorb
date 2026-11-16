@@ -6,6 +6,8 @@
 
 ## Current implementation / regression receipts
 
+- [Issue #193 ARR 2026v1 ARF method/source qualification](2026-11-17-issue193-arr2026-arf-method.md) — official Book 2 v4.1/v4.2 equation and ten-region coefficient audit, 2026 source/outlet delta and synthetic negative/positive tests; no formula change or native parity claim.
+
 - [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
 - [Issue #143 independent import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — original byte-exact fixtures, true installed reader integration, source/installed-wheel acceptance and preserved CMD limitations.
 
