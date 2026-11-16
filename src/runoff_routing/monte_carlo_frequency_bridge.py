@@ -171,7 +171,7 @@ def _validate_target_aeps(aeps: tuple[float, ...]) -> None:
         _fail("Target flood AEPs must be unique fractions in (0,1), not percentages")
 
 
-def _format_selected_aep_table(
+def format_selected_aep_table(
     site_id: str, targets: tuple[float, ...], estimates: list[dict[str, object]]
 ) -> tuple[list[str], bool]:
     """Format one physical site's selected 1-in-Y peak table without inventing missing points."""
@@ -185,7 +185,7 @@ def _format_selected_aep_table(
     any_flagged = False
     for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
         diagnostic = estimate.get("interval_contribution_warning")
-        flagged = isinstance(diagnostic, dict) and diagnostic.get("status") == "flagged"
+        flagged = isinstance(diagnostic, dict) and cast("dict[str, object]", diagnostic).get("status") == "flagged"
         any_flagged |= flagged
         value = estimate.get("peak_m3_s")
         peak_text = f"{float(value):.2f}{'*' if flagged else ''}" if isinstance(value, (float, int)) else "N/A"
@@ -275,7 +275,7 @@ def _report(
                 f"{population.scenario_id} {population.duration_min} min {site_id}: "
                 f"{'complete' if good else 'incomplete'}"
             )
-            warning_lines, flagged_here = _format_selected_aep_table(site_id, targets, estimates)
+            warning_lines, flagged_here = format_selected_aep_table(site_id, targets, estimates)
             text_lines.extend(warning_lines)
             summaries[-1]["has_interval_warning"] = flagged_here
             any_interval_warning |= flagged_here

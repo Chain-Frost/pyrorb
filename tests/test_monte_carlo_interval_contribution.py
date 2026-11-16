@@ -17,7 +17,7 @@ from runoff_routing.monte_carlo_frequency import (
     UnmodelledTails,
     build_frequency_curve,
 )
-from runoff_routing.monte_carlo_frequency_bridge import _format_selected_aep_table
+from runoff_routing.monte_carlo_frequency_bridge import format_selected_aep_table
 
 
 def _curve(
@@ -107,7 +107,7 @@ def test_missing_event_or_tail_requires_unassessed_warning_and_no_point() -> Non
 def test_aep_table_contains_row_number_one_in_y_and_provisional_asterisk() -> None:
     curve = _curve((10.0, 20.0, 30.0, 40.0, 50.0))
     targets = (0.99, 0.4)
-    estimates = [
+    estimates: list[dict[str, object]] = [
         {
             "status": item.status,
             "peak_m3_s": item.peak_m3_s,
@@ -116,7 +116,7 @@ def test_aep_table_contains_row_number_one_in_y_and_provisional_asterisk() -> No
         for item in (curve.estimate(0.99), curve.estimate(0.4))
         if item.interval_contribution_warning is not None
     ]
-    lines, flagged = _format_selected_aep_table("print_01", targets, estimates)
+    lines, flagged = format_selected_aep_table("print_01", targets, estimates)
     assert flagged
     assert "AEP(1inY)" in lines[1]
     assert "Peak print_01" in lines[1]
@@ -132,7 +132,7 @@ def test_incomplete_aep_table_says_na_without_a_star() -> None:
     curve = _curve((10.0, 20.0, 30.0, 40.0, 50.0), missing_index=0)
     result = curve.estimate(0.4)
     assert result.interval_contribution_warning is not None
-    lines, flagged = _format_selected_aep_table(
+    lines, flagged = format_selected_aep_table(
         "print_01",
         (0.4,),
         [
