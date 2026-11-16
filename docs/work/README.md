@@ -32,6 +32,8 @@
 
 - [#148 independent-seed simulation-budget convergence research](2026-11-15-issue148-convergence.md) — exact synthetic controls, negative and positive 100-seed confirmation, and separately pending real-catchment qualification.
 
+- [#150 finite local Windows RORBwin Monte Carlo evidence handoff](2026-11-16-issue150-local-windows-native-handoff.md) — native 6.52 executable fingerprint and bounded F1–F6 field observations; no unapproved raw outputs and no scientific acceptance implied.
+
 ## Retained diagnostic/reference evidence
 
 - [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.

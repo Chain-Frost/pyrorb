@@ -12,6 +12,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "pyright", "ruff==0.16.6"]
+research = ["scipy>=1.15"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

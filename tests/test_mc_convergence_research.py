@@ -239,3 +239,23 @@ def test_binomial_tail_extreme_values_are_finite() -> None:
         mc.binomial_upper_tail(1, 4, float("nan"))
     with pytest.raises(ValueError, match="invalid confidence"):
         mc.upper_confidence_bound(2, 1)
+
+
+def test_optional_scipy_binomial_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The research-only high-count path uses SciPy when installed."""
+    mc = _research()
+    calls: list[tuple[float, float, float]] = []
+
+    class _Special:
+        def betainc(self, a: float, b: float, p: float) -> float:
+            calls.append((a, b, p))
+            return 0.375
+
+    original = mc.importlib.import_module
+
+    def fake_import(module: str) -> object:
+        return _Special() if module == "scipy.special" else original(module)
+
+    monkeypatch.setattr(mc.importlib, "import_module", fake_import)
+    assert mc.binomial_upper_tail(500_000, 1_000_000, 0.5) == 0.375
+    assert calls == [(500_000, 500_001, 0.5)]

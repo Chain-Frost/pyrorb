@@ -8,7 +8,7 @@ import hmac
 import json
 from collections.abc import Callable
 from dataclasses import replace
-from decimal import Decimal, localcontext
+from decimal import ROUND_DOWN, Decimal, Inexact, localcontext
 from pathlib import Path
 from typing import Any, cast
 
@@ -482,3 +482,52 @@ def test_145_published_hmac_three_purpose_vectors() -> None:
     )
     for purpose, unit in expected.items():
         assert draw(42, plan, spec, row, 0, purpose) == unit
+
+
+def test_decimal_context_does_not_change_plan_draws_or_replay(tmp_path: Path) -> None:
+    """Changing caller Decimal settings cannot alter plan hashes, effective draws or replay."""
+    spec = _spec()
+    reference = SamplePlan.create(spec)
+    reference_manifest = reference.to_dict()
+    reference_samples = [record.to_dict() for record in iter_plan_samples(reference)]
+    reference_depth = interpolate_ifd_depth(reference, Decimal("0.45"))
+    reference_loss = inverse_storm_loss(reference, Decimal("0.3"))
+    reference_bins = normal_coordinate_strata((-0.84, 0.0, 0.84), (2, 3))
+    with localcontext() as ctx:
+        ctx.prec = 5
+        ctx.rounding = ROUND_DOWN
+        ctx.Emin = -9
+        ctx.Emax = 9
+        ctx.traps[Inexact] = True
+        plan = SamplePlan.create(spec)
+        assert plan == reference
+        assert plan.to_dict() == reference_manifest
+        assert [record.to_dict() for record in iter_plan_samples(plan)] == reference_samples
+        assert interpolate_ifd_depth(plan, Decimal("0.45")) == reference_depth
+        assert inverse_storm_loss(plan, Decimal("0.3")) == reference_loss
+        assert normal_coordinate_strata((-0.84, 0.0, 0.84), (2, 3)) == reference_bins
+        manifest, ledger = write_sample_plan(tmp_path / "fixed-context", plan)
+        assert read_sample_plan(manifest) == reference
+        assert [record.to_dict() for record in read_sample_records(ledger, plan)] == reference_samples
+
+
+def test_manifest_size_preflight_uses_encoded_bytes_and_leaves_no_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    spec = _spec()
+    spec["scenario_id"] = "Unicode-café-雨"
+    plan = SamplePlan.create(spec)
+    content = (json.dumps(plan.to_dict(), indent=2, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
+    assert len(content) > len(content.decode("utf-8"))
+    monkeypatch.setattr(module, "_MAX_MANIFEST_BYTES", len(content) - 1)
+    rejected_prefix = tmp_path / "too-large"
+    with pytest.raises(SamplePlanError, match="manifest exceeds size limit"):
+        write_sample_plan(rejected_prefix, plan)
+    assert not rejected_prefix.with_suffix(".plan.json").exists()
+    assert not rejected_prefix.with_suffix(".samples.jsonl").exists()
+    monkeypatch.setattr(module, "_MAX_MANIFEST_BYTES", len(content))
+    accepted_prefix = tmp_path / "exact-boundary"
+    manifest, ledger = write_sample_plan(accepted_prefix, plan)
+    assert manifest.stat().st_size == len(content)
+    assert read_sample_plan(manifest) == plan
+    assert len(read_sample_records(ledger, plan)) == 6

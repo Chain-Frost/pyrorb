@@ -37,3 +37,16 @@ materialisation/execution adapter remains unmerged; B/C source modules alone do
 not establish a qualified B→E→C flow-frequency result. See the main report
 for explicit preflight requirements. Do not relabel prior synthetic results
 as actual hydrological convergence.
+
+
+## 16 November 2026 — optional research SciPy and current study gate
+
+High-count `binomial_upper_tail` uses optional research-only
+`scipy.special.betainc` for n >= 1,000,000 if installed, avoiding
+large-n `lgamma` cancellation. Regular dev/product installation remains
+dependency-free; the logarithmic recurrence remains as fallback.
+
+All B/C/E code is now staged under #151, but a fully qualified
+catchment-specific convergence study has not been run. The public
+example IFD/catchment is synthetic; v1 1%-50% rainfall support leaves
+51% unmodelled mass. Do not infer full-domain adequacy or native parity.

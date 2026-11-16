@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from typing import cast
 
@@ -276,6 +277,16 @@ def test_missing_replay_identity_or_invalid_success_status_rejected() -> None:
         _record(s, "h", "s", None, status=cast(PeakStatus, "computed_unvalidated"))
 
 
+def test_unrepresentable_integer_peak_rejected_before_quantile_grouping() -> None:
+    scope = _scope()
+    accepted = _record(scope, "h", "exact-boundary", 1 << 53, weight=1 / 3)
+    assert accepted.peak_m3_s == float(1 << 53)
+    with pytest.raises(FrequencyInputError, match="Unrepresentable integer peak"):
+        _record(scope, "h", "unrepresentable", (1 << 53) + 1, weight=1 / 3)
+    with pytest.raises(FrequencyInputError, match="Unrepresentable integer peak"):
+        _record(scope, "h", "huge", 10**400, weight=1 / 3)
+
+
 def test_multiple_physical_sites_and_durations_do_not_pool() -> None:
     s_a = _scope(site="downstream", duration=60)
     s_b = _scope(site="upstream", duration=60)
@@ -384,3 +395,52 @@ def test_boundary_stratum_exceedance_contribution_without_native_warning() -> No
     assert x.boundary_strata_share_of_known_exceedance == pytest.approx(0.25)
     assert curve.estimate(0.3).peak_m3_s == 20
     assert curve.estimate(0.3).boundary_strata_known_exceedance_probability == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize(
+    ("count", "aep", "expected"),
+    [(10, 0.1, 8.0), (20, 0.95, 0.0), (20, 0.05, 18.0)],
+)
+def test_exact_step_boundary_quantiles_from_hand_computed_ranks(count: int, aep: float, expected: float) -> None:
+    scope = _scope()
+    population = CurvePopulation(scope, (StratumWeight("h", 1, count),))
+    records = tuple(_record(scope, "h", f"draw-{index}", float(index), weight=1 / count) for index in range(count))
+    curve = build_frequency_curve(population, records)
+    estimate = curve.estimate(aep)
+    assert estimate.peak_m3_s == expected
+    assert estimate.representative is not None
+    assert estimate.representative.realised_peak_m3_s == expected
+
+
+def test_adjacent_aep_probabilities_do_not_share_a_spurious_epsilon_tolerance() -> None:
+    scope = _scope()
+    population = CurvePopulation(scope, (StratumWeight("h", 1, 10),))
+    rows = tuple(_record(scope, "h", f"draw-{i}", float(i), weight=0.1) for i in range(10))
+    curve = build_frequency_curve(population, rows)
+    assert curve.estimate(math.nextafter(0.1, 0.0)).peak_m3_s == 9
+    assert curve.estimate(0.1).peak_m3_s == 8
+    assert curve.estimate(math.nextafter(0.1, 1.0)).peak_m3_s == 8
+
+
+def test_unequal_probability_strata_use_original_rational_allocations_for_inversion() -> None:
+    scope = _scope()
+    population = CurvePopulation(scope, (StratumWeight("a", 0.3, 3), StratumWeight("b", 0.7, 7)))
+    rows = tuple(
+        _record(scope, "a" if index < 3 else "b", f"draw-{index}", float(index), weight=0.1) for index in range(10)
+    )
+    curve = build_frequency_curve(population, reversed(rows))
+    assert curve.estimate(0.1).peak_m3_s == 8
+    assert curve.estimate(0.9).peak_m3_s == 0
+
+
+def test_incomplete_quantile_bounds_at_exact_rational_step_boundaries() -> None:
+    scope = _scope()
+    population = CurvePopulation(scope, (StratumWeight("modelled", 0.9, 9),), UnmodelledTails(lower_rainfall_mass=0.1))
+    rows = tuple(_record(scope, "modelled", f"draw-{i}", float(i), weight=0.1) for i in range(9))
+    curve = build_frequency_curve(population, rows)
+    estimate = curve.estimate(0.2)
+    assert estimate.status == "incomplete"
+    assert estimate.peak_m3_s is None
+    assert estimate.lower_bound_m3_s == 6  # F_known reaches 7/10 at Q=6.
+    assert estimate.upper_bound_m3_s == 7  # F_known reaches 8/10 at Q=7.
+    assert estimate.representative is None

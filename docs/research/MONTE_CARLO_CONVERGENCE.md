@@ -130,3 +130,37 @@ named authorised original-source catchment, qualified \`python-cmd/cmd-6.44\` pr
 physical site IDs, adopted supported IFD/TP/loss inputs and nonzero tail coverage,
 and must first pass a small B→E→C replay and completeness check before expensive
 independent-seed reference and confirmation runs. Do not run unbounded work in CI.
+
+
+### Optional SciPy precision backend at very large replication counts
+
+Install `python -m pip install ".[research]"` to use SciPy's regularized incomplete
+beta function `scipy.special.betainc` at n >= 1,000,000. The normal product
+installation remains dependency-free. For n=1,000,000,000, k=500,000,000,
+and p=0.5, SciPy returns 0.5000126156626065; the standard-library log-PMF
+recurrence returns 0.5000127075130283 (difference about 9.2e-8).
+Without the optional extra, the existing logarithmic recurrence remains
+available, and its million-trial cases are tested. Document whether SciPy
+was installed when reporting confidence results for very large n.
+
+Historical 30- and 100-replication receipts are unchanged because their
+replication counts are below the optional path's threshold.
+
+### Catchment qualification status, 16 November 2026
+
+Sampler #146, frequency #147 and execution #149 are now integrated into
+draft staging #151, which removes the previous software-integration blocker.
+However the bundled `examples/arr-design-synthetic-ifd.csv` has only 1%
+and 2% rainfall AEP anchors and is expressly synthetic. No qualified
+site-specific BoM/ARR IFD, temporal-pattern, loss and catchment population
+has been admitted for this study. The adopted nonextrapolated ARF law
+supports 1%-50% AEP, leaving 51% of rainfall probability mass unknown.
+A completed software-ledger run over this support cannot be promoted to
+a qualified *full-domain* flood-frequency estimate.
+
+Actual catchment acceptance requires one named permitted source model and
+physical output site, matched input/routing evidence, a cost-capped pilot,
+a separately estimated high-precision reference with uncertainty, and
+prespecified independent-seed confirmation with explicit missing/failed
+mass. No actual catchment convergence verdict or native RORBwin parity
+is claimed by this research-only confidence-limit repair.

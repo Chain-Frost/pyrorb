@@ -51,6 +51,33 @@ q_{\mathrm{low}}=\begin{cases}0,&a\le u,\\F_{\mathrm{known}}^{-1}(a-u),&a>u,\end
 
 The upper bound is `None`/unbounded if the known cumulative mass cannot reach `a`; the lower can also be unavailable in otherwise inconsistent partial inputs. The point estimate and representative are **absent** whenever unresolved positive mass exists, even when bounds are finite. These bounds describe possible completions of the *planned finite ledger*, not Monte Carlo confidence or population-predictive intervals. There is no IID-quantile interval attached to stratified/dependent draws.
 
+### Exact step-boundary arithmetic correction — 16 November 2026
+
+The adopted `monte-carlo-statistics/1` probability policy is unchanged. The previous
+implementation compared binary floating-point `1.0 - AEP` against repeatedly
+accumulated `w_h/n_h`, which can select the **next higher attained peak** at an
+exact boundary. For 10 equiprobable peaks 0–9 m³/s and AEP 0.1, the correct
+noninterpolating value is 8 m³/s (cumulative 9/10), not 9 m³/s. For 20 equal
+peaks and AEP 0.95, the correct value is the first, not the second peak.
+
+The fixed decision path uses exact rational fractions of the original planned
+stratum probabilities divided by their planned sample counts, aggregated at
+tied peaks; AEP is reconstructed from the shortest round-trip decimal
+representation of the public float input. Failed/missing/unsupported/unallocated
+and tail mass uses the same exact planned scale for incomplete bounds. Float
+`PeakGroup` and probability diagnostics remain unchanged for presentation, but
+**never determine quantile rank**. No `isclose` tolerance is used to blur real
+near-boundary differences, no unresolved mass is renormalised and no flow is
+extrapolated. The special complete-population final-step fallback is limited
+to original mass sums within the previously documented 1e-12 input roundoff,
+and returns only the last *attained* peak.
+
+A subsequent independent PR review identified that accepted Python integer peaks above 2**53 can round when converted to binary64 `PeakGroup.peak_m3_s`, losing their original group key and its probability mass. The public API now **rejects** integer peaks beyond the exactly representable binary64 integer range instead of silently selecting a different quantile. Float peaks remain valid; the response contract already reports binary64 values. This explicit rejection also avoids `math.isfinite` overflow for enormous integers.
+
+New independent literal-rank regression cases cover 10/20 equal samples,
+adjacent floating-point AEP values, unequal masses, and incomplete tail bounds.
+This corrects software arithmetic, not native RORBwin or engineering acceptance.
+
 ## Duration envelopes and actual-event representatives
 
 `build_frequency_curves` creates one curve per scenario/duration/physical site without pooling. `duration_envelope(curves, aep)` then takes the maximum of separately estimated duration quantiles; the **caller must pass curves in requested duration order**. Exact ties select the first **requested** duration and return all exactly tied durations in that same order. Near ties retain the exact numerical gap to the second-largest peak; there is no hidden tolerance. If any requested duration is incomplete, the envelope returns `incomplete`, **no critical-duration point** and only safe finite-ledger bounds where available. This max-of-quantiles is not the quantile of a cross-duration annual maximum without a separately accepted joint duration law.

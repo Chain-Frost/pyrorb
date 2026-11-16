@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib
 import json
 import math
 import platform
@@ -17,10 +18,11 @@ import statistics
 import sys
 import time
 import tracemalloc
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import NormalDist
-from typing import Any
+from typing import Any, cast
 
 POLICY = "synthetic-response-v1/weighted-nearest-rank-v1"
 ROOT_SEED = 1482026
@@ -320,7 +322,8 @@ def binomial_upper_tail(k: int, n: int, p: float) -> float:
 
     Sum the tail away from the binomial mode, starting from its log-PMF.
     The former p**n/(1-p)**n recurrence silently returned 0 or 1
-    around the mode for large n. No scientific runtime dependency is used.
+    around the mode for large n. Optional SciPy improves accuracy for very
+    large n via its regularized incomplete-beta implementation.
     """
     if not 0 <= k <= n or not math.isfinite(p) or not 0.0 <= p <= 1.0:
         message = "invalid binomial arguments"
@@ -329,6 +332,16 @@ def binomial_upper_tail(k: int, n: int, p: float) -> float:
         return 1.0
     if p == 0.0:
         return 0.0
+    if n >= 1_000_000:
+        # Optional research-only SciPy avoids lgamma cancellation at very large n.
+        try:
+            special = importlib.import_module("scipy.special")
+        except ModuleNotFoundError as exc:
+            if exc.name != "scipy":
+                raise
+        else:
+            beta_tail = cast("Callable[[float, float, float], float]", getattr(special, "betainc"))
+            return float(beta_tail(k, n - k + 1, p))
     use_upper = k > n * p
     edge = k if use_upper else k - 1
     log_term = (
