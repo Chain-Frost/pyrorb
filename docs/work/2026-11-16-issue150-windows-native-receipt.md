@@ -167,3 +167,60 @@ Local evidence-inventory SHA-256:
 `f9bbedb81f36528174164895f10d08004e7a435ca47cc7b7495a1b44a6529bb9`.
 This sanitised follow-up changes documentation only. **#150/#9 remain open; native
 statistical/engineering gates remain unresolved; #151 remains draft and unmerged to main.**
+
+## Owner-assisted correction and separately approved 25-event pilot
+
+**16 November 2026 (AWST), 10:39 execution.** The owner inspected the live dialogs,
+reported a minimum of **5 rainfall divisions and 5 samples per division**, and entered
+valid 5 / 5 values manually, leaving each field with Tab. The earlier proposed **2 / 10
+target was invalid** according to those owner-observed limits; it must not be presented
+as a supported native configuration. No independent below-minimum boundary experiment
+was performed. The text/spinner divergence above remains observed, but does not by
+itself identify every cause of the previous count failure.
+
+The owner first selected 12–48 hours and observed a warning excluding **30 hours because
+no TP was available**. The source file has members at 12, 18, 24, 36 and 48 hours within
+that range. Five durations would therefore have implied an expected 125 events at 5 / 5,
+but **that duration-range calculation was not executed**. The owner explicitly changed
+the selection to **24–24 hours**. The assistant's earlier inference that Cancel had
+discarded the duration selection was incorrect; this was a manual owner change.
+
+With individual results and analysis diagnostics checked, a new single-duration plan
+was frozen at SHA-256
+`676e87217fe7c3b7f5fa70babaec885dfe8bbe6cf8b5fa6129ad575441674d6b`.
+The owner then explicitly authorised commencement of **one 25-event pilot**, replacing
+the otherwise impossible 20-event budget for this distinct experiment. Limits were one
+attempt, one batch, concurrency one, 120 seconds, no retries or extraction. The original
+1,000-event cap breach remains a separate invalid cohort and is not retrospectively
+authorised by this approval.
+
+The actual native report confirms **5 divisions × 5 samples = 25 unique division/run
+pairs, one 24-hour duration**, with no missing members of that actual grid. It reports
+one elapsed second. The unchanged 6.52 executable/profile is separately authenticated;
+all four copied source files still match their preregistered hashes and sizes.
+The native echoes are `kc=12`, `m=0.8`, base IL **24 mm**, CL **5 mm/h**. All requested
+individual rows and diagnostics are present. There are **12 printed zero peaks** and
+no explicit failure-marker lines: rounded zeros still do not prove exact zero runoff.
+Multiple requested probability summaries accompany these same 25 rows; they were not
+counted as additional simulation batches in this observation.
+
+**Count verdict: `confirmed_for_profile` for this owner-entered 5 / 5, 24-hour pilot.**
+This provides actual execution evidence for the approved count, not a universal guarantee
+for automated control edits, arbitrary settings or saved-PAR replay. There was no further
+run. The native report remains available locally for owner inspection.
+
+**F1–F6 scientific disposition remains incomplete.** Printed depth, loss factors and
+probability are rounded, original TP ranks are not independently bound to complete sampled
+storms, and exact native effective inputs/weights/RNG remain unavailable. No full-Q
+comparison, exact event replay, representative extraction, distributional acceptance or
+engineering/convergence claim follows. Probability-domain tails and warning/selection
+rules remain unresolved; no equal-row weighting or tail renormalisation was introduced.
+
+Raw report, sources, screenshots, approval, plan and audit remain outside both Git
+repositories under `E:/LocalResearch/issue150-owner-assisted-20261116T022623Z/`.
+The local `approved25-receipt.json` SHA-256 is
+`eeaa0abc311df0c9072c68b087e0f78999ce0c9e44d97425978e38f36a6dd471`;
+the native report SHA-256 is
+`3adfffafecc7560958ed6ee6918bf7f3ed3de0cb93c05f7c699eeb57cfd08d6a`.
+Only this sanitised receipt is proposed for staging. Keep **#150/#9 open** and
+**#151 draft/unmerged to main**.
