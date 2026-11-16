@@ -6,6 +6,8 @@
 
 ## Delivered implementation and regression receipts
 
+- [ARR Data Hub 2026v1 ARF method and source qualification (#193)](2026-11-17-issue193-arr2026-arf-method.md) — ten published regional coefficient sets and source boundaries regression-tested; no 2026 formula change found, no native parity or SSP-workflow certification.
+
 - [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
 - [Issue #143 independent import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — original byte-exact fixtures, true installed reader integration, source/installed-wheel acceptance and preserved CMD limitations.
 
