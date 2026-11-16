@@ -1,5 +1,12 @@
 # #143 — Windows-native CMD 6.44 acceptance
 
+**Subsequent software integration:** The exact tested canonical-reader
+candidate below was later merged through [#142 PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+into main commit `f74620ec87222c8739c4b8887829f95dd0182898`.
+The native execution events, hashes, reader partial statuses and
+numerical/physical limitations have not changed. Statements below
+about the then-unmerged candidate are historical.
+
 16 November 2026 (Perth). **Bounded native execution/portability: pass (5/5).**
 Canonical report reading: demonstrated with retained **partial** statuses.
 Numerical equivalence: baseline **incomplete**, edited events **not assessed**.

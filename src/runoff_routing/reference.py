@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any, Literal, cast
 from uuid import uuid4
 
+from ryan_library.functions.RORB.readers import read_rorb_table_file
+
 SCHEMA_VERSION = 1
 Outcome = Literal[
     "captured_unverified",
@@ -200,58 +202,50 @@ def _files(root: Path, excluded: set[Path]) -> list[dict[str, str | int]]:
     return [_record(path, root) for path in paths]
 
 
-def _check_report(  # noqa: C901 -- explicit diagnostics for all malformed native-table states
+def _check_report(
     path: Path, expected_prints: dict[str, str], expected_steps: int | None
 ) -> tuple[Outcome, dict[str, Any]]:
-    """Conservative cached table check; a non-characterised format is NOT native parity."""
-    headers: list[tuple[int, list[str]]] = []
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    for index, line in enumerate(lines):
-        names = line.split()
-        if len(names) >= 3 and names[:2] == ["Inc", "Time"]:
-            headers.append((index, names))
-    if len(headers) != 1:
-        return "incomplete_output", {"reason": f"Expected one Inc/Time table; found {len(headers)}"}
-    index, names = headers[0]
+    """Apply source-specific capture policy to the canonical unverified table.
+
+    The full Inc/Time grammar, numeric validation, source records, contiguous
+    increments and clock monotonicity are owned by ryan-tools. This consumer
+    admits a native capture only against its separately declared print IDs,
+    horizon and provenance; a readable table is not numerical acceptance.
+    """
+    try:
+        document = read_rorb_table_file(path, max_bytes=64 * 1024 * 1024)
+    except (OSError, UnicodeError, ValueError) as exc:
+        return "incomplete_output", {"reason": f"Canonical report read failed: {exc}"}
+
+    tables = [section for section in document.sections if section.name.startswith("hydrographs_")]
+    if len(tables) != 1:
+        return "incomplete_output", {"reason": f"Expected one Inc/Time table; found {len(tables)}"}
+    table = tables[0]
+    names = table.columns[1:]
     if len(names) != len(set(names)) or set(names[2:]) != set(expected_prints):
         return "incomplete_output", {
             "reason": "Printed hydrograph columns differ from requested print identities",
             "columns": names,
         }
-    readings: list[list[float]] = []
-    time_labels: list[str] = []
-    for line in lines[index + 1 :]:
-        cells = line.split()
-        if not cells:
-            if readings:
-                break
-            continue
-        try:
-            float(cells[0])
-        except ValueError:
-            if readings:
-                break
-            continue
-        if len(cells) != len(names):
-            return "incomplete_output", {"reason": "Truncated/extra hydrograph row", "rows": len(readings)}
-        try:
-            values = [float(cell) for cell in cells]
-        except ValueError:
-            return "incomplete_output", {"reason": "Invalid numeric hydrograph row", "rows": len(readings)}
-        if not all(math.isfinite(value) for value in values):
-            return "incomplete_output", {"reason": "Non-finite hydrograph value", "rows": len(readings)}
-        if readings and (values[0] <= readings[-1][0] or values[1] <= readings[-1][1]):
-            return "incomplete_output", {"reason": "Time/increment did not advance", "rows": len(readings)}
-        readings.append(values)
-        time_labels.append(cells[1])
-    summary: dict[str, Any] = {"columns": names, "rows": len(readings), "raw_time_labels": time_labels}
-    if not readings or (expected_steps is not None and len(readings) != expected_steps):
+    summary: dict[str, Any] = {
+        "columns": names,
+        "rows": len(table.rows),
+        "raw_time_labels": [tokens["Time"] for tokens in table.source_tokens],
+    }
+    if document.status in {"invalid", "unsupported"} or not table.valid or len(table.source_tokens) != len(table.rows):
+        summary["reason"] = "Canonical report rejected the native hydrograph table"
+        summary["reader_errors"] = [
+            diagnostic.code for diagnostic in document.diagnostics if diagnostic.severity == "error"
+        ]
+        return "incomplete_output", summary
+    if not table.rows or (expected_steps is not None and len(table.rows) != expected_steps):
         summary["reason"] = "Empty/incomplete hydrograph table or unexpected horizon"
         return "incomplete_output", summary
     if expected_steps is None:
         summary["reason"] = "Expected timestep count not supplied: cannot establish completeness"
         return "captured_unverified", summary
-    if all(value == 0 for row in readings for value in row[2:]):
+
+    if all(table.source_decimal(i, column) == 0 for i in range(len(table.rows)) for column in names[2:]):
         return "zero_runoff", summary
     return "success", summary
 

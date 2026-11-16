@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from ryan_library.functions.RORB.readers import read_rorb_file
 
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
@@ -245,3 +246,45 @@ def test_public_rorbwin_652_original_report_bytes_are_authenticated(
     assert len(data) == size_bytes
     header = f"blob {len(data)}\0".encode("ascii")
     assert hashlib.sha1(header + data, usedforsecurity=False).hexdigest() == git_blob
+
+
+def test_integrated_ryan_reader_original_652_standard_output() -> None:
+    """The actual installed canonical reader validates all retained original table rows."""
+    path = DATA.parent / "s5-acceptance" / "rorbwin652-12h-standard.out"
+    raw = path.read_bytes()
+    report = read_rorb_file(path)
+    table = report.section("hydrographs_1")
+    assert report.kind == "standard_output"
+    assert report.original_bytes == raw
+    assert report.size_bytes == len(raw) == 19_020
+    assert report.sha256 == hashlib.sha256(raw).hexdigest()
+    assert table.valid
+    assert len(table.rows) == len(table.source_tokens) == 301
+    assert table.increment_origin == 0
+    assert [table.rows[0]["Inc"], table.rows[-1]["Inc"]] == [0, 300]
+    assert [table.source_tokens[0]["Time"], table.source_tokens[-1]["Time"]] == ["0.00", "150.00"]
+
+
+def test_integrated_ryan_reader_original_652_batch_identity() -> None:
+    """All 80 AEP/duration/TP cases retain identity despite repeated run numbers."""
+    path = DATA.parent / "s5-acceptance" / "rorbwin652-12h-batch.out"
+    raw = path.read_bytes()
+    report = read_rorb_file(path)
+    runs = report.section("runs")
+    reps = report.section("representatives")
+    assert report.kind == "batch_output"
+    assert report.original_bytes == raw
+    assert report.size_bytes == len(raw) == 8_558
+    assert report.sha256 == hashlib.sha256(raw).hexdigest()
+    assert runs.valid
+    assert len(runs.rows) == len(runs.source_tokens) == 80
+    assert len(reps.rows) == 8
+    assert len({row["reference"] for row in reps.rows}) == 8
+    assert len({row["Run"] for row in runs.rows}) < len(runs.rows)
+    assert len({
+        (row["Run"], row["duration_raw"], row["duration_unit"], row["aep_raw"], row["TPat"])
+        for row in runs.rows
+    }) == 80
+    freqs = {row["aep_raw"] for row in runs.rows}
+    assert {"50%", "0.5EY"} <= freqs
+    assert {row["aep_kind"] for row in runs.rows} == {"percent", "EY"}

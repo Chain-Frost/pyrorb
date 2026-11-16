@@ -105,8 +105,8 @@ and portable native CMD export. See [PAR projects](PAR_PROJECTS.md),
 [Issue #143 genuine Windows RORB CMD 6.44 acceptance](work/2026-11-16-issue143-native-acceptance.md)
 records 5/5 successful direct executions of relocated emitted PARs,
 unchanged native input bytes and real verbosity 1/2/3 differences.
-An installed canonical #142 reader candidate retained all 1,005
+The merged, installed #142 canonical reader retained all 1,005
 original native ordinates. [#142 PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
-is still unmerged and its other acceptance work remains separate.
+is merged and its bounded reader software acceptance is evidenced by the owner-authorised authentic 490-event 6.45 population; the historical distinct 420-event population remains unlocated.
 The five reader states remain `partial`; physical site identities
 and numerical equivalence are not accepted. Keep #5 open.

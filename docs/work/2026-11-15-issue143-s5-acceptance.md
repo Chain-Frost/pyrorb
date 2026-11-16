@@ -1,5 +1,29 @@
 # #143 — independent S5 import/edit/export/report qualification
 
+## Final canonical-reader integration — 16 November 2026
+
+Upstream [ryan-tools #233](https://github.com/Chain-Frost/ryan-tools/pull/233),
+authentic data [#4](https://github.com/Chain-Frost/ryan-tools-test-data/pull/4)
+and runoff [#142/#165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+are merged. Downstream source commit
+`f74620ec87222c8739c4b8887829f95dd0182898` pins the reader-code revision
+`598e5edea093df426cda64c3a528fd1c5784c612`.
+The owner-authorised authentic 490-event RORBWin 6.45 alternative
+achieved 490/490 corroborated event/CSV associations and validated
+1,472 original/distributed identities. The historical 420-event
+population remains unlocated and was **not** rechecked.
+
+Two focused tests in the #143 acceptance suite additionally exercise
+the actual installed reader against the original byte-identical
+RORBWin 6.52 **301-row** standard and **80-row/eight-reference** batch
+reports, retaining 0-based increment origin and compound Run/AEP/TP/duration
+identities. They run in source tests and the selected isolated wheel
+test suite. Record exact integration CI and code/wheel hashes after
+qualification; never infer native calculation or physical-site
+equivalence from a green parser result. The five true RORB CMD 6.44
+executions recorded below remain authenticated to their actual
+historical production revision. Scientific gate #5 remains open.
+
 ## Updated 16 November 2026 disposition — supersedes dated preflight limitations
 
 [Five actual native CMD 6.44 executions](2026-11-16-issue143-native-acceptance.md)
