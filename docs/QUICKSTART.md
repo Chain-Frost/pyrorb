@@ -94,3 +94,19 @@ python -m build --wheel
 ```
 
 Verify the resulting wheel with an **out-of-tree installation and import** before claiming wheel behaviour; do not import from the source checkout by accident. The existing CI checks pure-Python software quality and isolated wheel use; it does not run native CMD. Report distinctly: parser/software conformance; cached reference comparison; freshly executed source and installed-wheel computation; CMD-native numerical equivalence; independent engineering accuracy/conservation/refinement; and batch performance. Do not promote one category to another. [Regression policy](REGRESSION.md).
+
+## Native CMD interoperability acceptance (16 November 2026)
+
+Merged #138–#141 support backed CMD PAR-led input selection, typed edits
+and portable native CMD export. See [PAR projects](PAR_PROJECTS.md),
+[native export](NATIVE_CMD_EXPORT.md) and
+[S5 interoperability](S5_INTEROPERABILITY.md).
+
+[Issue #143 genuine Windows RORB CMD 6.44 acceptance](work/2026-11-16-issue143-native-acceptance.md)
+records 5/5 successful direct executions of relocated emitted PARs,
+unchanged native input bytes and real verbosity 1/2/3 differences.
+The merged, installed #142 canonical reader retained all 1,005
+original native ordinates. [#142 PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+is merged and its bounded reader software acceptance is evidenced by the owner-authorised authentic 490-event 6.45 population; the historical distinct 420-event population remains unlocated.
+The five reader states remain `partial`; physical site identities
+and numerical equivalence are not accepted. Keep #5 open.

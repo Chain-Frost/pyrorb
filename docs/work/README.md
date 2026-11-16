@@ -6,12 +6,15 @@
 
 ## Current implementation / regression receipts
 
+- [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
+- [Issue #143 independent import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — original byte-exact fixtures, true installed reader integration, source/installed-wheel acceptance and preserved CMD limitations.
+
 - [Explicit written-depth rainfall preparation and native event materialization (#175)](2026-11-16-issue175-written-rainfall.md) — opt-in policy, published/prepared rainfall audit, source/wheel checks and bounded native CMD integration; RORBwin routed acceptance remains open.
 - [Canonical cross-repository RORB report-reader handoff](2026-11-15-canonical-rorb-adoption.md) — #142, canonical ryan-tools readers, source/wheel CI and owner-authorised public 6.45 490-event acceptance; historical 420 unlocated.
 
 - [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — merged #139 / PR #166; optional pinned writer used for edited CATG, pending upstream admission.
 - [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — merged PR #159; selected staged inputs, schema-3 effective editing and shared native-export CLI delegation.
-- [Portable standalone RORB CMD export and native acceptance limitations (#141)](2026-11-15-issue141-native-export.md) — merged PR #162; source-exact input packaging, actual PyRomb edited-CATG integration, 1,198 source and 177 wheel tests; real native emitted-PAR execution remains not run.
+- [Portable standalone RORB CMD export and native acceptance limitations (#141)](2026-11-15-issue141-native-export.md) — merged PR #162; source-exact input packaging, actual PyRomb edited-CATG integration, 1,198 source and 177 wheel tests; later executed in the bounded #143 native case above; original #141 receipt is older.
 
 - [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 

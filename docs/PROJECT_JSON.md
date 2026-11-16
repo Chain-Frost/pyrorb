@@ -154,3 +154,19 @@ This is a source/provenance safeguard, not a native RORB or rainfall-method pari
 ## S5-P2 SHA-pinned CMD reference diagnostic
 
 The [S5 native review contract](S5_RECORDED_NATIVE_REVIEW.md) documents the `review-native` CLI. An actual 201-row CMD replay verified source evidence but **failed frozen printed parity: 11/201 within budget, maximum 0.22707849 m³/s**. The native column mapping is caller-asserted; numerical acceptance remains `unassessed`.
+
+## S5 interoperability acceptance (16 November 2026)
+
+Merged #138–#141 support typed editing, PAR-led source import and native
+CMD package export. [Canonical ryan-tools reader PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+has now merged as the reviewed canonical #142 reader dependency. The
+[S5 interoperability guide](S5_INTEROPERABILITY.md) and
+[#143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md)
+identify the corresponding qualified workflows.
+
+The [five genuine native CMD 6.44 runs](work/2026-11-16-issue143-native-acceptance.md)
+used the reviewed #142 dependency in an external installed-wheel environment:
+5/5 relocated emitted PARs ran successfully, 15 input files stayed
+byte-exact and 1,005 native ordinates were retained. Native portability
+does not establish numerical equivalence or physical output-site identity;
+gate #5 and physical/numerical qualification remain open; the authorised authentic 490-event 6.45 reader population was admitted as an alternative to the unlocated historical 420-event corpus.
