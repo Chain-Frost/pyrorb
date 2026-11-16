@@ -22,7 +22,7 @@ from runoff_routing.arr_arf import (
 )
 from runoff_routing.arr_data import ARRFormatError
 from runoff_routing.arr_import import parse_arr_json
-from runoff_routing.arr_patterns import parse_pattern_csv
+from runoff_routing.arr_patterns import Pattern, PatternSet, parse_pattern_csv
 from runoff_routing.arr_storm import storm_from_arr_2026
 
 ARR2026_SYNTHETIC = Path(__file__).absolute().parent / "fixtures" / "arr" / "2026v1-minimal.json"
@@ -77,7 +77,7 @@ def test_v42_arfs_still_use_existing_method_steps(
     assert Decimal(0) <= result.factor <= Decimal(1)
 
 
-def _point_patterns() -> tuple:
+def _point_patterns() -> tuple[PatternSet, Pattern]:
     # Local source parse is deliberate; pattern source identity is not an ARF parameter.
     pattern_set = parse_pattern_csv(
         b"EventID,Duration,TimeStep,Region,AEP,Increments\n0900,60,30,SYN,rare,25,75\n",
