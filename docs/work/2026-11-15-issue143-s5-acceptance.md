@@ -6,8 +6,13 @@ Upstream [ryan-tools #233](https://github.com/Chain-Frost/ryan-tools/pull/233),
 authentic data [#4](https://github.com/Chain-Frost/ryan-tools-test-data/pull/4)
 and runoff [#142/#165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
 are merged. Downstream source commit
-`f74620ec87222c8739c4b8887829f95dd0182898` pins the reader-code revision
+`f74620ec87222c8739c4b8887829f95dd0182898` originally pinned the reviewed reader-code revision
 `598e5edea093df426cda64c3a528fd1c5784c612`.
+Merged dependency-fix [PR #185](https://github.com/Chain-Frost/python-runoff-routing/pull/185) at current main 
+`c3b57e27c59b0001327154cb47c57722f9bda03e` now pins the accessible
+upstream merge archive `8940f46b251f4d2ba6e52d6cb2ef74cd71fbe33f`.
+The reader modules and distribution code are verified byte-identical; only the
+archive revision changed. Final installed-wheel acceptance must cover this pin.
 The owner-authorised authentic 490-event RORBWin 6.45 alternative
 achieved 490/490 corroborated event/CSV associations and validated
 1,472 original/distributed identities. The historical 420-event
