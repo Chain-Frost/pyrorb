@@ -349,6 +349,11 @@ def binomial_upper_tail(k: int, n: int, p: float) -> float:
         scipy_tail = _optional_scipy_binomial_tail(k, n, p)
         if scipy_tail is not None:
             return scipy_tail
+    return _stdlib_binomial_upper_tail(k, n, p)
+
+
+def _stdlib_binomial_upper_tail(k: int, n: int, p: float) -> float:
+    """Sum the smaller binomial tail from a log-PMF without optional SciPy."""
     use_upper = k > n * p
     edge = k if use_upper else k - 1
     log_term = (
