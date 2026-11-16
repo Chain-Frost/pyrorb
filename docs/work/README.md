@@ -7,6 +7,7 @@
 ## Current implementation / regression receipts
 
 - [Explicit written-depth rainfall preparation and native event materialization (#175)](2026-11-16-issue175-written-rainfall.md) — opt-in policy, published/prepared rainfall audit, source/wheel checks and bounded native CMD integration; RORBwin routed acceptance remains open.
+- [Canonical cross-repository RORB report-reader handoff](2026-11-15-canonical-rorb-adoption.md) — #142, canonical ryan-tools readers, source/wheel CI and owner-authorised public 6.45 490-event acceptance; historical 420 unlocated.
 
 - [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — merged #139 / PR #166; optional pinned writer used for edited CATG, pending upstream admission.
 - [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — merged PR #159; selected staged inputs, schema-3 effective editing and shared native-export CLI delegation.
