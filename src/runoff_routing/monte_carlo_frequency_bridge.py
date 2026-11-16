@@ -190,9 +190,7 @@ def format_selected_aep_table(
     any_review = False
     for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
         diagnostic = estimate.get("scientific_sampling_diagnostic")
-        review = (
-            isinstance(diagnostic, dict) and cast("dict[str, object]", diagnostic).get("status") == "review"
-        )
+        review = isinstance(diagnostic, dict) and cast("dict[str, object]", diagnostic).get("status") == "review"
         any_review |= review
         value = estimate.get("peak_m3_s")
         peak_text = f"{float(value):.2f}{'!' if review else ''}" if isinstance(value, (float, int)) else "N/A"
@@ -268,8 +266,14 @@ def _report(
             estimates = [
                 cast(
                     "dict[str, object]",
-                    asdict(cast("Any", curve.estimate(aep, confidence_level=confidence_level,
-                                                   relative_aep_screen=relative_aep_screen))),
+                    asdict(
+                        cast(
+                            "Any",
+                            curve.estimate(
+                                aep, confidence_level=confidence_level, relative_aep_screen=relative_aep_screen
+                            ),
+                        )
+                    ),
                 )
                 for aep in targets
             ]

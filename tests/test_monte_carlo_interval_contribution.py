@@ -61,9 +61,7 @@ def test_tpt_contributions_use_strict_exceedance_without_a_native_flag() -> None
     assert audit.maximum_stratum_id == "interval-3"
     assert audit.maximum_stratum_share_of_known_exceedance == pytest.approx(0.5)
     assert [row.exceeding_samples for row in audit.strata] == [0, 0, 0, 1, 1]
-    assert [row.strict_exceedance_probability_mass for row in audit.strata] == pytest.approx(
-        [0, 0, 0, 0.2, 0.2]
-    )
+    assert [row.strict_exceedance_probability_mass for row in audit.strata] == pytest.approx([0, 0, 0, 0.2, 0.2])
     # The concentrated interval contribution is DESCRIPTIVE, never a RORB *.
     assert estimate.native_interval_warning == "not_assessed"
     assert curve.exceedance(30.0).known_exceedance_probability == pytest.approx(0.4)
@@ -96,9 +94,7 @@ def test_5x5_adversarial_synthetic_concentration_is_not_native_parity() -> None:
     diagnostic = estimate.scientific_sampling_diagnostic
     assert diagnostic is not None
     assert diagnostic.status == "review"
-    assert diagnostic.simultaneous_absolute_aep_margin == pytest.approx(
-        math.sqrt(math.log(200) / 10)
-    )
+    assert diagnostic.simultaneous_absolute_aep_margin == pytest.approx(math.sqrt(math.log(200) / 10))
 
 
 def test_zero_atom_and_two_physical_sites_are_distinct() -> None:
@@ -120,9 +116,7 @@ def test_uniform_dkw_bound_is_simultaneous_and_uses_declared_screen() -> None:
     n = 1000
     scope = FrequencyScope("plan-1000", "independent", "v1", "synthetic", 60, "print_1")
     population = CurvePopulation(scope, (StratumWeight("h", 1.0, n),))
-    rows = tuple(
-        PeakRecord(scope, "h", f"s{i}", 1 / n, "valid", float(i), f"e{i}", f"i{i}") for i in range(n)
-    )
+    rows = tuple(PeakRecord(scope, "h", f"s{i}", 1 / n, "valid", float(i), f"e{i}", f"i{i}") for i in range(n))
     curve = build_frequency_curve(population, rows)
     expected = math.sqrt(math.log(40) / 2000)
     loose = curve.estimate(0.5)
@@ -138,7 +132,9 @@ def test_uniform_dkw_bound_is_simultaneous_and_uses_declared_screen() -> None:
     assert strict.scientific_sampling_diagnostic.native_equivalence == "not_assessed"
     assert strict.scientific_sampling_diagnostic.independent_seed_convergence == "not_assessed"
     assert strict.scientific_sampling_diagnostic.boundary_sensitivity == "not_assessed"
-    assert curve.estimate(0.5, confidence_level=0.95, relative_aep_screen=0.05).scientific_sampling_diagnostic is not None
+    assert (
+        curve.estimate(0.5, confidence_level=0.95, relative_aep_screen=0.05).scientific_sampling_diagnostic is not None
+    )
     lower = curve.estimate(0.5, confidence_level=0.95, relative_aep_screen=0.05)
     assert lower.scientific_sampling_diagnostic is not None
     assert lower.scientific_sampling_diagnostic.status == "review"

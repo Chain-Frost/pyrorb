@@ -406,8 +406,7 @@ class FrequencyCurve:
         bound = min(
             1.0,
             math.fsum(
-                item.probability_mass * min(1.0, math.sqrt(log_term / (2 * item.planned_samples)))
-                for item in active
+                item.probability_mass * min(1.0, math.sqrt(log_term / (2 * item.planned_samples))) for item in active
             ),
         )
         resolution = max(item.probability_mass / item.planned_samples for item in active)
@@ -523,9 +522,7 @@ class FrequencyCurve:
             evidence.boundary_strata_share_of_known_exceedance,
             at_edge,
             interval_probability_audit=self._interval_probability_audit(peak),
-            scientific_sampling_diagnostic=self._scientific_sampling_screen(
-                aep, confidence_level, relative_aep_screen
-            ),
+            scientific_sampling_diagnostic=self._scientific_sampling_screen(aep, confidence_level, relative_aep_screen),
         )
 
 
