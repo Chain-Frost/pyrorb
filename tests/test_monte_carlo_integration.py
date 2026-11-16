@@ -224,15 +224,42 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     for event in events:
         direct = run_project_events(project, (event.event,)).outcomes[0]
         assert direct.status == "computed_unvalidated"
-    assert main(["frequency", str(project), str(request), str(ledger), str(report), "--aep", "0.01"]) == 2
+    assert (
+        main(
+            [
+                "frequency",
+                str(project),
+                str(request),
+                str(ledger),
+                str(report),
+                "--aep",
+                "0.01",
+                "--confidence-level",
+                "0.9",
+                "--relative-aep-screen",
+                "0.1",
+            ]
+        )
+        == 2
+    )
     body = json.loads((tmp_path / "frequency.json").read_text(encoding="utf-8"))
     assert body["point_results_complete"] is False
+    assert body["native_rorbwin_interval_warning"] == "not_assessed"
+    assert cast("dict[str, object]", body["scientific_sampling_policy"])["confidence_level"] == 0.9
+    assert cast("dict[str, object]", body["scientific_sampling_policy"])["relative_aep_screen"] == 0.1
     scopes = cast("list[dict[str, object]]", body["frequency_scopes"])
     assert len(scopes) == 1
     assert scopes[0]["physical_site_id"] == "print_1"
     targets = cast("list[dict[str, object]]", scopes[0]["targets"])
     assert targets[0]["status"] == "incomplete"
     assert targets[0]["peak_m3_s"] is None
+    assert targets[0]["aep_1_in_y"] == 100
+    assert targets[0]["row_number"] == 1
+    assert targets[0]["native_interval_warning"] == "not_assessed"
+    assert targets[0]["interval_probability_audit"] is None
+    assert cast("dict[str, object]", targets[0]["scientific_sampling_diagnostic"])["status"] == "not_assessed"
+    assert "AEP(1inY)" in (tmp_path / "frequency.txt").read_text(encoding="utf-8")
+    assert "N/A" in (tmp_path / "frequency.txt").read_text(encoding="utf-8")
     assert (tmp_path / "frequency.csv").is_file()
     first = events[0]
     assert main(["replay", str(project), str(request), str(ledger), first.sample_id, str(tmp_path / "selected")]) == 0
