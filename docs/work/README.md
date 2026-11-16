@@ -2,7 +2,21 @@
 
 **Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
+**Current programme (15 November 2026):** #119 CLI/text-file MVP and #136 bounded deterministic ARR/BoM software have merged. The reviewed original CMD 6.44 `python-cmd` result remains **50/50 printed Q / 19,550 ordinates, 48 complete scalars and two undefined zero-flow peak times**, not full #5 acceptance. The curated #133 original PR16 bytes and eight CMD native captures remain **unadmitted gaps**. The later [actual #137 execution receipt](2026-11-15-issue137-actual-execution.md) documents 60/60 source/wheel matches but 1,320 differing native-written rain increments; #137/#8 input/routed qualification remains open. #152 owns downstream deterministic reporting. #9 Monte Carlo is separately staged, not delivered to `main`. See [current status](../STATUS.md), [single CMD matrix](../CMD_FEATURE_MATRIX.md) and [programme receipt](2026-11-15-programme-current-reconciliation.md).
+
 ## Current implementation / regression receipts
+
+- [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
+- [Issue #143 independent import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — original byte-exact fixtures, true installed reader integration, source/installed-wheel acceptance and preserved CMD limitations.
+
+- [Explicit written-depth rainfall preparation and native event materialization (#175)](2026-11-16-issue175-written-rainfall.md) — opt-in policy, published/prepared rainfall audit, source/wheel checks and bounded native CMD integration; RORBwin routed acceptance remains open.
+- [Canonical cross-repository RORB report-reader handoff](2026-11-15-canonical-rorb-adoption.md) — #142, canonical ryan-tools readers, source/wheel CI and owner-authorised public 6.45 490-event acceptance; historical 420 unlocated.
+
+- [PyRomb CATG and combined-preburst STM writer closeout](2026-11-15-issue139-pyromb-writer.md) — merged #139 / PR #166; optional pinned writer used for edited CATG, pending upstream admission.
+- [PAR-led CMD import, saved-PAR discrimination and editable-source persistence (#140)](2026-11-15-issue140-par-projects.md) — merged PR #159; selected staged inputs, schema-3 effective editing and shared native-export CLI delegation.
+- [Portable standalone RORB CMD export and native acceptance limitations (#141)](2026-11-15-issue141-native-export.md) — merged PR #162; source-exact input packaging, actual PyRomb edited-CATG integration, 1,198 source and 177 wheel tests; later executed in the bounded #143 native case above; original #141 receipt is older.
+
+- [Issue #137 actual original-population source/wheel execution](2026-11-15-issue137-actual-execution.md) — 60 actual events, exact source/wheel reports, private local staging and remaining scientific acceptance gates.
 
 - [Three-engine selector and native adapter contract](2026-11-14-three-engine-contract.md) — merged #77, with distinct numerical acceptance.
 - [Bounded compatible CMD engine integration](2026-11-14-python-cmd-integration.md) — merged #79 with a separately pinned earlier 36-case fresh original-input probe; full native/physical acceptance remains open.
@@ -19,10 +33,13 @@
 - [Independent CMD source/wheel feature qualification and MVP/deferred crosswalk](2026-11-15-independent-cmd-feature-verdicts.md) — exact heads, original 50-case printed Q and scalar evidence, explicit remaining gates; no second CMD matrix or comparator.
 
 - [CLI/text-file MVP, prepared model cache and review evidence](2026-11-15-issue119-cli-mvp.md) — #119 / PR #128; source/installed-wheel acceptance, full original events, explicit limitations.
+- [Typed S1 domain and effective event editing](2026-11-15-issue138-types-and-editing.md) — #138 / PR #157; validated enum/loss/effective-model contract and source/wheel checks, distinct from #143 acceptance.
 - [Deterministic ARR2019/BoM design-ensemble CLI and separate input/output gates](2026-11-15-s6-deterministic-design.md) — #8, source-preserving ten-member input preparation and #119 replay; native storm/flow parity unassessed.
-- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, private 224-file SHA-256 custody and 60-event audit; **strict merged-#136 effective-input replay and routed parity not run**.
+- [Deterministic ARR results reporting, population accounting and unverified selection evidence](2026-11-15-s6-results-reporting.md) — #152 / PR #155; reviewed read-only CLI/API summaries and complete source/wheel checks; native representative and critical-duration rules remain unverified pending #137/#142.
+- [Original RORBwin 60-event reference authentication and independent source/print preflight](2026-11-15-issue137-independent-rorbwin-preflight.md) — #137, archived source/print audit; **at the time of that preflight**, merged-#136 software execution had not run. Later actual execution and remaining native parity limits are recorded above.
 
-- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; independent review required before new scalar acceptance.
+- [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; distinguish historical concern from later merged #135 comparator review.
+- [Current programme documentation reconciliation](2026-11-15-programme-current-reconciliation.md) — #1/#5 current owner map and evidence separation; original historical receipts remain dated.
 
 ## Planning receipts
 
@@ -35,6 +52,7 @@
 - [#150 finite local Windows RORBwin Monte Carlo evidence handoff](2026-11-16-issue150-local-windows-native-handoff.md) — native 6.52 executable fingerprint and bounded F1–F6 field observations; no unapproved raw outputs and no scientific acceptance implied.
 
 ## Retained diagnostic/reference evidence
+- [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) — original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.
 
 - [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) — eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.
 - [S0 native provenance](2026-11-11-s0-native.md), [S1 source/CMD model](2026-11-11-s1-bidirectional.md) and [S5 source-verified CMD diagnostic](2026-11-12-s5-native-capture-review.md) — distinguish original inputs, raw time and native-failed numerical comparisons.

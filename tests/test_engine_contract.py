@@ -16,7 +16,8 @@ from runoff_routing.engine_execution import run_engine_project, write_engine_res
 from runoff_routing.engine_provenance import identify_implementation
 from runoff_routing.engine_types import CAPABILITIES, EngineSelection
 from runoff_routing.integration import canonical_run_bytes
-from runoff_routing.native_cmd import NativeConfiguration
+from runoff_routing.native_cmd import NativeConfiguration, NativeObservation
+from runoff_routing.project_batch import ProjectEvent, run_project_events
 from runoff_routing.project_execution import run_project
 from runoff_routing.project_json import (
     EmbeddedRun,
@@ -32,6 +33,48 @@ from runoff_routing.project_json import (
 from runoff_routing.rorb_model import RoutingValue, RunModel, from_json
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
+
+
+def test_native_event_materializes_verified_files_without_changing_originals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from runoff_routing import native_cmd  # noqa: PLC0415 -- patch the execution boundary, never launch RORB
+    from runoff_routing.project_json import LoadedProject, load_project  # noqa: PLC0415 -- test-local boundary
+
+    project_path = _legacy(tmp_path, EngineSelection.for_engine("rorb-cmd"))
+    original = load_project(project_path)
+    original_hashes = original.file_hashes
+    config = _native_config(tmp_path)
+    seen: list[LoadedProject] = []
+
+    def observe(loaded: LoadedProject, native: NativeConfiguration, path: Path) -> NativeObservation:
+        assert path.is_relative_to(config.output_root)
+        assert loaded.original_inputs_match_effective()
+        assert loaded.run.storm.depths_mm == (Decimal("12.03"),)
+        assert loaded.run.parameters.losses[0].initial_loss_mm == Decimal("3.25")
+        seen.append(loaded)
+        return NativeObservation((), (), (), (), native.executable_sha256, "6.44", "0" * 64, "synthetic-capture")
+
+    monkeypatch.setattr(native_cmd, "run_native_cmd", observe)
+    report = run_project_events(
+        project_path,
+        (ProjectEvent("prepared_rain", storm={"depths_mm": ["12.03"]}, losses={"initial_loss_mm": "3.25"}),),
+        selection=EngineSelection.for_engine("rorb-cmd"),
+        native_config=config,
+    )
+    assert len(seen) == 1
+    assert report.succeeded
+    outcome = report.outcomes[0]
+    manifest_path = Path(str(outcome.effective_inputs["native_prepared_package_manifest"]))
+    assert (
+        hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        == outcome.effective_inputs["native_prepared_package_sha256"]
+    )
+    package = json.loads(manifest_path.read_text())
+    assert package["events"][0]["event_id"] == "prepared_rain"
+    assert package["events"][0]["inputs"]["catchment"]["mode"] == "source_exact"
+    assert package["events"][0]["inputs"]["storm"]["mode"] == "semantic_edit"
+    assert load_project(project_path).file_hashes == original_hashes
 
 
 def _model() -> RunModel:

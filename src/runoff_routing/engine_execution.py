@@ -18,7 +18,7 @@ from .cmd_engine import CMD_PROFILE, CmdBoundaryError, PreparedCmdModel, run_cmd
 from .engine_provenance import identify_implementation, verify_installed_wheel
 from .engine_types import EngineDiagnostic, EngineHydrograph, EngineOutcome, EngineSelection, EngineStatus
 from .integration import RunInputError, run_model
-from .native_cmd import NativeBoundaryError, NativeConfiguration, run_native_cmd
+from .native_cmd import NativeBoundaryError, NativeConfiguration, run_native_cmd, run_native_event
 from .project_json import LoadedProject, load_project
 from .rorb_model import to_json
 from .single_storm import PreparedCatchment
@@ -163,6 +163,7 @@ def execute_loaded_engine(
     native_config: NativeConfiguration | None = None,
     prepared_python: PreparedCatchment | None = None,
     prepared_cmd: PreparedCmdModel | None = None,
+    materialize_native_event: bool = False,
 ) -> EngineOutcome:
     """Dispatch an already verified, in-memory S1 event using its attributed outcome.
 
@@ -194,7 +195,11 @@ def execute_loaded_engine(
             "Selected numerical profile does not match the reviewed executable configuration",
         )
     try:
-        observation = run_native_cmd(loaded, native_config, project_path)
+        observation = (
+            run_native_event(loaded, native_config, project_path, event_id=base.event_id)
+            if materialize_native_event
+            else run_native_cmd(loaded, native_config, project_path)
+        )
     except NativeBoundaryError as exc:
         return _failure(base, exc.status, exc.code, str(exc), manifest=exc.manifest)
     except (OSError, ValueError, TypeError) as exc:
@@ -211,6 +216,17 @@ def execute_loaded_engine(
         native_observed_version=observation.observed_version,
         native_output_sha256=observation.output_sha256,
         capture_manifest_path=observation.manifest_path,
+        effective_inputs={
+            **base.effective_inputs,
+            **(
+                {
+                    "native_prepared_package_manifest": observation.prepared_package_manifest,
+                    "native_prepared_package_sha256": observation.prepared_package_sha256 or "",
+                }
+                if observation.prepared_package_manifest is not None
+                else {}
+            ),
+        },
         internal_quantities="native_unavailable",
     )
 

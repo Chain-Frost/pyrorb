@@ -7,11 +7,17 @@ name = "python-runoff-routing"
 version = "0.0.0.dev0"
 description = "Public in-development Python rainfall-runoff routing implementation"
 readme = "README.md"
+license = "LicenseRef-SUL-1.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/8940f46b251f4d2ba6e52d6cb2ef74cd71fbe33f.tar.gz#subdirectory=packaging/rorb-readers",
+]
 
 [project.optional-dependencies]
-dev = ["build", "pytest", "pyright", "ruff==0.16.6"]
+catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
+
+dev = ["build", "pytest", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
 research = ["scipy>=1.15"]
 
 [tool.setuptools.packages.find]

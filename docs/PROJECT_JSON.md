@@ -12,11 +12,15 @@
 > `python/engineering-v1` choice without changing source content or execution semantics. The `rainfall_profile` is independent of the numerical
 > engine. See [the three-engine execution contract](ENGINES.md).
 
+> **PAR-led imports (#140, schema 3):** importing an original CMD PAR can now discover its embedded CATG/STM references, accept per-role file overrides and stage all three original byte streams under the destination project directory. The source-bound manifest records selected bindings separately from an optional editable effective S1 run. An old schema-1 or schema-2 project retains its existing interpretation. See [PAR import workflow](PAR_PROJECTS.md).
+
+**Current note (15 November 2026):** merged [#119 CLI/text-file MVP](PROJECT_BATCH_MVP.md) delivers selected-engine original/JSON event batches. The reviewed #138–#143 typed edits/PAR-led import/native export/report reading PRs extend the **same** project; source/manifest schema-1 paragraphs below are dated S5-P0 background. Current files are modern graphical CATG/STM and CMD PAR including characterised graphical `.cat`; old plain computational CAT and combined DAT excluded; saved RORBwin PAR deferred #144. 
+
 ## Architecture and source identities
 
 - Keep the immutable S1 `RunModel` as the sole calculation-domain model. Its existing versioned JSON remains unchanged.
-- S5 adds a separate version-1 JSON *project manifest*. Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
-- Both source modes validate into the same S1 RunModel. The explicit project paths are used, but embedded filenames inside the original `.par` are preserved and **never followed**. No graphical-to-computational reordering or source rewriting.
+- S5 adds a versioned JSON *project manifest* (historical schema 1; new ordinary projects schema 2 and source-bound edited projects schema 3). Its `model_source` is either a self-contained S1 run document (`embedded-run`) or SHA-256-pinned relative paths to original `.par`, `.catg` and `.stm` bytes (`rorb-files`).
+- Both source modes validate into the same S1 RunModel. Legacy schema-1/2 file-backed projects load their explicit hash-pinned paths and never follow embedded PAR references. **Only the opt-in PAR-led importer** reads and selects embedded paths at import time, stages exact bytes, and records its explicit overrides. Once staged, reopen does not follow original or embedded paths. No graphical-to-computational reordering or source rewriting.
 - The project selects an explicit `rainfall_profile`: `explicit`, `legacy-rorb`, or `arr-2026v1`. This records a method boundary, **not** proof of a historical/modern calculation or a default selection of rainfall guidance.
 - External rainfall, temporal patterns, curves and reference evidence can be catalogued with an independent data-profile ID, relative path and hash. Original assets are read only for verification and are otherwise opaque to S5; the S6 rainfall workpack performs semantic processing. A single project may catalogue modern and legacy data for comparison, but does not silently combine them.
 
@@ -87,13 +91,17 @@ py -3.14 -m runoff_routing.project_json import-rorb case-one legacy-rorb "C:\mod
 
 The validation output deliberately reports `structural_only` and `numerical_parity: not_assessed`; it never launches RORB or the Python solver.
 
+## PAR-led import and editable source-bound projects
+
+See [the end-to-end CLI/API examples and exact path semantics](PAR_PROJECTS.md). Original PAR/CATG/STM files are hash-pinned and remain byte-identical; an edited S1 run is stored as an effective settings overlay (project schema 3). `load_project(path).run`, selected-engine execution and `export-run` consume the effective typed model, not stale original parameters. `save_project_as` creates a new manifest and copies the immutable source closure if the project is relocated; it never overwrites files. The separate native-runnable CMD packaging and PAR semantic writer belong to #141 and are **not** provided by this operation.
+
 ## Security and path rules
 
 File references use forward-slash project-relative paths even on Windows. The selected project directory itself can be local, mapped drive or UNC. Entries reject absolute/drive/UNC references, parent traversal, empty path components and unsafe separators. Readers deliberately resolve symlinks **solely to establish physical containment**, verify original SHA-256 and impose a 64 MiB first-slice file-size bound. Original path spelling and source bytes are retained. Exclusive-create writes never clobber a file.
 
 ## Unsupported and deferred
 
-- Full text `.cat`, combined `.dat`, GUI `.par`, uncharacterised S1 dialects and additional external rainfall file parsing remain unsupported.
+- Old plain computational `.cat`, combined `.dat`, RORBwin saved-`.par` *settings import*, uncharacterised S1 dialects and additional external rainfall file parsing remain unsupported. Characterised modern graphical content named `.cat` is supported. Known RORBwin saved-PAR structures are now positively recognised and reported as deferred rather than partially parsed as CMD.
 - The S5-P1 adapter now executes already supplied, supported DESIGN storms through the strict Python S2 reference. This computes unvalidated Python ordinates; it is not RORB native parity or modern ARR rainfall generation. Full native comparisons and an accepted numerical profile remain future work.
 - Legacy ARR/RORB rainfall preparation and ARR Data Hub 2026v1 methods remain separate in S6 [#33](https://github.com/Chain-Frost/python-runoff-routing/issues/33). Neither climate adjustments nor rainfall bursts are generated by this S5 layer.
 
@@ -146,3 +154,19 @@ This is a source/provenance safeguard, not a native RORB or rainfall-method pari
 ## S5-P2 SHA-pinned CMD reference diagnostic
 
 The [S5 native review contract](S5_RECORDED_NATIVE_REVIEW.md) documents the `review-native` CLI. An actual 201-row CMD replay verified source evidence but **failed frozen printed parity: 11/201 within budget, maximum 0.22707849 m³/s**. The native column mapping is caller-asserted; numerical acceptance remains `unassessed`.
+
+## S5 interoperability acceptance (16 November 2026)
+
+Merged #138–#141 support typed editing, PAR-led source import and native
+CMD package export. [Canonical ryan-tools reader PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+has now merged as the reviewed canonical #142 reader dependency. The
+[S5 interoperability guide](S5_INTEROPERABILITY.md) and
+[#143 acceptance receipt](work/2026-11-15-issue143-s5-acceptance.md)
+identify the corresponding qualified workflows.
+
+The [five genuine native CMD 6.44 runs](work/2026-11-16-issue143-native-acceptance.md)
+used the reviewed #142 dependency in an external installed-wheel environment:
+5/5 relocated emitted PARs ran successfully, 15 input files stayed
+byte-exact and 1,005 native ordinates were retained. Native portability
+does not establish numerical equivalence or physical output-site identity;
+gate #5 and physical/numerical qualification remain open; the authorised authentic 490-event 6.45 reader population was admitted as an alternative to the unlocated historical 420-event corpus.
