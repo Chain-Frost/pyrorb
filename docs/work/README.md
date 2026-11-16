@@ -45,3 +45,5 @@
 Other retained dated records describe the exact historical source, experiment and constraints they were written for. They **do not** reopen obsolete PRs, replace the single CMD feature matrix or require the private workspace for product use. Unneeded first-agent handoffs, obsolete status snapshots and the former ten-PR backlog matrix were removed from the active tree and remain in ordinary Git history.
 
 - [Monte Carlo weighted peak-frequency result layer](2026-11-15-mc-weighted-frequency.md) — #147 staged statistical software and independent control handoff; not native flood-AEP acceptance.
+
+- [Windows issue #150 native observation and cap-deviation receipt](2026-11-16-issue150-windows-native-receipt.md) - authenticated 6.52; incomplete F1-F6 and stopped native execution, separate from staged software acceptance.
