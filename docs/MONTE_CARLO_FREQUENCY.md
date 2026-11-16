@@ -96,3 +96,47 @@ At a complete attained quantile, the representative is the **actual successful**
 - **Statistical:** #145 adopted the public *project* probability and step-quantile rules; #148/#150 still own convergence, finite-sample uncertainty and independent research. No IID confidence estimator is provided here.
 - **Native RORBwin equivalence:** **not assessed**, and cannot be inferred from hand-calculated tests. The published table/loss and effective native build remain F's obligations.
 - **Engineering:** a finite rainfall support with unmodelled tails is not a complete flood AEP distribution. The code retains those tails and refuses false full-population point estimates.
+
+
+## Provisional per-rainfall-interval 20% contribution warnings (16 November 2026)
+
+RORB Version 6 Manual §8.5 and the worked example (printed pp.147–148)
+display `*` for AEP estimates where a rainfall-frequency **interval contribution
+to total AEP exceeds 20%**. The manual's legend is primary source for the
+warning's existence, but does **not** independently establish the precise
+algorithm of the installed 6.52 executable.
+
+The project provides a **provisional** diagnostic under method identifier
+`project-rainfall-stratum-at-or-above-20pct-v1`:
+
+For a complete population and the v1 noninterpolated attained quantile
+`q_α`, in each original rainfall stratum `h` with planned mass `w_h`
+and planned sample count `n_h`, define
+
+`c_h(q_α) = (w_h/n_h) × count(valid samples in h with Q >= q_α)`.
+
+`C=sum_h(c_h)`, `R=max_h(c_h)/C`. Flag `*` only when
+`R>0.20` (strictly greater), comparing **exact rational** planned
+masses. The use of **`>=` only for this diagnostic** includes
+the attained quantile crossing and tied peaks; it **does not change**
+the adopted strict `P(Q>q)` estimator, quantile or representative.
+
+For each requested AEP, the JSON includes the exact method ID, warning
+status `flagged|not_flagged|not_assessed`, threshold, maximum contributing
+stratum and share, total at-or-above mass, and full ordered per-stratum
+contributions/counts. `aep_1_in_y` is `1/aep_fraction`,
+not a native ARI/return-period reinterpretation. The text report includes
+`No. AEP(1inY) Peak <physical site>` with `*` only where the
+project diagnostic flags a **complete** point.
+
+When any positive failure/missing/unsupported/zero-allocation/unmodelled
+tail mass remains, the full-population point peak is `N/A`, the diagnostic
+is `not_assessed` and no `*` is printed. Existing finite-ledger bounds
+remain available in JSON. An unflagged project diagnostic is **not**
+a demonstration of reliability, sampling convergence, or hydrological fitness.
+The native 6.52 asterisk logic remains under #150 F6, requiring actual
+interval contributions or matched native effective observations.
+
+The current CSV continues to contain attained peak-frequency groups;
+the selected-AEP table with all warnings is in the text and JSON
+reports, retaining the existing CSV contract.

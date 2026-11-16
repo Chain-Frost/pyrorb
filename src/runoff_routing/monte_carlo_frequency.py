@@ -15,7 +15,10 @@ from typing import Literal, Never
 
 PeakStatus = Literal["valid", "failed", "missing", "unsupported"]
 QuantileStatus = Literal["estimated", "zero_atom", "incomplete"]
+IntervalWarningStatus = Literal["flagged", "not_flagged", "not_assessed"]
 METHOD_PROFILE = "monte-carlo-statistics/1:weighted-step-inverse-v1"
+INTERVAL_WARNING_METHOD = "project-rainfall-stratum-at-or-above-20pct-v1"
+INTERVAL_WARNING_THRESHOLD = 0.2
 _MASS_ROUNDOFF = 1e-12  # Input binary floating-point summation tolerance, never an engineering error band.
 
 
@@ -250,6 +253,32 @@ class RepresentativeEvent:
 
 
 @dataclass(frozen=True, slots=True)
+class IntervalContribution:
+    """One original rainfall probability interval's non-normalised contribution."""
+
+    stratum_id: str
+    contributing_samples: int
+    at_or_above_probability_mass: float
+
+
+@dataclass(frozen=True, slots=True)
+class IntervalContributionWarning:
+    """Provisional project concentration diagnostic; RORBwin parity is not assessed.
+
+    An unflagged complete quantile is NOT an engineering reliability certificate.
+    """
+
+    status: IntervalWarningStatus
+    maximum_stratum_id: str | None
+    maximum_stratum_share: float | None
+    at_or_above_probability_mass: float | None
+    strata: tuple[IntervalContribution, ...]
+    threshold_share: float = INTERVAL_WARNING_THRESHOLD
+    method: str = INTERVAL_WARNING_METHOD
+    native_equivalence: Literal["not_assessed"] = "not_assessed"
+
+
+@dataclass(frozen=True, slots=True)
 class QuantileEstimate:
     aep: float
     status: QuantileStatus
@@ -264,6 +293,7 @@ class QuantileEstimate:
     software_qualification: Literal["provisional"] = "provisional"
     statistical_qualification: Literal["not_assessed"] = "not_assessed"
     native_equivalence: Literal["not_assessed"] = "not_assessed"
+    interval_contribution_warning: IntervalContributionWarning | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -303,6 +333,43 @@ class FrequencyCurve:
             boundary / known if known else None,
         )
 
+    def _interval_warning_at_peak(self, peak: float) -> IntervalContributionWarning:
+        """Flag a dominant original rainfall interval at the attained quantile.
+
+        The diagnostic includes Q >= peak to retain the quantile-crossing
+        step/ties. The separate scientific frequency estimator remains strict
+        P(Q > q). Exact rational w_h/n_h avoids false flags at 20% equality.
+        """
+        if not self.coverage.complete:
+            return IntervalContributionWarning("not_assessed", None, None, None, ())
+        counts: Counter[str] = Counter(
+            item.record.stratum_id
+            for item in self.positive_weight_observations
+            if item.record.peak_m3_s is not None and item.record.peak_m3_s >= peak
+        )
+        parts: list[tuple[str, Fraction, int]] = []
+        for allocation in self.accounting:
+            count = counts[allocation.stratum_id]
+            mass = (
+                Fraction(str(allocation.probability_mass)) * count / allocation.planned_samples
+                if allocation.planned_samples > 0
+                else Fraction(0)
+            )
+            parts.append((allocation.stratum_id, mass, count))
+        total = sum((item[1] for item in parts), Fraction(0))
+        if total == 0:
+            return IntervalContributionWarning("not_assessed", None, None, None, ())
+        largest = max(parts, key=lambda item: item[1])
+        share = largest[1] / total
+        status: IntervalWarningStatus = "flagged" if share > Fraction(1, 5) else "not_flagged"
+        return IntervalContributionWarning(
+            status,
+            largest[0],
+            float(share),
+            float(total),
+            tuple(IntervalContribution(name, count, float(mass)) for name, mass, count in parts),
+        )
+
     def estimate(self, aep: float) -> QuantileEstimate:
         """Adopted #145 weighted noninterpolating generalized inverse on attained peaks.
 
@@ -321,7 +388,18 @@ class FrequencyCurve:
         if not self.coverage.complete:
             unresolved = _exact_unresolved_mass(self.accounting, self.coverage.tails)
             lower, upper = _incomplete_bounds(steps, nonexceedance, unresolved)
-            return QuantileEstimate(aep, "incomplete", None, lower, upper, None, None, None, False)
+            return QuantileEstimate(
+                aep,
+                "incomplete",
+                None,
+                lower,
+                upper,
+                None,
+                None,
+                None,
+                False,
+                interval_contribution_warning=IntervalContributionWarning("not_assessed", None, None, None, ()),
+            )
         if not self.groups:
             _fail("Complete populations must contain positive-weight observed peaks")
         peak = _inverse_step(steps, nonexceedance)
@@ -364,6 +442,7 @@ class FrequencyCurve:
             evidence.boundary_strata_known_exceedance_probability,
             evidence.boundary_strata_share_of_known_exceedance,
             at_edge,
+            interval_contribution_warning=self._interval_warning_at_peak(peak),
         )
 
 

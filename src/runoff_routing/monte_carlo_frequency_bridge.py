@@ -171,6 +171,29 @@ def _validate_target_aeps(aeps: tuple[float, ...]) -> None:
         _fail("Target flood AEPs must be unique fractions in (0,1), not percentages")
 
 
+def _format_selected_aep_table(
+    site_id: str, targets: tuple[float, ...], estimates: list[dict[str, object]]
+) -> tuple[list[str], bool]:
+    """Format one physical site's selected 1-in-Y peak table without inventing missing points."""
+    lines = [
+        "Peak flows for selected AEPs (* indicates PROVISIONAL project rainfall-interval "
+        "contribution > 20%; RORBwin equivalence not established)",
+        f"  No.      AEP(1inY)       Peak {site_id}",
+    ]
+    any_flagged = False
+    for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
+        diagnostic = estimate.get("interval_contribution_warning")
+        flagged = isinstance(diagnostic, dict) and diagnostic.get("status") == "flagged"
+        any_flagged |= flagged
+        value = estimate.get("peak_m3_s")
+        peak_text = f"{float(value):.2f}{'*' if flagged else ''}" if isinstance(value, (float, int)) else "N/A"
+        lines.append(f"{number:>5} {1 / aep:>14.4g} {peak_text:>20}")
+    if any(estimate.get("status") == "incomplete" for estimate in estimates):
+        lines.append("N/A = incomplete probability support; no full-domain point quantile or interval warning verdict")
+    lines.append("")
+    return lines, any_flagged
+
+
 def _report(
     project: Path,
     request: Path,
@@ -195,6 +218,7 @@ def _report(
     summaries: list[dict[str, object]] = []
     text_lines: list[str] = []
     all_complete = True
+    any_interval_warning = False
     for population in header.populations:
         for site_id in sites:
             scope, planned = _curve_population(
@@ -224,6 +248,9 @@ def _report(
                     )
                 )
             estimates = [cast("dict[str, object]", asdict(cast("Any", curve.estimate(aep)))) for aep in targets]
+            for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
+                estimate["row_number"] = number
+                estimate["aep_1_in_y"] = 1 / aep
             coverage = cast("dict[str, object]", asdict(cast("Any", curve.coverage)))
             good = (
                 bool(coverage["complete"]) if "complete" in coverage else (cast("Any", curve.coverage).complete is True)
@@ -246,6 +273,10 @@ def _report(
                 f"{population.scenario_id} {population.duration_min} min {site_id}: "
                 f"{'complete' if good else 'incomplete'}"
             )
+            warning_lines, flagged_here = _format_selected_aep_table(site_id, targets, estimates)
+            text_lines.extend(warning_lines)
+            summaries[-1]["has_interval_warning"] = flagged_here
+            any_interval_warning |= flagged_here
     report: dict[str, object] = {
         "format": "python-runoff-routing-mc-frequency-summary",
         "schema_version": 1,
@@ -256,6 +287,13 @@ def _report(
         "target_aeps_fractions": list(targets),
         "frequency_scopes": summaries,
         "point_results_complete": all_complete,
+        "has_interval_contribution_warnings": any_interval_warning,
+        "interval_warning_policy": {
+            "method": "project-rainfall-stratum-at-or-above-20pct-v1",
+            "threshold_share": 0.2,
+            "interpretation": "project_concentration_flag_only_not_scientific_acceptance",
+            "native_rorbwin_equivalence": "not_assessed",
+        },
         "numerical_native_equivalence": "not_assessed",
         "statistical_convergence": "not_assessed",
     }

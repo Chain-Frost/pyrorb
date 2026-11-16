@@ -233,6 +233,11 @@ def test_real_b_to_e_to_c_cli_and_representative_replay(tmp_path: Path) -> None:
     targets = cast("list[dict[str, object]]", scopes[0]["targets"])
     assert targets[0]["status"] == "incomplete"
     assert targets[0]["peak_m3_s"] is None
+    assert targets[0]["aep_1_in_y"] == 100
+    assert targets[0]["row_number"] == 1
+    assert cast("dict[str, object]", targets[0]["interval_contribution_warning"])["status"] == "not_assessed"
+    assert "AEP(1inY)" in (tmp_path / "frequency.txt").read_text(encoding="utf-8")
+    assert "N/A" in (tmp_path / "frequency.txt").read_text(encoding="utf-8")
     assert (tmp_path / "frequency.csv").is_file()
     first = events[0]
     assert main(["replay", str(project), str(request), str(ledger), first.sample_id, str(tmp_path / "selected")]) == 0
