@@ -176,8 +176,10 @@ def _format_selected_aep_table(
 ) -> tuple[list[str], bool]:
     """Format one physical site's selected 1-in-Y peak table without inventing missing points."""
     lines = [
-        "Peak flows for selected AEPs (* indicates PROVISIONAL project rainfall-interval "
-        "contribution > 20%; RORBwin equivalence not established)",
+        (
+            "Peak flows for selected AEPs (* indicates PROVISIONAL project rainfall-interval "
+            "contribution > 20%; RORBwin equivalence not established)"
+        ),
         f"  No.      AEP(1inY)       Peak {site_id}",
     ]
     any_flagged = False

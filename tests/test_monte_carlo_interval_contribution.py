@@ -10,8 +10,8 @@ import pytest
 
 from runoff_routing.monte_carlo_frequency import (
     CurvePopulation,
-    FrequencyScope,
     FrequencyCurve,
+    FrequencyScope,
     PeakRecord,
     StratumWeight,
     UnmodelledTails,
@@ -25,9 +25,10 @@ def _curve(
     *,
     site: str = "print_1",
     missing_index: int | None = None,
-    tails: UnmodelledTails = UnmodelledTails(),
+    tails: UnmodelledTails | None = None,
 ) -> FrequencyCurve:
     scope = FrequencyScope("plan-187", "independent", "v1", "synthetic", 1440, site)
+    tails = tails if tails is not None else UnmodelledTails()
     mass = (1 - tails.total) / len(peaks)
     allocations = tuple(StratumWeight(f"interval-{i}", mass, 1) for i in range(len(peaks)))
     records = tuple(
