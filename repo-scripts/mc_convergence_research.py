@@ -317,6 +317,19 @@ def one_trial(
     return rows
 
 
+
+
+def _optional_scipy_binomial_tail(k: int, n: int, p: float) -> float | None:
+    """Research-only regularized beta tail; None when the extra is absent."""
+    try:
+        special = importlib.import_module("scipy.special")
+    except ModuleNotFoundError as exc:
+        if exc.name != "scipy":
+            raise
+        return None
+    beta_tail = cast("Callable[[float, float, float], float]", special.betainc)
+    return float(beta_tail(k, n - k + 1, p))
+
 def binomial_upper_tail(k: int, n: int, p: float) -> float:
     """P(Binomial(n,p)>=k) without underflow at high replication counts.
 
@@ -333,15 +346,9 @@ def binomial_upper_tail(k: int, n: int, p: float) -> float:
     if p == 0.0:
         return 0.0
     if n >= 1_000_000:
-        # Optional research-only SciPy avoids lgamma cancellation at very large n.
-        try:
-            special = importlib.import_module("scipy.special")
-        except ModuleNotFoundError as exc:
-            if exc.name != "scipy":
-                raise
-        else:
-            beta_tail = cast("Callable[[float, float, float], float]", getattr(special, "betainc"))
-            return float(beta_tail(k, n - k + 1, p))
+        scipy_tail = _optional_scipy_binomial_tail(k, n, p)
+        if scipy_tail is not None:
+            return scipy_tail
     use_upper = k > n * p
     edge = k if use_upper else k - 1
     log_term = (
