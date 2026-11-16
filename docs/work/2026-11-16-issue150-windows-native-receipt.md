@@ -112,3 +112,115 @@ permission blocked this task; missing fields and unsafe-to-trust count automatio
 
 Keep **#150 and #9 open** and **#151 draft/unmerged to main**. Review this receipt separately
 from the staged software and statistical controls.
+
+## Follow-up: count-control persistence, zero simulations
+
+**16 November 2026 (AWST).** Following the [independent review and restricted next action](https://github.com/Chain-Frost/python-runoff-routing/issues/150#issuecomment-6904803200),
+the count controls and saved-settings reload were inspected without calculation. This
+follow-up starts from staging `bcdec24d176eccaac43d8464fc116b8af9c9bf7f`, on branch
+`evidence/issue150-count-controls-20261116`. Windows 10 / CPython 3.14.6; executable
+SHA-256 still matches the reference above. Both owned processes were closed.
+
+**Actual work: two application launches, zero simulations, zero events, zero MC-OK
+actions.** A guarded local helper permitted only known setup, inspection, Cancel,
+file-open and save actions; MC confirmation was prohibited. Opening the previously
+observed MC setup dialog through the parameter Text action did not start calculation.
+Generated preliminary storm inputs are retained separately from simulation results;
+no new `.out` or result CSV was produced. Original source files and previous evidence
+were preserved; all **120** files in the prior evidence inventory still match their
+recorded SHA-256 and size.
+
+| Inspection | Observed result | Meaning |
+| --- | --- | --- |
+| Ordinary `WM_SETTEXT` to the two custom controls | Display reads 2 / 10. | Text alone does not establish native counts. |
+| One divisions down-arrow click after displaying 2 | Display changes to **49**, starting from retained 50 rather than displayed 2. | Confirmed divergence between displayed custom text and spinner state. |
+| Cancel after text edits, then save and reopen | Saved PAR and reopened counts remain 50 / 20. | The inspected Cancel path does not persist the transient changes; this alone cannot establish the MC-OK commit behaviour. |
+| Cancel after the arrow change, then save | Saved counts remain 50 / 20. | A genuine spinner interaction is still insufficient to establish committed counts through Cancel. |
+| New local PAR derivative with only the two count tokens changed to 2 / 10 | Reload/save retains the 2 / 10 tokens. | This is a controlled settings-copy observation, not proof of calculation count. No original PAR was edited. |
+| Reopen MC setup from that derivative, including in a fresh process | Dialog reads **50 / 10**, while subsequent saved PAR still retains **2 / 10**. | Saved tokens, rendered controls and spinner state disagree. Fresh-process restart does not resolve the discrepancy. |
+
+Read-only Windows spinner-position queries also returned an error flag in their high
+word. Their low-word values must **not** be promoted to an effective-state oracle.
+The derivative experiment changed only two count tokens on the identified count/table
+row; every other line was preserved. It establishes local file roundtrip behaviour,
+not a general saved-PAR product parser or #144 capability.
+
+**Conclusion: the state divergence is reproduced, but the native validation/commit
+path and effective 2 × 10 calculation limit remain unresolved.** A native minimum or
+silent validation rule could contribute to the reload discrepancy, but neither is
+established. No executable, process memory or internal implementation was inspected.
+No simulation was used to choose between these explanations. Neither screenshot,
+saved-token readback nor spinner query is a reliable standalone pre-execution check.
+
+The requested safe stopping condition therefore applies: **no further native calculation**.
+A reliable effective-count proof would require a supported non-executing configuration
+echo or documented validation/commit procedure that reconciles these conflicting states.
+Such a procedure was not established here. Any future calculation needs a new reviewed
+bounded preregistration and authorisation; this receipt supplies neither.
+
+New raw evidence, settings copies, screenshots, action logs and detailed receipt remain
+outside both Git repositories at
+`E:/LocalResearch/issue150-count-controls-20261116T015723Z/`.
+Local `receipt.json` SHA-256:
+`ff66b6423f0d52410fbf249069355fbd725ace5291daf9f9a4a361b7442822b6`.
+Local evidence-inventory SHA-256:
+`f9bbedb81f36528174164895f10d08004e7a435ca47cc7b7495a1b44a6529bb9`.
+This sanitised follow-up changes documentation only. **#150/#9 remain open; native
+statistical/engineering gates remain unresolved; #151 remains draft and unmerged to main.**
+
+## Owner-assisted correction and separately approved 25-event pilot
+
+**16 November 2026 (AWST), 10:39 execution.** The owner inspected the live dialogs,
+reported a minimum of **5 rainfall divisions and 5 samples per division**, and entered
+valid 5 / 5 values manually, leaving each field with Tab. The earlier proposed **2 / 10
+target was invalid** according to those owner-observed limits; it must not be presented
+as a supported native configuration. No independent below-minimum boundary experiment
+was performed. The text/spinner divergence above remains observed, but does not by
+itself identify every cause of the previous count failure.
+
+The owner first selected 12–48 hours and observed a warning excluding **30 hours because
+no TP was available**. The source file has members at 12, 18, 24, 36 and 48 hours within
+that range. Five durations would therefore have implied an expected 125 events at 5 / 5,
+but **that duration-range calculation was not executed**. The owner explicitly changed
+the selection to **24–24 hours**. The assistant's earlier inference that Cancel had
+discarded the duration selection was incorrect; this was a manual owner change.
+
+With individual results and analysis diagnostics checked, a new single-duration plan
+was frozen at SHA-256
+`676e87217fe7c3b7f5fa70babaec885dfe8bbe6cf8b5fa6129ad575441674d6b`.
+The owner then explicitly authorised commencement of **one 25-event pilot**, replacing
+the otherwise impossible 20-event budget for this distinct experiment. Limits were one
+attempt, one batch, concurrency one, 120 seconds, no retries or extraction. The original
+1,000-event cap breach remains a separate invalid cohort and is not retrospectively
+authorised by this approval.
+
+The actual native report confirms **5 divisions × 5 samples = 25 unique division/run
+pairs, one 24-hour duration**, with no missing members of that actual grid. It reports
+one elapsed second. The unchanged 6.52 executable/profile is separately authenticated;
+all four copied source files still match their preregistered hashes and sizes.
+The native echoes are `kc=12`, `m=0.8`, base IL **24 mm**, CL **5 mm/h**. All requested
+individual rows and diagnostics are present. There are **12 printed zero peaks** and
+no explicit failure-marker lines: rounded zeros still do not prove exact zero runoff.
+Multiple requested probability summaries accompany these same 25 rows; they were not
+counted as additional simulation batches in this observation.
+
+**Count verdict: `confirmed_for_profile` for this owner-entered 5 / 5, 24-hour pilot.**
+This provides actual execution evidence for the approved count, not a universal guarantee
+for automated control edits, arbitrary settings or saved-PAR replay. There was no further
+run. The native report remains available locally for owner inspection.
+
+**F1–F6 scientific disposition remains incomplete.** Printed depth, loss factors and
+probability are rounded, original TP ranks are not independently bound to complete sampled
+storms, and exact native effective inputs/weights/RNG remain unavailable. No full-Q
+comparison, exact event replay, representative extraction, distributional acceptance or
+engineering/convergence claim follows. Probability-domain tails and warning/selection
+rules remain unresolved; no equal-row weighting or tail renormalisation was introduced.
+
+Raw report, sources, screenshots, approval, plan and audit remain outside both Git
+repositories under `E:/LocalResearch/issue150-owner-assisted-20261116T022623Z/`.
+The local `approved25-receipt.json` SHA-256 is
+`eeaa0abc311df0c9072c68b087e0f78999ce0c9e44d97425978e38f36a6dd471`;
+the native report SHA-256 is
+`3adfffafecc7560958ed6ee6918bf7f3ed3de0cb93c05f7c699eeb57cfd08d6a`.
+Only this sanitised receipt is proposed for staging. Keep **#150/#9 open** and
+**#151 draft/unmerged to main**.
