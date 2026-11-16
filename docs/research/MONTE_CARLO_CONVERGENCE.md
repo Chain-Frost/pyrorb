@@ -101,3 +101,66 @@ Scope D should consume the **adopted A/B/C/E policy and event ledger**, not inve
 4. Clopper & Pearson (1934), [*The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial*](https://doi.org/10.1093/biomet/26.4.404) — exact binomial confidence limits for independent whole-run success/failure outcomes.
 
 Related: [parent #9](https://github.com/Chain-Frost/python-runoff-routing/issues/9); [policy #145](https://github.com/Chain-Frost/python-runoff-routing/issues/145); [sampling #146](https://github.com/Chain-Frost/python-runoff-routing/issues/146); [aggregation #147](https://github.com/Chain-Frost/python-runoff-routing/issues/147); [execution #149](https://github.com/Chain-Frost/python-runoff-routing/issues/149); [qualification #150](https://github.com/Chain-Frost/python-runoff-routing/issues/150).
+
+
+## Large-replication numerical correction (16 November 2026)
+
+The original research used a valid Clopper–Pearson inversion but an unstable binomial-tail summation
+that began at \`p**n\` or \`(1-p)**n\`. At sufficiently large numbers of independent replications,
+those powers underflowed even near the distribution's mode, causing false tail probabilities
+and incorrect confidence limits. The corrected standard-library algorithm evaluates the starting
+probability in log space (\`math.lgamma\`, \`math.log1p\`) and sums outwards from the relevant
+tail boundary towards lower-probability masses. Exact all-success and no-success endpoints
+use direct stable formulas (\`exp(log(alpha)/n)\` and \`-expm1(log(alpha)/n)\`).
+
+Focused checks include one million independent Bernoulli trials with success fractions
+0.50, 0.95, 0, 1 and rare events. For 500,000 successes / 1,000,000 trials, one-sided 95%
+Clopper–Pearson bounds are approximately 0.49917707395 and 0.50082292605,
+cross-checked with an independent SciPy beta-quantile calculation **locally for research
+verification only**. No SciPy or other scientific dependency is added to the product.
+
+The prior 30/100-replication archived raw results, study decisions and reported limits
+remain attributable to their original execution revisions and are **not regenerated** by
+this correction. This is a confidence-limit *numerics* repair, not a new hydrological study.
+
+**Actual catchment status:** #146 and #147 are staged, but the #149 B→E→C execution adapter
+remains a separately reviewed PR. A qualified real-catchment study cannot be claimed from
+the existing synthetic controls or a draft E adapter. Its preflight must identify a
+named authorised original-source catchment, qualified \`python-cmd/cmd-6.44\` profile,
+physical site IDs, adopted supported IFD/TP/loss inputs and nonzero tail coverage,
+and must first pass a small B→E→C replay and completeness check before expensive
+independent-seed reference and confirmation runs. Do not run unbounded work in CI.
+
+
+### Optional SciPy precision backend at very large replication counts
+
+Install `python -m pip install ".[research]"` to use SciPy's regularized incomplete
+beta function `scipy.special.betainc` at n >= 1,000,000. The normal product
+installation remains dependency-free. For n=1,000,000,000, k=500,000,000,
+and p=0.5, SciPy returns 0.5000126156626065; the standard-library log-PMF
+recurrence returns 0.5000127075130283 (difference about 9.2e-8).
+Without the optional extra, the existing logarithmic recurrence remains
+available, and its million-trial cases are tested. Document whether SciPy
+was installed when reporting confidence results for very large n.
+
+Historical 30- and 100-replication receipts are unchanged because their
+replication counts are below the optional path's threshold.
+
+### Catchment qualification status, 16 November 2026
+
+Sampler #146, frequency #147 and execution #149 are now integrated into
+draft staging #151, which removes the previous software-integration blocker.
+However the bundled `examples/arr-design-synthetic-ifd.csv` has only 1%
+and 2% rainfall AEP anchors and is expressly synthetic. No qualified
+site-specific BoM/ARR IFD, temporal-pattern, loss and catchment population
+has been admitted for this study. The adopted nonextrapolated ARF law
+supports 1%-50% AEP, leaving 51% of rainfall probability mass unknown.
+A completed software-ledger run over this support cannot be promoted to
+a qualified *full-domain* flood-frequency estimate.
+
+Actual catchment acceptance requires one named permitted source model and
+physical output site, matched input/routing evidence, a cost-capped pilot,
+a separately estimated high-precision reference with uncertainty, and
+prespecified independent-seed confirmation with explicit missing/failed
+mass. No actual catchment convergence verdict or native RORBwin parity
+is claimed by this research-only confidence-limit repair.

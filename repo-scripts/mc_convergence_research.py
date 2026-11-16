@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib
 import json
 import math
 import platform
@@ -17,10 +18,11 @@ import statistics
 import sys
 import time
 import tracemalloc
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import NormalDist
-from typing import Any
+from typing import Any, cast
 
 POLICY = "synthetic-response-v1/weighted-nearest-rank-v1"
 ROOT_SEED = 1482026
@@ -315,33 +317,68 @@ def one_trial(
     return rows
 
 
+def _optional_scipy_binomial_tail(k: int, n: int, p: float) -> float | None:
+    """Research-only regularized beta tail; None when the extra is absent."""
+    try:
+        special = importlib.import_module("scipy.special")
+    except ModuleNotFoundError as exc:
+        if exc.name != "scipy":
+            raise
+        return None
+    beta_tail = cast("Callable[[float, float, float], float]", special.betainc)
+    return float(beta_tail(k, n - k + 1, p))
+
+
 def binomial_upper_tail(k: int, n: int, p: float) -> float:
-    """Exact P_p(X>=k) for n Bernoulli trials, using a stable finite recurrence."""
-    if not 0 <= k <= n or not 0.0 <= p <= 1.0:
+    """P(Binomial(n,p)>=k) without underflow at high replication counts.
+
+    Sum the tail away from the binomial mode, starting from its log-PMF.
+    The former p**n/(1-p)**n recurrence silently returned 0 or 1
+    around the mode for large n. Optional SciPy improves accuracy for very
+    large n via its regularized incomplete-beta implementation.
+    """
+    if not 0 <= k <= n or not math.isfinite(p) or not 0.0 <= p <= 1.0:
         message = "invalid binomial arguments"
         raise ValueError(message)
-    if k == 0:
+    if k == 0 or p == 1.0:
         return 1.0
     if p == 0.0:
         return 0.0
-    if p == 1.0:
-        return 1.0
-    if k == n:
-        return p**n
-    # Sum complement from zero if shorter; avoids a beta/special-function dependency.
-    if k > n // 2:
-        term = p**n
-        total = term
-        for x in range(n, k, -1):
-            term *= x * (1.0 - p) / ((n - x + 1) * p)
+    if n >= 1_000_000:
+        scipy_tail = _optional_scipy_binomial_tail(k, n, p)
+        if scipy_tail is not None:
+            return scipy_tail
+    return _stdlib_binomial_upper_tail(k, n, p)
+
+
+def _stdlib_binomial_upper_tail(k: int, n: int, p: float) -> float:
+    """Sum the smaller binomial tail from a log-PMF without optional SciPy."""
+    use_upper = k > n * p
+    edge = k if use_upper else k - 1
+    log_term = (
+        math.lgamma(n + 1)
+        - math.lgamma(edge + 1)
+        - math.lgamma(n - edge + 1)
+        + edge * math.log(p)
+        + (n - edge) * math.log1p(-p)
+    )
+    term = math.exp(log_term)
+    total = term
+    if use_upper:
+        odds = p / (1.0 - p)
+        for x in range(edge, n):
+            term *= (n - x) * odds / (x + 1)
             total += term
+            if term <= total * 1e-16:
+                break
         return min(1.0, total)
-    term = (1.0 - p) ** n
-    lower = term
-    for x in range(k - 1):
-        term *= (n - x) * p / ((x + 1) * (1.0 - p))
-        lower += term
-    return max(0.0, 1.0 - lower)
+    odds = (1.0 - p) / p
+    for x in range(edge, 0, -1):
+        term *= x * odds / (n - x + 1)
+        total += term
+        if term <= total * 1e-16:
+            break
+    return max(0.0, 1.0 - total)
 
 
 def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> float:
@@ -351,6 +388,8 @@ def lower_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> 
         raise ValueError(message)
     if successes == 0:
         return 0.0
+    if successes == trials:
+        return math.exp(math.log(alpha) / trials)
     low, high = 0.0, 1.0
     for _ in range(65):
         mid = (low + high) / 2
@@ -368,6 +407,8 @@ def upper_confidence_bound(successes: int, trials: int, alpha: float = 0.05) -> 
         raise ValueError(message)
     if successes == trials:
         return 1.0
+    if successes == 0:
+        return -math.expm1(math.log(alpha) / trials)
     low, high = 0.0, 1.0
     for _ in range(65):
         mid = (low + high) / 2

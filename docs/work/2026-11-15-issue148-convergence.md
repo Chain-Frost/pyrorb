@@ -19,3 +19,34 @@ See [full methods and results](../research/MONTE_CARLO_CONVERGENCE.md) and [scop
 - **F/#150 independent scientific review has now completed both parts** of the synthetic research on PR #168: 14,160 original rows/590 variant-replication groups and the new 7,200 rows/300 independent replication groups, including independent Clopper–Pearson limits and separate reference integration. Both reviews report **no concrete statistical discrepancy**. A passed synthetic review does not qualify real-catchment or current-build native behaviour.
 - Previous [Windows/Python 3.13 CI #43728288716](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43728288716) completed successfully on earlier source/staging merge `0846201`. New research additions were corrected for pinned Ruff formatting and strict Pyright at later heads; [current follow-up CI #43732400389](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43732400389) passed strict local quality on `253379a`, with source CMD/wheel checks not yet complete at this record. This is GitHub CI evidence, not locally executed Windows checks.
 - **Remaining full issue #148 gate:** conduct a bounded named physical-site catchment study *through the qualified common B→E→C execution/result path* after #145/#146/#147/#149 policy/contracts integrate, with separate independent high-precision references, uncertainty, failed/missing/tail mass and engine profile. The F/#150 native comparison and engineering acceptance are distinct; do not claim either here. Keep #148/#9 open and PR #168 in Monte Carlo staging.
+
+
+## 16 November 2026 — confidence-limit correction
+
+A subsequent focused branch repairs large-n binomial upper-tail numerical underflow in
+\`repo-scripts/mc_convergence_research.py\`, keeping exact one-sided Clopper–Pearson
+inversion and historical research receipts. Eleven focused local tests passed Linux /
+Python 3.13.5, including independent 1,000,000-replication binomial/CP reference values
+and archived original/synthetic-positive first-run replay. Research-only SciPy beta
+quantiles independently checked 11 count configurations up to 10,000,000
+replications (not a runtime dependency); the largest bound differences were
+approximately 1e-12. Source/wheel CI and reviewed PR status are independent.
+
+A named real-catchment convergence acceptance is still not run: the #149
+materialisation/execution adapter remains unmerged; B/C source modules alone do
+not establish a qualified B→E→C flow-frequency result. See the main report
+for explicit preflight requirements. Do not relabel prior synthetic results
+as actual hydrological convergence.
+
+
+## 16 November 2026 — optional research SciPy and current study gate
+
+High-count `binomial_upper_tail` uses optional research-only
+`scipy.special.betainc` for n >= 1,000,000 if installed, avoiding
+large-n `lgamma` cancellation. Regular dev/product installation remains
+dependency-free; the logarithmic recurrence remains as fallback.
+
+All B/C/E code is now staged under #151, but a fully qualified
+catchment-specific convergence study has not been run. The public
+example IFD/catchment is synthetic; v1 1%-50% rainfall support leaves
+51% unmodelled mass. Do not infer full-domain adequacy or native parity.
