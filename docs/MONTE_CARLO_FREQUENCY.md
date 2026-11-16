@@ -224,7 +224,7 @@ uniform absolute/relative AEP bound, single-draw resolution and
 **Sources:**
 - [ARR Book 4 v4.2 §4.3.3.3](https://www.arr-software.org/pdfs/ARR_190514_Book4_V4.2.pdf)
 - [Nathan & Weinmann (2013), worked stratified example and rainfall endpoint assumptions](https://arr.ga.gov.au/__data/assets/pdf_file/0017/40562/ARR_DiscussionPaper_MonteCarlo.pdf)
-- [DKW finite-sample uniform CDF inequality](https://www.stat.cmu.edu/~larry/=sml/DKW.pdf)
+- [DKW finite-sample uniform CDF inequality](https://pbreheny.org/621/f12/notes/8-23.pdf)
 - [HARC boundary discussion](https://harc.com.au/forums/topic/monte-carlo-simulation-summary-results/)
 
 No raw native RORBwin artefacts are added to the public repository.
