@@ -15,10 +15,12 @@ from typing import Literal, Never
 
 PeakStatus = Literal["valid", "failed", "missing", "unsupported"]
 QuantileStatus = Literal["estimated", "zero_atom", "incomplete"]
-IntervalWarningStatus = Literal["flagged", "not_flagged", "not_assessed"]
+ScientificScreenStatus = Literal["review", "below_screen", "not_assessed"]
 METHOD_PROFILE = "monte-carlo-statistics/1:weighted-step-inverse-v1"
-INTERVAL_WARNING_METHOD = "project-rainfall-stratum-at-or-above-20pct-v1"
-INTERVAL_WARNING_THRESHOLD = 0.2
+INTERVAL_AUDIT_METHOD = "arr-total-probability-strict-interval-contributions-v1"
+SCIENTIFIC_SCREEN_METHOD = "conditional-stratum-dkw-uniform-bonferroni-v1"
+DEFAULT_SAMPLING_CONFIDENCE = 0.95
+DEFAULT_RELATIVE_AEP_SCREEN = 0.2
 _MASS_ROUNDOFF = 1e-12  # Input binary floating-point summation tolerance, never an engineering error band.
 
 
@@ -254,27 +256,41 @@ class RepresentativeEvent:
 
 @dataclass(frozen=True, slots=True)
 class IntervalContribution:
-    """One original rainfall probability interval's non-normalised contribution."""
+    """An ARR Total Probability Theorem component at a *strict* peak threshold."""
 
     stratum_id: str
-    contributing_samples: int
-    at_or_above_probability_mass: float
+    exceeding_samples: int
+    strict_exceedance_probability_mass: float
 
 
 @dataclass(frozen=True, slots=True)
-class IntervalContributionWarning:
-    """Provisional project concentration diagnostic; RORBwin parity is not assessed.
+class IntervalContributionAudit:
+    """Descriptive conditional exceedance contributions, NOT a reliability test."""
 
-    An unflagged complete quantile is NOT an engineering reliability certificate.
-    """
-
-    status: IntervalWarningStatus
+    known_strict_exceedance_probability: float
     maximum_stratum_id: str | None
-    maximum_stratum_share: float | None
-    at_or_above_probability_mass: float | None
+    maximum_stratum_share_of_known_exceedance: float | None
     strata: tuple[IntervalContribution, ...]
-    threshold_share: float = INTERVAL_WARNING_THRESHOLD
-    method: str = INTERVAL_WARNING_METHOD
+    method: str = INTERVAL_AUDIT_METHOD
+    native_equivalence: Literal["not_assessed"] = "not_assessed"
+
+
+@dataclass(frozen=True, slots=True)
+class ScientificSamplingDiagnostic:
+    """Conservative uniform-in-q probability screen; NOT a flood-quantile confidence interval."""
+
+    status: ScientificScreenStatus
+    confidence_level: float
+    relative_aep_screen: float
+    simultaneous_absolute_aep_margin: float | None
+    margin_relative_to_target_aep: float | None
+    maximum_single_sample_probability_weight: float | None
+    maximum_sample_weight_relative_to_target_aep: float | None
+    reason: str
+    method: str = SCIENTIFIC_SCREEN_METHOD
+    assumptions: str = "iid_within_each_rainfall_stratum_conditional_on_fixed_project_distribution"
+    independent_seed_convergence: Literal["not_assessed"] = "not_assessed"
+    boundary_sensitivity: Literal["not_assessed"] = "not_assessed"
     native_equivalence: Literal["not_assessed"] = "not_assessed"
 
 
@@ -293,7 +309,9 @@ class QuantileEstimate:
     software_qualification: Literal["provisional"] = "provisional"
     statistical_qualification: Literal["not_assessed"] = "not_assessed"
     native_equivalence: Literal["not_assessed"] = "not_assessed"
-    interval_contribution_warning: IntervalContributionWarning | None = None
+    interval_probability_audit: IntervalContributionAudit | None = None
+    scientific_sampling_diagnostic: ScientificSamplingDiagnostic | None = None
+    native_interval_warning: Literal["not_assessed"] = "not_assessed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -333,19 +351,12 @@ class FrequencyCurve:
             boundary / known if known else None,
         )
 
-    def _interval_warning_at_peak(self, peak: float) -> IntervalContributionWarning:
-        """Flag a dominant original rainfall interval at the attained quantile.
-
-        The diagnostic includes Q >= peak to retain the quantile-crossing
-        step/ties. The separate scientific frequency estimator remains strict
-        P(Q > q). Exact rational w_h/n_h avoids false flags at 20% equality.
-        """
-        if not self.coverage.complete:
-            return IntervalContributionWarning("not_assessed", None, None, None, ())
+    def _interval_probability_audit(self, peak: float) -> IntervalContributionAudit:
+        """Break the strict ARR/TPT survival probability into original rainfall strata."""
         counts: Counter[str] = Counter(
             item.record.stratum_id
             for item in self.positive_weight_observations
-            if item.record.peak_m3_s is not None and item.record.peak_m3_s >= peak
+            if item.record.peak_m3_s is not None and item.record.peak_m3_s > peak
         )
         parts: list[tuple[str, Fraction, int]] = []
         for allocation in self.accounting:
@@ -356,21 +367,73 @@ class FrequencyCurve:
                 else Fraction(0)
             )
             parts.append((allocation.stratum_id, mass, count))
-        total = sum((item[1] for item in parts), Fraction(0))
-        if total == 0:
-            return IntervalContributionWarning("not_assessed", None, None, None, ())
-        largest = max(parts, key=lambda item: item[1])
-        share = largest[1] / total
-        status: IntervalWarningStatus = "flagged" if share > Fraction(1, 5) else "not_flagged"
-        return IntervalContributionWarning(
-            status,
-            largest[0],
-            float(share),
+        total = sum((part[1] for part in parts), Fraction(0))
+        largest = max(parts, key=lambda part: part[1]) if total > 0 else None
+        return IntervalContributionAudit(
             float(total),
+            largest[0] if largest is not None else None,
+            float(largest[1] / total) if largest is not None else None,
             tuple(IntervalContribution(name, count, float(mass)) for name, mass, count in parts),
         )
 
-    def estimate(self, aep: float) -> QuantileEstimate:
+    def _scientific_sampling_screen(
+        self, aep: float, confidence_level: float, relative_aep_screen: float
+    ) -> ScientificSamplingDiagnostic:
+        """Simultaneous stratified DKW bound; independent iid draws WITHIN strata required.
+
+        Union-bound the conditional DKW inequalities across positive-weight
+        intervals. Weighted summation bounds the supremum of the full CDF
+        error over all Q, including data-selected quantiles. Not a flow
+        quantile interval or evidence of correctness of the hydrological model.
+        """
+        if not self.coverage.complete:
+            return ScientificSamplingDiagnostic(
+                "not_assessed",
+                confidence_level,
+                relative_aep_screen,
+                None,
+                None,
+                None,
+                None,
+                "unresolved_probability_mass",
+            )
+        active = tuple(item for item in self.accounting if item.probability_mass > 0)
+        if not active or any(item.planned_samples <= 0 for item in active):
+            return ScientificSamplingDiagnostic(
+                "not_assessed", confidence_level, relative_aep_screen, None, None, None, None, "unallocated_stratum"
+            )
+        log_term = math.log(2 * len(active) / (1 - confidence_level))
+        bound = min(
+            1.0,
+            math.fsum(
+                item.probability_mass * min(1.0, math.sqrt(log_term / (2 * item.planned_samples)))
+                for item in active
+            ),
+        )
+        resolution = max(item.probability_mass / item.planned_samples for item in active)
+        relative = bound / aep
+        relative_resolution = resolution / aep
+        status: ScientificScreenStatus = "review" if relative > relative_aep_screen else "below_screen"
+        # Very small positive AEPs can overflow the relative display ratio.
+        # The absolute probability bound remains finite and authoritative.
+        return ScientificSamplingDiagnostic(
+            status,
+            confidence_level,
+            relative_aep_screen,
+            bound,
+            relative if math.isfinite(relative) else None,
+            resolution,
+            relative_resolution if math.isfinite(relative_resolution) else None,
+            "conditional_iid_sampling_assumption_not_independently_qualified",
+        )
+
+    def estimate(
+        self,
+        aep: float,
+        *,
+        confidence_level: float = DEFAULT_SAMPLING_CONFIDENCE,
+        relative_aep_screen: float = DEFAULT_RELATIVE_AEP_SCREEN,
+    ) -> QuantileEstimate:
         """Adopted #145 weighted noninterpolating generalized inverse on attained peaks.
 
         This is an empirical *finite-ledger* estimate. Unresolved mass returns
@@ -378,6 +441,11 @@ class FrequencyCurve:
         No IID confidence interval or smooth/extrapolated quantile is implied.
         """
         _probability(aep, "AEP")
+        _probability(confidence_level, "sampling confidence level")
+        if not 0 < confidence_level < 1:
+            _fail("sampling confidence level must be strictly between 0 and 1")
+        if not _finite_real(relative_aep_screen) or relative_aep_screen <= 0:
+            _fail("relative AEP screen must be a finite positive number")
         if not 0 < aep < 1:
             _fail("AEP must be strictly inside (0, 1)")
         # Convert the public decimal probability values into exact rationals.
@@ -398,7 +466,9 @@ class FrequencyCurve:
                 None,
                 None,
                 False,
-                interval_contribution_warning=IntervalContributionWarning("not_assessed", None, None, None, ()),
+                scientific_sampling_diagnostic=self._scientific_sampling_screen(
+                    aep, confidence_level, relative_aep_screen
+                ),
             )
         if not self.groups:
             _fail("Complete populations must contain positive-weight observed peaks")
@@ -409,9 +479,19 @@ class FrequencyCurve:
             # peak rather than inventing any higher flow or missing tail.
             peak = self.groups[-1].peak_m3_s
         at_edge = peak in (self.groups[0].peak_m3_s, self.groups[-1].peak_m3_s)
-        return self._result(aep, peak, "zero_atom" if peak == 0 else "estimated", at_edge)
+        return self._result(
+            aep, peak, "zero_atom" if peak == 0 else "estimated", at_edge, confidence_level, relative_aep_screen
+        )
 
-    def _result(self, aep: float, peak: float, status: QuantileStatus, at_edge: bool) -> QuantileEstimate:
+    def _result(
+        self,
+        aep: float,
+        peak: float,
+        status: QuantileStatus,
+        at_edge: bool,
+        confidence_level: float,
+        relative_aep_screen: float,
+    ) -> QuantileEstimate:
         selected = min(
             self.positive_weight_observations,
             key=lambda item: (
@@ -442,7 +522,10 @@ class FrequencyCurve:
             evidence.boundary_strata_known_exceedance_probability,
             evidence.boundary_strata_share_of_known_exceedance,
             at_edge,
-            interval_contribution_warning=self._interval_warning_at_peak(peak),
+            interval_probability_audit=self._interval_probability_audit(peak),
+            scientific_sampling_diagnostic=self._scientific_sampling_screen(
+                aep, confidence_level, relative_aep_screen
+            ),
         )
 
 

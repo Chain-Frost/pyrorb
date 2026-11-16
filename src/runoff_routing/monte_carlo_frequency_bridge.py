@@ -41,7 +41,7 @@ class _CurveView(Protocol):
     coverage: object
     groups: tuple[object, ...]
 
-    def estimate(self, aep: float) -> object: ...
+    def estimate(self, aep: float, *, confidence_level: float, relative_aep_screen: float) -> object: ...
 
 
 class _FrequencyApi(Protocol):
@@ -172,28 +172,38 @@ def _validate_target_aeps(aeps: tuple[float, ...]) -> None:
 
 
 def format_selected_aep_table(
-    site_id: str, targets: tuple[float, ...], estimates: list[dict[str, object]]
+    site_id: str,
+    targets: tuple[float, ...],
+    estimates: list[dict[str, object]],
+    *,
+    confidence_level: float = 0.95,
+    relative_aep_screen: float = 0.2,
 ) -> tuple[list[str], bool]:
-    """Format one physical site's selected 1-in-Y peak table without inventing missing points."""
+    """One site's selected peaks; '!' is NOT RORBwin's unverified '*'."""
     lines = [
         (
-            "Peak flows for selected AEPs (* indicates PROVISIONAL project rainfall-interval "
-            "contribution > 20%; RORBwin equivalence not established)"
+            f"Peak flows for selected AEPs (! = conservative {confidence_level:.0%} conditional-iid "
+            f"sampling AEP error > {relative_aep_screen:.0%} of target AEP; NOT RORBwin native *)"
         ),
         f"  No.      AEP(1inY)       Peak {site_id}",
     ]
-    any_flagged = False
+    any_review = False
     for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
-        diagnostic = estimate.get("interval_contribution_warning")
-        flagged = isinstance(diagnostic, dict) and cast("dict[str, object]", diagnostic).get("status") == "flagged"
-        any_flagged |= flagged
+        diagnostic = estimate.get("scientific_sampling_diagnostic")
+        review = (
+            isinstance(diagnostic, dict) and cast("dict[str, object]", diagnostic).get("status") == "review"
+        )
+        any_review |= review
         value = estimate.get("peak_m3_s")
-        peak_text = f"{float(value):.2f}{'*' if flagged else ''}" if isinstance(value, (float, int)) else "N/A"
+        peak_text = f"{float(value):.2f}{'!' if review else ''}" if isinstance(value, (float, int)) else "N/A"
         lines.append(f"{number:>5} {1 / aep:>14.4g} {peak_text:>20}")
     if any(estimate.get("status") == "incomplete" for estimate in estimates):
-        lines.append("N/A = incomplete probability support; no full-domain point quantile or interval warning verdict")
+        lines.append("N/A = unresolved probability mass; no full-population point or uncertainty screen")
+    lines.append("! = screening caution under stated iid assumptions; not a flood-flow confidence interval")
+    lines.append("RORBwin 6.52 native interval warning (*) = NOT ASSESSED; no native stars are generated")
+    lines.append("An absent ! is not engineering acceptance; independent-seed/boundary studies remain open")
     lines.append("")
-    return lines, any_flagged
+    return lines, any_review
 
 
 def _report(
@@ -206,8 +216,14 @@ def _report(
     wheel_artifact: Path | None,
     csv_writer: _CSVWriter,
     read_rows: _VerifiedReader,
+    confidence_level: float,
+    relative_aep_screen: float,
 ) -> tuple[dict[str, object], str, bool]:
     _validate_target_aeps(targets)
+    if not math.isfinite(confidence_level) or not 0 < confidence_level < 1:
+        _fail("sampling confidence level must be strictly between zero and one")
+    if not math.isfinite(relative_aep_screen) or relative_aep_screen <= 0:
+        _fail("relative AEP screen must be finite and positive")
     header = read_header(request)
     if not header.strata:
         _fail("Frequency output requires the complete explicit #146 allocation, including zero-count strata")
@@ -220,7 +236,7 @@ def _report(
     summaries: list[dict[str, object]] = []
     text_lines: list[str] = []
     all_complete = True
-    any_interval_warning = False
+    any_scientific_warning = False
     for population in header.populations:
         for site_id in sites:
             scope, planned = _curve_population(
@@ -249,7 +265,14 @@ def _report(
                         body["cumulative_mass"],
                     )
                 )
-            estimates = [cast("dict[str, object]", asdict(cast("Any", curve.estimate(aep)))) for aep in targets]
+            estimates = [
+                cast(
+                    "dict[str, object]",
+                    asdict(cast("Any", curve.estimate(aep, confidence_level=confidence_level,
+                                                   relative_aep_screen=relative_aep_screen))),
+                )
+                for aep in targets
+            ]
             for number, (aep, estimate) in enumerate(zip(targets, estimates, strict=True), start=1):
                 estimate["row_number"] = number
                 estimate["aep_1_in_y"] = 1 / aep
@@ -275,10 +298,12 @@ def _report(
                 f"{population.scenario_id} {population.duration_min} min {site_id}: "
                 f"{'complete' if good else 'incomplete'}"
             )
-            warning_lines, flagged_here = format_selected_aep_table(site_id, targets, estimates)
+            warning_lines, flagged_here = format_selected_aep_table(
+                site_id, targets, estimates, confidence_level=confidence_level, relative_aep_screen=relative_aep_screen
+            )
             text_lines.extend(warning_lines)
-            summaries[-1]["has_interval_warning"] = flagged_here
-            any_interval_warning |= flagged_here
+            summaries[-1]["has_scientific_sampling_warning"] = flagged_here
+            any_scientific_warning |= flagged_here
     report: dict[str, object] = {
         "format": "python-runoff-routing-mc-frequency-summary",
         "schema_version": 1,
@@ -289,13 +314,15 @@ def _report(
         "target_aeps_fractions": list(targets),
         "frequency_scopes": summaries,
         "point_results_complete": all_complete,
-        "has_interval_contribution_warnings": any_interval_warning,
-        "interval_warning_policy": {
-            "method": "project-rainfall-stratum-at-or-above-20pct-v1",
-            "threshold_share": 0.2,
-            "interpretation": "project_concentration_flag_only_not_scientific_acceptance",
-            "native_rorbwin_equivalence": "not_assessed",
+        "has_scientific_sampling_warnings": any_scientific_warning,
+        "scientific_sampling_policy": {
+            "method": "conditional-stratum-dkw-uniform-bonferroni-v1",
+            "confidence_level": confidence_level,
+            "relative_aep_screen": relative_aep_screen,
+            "assumption": "iid_within_rainfall_strata_and_fixed_project_population",
+            "interpretation": "conservative_sampling_screen_not_engineering_acceptance",
         },
+        "native_rorbwin_interval_warning": "not_assessed",
         "numerical_native_equivalence": "not_assessed",
         "statistical_convergence": "not_assessed",
     }
@@ -312,6 +339,8 @@ def write_mc_frequency(
     selection: EngineSelection | None = None,
     wheel_artifact: Path | None = None,
     read_rows: _VerifiedReader,
+    confidence_level: float = 0.95,
+    relative_aep_screen: float = 0.2,
 ) -> MCWeightedResult:
     """Use #147 for exact weighted frequency, write reports without clobbering."""
     paths = (
@@ -334,6 +363,8 @@ def write_mc_frequency(
                 wheel_artifact=wheel_artifact,
                 csv_writer=csv.writer(stream, lineterminator="\n"),
                 read_rows=read_rows,
+                confidence_level=confidence_level,
+                relative_aep_screen=relative_aep_screen,
             )
         with paths[0].open("x", encoding="utf-8", newline="\n") as stream:
             created.append(paths[0])

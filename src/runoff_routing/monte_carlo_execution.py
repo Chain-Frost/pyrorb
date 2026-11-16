@@ -772,6 +772,8 @@ def main(argv: list[str] | None = None) -> int:
     frequency.add_argument("ledger", type=Path)
     frequency.add_argument("output_prefix", type=Path)
     frequency.add_argument("--aep", type=float, required=True, action="append")
+    frequency.add_argument("--confidence-level", type=float, default=0.95)
+    frequency.add_argument("--relative-aep-screen", type=float, default=0.2)
     inspect = commands.add_parser("inspect", help="report checkpoint completeness without a frequency estimate")
     inspect.add_argument("project", type=Path)
     inspect.add_argument("request", type=Path)
