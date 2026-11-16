@@ -43,6 +43,8 @@
 
 ## Planning receipts
 
+- [RORB Monte Carlo method compatibility and larger-sample study scopes](2026-11-17-issue9-rorb-statistical-method-scopes.md) — current #150/#189/#190/#191/#148 handoffs; all target draft #151, with existing routing reused and no main merge.
+
 - [Monte Carlo #9 decomposition and statistical research plan](2026-11-15-issue9-scoping.md) — #145–#150 and the initial method note; no MC code, simulation results or native qualification claimed.
 
 - [#145 Monte Carlo statistical method and source review](2026-11-15-issue145-mc-statistical-method.md) — versioned probability, loss, mass, replay and B/C/E handoff; #150 native gaps remain open.

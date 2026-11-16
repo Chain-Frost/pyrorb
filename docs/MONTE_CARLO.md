@@ -2,13 +2,15 @@
 
 ## Status and purpose
 
-This is the initial specification and research plan for [issue #9](https://github.com/Chain-Frost/python-runoff-routing/issues/9), reviewed for planning on 15 November 2026. It is **not an implemented Monte Carlo capability or an accepted RORBwin compatibility claim**. Source-derived guidance, proposed project decisions and unresolved native details are distinguished below. Scope A owns the enduring adopted method; measured convergence results belong in a linked dated research report.
+**Status — 17 November 2026:** The adopted project sampler, weighted frequency layer, prepared execution and selected-AEP reporting are implemented on **draft staging [PR #151](https://github.com/Chain-Frost/python-runoff-routing/pull/151)**. They are unreleased and do not establish RORBwin statistical equivalence. The owner-directed [RORB method and larger-sample comparison work packs](work/2026-11-17-issue9-rorb-statistical-method-scopes.md) reuse #150 for native evidence and #148 for the physical study, with new #189 sampling/preparation, #190 probability/results and #191 canonical comparison scopes. All changes remain on #151; do not merge main.
+
+This document retains the adopted `monte-carlo-statistics/1` method and its source/decision distinctions. A verified native-compatible profile will have a separate identity; it must not reinterpret existing saved plans. Measured convergence and comparison results belong in linked dated research reports.
 
 The product surface remains CLI, Python API and text files. Current development executes explicit events with `python-cmd/cmd-6.44`. The independent `python/engineering-v1` remains the intended future default. The sampling policy has its own identity, separate from the selected event engine.
 
-## What is ready
+## Original scoping baseline — 15 November 2026
 
-The inspected baseline is main `0675d75b05dba7728b389fdd8af743060b4469b2`:
+The following describes the original pre-Monte-Carlo baseline; the current staged software status and follow-on work are above. The inspected baseline was main `0675d75b05dba7728b389fdd8af743060b4469b2`:
 
 - [#119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) supplies the common [explicit-event and batch contract](PROJECT_BATCH_MVP.md), including prepared geometry reuse and per-event outcomes.
 - Merged [#136](https://github.com/Chain-Frost/python-runoff-routing/pull/136) supplies [deterministic design rainfall](ARR_DESIGN_BATCH.md). Its source readers, temporal-pattern, ARF and loss/preburst components are reusable.
@@ -37,7 +39,7 @@ The [HARC product page](https://harc.com.au/software/rorb/) listed 6.52 at this 
 
 ## Adopted v1 scientific contract (#145)
 
-**Status (15 November 2026):** This section is the versioned **project method** `monte-carlo-statistics/1`. It supersedes tentative choices in the initial #151 scoping text below; it is not implemented software, an admitted numerical RORBwin 6.52 distribution, or an engineering-accepted flood-frequency estimate. “Project decision” identifies a deliberate algorithm choice rather than a proven RORBwin implementation. Source IDs refer to [SOURCES.md](SOURCES.md).
+**Status (adopted 15 November; implementation status refreshed 17 November 2026):** This section is the versioned **project method** `monte-carlo-statistics/1`, now implemented on draft #151. It supersedes tentative choices in the original scoping text below; it is not an admitted numerical RORBwin 6.52 distribution or an engineering-accepted flood-frequency estimate. “Project decision” identifies a deliberate algorithm choice rather than a proven RORBwin implementation. Source IDs refer to [SOURCES.md](SOURCES.md).
 
 ### Target population and dependencies
 
@@ -247,13 +249,17 @@ Fresh native observations require a finite experiment plan under existing local 
 
 ## Work allocation and completion
 
-| Scope | Tracker | Start and dependency |
+| Scope | Tracker | Current disposition |
 | --- | --- | --- |
-| A — statistical specification and source reconciliation | [#145](https://github.com/Chain-Frost/python-runoff-routing/issues/145) | Start now; owns the adopted method and gap register. |
-| B — persisted sample plans and sampler | [#146](https://github.com/Chain-Frost/python-runoff-routing/issues/146) | Schema/analytic design now; implementation after A's baseline contract. |
-| C — weighted frequency/results | [#147](https://github.com/Chain-Frost/python-runoff-routing/issues/147) | Analytic controls now; agree A/B schema before implementation. |
-| D — simulation-budget/convergence research | [#148](https://github.com/Chain-Frost/python-runoff-routing/issues/148) | Analytic harness now; catchment results after A/B/C/E and feature qualification. |
-| E — prepared execution and CLI integration | [#149](https://github.com/Chain-Frost/python-runoff-routing/issues/149) | Reuse current interfaces; complete against A/B/C contracts. |
-| F — independent native/statistical qualification | [#150](https://github.com/Chain-Frost/python-runoff-routing/issues/150) | Reconcile evidence now; small observations for A's gaps, final qualification after implementation. |
+| A — statistical specification | [#145](https://github.com/Chain-Frost/python-runoff-routing/issues/145) | Completed project-method specification; retain its identity. |
+| B — persisted plans and sampler | [#146](https://github.com/Chain-Frost/python-runoff-routing/issues/146) | Completed staged software; new native-profile sampling/preparation is #189. |
+| C — weighted frequency/results | [#147](https://github.com/Chain-Frost/python-runoff-routing/issues/147) | Completed project estimator; native probability/result-policy work is #190. |
+| D — simulation-budget research | [#148](https://github.com/Chain-Frost/python-runoff-routing/issues/148) | Analytical studies completed; physical-catchment/native comparison and production stability remain open. |
+| E — execution/CLI | [#149](https://github.com/Chain-Frost/python-runoff-routing/issues/149) | Completed staged execution; reuse it in #189/#191 without another runner. |
+| F — native/statistical qualification | [#150](https://github.com/Chain-Frost/python-runoff-routing/issues/150) | Open: native method specification, bounded observations and independent final assessment. |
+| Reporting | [#187](https://github.com/Chain-Frost/python-runoff-routing/issues/187) | Completed selected-AEP reporting; native warning remains not assessed. |
+| Comparison adapter | [#191](https://github.com/Chain-Frost/python-runoff-routing/issues/191) | New canonical native-record and comparison interface; reuse ryan-tools. |
+
+The [17 November work plan](work/2026-11-17-issue9-rorb-statistical-method-scopes.md) defines the current five packs, dependency order, conditional Ghidra decision and larger-sample experimental requirements.
 
 The issue bodies contain the authoritative handoff prompts and acceptance criteria. This is not a second capability matrix. Keep [#9](https://github.com/Chain-Frost/python-runoff-routing/issues/9) open until the selected implementation, statistical, effective-input, native and reproducibility gates are supported by independent evidence. Software implementation and source documentation may finish earlier and must be labelled accordingly.
