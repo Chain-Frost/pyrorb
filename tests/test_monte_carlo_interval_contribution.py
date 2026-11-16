@@ -74,9 +74,7 @@ def test_one_interval_over_20_percent_is_flagged_without_changing_strict_surviva
     assert warning.maximum_stratum_share == pytest.approx(1 / 3)
     assert warning.at_or_above_probability_mass == pytest.approx(0.6)
     assert [row.contributing_samples for row in warning.strata] == [0, 0, 1, 1, 1]
-    assert [row.at_or_above_probability_mass for row in warning.strata] == pytest.approx(
-        [0, 0, 0.2, 0.2, 0.2]
-    )
+    assert [row.at_or_above_probability_mass for row in warning.strata] == pytest.approx([0, 0, 0.2, 0.2, 0.2])
 
 
 def test_zero_atom_and_two_physical_sites_remain_independent() -> None:
@@ -137,7 +135,13 @@ def test_incomplete_aep_table_says_na_without_a_star() -> None:
     lines, flagged = _format_selected_aep_table(
         "print_01",
         (0.4,),
-        [{"status": result.status, "peak_m3_s": result.peak_m3_s, "interval_contribution_warning": {"status": "not_assessed"}}],
+        [
+            {
+                "status": result.status,
+                "peak_m3_s": result.peak_m3_s,
+                "interval_contribution_warning": {"status": "not_assessed"},
+            }
+        ],
     )
     assert not flagged
     assert "N/A" in lines[2]
