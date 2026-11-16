@@ -816,6 +816,8 @@ def main(argv: list[str] | None = None) -> int:
                 selection=selected,
                 wheel_artifact=args.wheel_artifact,
                 read_rows=iter_verified_mc_results,
+                confidence_level=args.confidence_level,
+                relative_aep_screen=args.relative_aep_screen,
             )
             print(f"Weighted frequency: {result.scopes} physical populations; complete={result.point_results_complete}")
             return 0 if result.point_results_complete else 2

@@ -98,45 +98,133 @@ At a complete attained quantile, the representative is the **actual successful**
 - **Engineering:** a finite rainfall support with unmodelled tails is not a complete flood AEP distribution. The code retains those tails and refuses false full-population point estimates.
 
 
-## Provisional per-rainfall-interval 20% contribution warnings (16 November 2026)
+## Stratified sampling diagnostics and native warning separation — 17 November 2026
 
-RORB Version 6 Manual §8.5 and the worked example (printed pp.147–148)
-display `*` for AEP estimates where a rainfall-frequency **interval contribution
-to total AEP exceeds 20%**. The manual's legend is primary source for the
-warning's existence, but does **not** independently establish the precise
-algorithm of the installed 6.52 executable.
+**Issue #187:** The 2010 RORB manual's example (pp. 147–148) and a live
+RORBwin 6.52 receipt show an asterisk legend involving rainfall-interval
+contributions above 20%. **The native numerical rule is NOT established.**
+The prior project implementation, which marked a peak when the largest
+at-or-above-quantile interval contribution exceeded 20% of the total, was
+**falsified** by the authentic 5×5 native output: at positive peaks only
+three of the five rainfall divisions contribute at all, so it would
+automatically mark all positive peaks despite several unstarred native
+values. That method and its native-looking '*' markers are withdrawn.
 
-The project provides a **provisional** diagnostic under method identifier
-`project-rainfall-stratum-at-or-above-20pct-v1`:
+### 1. Strict total-probability interval audit (not a warning)
 
-For a complete population and the v1 noninterpolated attained quantile
-`q_α`, in each original rainfall stratum `h` with planned mass `w_h`
-and planned sample count `n_h`, define
+ARR Book 4 v4.2 §4.3.3.3 Eq. (4.4.7) defines, for threshold \`q\`,
+original interval probability mass \`w_h\` and conditional exceedance
+probability \`p_h(q)\`:
 
-`c_h(q_α) = (w_h/n_h) × count(valid samples in h with Q >= q_α)`.
+\[
+\widehat{S}(q)=\sum_h w_h\,\widehat p_h(q),\quad
+\widehat p_h(q)=\frac{\#\{i:Q_{hi}>q\}}{n_h}.
+\]
 
-`C=sum_h(c_h)`, `R=max_h(c_h)/C`. Flag `*` only when
-`R>0.20` (strictly greater), comparing **exact rational** planned
-masses. The use of **`>=` only for this diagnostic** includes
-the attained quantile crossing and tied peaks; it **does not change**
-the adopted strict `P(Q>q)` estimator, quantile or representative.
+This code computes every strict \`Q>q\` stratum contribution from
+**the originally planned** \`w_h/n_h\`, and records the interval identity,
+exceedance count, absolute contribution, total strict probability and
+maximum share (where the denominator is nonzero). This is descriptive
+diagnostic evidence only. The maximum contributing share does **not**
+directly measure statistical error, and never creates a native \`*\` or
+\`!\` warning. The generalised-inverse quantile and separate existing
+strict estimator remain unchanged.
 
-For each requested AEP, the JSON includes the exact method ID, warning
-status `flagged|not_flagged|not_assessed`, threshold, maximum contributing
-stratum and share, total at-or-above mass, and full ordered per-stratum
-contributions/counts. `aep_1_in_y` is `1/aep_fraction`,
-not a native ARI/return-period reinterpretation. The text report includes
-`No. AEP(1inY) Peak <physical site>` with `*` only where the
-project diagnostic flags a **complete** point.
+### 2. Simultaneous conditional-sampling uncertainty screen
 
-When any positive failure/missing/unsupported/zero-allocation/unmodelled
-tail mass remains, the full-population point peak is `N/A`, the diagnostic
-is `not_assessed` and no `*` is printed. Existing finite-ledger bounds
-remain available in JSON. An unflagged project diagnostic is **not**
-a demonstration of reliability, sampling convergence, or hydrological fitness.
-The native 6.52 asterisk logic remains under #150 F6, requiring actual
-interval contributions or matched native effective observations.
+A separate, **conservative** mathematical bound describes sampling
+uncertainty for the **fixed versioned stochastic flood surrogate**
+*if all outputs for positive-mass strata are independent, identically
+distributed conditional on their original rainfall stratum*. It does
+**not** address catchment model, calibration, rainfall/loss distribution,
+boundary/extrapolation or annual-max-flood assumptions.
 
-The current CSV continues to contain attained peak-frequency groups;
-the selected-AEP table with all warnings is in the text and JSON
-reports, retaining the existing CSV contract.
+For each positive-weight stratum, the finite-sample
+Dvoretzky–Kiefer–Wolfowitz (DKW) inequality gives
+\`P(sup_q |F_hat_h(q)-F_h(q)|>eps_h) <= 2 exp(-2 n_h eps_h^2)\`.
+A union bound across \`H\` positive-weight strata at confidence \`1-delta\`
+sets
+
+\[
+\varepsilon_h=\min\left(1,
+\sqrt{\frac{\log(2H/\delta)}{2n_h}}\right),\qquad
+\varepsilon=\min\left(1,\sum_h w_h\varepsilon_h\right).
+\]
+
+Thus, under those iid assumptions, a \`(1-delta)\` simultaneous
+**absolute exceedance-probability error bound** is \`eps\` for
+all fixed or *sample-selected* peak thresholds. It is **not** a
+confidence bound on the *peak discharge quantile*, and is not
+an independent-seed replication result.
+
+The public method
+\`conditional-stratum-dkw-uniform-bonferroni-v1\` defaults to
+**95% conditional sampling confidence** and an explicitly
+**project-selected 20% relative-AEP screening threshold**:
+\`eps/target_AEP > 0.20\` produces \`scientific_sampling_diagnostic.status
+= "review"\`; otherwise it is \`"below_screen"\`, **not "reliable"**.
+Both parameters are configurable in Python and the CLI
+(\`--confidence-level\`, \`--relative-aep-screen\`).
+The JSON also reports the maximum original single-draw probability
+weight \`max_h(w_h/n_h)\` and its ratio to the target AEP as a
+sample-resolution diagnostic. Neither 20% nor 95% establishes
+hydrological or numerical engineering acceptance.
+
+**Illustration, not a hydrological result:** a hypothetical
+five-stratum sample with \`n_h=5\` and \`w_h=0.2\` has
+\`eps=sqrt(ln(200)/10)=0.727895...\` at 95% simultaneous confidence.
+This high conservative probability error ceiling shows why **5×5 is
+suitable only for execution/formatting tests** and cannot establish
+extreme-tail stability. For one complete 1000-event equally weighted
+stratum, the illustrative bound is \`sqrt(ln(40)/2000)=0.0429469...\`.
+These are mathematical controls, not endorsements of a required
+simulation count or real-catchment uncertainty.
+
+If **any** positive-weight event is failed, missing or unsupported,
+or if a probability-domain rainfall tail remains unmodelled,
+the point flood AEP is \`N/A\` and sampling screen
+\`"not_assessed"\`. Known finite-ledger logical bounds remain
+in JSON, but are neither statistical confidence limits nor a basis
+for rounding away omitted mass. For future sampling policies
+without iid within-stratum draws, the DKW model must be replaced or
+disabled; applying the bound to the native RORB 5×5 report is
+**not supported**, since its stochastic dependence is unverified.
+
+### 3. Native warning and boundary sensitivity remain separate
+
+\`native_interval_warning="not_assessed"\` is always emitted until
+the 6.52 native implementation and its rainfall-interval contributions
+are independently characterised under #150 F6. No native \`*\`
+asterisks are fabricated.
+
+\`boundary_sensitivity="not_assessed"\` and
+\`independent_seed_convergence="not_assessed"\` are retained
+in the scientific diagnostic because no independently accepted
+alternative endpoint extrapolations or replicated-run convergence
+study is present. ARR §4.3.3.3 and Nathan & Weinmann (2013)
+discuss conditional weighting and the special assumptions for first
+and last rainfall intervals. Even an unflagged sampling screen
+does not qualify a full-domain flood annual-max AEP or boundary
+sensitivity. #148 owns a real-catchment independent-seed study.
+
+### Report format and status
+
+The existing frequency-group CSV remains unchanged. JSON selected-AEP
+targets include the strict interval breakdown, sampling confidence,
+uniform absolute/relative AEP bound, single-draw resolution and
+**separate native-versus-scientific statuses**. Text includes:
+
+- \`No.\`, \`AEP(1inY) = 1/AEP fraction\`, and physical output-site peak;
+- \`!\` **only** when the conditional scientific sampling screen
+  requests review, subject to its assumptions;
+- \`N/A\` when positive probability mass is unresolved, with no point;
+- an explicit statement that RORBwin's \`*\` is **not assessed**,
+  and an absent \`!\` does **not** imply reliability.
+
+**Sources:**
+- [ARR Book 4 v4.2 §4.3.3.3](https://www.arr-software.org/pdfs/ARR_190514_Book4_V4.2.pdf)
+- [Nathan & Weinmann (2013), worked stratified example and rainfall endpoint assumptions](https://arr.ga.gov.au/__data/assets/pdf_file/0017/40562/ARR_DiscussionPaper_MonteCarlo.pdf)
+- [DKW finite-sample uniform CDF inequality](https://www.stat.cmu.edu/~larry/=sml/DKW.pdf)
+- [HARC boundary discussion](https://harc.com.au/forums/topic/monte-carlo-simulation-summary-results/)
+
+No raw native RORBwin artefacts are added to the public repository.
