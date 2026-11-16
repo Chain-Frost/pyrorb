@@ -281,10 +281,11 @@ def test_integrated_ryan_reader_original_652_batch_identity() -> None:
     assert len(reps.rows) == 8
     assert len({row["reference"] for row in reps.rows}) == 8
     assert len({row["Run"] for row in runs.rows}) < len(runs.rows)
-    assert len({
+    event_identities = {
         (row["Run"], row["duration_raw"], row["duration_unit"], row["aep_raw"], row["TPat"])
         for row in runs.rows
-    }) == 80
+    }
+    assert len(event_identities) == 80
     freqs = {row["aep_raw"] for row in runs.rows}
     assert {"50%", "0.5EY"} <= freqs
     assert {row["aep_kind"] for row in runs.rows} == {"percent", "EY"}
