@@ -1,5 +1,7 @@
 # Four anonymised existing-model sets: routing and rainfall audit
 
+Extended by [the fifth-set addendum](2026-11-19-anonymised-site-e-validation.md). The four-set counts below remain a separate dated receipt.
+
 Dated 19 November 2026. Owner-authorised local validation; publication is limited to anonymised Markdown and issues. No original models, rainfall tables, reports, hydrographs, local paths, project names or locations are distributed.
 
 All four sets were inventoried and all 23 catchment files were screened. Original product CATG import admitted **0/23**; all **111** saved parameter files were recognised but unsupported. Diagnostic derivatives permitted a **259-event numerical sample across 7 model files**: **207 complete printed-series matches / 52 differences**. This is not a claim that every saved event was numerically executed or that the original projects run unchanged.
