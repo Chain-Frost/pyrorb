@@ -130,9 +130,7 @@ def test_metadata_padding_accepts_only_empty_trailing_cells(record: bytes, paddi
     assert parsed.raw_bytes == padded
     assert parsed.sha256 == hashlib.sha256(padded).hexdigest()
     assert tuple((record + padding).decode().split(",")) in parsed.raw_preamble
-    assert replace(
-        parsed, raw_bytes=raw, sha256=original.sha256, raw_preamble=original.raw_preamble
-    ) == original
+    assert replace(parsed, raw_bytes=raw, sha256=original.sha256, raw_preamble=original.raw_preamble) == original
 
 
 @pytest.mark.parametrize("record", _METADATA_RECORDS)
@@ -168,9 +166,7 @@ def test_metadata_padding_rejects_nonempty_extra_fields(record: bytes) -> None:
         ),
     ],
 )
-def test_padded_coordinates_still_validate_fields(
-    record: bytes, replacement: bytes, message: str
-) -> None:
+def test_padded_coordinates_still_validate_fields(record: bytes, replacement: bytes, message: str) -> None:
     raw = _csv()
     with pytest.raises(ARRFormatError, match=message):
         parse_bom_ifd_csv(raw.replace(record, replacement, 1))
