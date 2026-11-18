@@ -92,7 +92,11 @@ def compute_geometry(event: Event) -> Geometry:
         relative = store_rational(mul53(fraction(length), inverse))
         coefficient = store_rational(mul53(fraction(event.kc.stored), fraction(relative)))
         seconds = store_rational(mul53(fraction(coefficient), Fraction(3600)))
-        if min(relative, coefficient, seconds) <= 0:
+        if length == 0.0:
+            if relative != 0.0 or coefficient != 0.0 or seconds != 0.0:
+                message = f"reach {reach_id}: zero-length coefficient mismatch"
+                raise UnsupportedNumericPath(message)
+        elif min(relative, coefficient, seconds) <= 0:
             message = f"reach {reach_id}: positive coefficient underflow"
             raise UnsupportedNumericPath(message)
         reaches.append(ReachGeometry(reach_id, length, relative, coefficient, seconds))
