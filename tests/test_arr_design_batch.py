@@ -162,14 +162,15 @@ def test_written_profile_does_not_admit_unqualified_preburst_conventions(tmp_pat
 def test_padded_bom_metadata_is_admitted_to_design_batch(tmp_path: Path) -> None:
     """Synthetic padded preamble must survive preparation without changing depth data."""
     raw = IFD.read_bytes()
+    newline = b"\r\n" if b"\r\n" in raw else b"\n"
     for record in (
         b"Issued:,15 November 2026",
         b"Location Label:,SYNTHETIC EXAMPLE ONLY",
         b"Requested coordinate:,Latitude,-30.00500,Longitude,150.100",
         b"Nearest grid cell:,Latitude,30.00500 (S),Longitude,150.100 (E)",
     ):
-        assert raw.count(record + b"\n") == 1
-        raw = raw.replace(record + b"\n", record + b",,\n", 1)
+        assert raw.count(record + newline) == 1
+        raw = raw.replace(record + newline, record + b",," + newline, 1)
 
     source = tmp_path / "padded-ifd.csv"
     source.write_bytes(raw)
