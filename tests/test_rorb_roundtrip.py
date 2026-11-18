@@ -295,10 +295,14 @@ def test_cp1252_labels_preserve_original_encoding() -> None:
 
 def test_original_zero_length_terminal_code5_is_admitted_without_source_changes() -> None:
     """Native-observed terminal zero-reach admission preserves original source bytes."""
-    raw = _catg().replace(
-        "7, PRINT outlet\nPRINT outlet\n0\n",
-        "5, 0, -99, terminal copy\n7, PRINT outlet\nPRINT outlet\n0\n",
-    ).encode()
+    raw = (
+        _catg()
+        .replace(
+            "7, PRINT outlet\nPRINT outlet\n0\n",
+            "5, 0, -99, terminal copy\n7, PRINT outlet\nPRINT outlet\n0\n",
+        )
+        .encode()
+    )
     assert b"5, 0, -99, terminal copy\n" in raw
     parsed = parse_catg(raw)
     assert parsed.model.controls[-2].code == 5
@@ -312,12 +316,8 @@ def test_original_zero_length_terminal_code5_is_admitted_without_source_changes(
     "source",
     [
         _catg().replace("1, 5.000, -99", "1, 0, -99"),
-        _catg().replace("5, 2.500, -99", "5, 0, -99").replace(
-            "7, PRINT outlet\n", "5, 1.000, -99\n7, PRINT outlet\n"
-        ),
-        _catg().replace(
-            "7, PRINT outlet\n", "5, 0, -99\n5, 0, -99\n7, PRINT outlet\n"
-        ),
+        _catg().replace("5, 2.500, -99", "5, 0, -99").replace("7, PRINT outlet\n", "5, 1.000, -99\n7, PRINT outlet\n"),
+        _catg().replace("7, PRINT outlet\n", "5, 0, -99\n5, 0, -99\n7, PRINT outlet\n"),
     ],
 )
 def test_zero_reach_elsewhere_is_rejected_by_typed_topology(source: str) -> None:
