@@ -132,9 +132,7 @@ def test_mode_two_equality_zero_and_coefficient_boundaries(
 
 
 @pytest.mark.parametrize("exponent", ["1", "0.8"])
-def test_zero_length_terminal_code5_copies_positive_flow_at_two_physical_prints(
-    tmp_path: Path, exponent: str
-) -> None:
+def test_zero_length_terminal_code5_copies_positive_flow_at_two_physical_prints(tmp_path: Path, exponent: str) -> None:
     """Python source/installed-wheel smoke, not a new native acceptance case."""
     original = _model()
     catchment = original.catchment
