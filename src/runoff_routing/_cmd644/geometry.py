@@ -62,7 +62,7 @@ def _source_distances(event: Event) -> tuple[list[float], list[float]]:
     return distances, reach_lengths
 
 
-def compute_geometry(event: Event) -> Geometry:
+def compute_geometry(event: Event) -> Geometry:  # noqa: C901 -- bounded zero terminal copy guard
     """Compute stored coefficients in the original arithmetic order."""
     distances, reach_lengths = _source_distances(event)
     if not all(x > 0 for x in distances):
