@@ -64,3 +64,5 @@ Six superseded planning/implementation notes were removed from the active tree a
 
 - [Native follow-up of selected existing-project differences](2026-11-19-native-followup.md) - saved precision, same-input CMD comparisons and retained residuals.
 
+
+- [Difference-group coverage review](2026-11-19-difference-group-review.md) — all six differing model files, eleven parameter groups and explicit remaining error-family scope.
