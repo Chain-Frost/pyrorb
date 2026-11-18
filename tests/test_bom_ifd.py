@@ -119,7 +119,7 @@ _METADATA_RECORDS = (
 
 
 @pytest.mark.parametrize("record", _METADATA_RECORDS)
-@pytest.mark.parametrize("padding", (b",", b",,", b",  ,\t"))
+@pytest.mark.parametrize("padding", [b",", b",,", b",  ,\t"])
 def test_metadata_padding_accepts_only_empty_trailing_cells(record: bytes, padding: bytes) -> None:
     raw = _csv()
     assert raw.count(record + b"\r\n") == 1
