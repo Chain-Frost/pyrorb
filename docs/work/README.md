@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Four anonymised existing-model sets: routing and rainfall audit](2026-11-19-anonymised-site-validation.md) - complete input survey, sampled source/wheel routing, regenerated rainfall and explicit unsupported states; [anonymous case metrics](2026-11-19-anonymised-site-cases.md).
+
 **Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
 **Current navigation:** use [STATUS.md](../STATUS.md) for delivered software and [BACKLOG.md](../BACKLOG.md) for remaining work. #119/#136/#155/#175, #110/#125 and #138–#143 are delivered; #137 is a completed finite evidence task. Original CMD, rainfall and selection scientific limits remain separately tracked under #5/#8/#152/#192/#193. Monte Carlo stays on draft #151 with its own method/comparison packs. Older receipt counts, blocked dependencies and next actions apply only to the revisions recorded below.
