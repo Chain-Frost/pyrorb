@@ -139,7 +139,7 @@ def test_canonical_physical_binding_accepts_zero_padding_without_changing_scalar
     assert matched[0].column == "Hyd0001"
     assert matched[0].label == "Synthetic outlet"
     assert matched[0].peak is not None
-    assert matched[0].peak.token == "1.500"
+    assert matched[0].peak.token == base.lines[2].split()[-1]
 
 
 def test_reordered_hyd_columns_bind_only_named_sites_when_scalars_are_absent() -> None:
