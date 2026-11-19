@@ -11,7 +11,7 @@ license = "LicenseRef-SUL-1.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
-  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/18b391ce063afec84d0f7777f82e5b59be777e94.tar.gz#subdirectory=packaging/rorb-readers",
+  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/0ab83025c28294ee7e9137375fa1b5a9261b94dc.tar.gz#subdirectory=packaging/rorb-readers",
 ]
 
 [project.optional-dependencies]

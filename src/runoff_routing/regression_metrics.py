@@ -33,7 +33,7 @@ class ScalarField:
 
 @dataclass(frozen=True, slots=True)
 class SiteMetrics:
-    """Explicit report legend identity and three original native scalars."""
+    """Reported column and raw legend text; physical print identity is unverified."""
 
     column: str
     label: str
@@ -117,7 +117,7 @@ def _site_scalars(fields: tuple[ScalarField, ...], count: int) -> tuple[ScalarFi
 
 
 def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[SiteMetrics, ...]:
-    """Bind source-scoped canonical scalar/legend records without parsing lines."""
+    """Bind source-scoped ordinal/scalar records, not verified physical print sites."""
     document = checked_canonical_report(source)
     if document.kind != "standard_output":
         message = "Canonical report is not a supported native output"
@@ -137,7 +137,14 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
     # The canonical shared reader owns the sole numeric Hyd-ordinal grammar.
     # This consumes its source-preserving physical legend/column association
     # rather than reformatting HydNNN identifiers with a second local parser.
-    mapped = bind_output_site_columns(document)
+    # CMD original reports routinely omit the location name for their one
+    # printed hydrograph. Preserve its numeric ordinal for source-derived
+    # scalar comparisons without claiming a verified physical print identity.
+    # The canonical reader remains strict by default in physical-site contexts.
+    mapped = bind_output_site_columns(document, allow_unnamed=True)
+    if len(mapped) != 1 and any(site.physical_name is None for site in mapped):
+        message = "Multiple unnamed physical sites cannot be bound to scalar comparison"
+        raise ValueError(message)
     if tuple(site.column for site in mapped) != report.columns:
         message = "Native physical site binding differs from the actual table columns"
         raise ValueError(message)
