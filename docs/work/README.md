@@ -66,3 +66,5 @@ Six superseded planning/implementation notes were removed from the active tree a
 
 
 - [Difference-group coverage review](2026-11-19-difference-group-review.md) — all six differing model files, eleven parameter groups and explicit remaining error-family scope.
+
+- [PR coverage against real-project findings](2026-11-19-pr-coverage-review.md) — implementation scope, exact-head CI and original-input admission checks.
