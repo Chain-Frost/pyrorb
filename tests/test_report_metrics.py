@@ -105,7 +105,7 @@ def test_wrong_site_legend_does_not_bind_by_position_alone() -> None:
     original = source(legend="02")
     report = inspect_output(original).hydrographs
     assert report is not None
-    with pytest.raises(ValueError, match="legend identity/order"):
+    with pytest.raises(ValueError, match="no matching physical site"):
         bind_report_metrics(original, report)
 
 
@@ -114,6 +114,80 @@ def test_nonfinite_peak_summary_rejected_even_with_valid_table() -> None:
     report = inspect_output(original).hydrographs
     assert report is not None
     with pytest.raises(ValueError, match="finite and nonnegative"):
+        bind_report_metrics(original, report)
+
+
+def _source_from_text(text: str) -> RorbSource:
+    raw = text.encode("utf-8")
+    return RorbSource(
+        Path("physical-sites.out").absolute(),
+        hashlib.sha256(raw).hexdigest(),
+        len(raw),
+        "utf-8",
+        tuple(text.splitlines()),
+    )
+
+
+def test_canonical_physical_binding_accepts_zero_padding_without_changing_scalar_scope() -> None:
+    base = source()
+    raw = "\n".join(base.lines).replace("Inc Time Hyd001", "Inc Time Hyd0001") + "\n"
+    original = _source_from_text(raw)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    matched = bind_report_metrics(original, report)
+    assert len(matched) == 1
+    assert matched[0].column == "Hyd0001"
+    assert matched[0].label == "Synthetic outlet"
+    assert matched[0].peak is not None
+    assert matched[0].peak.token == "1.500"
+
+
+def test_reordered_hyd_columns_bind_only_named_sites_when_scalars_are_absent() -> None:
+    text = (
+        "RORBWin Output File\nProgram version 6.44\n"
+        "Time increment (hours)= 0.50\nDuration of calculations: 2\n"
+        "Hydrograph summary\nSite Description\n"
+        "01 Calculated hydrograph, Upstream\n"
+        "02 Calculated hydrograph, Downstream\n"
+        "Inc Time Hyd002 Hyd001\n"
+        "1 0.50 0.000 0.000\n2 1.00 1.500 1.000\n3 1.50 0.000 0.000\n"
+    )
+    original = _source_from_text(text)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    matched = bind_report_metrics(original, report)
+    assert [(item.column, item.label) for item in matched] == [
+        ("Hyd002", "Calculated hydrograph, Downstream"),
+        ("Hyd001", "Calculated hydrograph, Upstream"),
+    ]
+    assert all(item.peak is None and item.peak_time is None and item.volume is None for item in matched)
+
+
+def test_reordered_hyd_columns_reject_unqualified_scalar_ordinal_association() -> None:
+    text = (
+        "RORBWin Output File\nProgram version 6.44\n"
+        "Time increment (hours)= 0.50\nDuration of calculations: 2\n"
+        "Peak discharge,m³/s 1.500 1.000\n"
+        "Hydrograph summary\nSite Description\n"
+        "01 Calculated hydrograph, Upstream\n"
+        "02 Calculated hydrograph, Downstream\n"
+        "Inc Time Hyd002 Hyd001\n"
+        "1 0.50 0.000 0.000\n2 1.00 1.500 1.000\n3 1.50 0.000 0.000\n"
+    )
+    original = _source_from_text(text)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    with pytest.raises(ValueError, match="scalar ordinals cannot be bound"):
+        bind_report_metrics(original, report)
+
+
+def test_unnamed_physical_site_is_explicitly_unbound() -> None:
+    base = source()
+    raw = "\n".join(base.lines).replace("01 Synthetic outlet", "01 Calculated hydrograph,") + "\n"
+    original = _source_from_text(raw)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    with pytest.raises(ValueError, match="unnamed"):
         bind_report_metrics(original, report)
 
 
