@@ -71,7 +71,8 @@ def _read(path: Path) -> tuple[dict[str, object], str, int]:
             data.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_constant
         )
     except (UnicodeError, TypeError, ValueError) as exc:
-        raise ValueError(f"Malformed result JSON: {exc}") from exc
+        message = f"Malformed result JSON: {exc}"
+        raise ValueError(message) from exc
     return _object(value, "Result"), hashlib.sha256(data).hexdigest(), len(data)
 
 

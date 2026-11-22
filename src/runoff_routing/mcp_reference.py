@@ -184,7 +184,7 @@ SCHEMAS: dict[SchemaName, dict[str, object]] = {
     "project": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "urn:python-runoff-routing:mcp:project:v1",
-        "title": "Versioned JSON project – structural discovery only",
+        "title": "Versioned JSON project - structural discovery only",
         "type": "object",
         "required": ["format", "schema_version", "project_id", "rainfall_profile", "model_source", "external_assets"],
         "additionalProperties": False,
@@ -240,7 +240,7 @@ SCHEMAS: dict[SchemaName, dict[str, object]] = {
     "events": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "urn:python-runoff-routing:mcp:events:v1",
-        "title": "Explicit event request – structural discovery only",
+        "title": "Explicit event request - structural discovery only",
         "type": "object",
         "required": ["format", "schema_version", "events"],
         "additionalProperties": False,
@@ -267,7 +267,7 @@ SCHEMAS: dict[SchemaName, dict[str, object]] = {
     "arr-design": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "urn:python-runoff-routing:mcp:arr-design:v1",
-        "title": "ARR2019/BoM design batch – structural discovery only",
+        "title": "ARR2019/BoM design batch - structural discovery only",
         "type": "object",
         "required": [
             "format", "schema_version", "project", "bom_ifd", "temporal_patterns",
