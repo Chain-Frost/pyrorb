@@ -65,7 +65,7 @@ against the exact computational reach length, and the original 1/3/4/5/7 stack
 order against the actual confluence locations. Reversed line digitisation is
 supported. It uses the **existing canonical computational-vector writer**,
 including [the native-evidence code-7 physical print-location fix
-#25](https://github.com/Chain-Frost/python-runoff-routing/pull/25), rather than
+#25](https://github.com/Chain-Frost/pyrorb/pull/25), rather than
 creating another RORB grammar.
 
 **Native print-label compatibility boundary:** The original two-file CMD 6.44
