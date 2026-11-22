@@ -1,1 +1,1 @@
-"""Independent runoff-routing development; numerical capabilities are not implemented yet."""
+"""PyRORB's Python API, retained under the runoff_routing import namespace."""
