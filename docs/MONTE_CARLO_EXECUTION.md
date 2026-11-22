@@ -1,6 +1,6 @@
 # S7 Monte Carlo effective-event execution boundary (#149)
 
-**Status:** Bounded E execution adapter integrated with B's sampler and C's frequency layer on draft staging #151. Not a qualified RORBwin Monte Carlo implementation. Scope [#146](https://github.com/Chain-Frost/python-runoff-routing/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/python-runoff-routing/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/python-runoff-routing/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
+**Status:** Bounded E execution adapter integrated with B's sampler and C's frequency layer on draft staging #151. Not a qualified RORBwin Monte Carlo implementation. Scope [#146](https://github.com/Chain-Frost/pyrorb/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/pyrorb/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/pyrorb/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
 
 ## API and CLI
 
@@ -268,9 +268,9 @@ envelope policies; the CLI deliberately does not invent those results.
   qualification. No broad GUI/native investigation is authorised.
 
 Neither a green execution test nor this adapter closes parent
-[#9](https://github.com/Chain-Frost/python-runoff-routing/issues/9),
-scientific rainfall qualification [#8](https://github.com/Chain-Frost/python-runoff-routing/issues/8),
-or the full CMD gate [#5](https://github.com/Chain-Frost/python-runoff-routing/issues/5).
+[#9](https://github.com/Chain-Frost/pyrorb/issues/9),
+scientific rainfall qualification [#8](https://github.com/Chain-Frost/pyrorb/issues/8),
+or the full CMD gate [#5](https://github.com/Chain-Frost/pyrorb/issues/5).
 
 ### Deterministic Decimal context
 

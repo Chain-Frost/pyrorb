@@ -1,10 +1,12 @@
 # Current work and evidence index
 
-**Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
+**Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
 **Current programme (15 November 2026):** #119 CLI/text-file MVP and #136 bounded deterministic ARR/BoM software have merged. The reviewed original CMD 6.44 `python-cmd` result remains **50/50 printed Q / 19,550 ordinates, 48 complete scalars and two undefined zero-flow peak times**, not full #5 acceptance. The curated #133 original PR16 bytes and eight CMD native captures remain **unadmitted gaps**. The later [actual #137 execution receipt](2026-11-15-issue137-actual-execution.md) documents 60/60 source/wheel matches but 1,320 differing native-written rain increments; #137/#8 input/routed qualification remains open. #152 owns downstream deterministic reporting. #9 Monte Carlo is separately staged, not delivered to `main`. See [current status](../STATUS.md), [single CMD matrix](../CMD_FEATURE_MATRIX.md) and [programme receipt](2026-11-15-programme-current-reconciliation.md).
 
 ## Current implementation / regression receipts
+
+- [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
 
 - [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
 - [Issue #143 independent import/edit/export/report qualification](2026-11-15-issue143-s5-acceptance.md) — original byte-exact fixtures, true installed reader integration, source/installed-wheel acceptance and preserved CMD limitations.

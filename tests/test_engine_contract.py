@@ -7,11 +7,13 @@ import json
 import subprocess
 from dataclasses import replace
 from decimal import Decimal
+from importlib.metadata import PackageNotFoundError
 from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
 
+from runoff_routing import engine_provenance
 from runoff_routing.engine_execution import run_engine_project, write_engine_result
 from runoff_routing.engine_provenance import identify_implementation
 from runoff_routing.engine_types import CAPABILITIES, EngineSelection
@@ -341,7 +343,7 @@ def test_zero_exit_is_not_sufficient_for_native_success(
 def _manufactured_wheel(root: Path, *, altered: bool = False) -> Path:
     """Source-matched ZIP fixture; actual CI separately verifies a built wheel."""
     package_root = Path(__file__).parents[1] / "src" / "runoff_routing"
-    wheel = root / "python_runoff_routing-0.0.0.dev0-py3-none-any.whl"
+    wheel = root / "pyrorb-0.0.0.dev0-py3-none-any.whl"
     with ZipFile(wheel, mode="w") as archive:
         for path in sorted(package_root.rglob("*")):
             if not path.is_file() or not (path.suffix in (".py", ".pyi") or path.name == "py.typed"):
@@ -351,6 +353,28 @@ def _manufactured_wheel(root: Path, *, altered: bool = False) -> Path:
                 contents += b"\n# manufactured mismatch\n"
             archive.writestr(f"runoff_routing/{path.relative_to(package_root).as_posix()}", contents)
     return wheel
+
+
+@pytest.mark.parametrize("package_version", ["0.0.0.dev0", None])
+def test_pyrorb_metadata_lookup_preserves_legacy_source_fingerprint(
+    monkeypatch: pytest.MonkeyPatch, package_version: str | None
+) -> None:
+    def installed_version(name: str) -> str:
+        assert name == "pyrorb"
+        if package_version is None:
+            raise PackageNotFoundError(name)
+        return package_version
+
+    monkeypatch.setattr(engine_provenance, "version", installed_version)
+    monkeypatch.setattr(
+        engine_provenance, "_installed_sources", lambda: {"runoff_routing/__init__.py": b"example = 1\n"}
+    )
+    identity = identify_implementation.__wrapped__()
+    assert identity.package_version == package_version
+    # Frozen package-code-v1 vector: display/distribution renames must retain the original hash domain.
+    assert (
+        identity.revision == "package-code-v1-sha256:4966c32e4e9540b4d64958bef19f8e618f3c7f8770229f51ac79581a3b55b260"
+    )
 
 
 def test_implementation_identity_is_exact_code_content_not_package_version(tmp_path: Path) -> None:

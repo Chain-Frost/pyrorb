@@ -1,6 +1,6 @@
 # S6 follow-up: BoM IFD CSV, ARR temporal patterns and explicit gross rainfall
 
-**Status:** implemented as independent, source-preserving import/validation and arithmetic-only gross hyetograph construction. **No ARR design-method acceptance, RORBwin parity or hydrological solver acceptance.** This change is intentionally stacked on the draft [S6-P0 ARR import PR #38](https://github.com/Chain-Frost/python-runoff-routing/pull/38).
+**Status:** implemented as independent, source-preserving import/validation and arithmetic-only gross hyetograph construction. **No ARR design-method acceptance, RORBwin parity or hydrological solver acceptance.** This change is intentionally stacked on the draft [S6-P0 ARR import PR #38](https://github.com/Chain-Frost/pyrorb/pull/38).
 
 ## Distinct input systems
 
