@@ -105,6 +105,25 @@ def test_zero_m_is_rejected_at_typed_domain_not_silently_routed() -> None:
         RoutingValue(1, Decimal(5), Decimal(0))
 
 
+@pytest.mark.parametrize("exponent", [0.8, 1.0])
+def test_cmd_zero_length_terminal_copy_does_not_require_linear_timestep(exponent: float) -> None:
+    """A pure-Q terminal copy does not run the linear solver or consume hours."""
+    incoming = (0.0, 2.0, 1.0, 0.0)
+    geometry = ReachGeometry(2, 0.0, 0.0, 0.0, 0.0)
+    result = route_cmd_reach(incoming, geometry, 1800.0, (1,), exponent=exponent)
+    assert result.q == incoming
+    assert result.s == (0.0,) * len(incoming)
+    assert result.steps == ()
+    assert all(state.s == 0.0 for state in result.states)
+    assert not result.is_linear
+
+
+def test_cmd_positive_linear_reach_still_requires_actual_timestep() -> None:
+    geometry = ReachGeometry(1, 1.0, 1.0, 5.0, 18000.0)
+    with pytest.raises(UnsupportedNumericPath, match="linear routing requires the actual stored input timestep"):
+        route_cmd_reach((0.0, 1.0, 0.0), geometry, 1800.0, (1,), exponent=1.0)
+
+
 def test_default_zero_storage_is_not_equivalent_to_zero_exponent() -> None:
     incoming = (0.0, 1.0, 0.5, 0.0)
     assert route_default_reach(incoming, coefficient_k=0.0, exponent_m=0.8, time_step_hours=0.5) == incoming
