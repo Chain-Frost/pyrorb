@@ -1,7 +1,7 @@
 # S2 native report-volume conventions versus physical-horizon integration
 
 **Status:** independent reporting diagnostic, **not** numerical RORB compatibility acceptance.
-The strict [S2 integration](https://github.com/Chain-Frost/python-runoff-routing/pull/23),
+The strict [S2 integration](https://github.com/Chain-Frost/pyrorb/pull/23),
 [regression contract](REGRESSION.md) and original raw time labels remain unchanged.
 
 ## What is being compared

@@ -1,11 +1,12 @@
-# Documentation index
+# PyRORB documentation
 
 ## Start here
 
 - [Project README](../README.md) — purpose, installation, three engine roles and acceptance limits.
+- [Naming and compatibility policy](NAMING.md) — PyRORB identity, retained `runoff_routing` imports and stable stored identifiers.
 - [Quickstart](QUICKSTART.md) — install, engine selection, single event, batches, public regression and wheel.
-- [Current backlog and work owners](BACKLOG.md) — remaining work and links to live issues; [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) is the programme of record.
-- [Current capability status](STATUS.md) — delivered software, staged work and scientific limitations; the [single merged CMD feature matrix](CMD_FEATURE_MATRIX.md) from [PR #84](https://github.com/Chain-Frost/python-runoff-routing/pull/84) is authoritative for feature-level recognition, execution, outputs and qualification.
+- [Current backlog and work owners](BACKLOG.md) — remaining work and links to live issues; [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1) is the programme of record.
+- [Current capability status](STATUS.md) — delivered software, staged work and scientific limitations; the [single merged CMD feature matrix](CMD_FEATURE_MATRIX.md) from [PR #84](https://github.com/Chain-Frost/pyrorb/pull/84) is authoritative for feature-level recognition, execution, outputs and qualification.
 - [CLI/text-file selected-engine batch MVP](PROJECT_BATCH_MVP.md) — import/validate/run, ordered explicit events, complete CSV/JSON and plain-text results (#119).
 - [Engine contract](ENGINES.md), [default engineering method](ENGINEERING_METHOD.md), [prepared explicit-event batches](ENGINEERING_BATCHES.md), [JSON project format](PROJECT_JSON.md), [development and quality](DEVELOPMENT.md), [compatibility](COMPATIBILITY.md), [regression policy](REGRESSION.md) and [public regression dataset](REGRESSION_DATASET.md).
 - [Agent instructions](../AGENTS.md) and [current work/evidence receipts](work/README.md).
