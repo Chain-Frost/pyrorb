@@ -1,6 +1,6 @@
 # Implementation plan — delivered CLI product and remaining qualification
 
-[Current status](STATUS.md) records merged deliveries and exact evidence. [The backlog](BACKLOG.md) assigns remaining work under [roadmap #1](https://github.com/Chain-Frost/python-runoff-routing/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5). Use the [single feature matrix](CMD_FEATURE_MATRIX.md) for recognition, execution, outputs and qualification; dated [work receipts](work/README.md) do not reopen completed assignments.
+[Current status](STATUS.md) records merged deliveries and exact evidence. [The backlog](BACKLOG.md) assigns remaining work under [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5). Use the [single feature matrix](CMD_FEATURE_MATRIX.md) for recognition, execution, outputs and qualification; dated [work receipts](work/README.md) do not reopen completed assignments.
 
 ## Foundation already delivered
 

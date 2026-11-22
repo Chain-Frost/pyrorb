@@ -86,9 +86,9 @@ environment outside the checkout; execute with that interpreter:
 ```sh
 python -m build --wheel
 python -m venv /tmp/runoff-mvp-wheel
-/tmp/runoff-mvp-wheel/bin/python -m pip install dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl
+/tmp/runoff-mvp-wheel/bin/python -m pip install dist/pyrorb-0.0.0.dev0-py3-none-any.whl
 /tmp/runoff-mvp-wheel/bin/python examples/create_cmd_project.py
-/tmp/runoff-mvp-wheel/bin/python -m runoff_routing.project_batch cmd-example-project.json wheel-mvp --events examples/mvp-events.json --engine python-cmd --wheel-artifact dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl
+/tmp/runoff-mvp-wheel/bin/python -m runoff_routing.project_batch cmd-example-project.json wheel-mvp --events examples/mvp-events.json --engine python-cmd --wheel-artifact dist/pyrorb-0.0.0.dev0-py3-none-any.whl
 ```
 
 On Windows use `py -3.13 -m venv <new-folder>` and

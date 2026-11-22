@@ -22,14 +22,14 @@ from .project_json import EmbeddedRun, load_project
 from .rorb_inspect import inspect_file
 
 INSTRUCTIONS = (
-    "This local server gives read-only discovery and inspection of python-runoff-routing. "
+    "This local server gives read-only discovery and inspection of PyRORB. "
     "Call list_capabilities, then describe_capability. Staged and planned entries are not runnable. "
     "Parsing and structural validation do not establish native parity, physical accuracy or engineering acceptance. "
     "Do not silently substitute another engine. For execution use the documented CLI/Python API."
 )
 MAX_INSPECTION_BYTES = 32 * 1024 * 1024
 _READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
-mcp = MCPServer("python-runoff-routing", instructions=INSTRUCTIONS)
+mcp = MCPServer("PyRORB", instructions=INSTRUCTIONS)
 
 
 @mcp.tool(annotations=_READ_ONLY)

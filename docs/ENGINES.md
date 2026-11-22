@@ -10,7 +10,7 @@ or launched for normal Python use, inspection, installation or CI.
 | `python-cmd` | **Temporary default**; `cmd-6.44` | Merged #132/#135/#108/#111/#113/#120; latest reviewed source/installed-wheel original 50 Q / 19,550 ordinates, 48 scalar pass/two undefined zero-time incomplete; full feature/site/physical #5 open | Supported admitted original DESIGN including historical graphical code-2/FI, bounded mode-2 and ordered ordinary code-7 | Complete source/site/clock Q outcomes for qualified profiles, not universal CMD/physical equivalence |
 | `rorb-cmd` | Explicit; `cmd-6.44` | User-installed executable; conditional native capture, not scientific approval | Original hash-verified `.par/.catg/.stm` project, DESIGN one ISA/burst/pluviograph, lumped kc, IL/CL | Complete validated native HydNNN discharges, exact raw native clocks/tokens and executable evidence; internal states unavailable |
 
-The bounded [#119 CLI/text-file MVP](https://github.com/Chain-Frost/python-runoff-routing/issues/119) was **delivered by merged #128** with five original seeds / 1,805 printed ordinates and full selected-engine JSON/CSV/text event/batch output; deterministic #136 ARR software uses the same runner. Original upstream PR16 producer, code-11/physical sites, default-engine scientific and generated-storm native claims remain separately open, not hidden by delivered software. Advanced #114–#118 are post-MVP; #96 is the current ordinary PyRomb target. No GUI or general native investigation is in scope.
+The bounded [#119 CLI/text-file MVP](https://github.com/Chain-Frost/pyrorb/issues/119) was **delivered by merged #128** with five original seeds / 1,805 printed ordinates and full selected-engine JSON/CSV/text event/batch output; deterministic #136 ARR software uses the same runner. Original upstream PR16 producer, code-11/physical sites, default-engine scientific and generated-storm native claims remain separately open, not hidden by delivered software. Advanced #114–#118 are post-MVP; #96 is the current ordinary PyRomb target. No GUI or general native investigation is in scope.
 
 ## JSON schema and selection
 
@@ -126,7 +126,7 @@ from runoff_routing.engine_execution import run_engine_project
 
 outcome = run_engine_project(
     Path("project.json"),
-    wheel_artifact=Path("dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl"),
+    wheel_artifact=Path("dist/pyrorb-0.0.0.dev0-py3-none-any.whl"),
 )
 print(outcome.implementation_revision, outcome.verified_wheel_sha256)
 ```
@@ -134,7 +134,7 @@ print(outcome.implementation_revision, outcome.verified_wheel_sha256)
 Equivalent CLI:
 
 ```powershell
-py -3.14 -m runoff_routing.project_json run project.json result.json --wheel-artifact dist/python_runoff_routing-0.0.0.dev0-py3-none-any.whl
+py -3.14 -m runoff_routing.project_json run project.json result.json --wheel-artifact dist/pyrorb-0.0.0.dev0-py3-none-any.whl
 ```
 
 The installed-wheel quality workflow exercises this path with the actual built

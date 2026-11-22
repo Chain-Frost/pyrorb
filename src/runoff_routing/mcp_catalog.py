@@ -143,7 +143,7 @@ CATALOG: tuple[Capability, ...] = (
         "docs/STATUS.md",
         "Monte Carlo sampling, execution and frequency analysis under development.",
         "Not shipped on main; original RORB statistical equivalence unqualified.",
-        "https://github.com/Chain-Frost/python-runoff-routing/pull/151",
+        "https://github.com/Chain-Frost/pyrorb/pull/151",
     ),
     Capability(
         "native_representative_selection",
@@ -154,7 +154,7 @@ CATALOG: tuple[Capability, ...] = (
         "docs/ARR_DETERMINISTIC_RESULTS.md",
         "Native representative-event and critical-duration selection qualification.",
         "Do not treat diagnostic observed-peak ranks as native rules.",
-        "https://github.com/Chain-Frost/python-runoff-routing/issues/152",
+        "https://github.com/Chain-Frost/pyrorb/issues/152",
     ),
     Capability(
         "advanced_structures",
@@ -165,7 +165,7 @@ CATALOG: tuple[Capability, ...] = (
         "docs/CMD_FEATURE_MATRIX.md",
         "Special storages and other deferred advanced features.",
         "Must continue to fail closed until separately implemented and qualified.",
-        "https://github.com/Chain-Frost/python-runoff-routing/issues/5",
+        "https://github.com/Chain-Frost/pyrorb/issues/5",
     ),
 )
 

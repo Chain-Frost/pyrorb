@@ -1,6 +1,6 @@
 # S5 - portable native RORB CMD export (issue #141)
 
-**Software implementation merged:** [PR #162](https://github.com/Chain-Frost/python-runoff-routing/pull/162), 16 November 2026, squash `766b56a8ba6fe42785f05bb5d8df51a741a07e2c`. The exact-head source/installed-wheel quality and package/launcher software tests passed. **Native RORB CMD executable acceptance remains `not_run`; numerical equivalence remains `not_assessed`.**
+**Software implementation merged:** [PR #162](https://github.com/Chain-Frost/pyrorb/pull/162), 16 November 2026, squash `766b56a8ba6fe42785f05bb5d8df51a741a07e2c`. The exact-head source/installed-wheel quality and package/launcher software tests passed. **Native RORB CMD executable acceptance remains `not_run`; numerical equivalence remains `not_assessed`.**
 
 The native export is distinct from S1 `export-run`, which writes a typed JSON model, and from S0 `capture_cmd`, which constructs its *own* PAR with verbosity 3. The native exporter stages and reparses **the exact PAR handed to a recipient**, without running Python or regenerating a different PAR at native execution time.
 
@@ -66,9 +66,9 @@ For acceptance record the native executable's original SHA-256 and observed vers
 
 ### Remaining dependencies and limits
 
-- Merged #138 [PR #157](https://github.com/Chain-Frost/python-runoff-routing/pull/157) supplies the public typed `resolve_effective_model` that native export and Python event selection share. Persisted engine choices and schema-1 historical meaning are retained.
-- Merged #140 [PR #159](https://github.com/Chain-Frost/python-runoff-routing/pull/159) supplies PAR-led binding, schema-3 effective editing, `LoadedProject.run` and the shared `export-native` CLI delegation. Export copies the selected staged inputs and does not follow original embedded paths or package local `resolved_source` paths.
-- Merged #139 [PR #166](https://github.com/Chain-Frost/python-runoff-routing/pull/166) supplies the optional pinned PyRomb writer and STM serializer. The positive edited-CATG test ran as part of the merged-main PR #162 source suite. Exact unmodified CATG copy does not need PyRomb; edited graphical input still requires a valid `GeDrawing` and the optional writer dependency.
+- Merged #138 [PR #157](https://github.com/Chain-Frost/pyrorb/pull/157) supplies the public typed `resolve_effective_model` that native export and Python event selection share. Persisted engine choices and schema-1 historical meaning are retained.
+- Merged #140 [PR #159](https://github.com/Chain-Frost/pyrorb/pull/159) supplies PAR-led binding, schema-3 effective editing, `LoadedProject.run` and the shared `export-native` CLI delegation. Export copies the selected staged inputs and does not follow original embedded paths or package local `resolved_source` paths.
+- Merged #139 [PR #166](https://github.com/Chain-Frost/pyrorb/pull/166) supplies the optional pinned PyRomb writer and STM serializer. The positive edited-CATG test ran as part of the merged-main PR #162 source suite. Exact unmodified CATG copy does not need PyRomb; edited graphical input still requires a valid `GeDrawing` and the optional writer dependency.
 - Optional external rainfall/curve/temporal-pattern inputs cannot be inferred from metadata. Non-reference external assets currently fail closed rather than yield an incomplete native package. RORBwin saved PAR, plain computational CAT and DAT remain unsupported.
 - Native output names, verbosity-dependent available reports and actual CMD success are **not characterised in this bounded software slice**. An export remains marked native-not-run until the actual relocated-par Windows acceptance case is performed. No native executable, numerical method, private data dependency, GUI, second comparator or feature matrix is added.
 

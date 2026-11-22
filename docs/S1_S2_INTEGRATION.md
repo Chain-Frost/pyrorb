@@ -1,6 +1,6 @@
 # S1–S2 Python-only integration
 
-**Status: implementation merged to `main` in [PR #23](https://github.com/Chain-Frost/python-runoff-routing/pull/23), NOT an accepted RORB-compatible numerical implementation.** This document covers the code behind [S1 #19](https://github.com/Chain-Frost/python-runoff-routing/pull/19) and [S2 #14](https://github.com/Chain-Frost/python-runoff-routing/pull/14)/[#18](https://github.com/Chain-Frost/python-runoff-routing/pull/18). Keep [issue #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3) and [issue #4](https://github.com/Chain-Frost/python-runoff-routing/issues/4) open.
+**Status: implementation merged to `main` in [PR #23](https://github.com/Chain-Frost/pyrorb/pull/23), NOT an accepted RORB-compatible numerical implementation.** This document covers the code behind [S1 #19](https://github.com/Chain-Frost/pyrorb/pull/19) and [S2 #14](https://github.com/Chain-Frost/pyrorb/pull/14)/[#18](https://github.com/Chain-Frost/pyrorb/pull/18). Keep [issue #3](https://github.com/Chain-Frost/pyrorb/issues/3) and [issue #4](https://github.com/Chain-Frost/pyrorb/issues/4) open.
 
 ## Supported API, source provenance and no-clobber outputs
 
@@ -100,8 +100,8 @@ Use the existing Windows `quality.yml` on the draft integration PR. Run private 
 
 **Proposed merge sequence and conflict resolution:**
 
-1. Complete and separately review S0 [#12](https://github.com/Chain-Frost/python-runoff-routing/pull/12) before accepting S1 inspection [#13](https://github.com/Chain-Frost/python-runoff-routing/pull/13), then typed/codec S1 [#19](https://github.com/Chain-Frost/python-runoff-routing/pull/19).
-2. Independently review S2 routing [#14](https://github.com/Chain-Frost/python-runoff-routing/pull/14), followed by printed-ordinate audit [#18](https://github.com/Chain-Frost/python-runoff-routing/pull/18). Keep their validation obligations separate and use their existing branches, not an unrelated S1 rebasing operation.
+1. Complete and separately review S0 [#12](https://github.com/Chain-Frost/pyrorb/pull/12) before accepting S1 inspection [#13](https://github.com/Chain-Frost/pyrorb/pull/13), then typed/codec S1 [#19](https://github.com/Chain-Frost/pyrorb/pull/19).
+2. Independently review S2 routing [#14](https://github.com/Chain-Frost/pyrorb/pull/14), followed by printed-ordinate audit [#18](https://github.com/Chain-Frost/pyrorb/pull/18). Keep their validation obligations separate and use their existing branches, not an unrelated S1 rebasing operation.
 3. Integration includes an explicit **two-parent merge commit** (S1 and S2 heads), then integration-only commits. Once both parent lines are merged to `main`, update the integration PR target/branch with a non-forced merge/reconciliation; resolve `README.md`, `docs/README.md` and `docs/work/README.md` by keeping both work histories and explicit links. Keep duplicate old fixture parser excluded from domain authority.
 4. Run exact-head Windows 3.14 quality, build/wheel import, public integration tests, then separate private offline replay. Only then request independent numerical/domain review. No issue closure, package publication, native launches or automatic merge from this draft integration branch.
 

@@ -1,6 +1,6 @@
 # RORB legacy-behavior audit and compatibility-warning contract
 
-Status: proposed policy, not an implemented feature. Tracking: [independent audit issue #16](https://github.com/Chain-Frost/python-runoff-routing/issues/16). Related: [S0 #2](https://github.com/Chain-Frost/python-runoff-routing/issues/2), [S1 #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3), [S2 #4](https://github.com/Chain-Frost/python-runoff-routing/issues/4).
+Status: proposed policy, not an implemented feature. Tracking: [independent audit issue #16](https://github.com/Chain-Frost/pyrorb/issues/16). Related: [S0 #2](https://github.com/Chain-Frost/pyrorb/issues/2), [S1 #3](https://github.com/Chain-Frost/pyrorb/issues/3), [S2 #4](https://github.com/Chain-Frost/pyrorb/issues/4).
 
 ## Purpose
 
@@ -118,4 +118,4 @@ The eventual independently authored Python code should derive from public mathem
 
 ## Dependencies and delivery
 
-These responsibilities were originally assigned to historical S0/S1/S2 drafts; they are not current live handoffs. The [current backlog](BACKLOG.md) now allocates public engine, parser and regression ownership, and the [S0 reference-capture contract](REFERENCE_CAPTURE.md) remains the supported native-evidence interface. For further specific GUI/CMD observations, track the bounded, deferred [behavior audit #16](https://github.com/Chain-Frost/python-runoff-routing/issues/16) without adding another public runner or expanding RORBwin before the CMD gate. The [original investigation prompt](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-11-rorb-forensics-handoff.md) remains only in immutable Git history, not as an instruction to start a new native campaign.
+These responsibilities were originally assigned to historical S0/S1/S2 drafts; they are not current live handoffs. The [current backlog](BACKLOG.md) now allocates public engine, parser and regression ownership, and the [S0 reference-capture contract](REFERENCE_CAPTURE.md) remains the supported native-evidence interface. For further specific GUI/CMD observations, track the bounded, deferred [behavior audit #16](https://github.com/Chain-Frost/pyrorb/issues/16) without adding another public runner or expanding RORBwin before the CMD gate. The [original investigation prompt](https://github.com/Chain-Frost/python-runoff-routing/blob/c789c58fc7605c2341fef969ca426d30c3a477bf/docs/work/2026-11-11-rorb-forensics-handoff.md) remains only in immutable Git history, not as an instruction to start a new native campaign.
