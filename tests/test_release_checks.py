@@ -208,6 +208,7 @@ def test_supported_core_metadata_versions_are_accepted(tmp_path: Path, metadata_
     raw = _metadata().replace(b"Metadata-Version: 2.4", f"Metadata-Version: {metadata_version}".encode())
     assert CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, wheel=raw, sdist=raw)) == []
 
+
 def test_missing_extra_and_different_sdist_requirements_fail(tmp_path: Path) -> None:
     raw = _metadata(requirements=("sample-reader>=2",)).replace(b"Provides-Extra: catg\n", b"")
     errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, sdist=raw))

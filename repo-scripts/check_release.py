@@ -184,8 +184,7 @@ def _wheel_metadata(path: Path, filename_name: str, filename_version: Version) -
         directories = {
             PurePosixPath(entry.filename).parts[0]
             for entry in archive.infolist()
-            if PurePosixPath(entry.filename).parts
-            and PurePosixPath(entry.filename).parts[0].endswith(".dist-info")
+            if PurePosixPath(entry.filename).parts and PurePosixPath(entry.filename).parts[0].endswith(".dist-info")
         }
         if directories != {directory}:
             detail = "Wheel contains an unrelated top-level .dist-info directory"
