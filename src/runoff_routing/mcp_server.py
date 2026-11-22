@@ -129,10 +129,19 @@ def summarize_arr_results(effective_path: str, routed_path: str) -> dict[str, ob
     """Read persisted ARR outcomes and return compact summary metadata, not full hydrographs."""
     summary = read_deterministic_results(Path(effective_path), Path(routed_path)).data
     keys = (
-        "format", "schema_version", "engine", "numerical_profile", "expected_population",
-        "prepared_population", "physical_print_sites", "software_execution_success",
-        "software_population_complete", "selection_qualification", "routed_status_counts",
-        "routed_native_reference_status", "site_population_count",
+        "format",
+        "schema_version",
+        "engine",
+        "numerical_profile",
+        "expected_population",
+        "prepared_population",
+        "physical_print_sites",
+        "software_execution_success",
+        "software_population_complete",
+        "selection_qualification",
+        "routed_status_counts",
+        "routed_native_reference_status",
+        "site_population_count",
     )
     return {name: summary.get(name) for name in keys}
 
