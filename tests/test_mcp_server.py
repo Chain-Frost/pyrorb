@@ -13,9 +13,11 @@ from runoff_routing.mcp_server import inspect_rorb_file, mcp
 
 def test_catalog_has_explicit_placeholders() -> None:
     mc = find_capability("monte_carlo")
-    assert mc is not None and mc.exposure == "staged"
+    assert mc is not None
+    assert mc.exposure == "staged"
     special = find_capability("advanced_structures")
-    assert special is not None and special.exposure == "planned"
+    assert special is not None
+    assert special.exposure == "planned"
     assert find_capability("missing_api") is None
     assert len({entry.name for entry in CATALOG}) == len(CATALOG)
 
