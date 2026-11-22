@@ -253,6 +253,7 @@ def test_mcp_arr_rejects_native_configuration_before_routing(tmp_path: Path) -> 
     config = _design(tmp_path, project)
     data = json.loads(config.read_text(encoding="utf-8"))
     data["engine"] = "rorb-cmd"
+    data["rainfall_preparation"] = "published_arf_stm_2dp"
     config.write_text(json.dumps(data) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="not exposed through MCP"):
         prepare_arr_design(str(config), str(tmp_path / "blocked"), allow_write=True)
