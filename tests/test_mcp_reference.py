@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+from collections.abc import Callable
 import json
 from importlib import import_module
 from pathlib import Path
@@ -11,10 +12,11 @@ from typing import cast
 
 from jsonschema import Draft202012Validator
 from mcp import Client
+from mcp.types import TextResourceContents
 
 from runoff_routing.arr_design_batch import read_design_config
 from runoff_routing.mcp_catalog import CATALOG
-from runoff_routing.mcp_reference import API_AREAS, EXAMPLES, REFERENCE_VERSION, SCHEMAS, api_manifest, schema_manifest
+from runoff_routing.mcp_reference import API_AREAS, EXAMPLES, REFERENCE_VERSION, SCHEMAS, SchemaName, api_manifest, schema_manifest
 from runoff_routing.mcp_server import mcp
 from runoff_routing.project_batch import load_event_request
 from runoff_routing.project_json import EmbeddedRun, Project, project_to_dict, project_to_json
@@ -39,8 +41,10 @@ def test_reference_schema_version_and_example_contracts(tmp_path: Path) -> None:
     assert json.loads(project_to_json(project)) == project_doc
 
     for name, document in (("project", project_doc), ("events", event_doc), ("arr-design", config_doc)):
-        Draft202012Validator.check_schema(SCHEMAS[name])
-        Draft202012Validator(SCHEMAS[name]).validate(document)
+        schema = SCHEMAS[cast("SchemaName", name)]
+        Draft202012Validator.check_schema(schema)
+        validate_document = cast("Callable[[object], None]", Draft202012Validator(schema).validate)
+        validate_document(document)
 
     request_path = tmp_path / "events.json"
     request_path.write_text(json.dumps(event_doc), encoding="utf-8")
@@ -81,11 +85,15 @@ def test_mcp_resource_uris_and_api_discovery_through_client() -> None:
             assert "runoff-routing://v1/examples" in uris
             assert "runoff-routing://v1/api" in uris
             schemas = await client.read_resource("runoff-routing://v1/schemas")
-            payload = json.loads(schemas.contents[0].text)
+            schema_part = schemas.contents[0]
+            assert isinstance(schema_part, TextResourceContents)
+            payload = json.loads(schema_part.text)
             assert payload["reference_version"] == 1
             assert "project" in payload["schemas"]
             examples = await client.read_resource("runoff-routing://v1/examples")
-            content = json.loads(examples.contents[0].text)
+            example_part = examples.contents[0]
+            assert isinstance(example_part, TextResourceContents)
+            content = json.loads(example_part.text)
             assert content["examples"]["events"]["document"]["schema_version"] == 1
             reference = await client.call_tool("get_api_reference", {"area": "model-editing"})
             assert not reference.is_error

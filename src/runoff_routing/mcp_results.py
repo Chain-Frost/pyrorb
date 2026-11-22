@@ -45,6 +45,12 @@ def _int(value: object, label: str) -> int:
     return value
 
 
+def _list(value: object, label: str) -> list[object]:
+    if not isinstance(value, list):
+        _fail(f"{label} must be a JSON array")
+    return cast("list[object]", value)
+
+
 def _pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for name, value in pairs:
@@ -86,10 +92,8 @@ def _single(item: dict[str, object]) -> dict[str, object]:
     status = _string(item.get("status"), "status")
     if status not in {entry.value for entry in ResultStatus}:
         _fail("Unsupported single-project result status")
-    graphs = item.get("hydrographs")
-    diagnostics = item.get("diagnostics")
-    if not isinstance(graphs, list) or not isinstance(diagnostics, list):
-        _fail("Single-project result requires hydrographs and diagnostics lists")
+    graphs = _list(item.get("hydrographs"), "hydrographs")
+    diagnostics = _list(item.get("diagnostics"), "diagnostics")
     return {
         "kind": "single_project",
         "status": status,
@@ -114,9 +118,7 @@ def _single(item: dict[str, object]) -> dict[str, object]:
 def _batch(item: dict[str, object]) -> dict[str, object]:
     if item.get("schema_version") != REQUEST_VERSION:
         _fail("Unknown batch result version")
-    data = item.get("outcomes")
-    if not isinstance(data, list):
-        _fail("Batch result is missing the outcomes list")
+    data = _list(item.get("outcomes"), "outcomes")
     rows = [_object(value, "Batch outcome") for value in data]
     expected = _int(item.get("requested_event_count"), "requested_event_count")
     if len(rows) != expected:
@@ -141,7 +143,7 @@ def _batch(item: dict[str, object]) -> dict[str, object]:
                 "diagnostic_codes": [
                     entry.get("code")
                     for entry in (
-                        _object(value, "diagnostic") for value in cast("list[object]", row.get("diagnostics", []))[:1]
+                        _object(value, "diagnostic") for value in _list(row.get("diagnostics"), "outcome.diagnostics")[:1]
                     )
                 ],
             }
@@ -191,8 +193,9 @@ def _arr_summary(item: dict[str, object]) -> dict[str, object]:
     result = {name: item.get(name) for name in fields}
     sites = result.get("physical_print_sites")
     if isinstance(sites, list):
-        result["physical_print_sites"] = sites[:MAX_FAILURES]
-        result["site_list_truncated"] = len(sites) > MAX_FAILURES
+        site_items = cast("list[object]", sites)
+        result["physical_print_sites"] = site_items[:MAX_FAILURES]
+        result["site_list_truncated"] = len(site_items) > MAX_FAILURES
     return {"kind": "arr_summary", **result}
 
 

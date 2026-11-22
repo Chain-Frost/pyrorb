@@ -109,7 +109,7 @@ def test_arr_effective_and_summary_metadata_do_not_infer_selection(tmp_path: Pat
     assert summary["kind"] == "arr_summary"
     assert summary["selection_qualification"] == "unverified"
     assert summary["site_list_truncated"] is True
-    assert len(summary["physical_print_sites"]) == 10
+    assert summary["physical_print_sites"] == [f"site_{i}" for i in range(10)]
 
 
 def test_bad_json_and_excessive_size_fail_closed(tmp_path: Path) -> None:
