@@ -18,7 +18,7 @@ from zipfile import BadZipFile, ZipFile
 _MAX_MODULE_BYTES = 8 * 1024 * 1024
 _MAX_WHEEL_BYTES = 64 * 1024 * 1024
 _SOURCE_DOMAIN = b"python-runoff-routing:package-code-v1\x00"
-_PACKAGE_NAME = "python-runoff-routing"
+_PACKAGE_NAME = "pyrorb"
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,6 +1,6 @@
 # S5-P2: SHA-pinned native CMD reference review
 
-**Status: read-only diagnostic only; numerical equivalence is unassessed.** Child of [S5 #7](https://github.com/Chain-Frost/python-runoff-routing/issues/7), [issue #51](https://github.com/Chain-Frost/python-runoff-routing/issues/51). Depends on the S5-P1 [PR #47](https://github.com/Chain-Frost/python-runoff-routing/pull/47), typed native [PR #45](https://github.com/Chain-Frost/python-runoff-routing/pull/45), and separate printed-volume [PR #40](https://github.com/Chain-Frost/python-runoff-routing/pull/40).
+**Status: read-only diagnostic only; numerical equivalence is unassessed.** Child of [S5 #7](https://github.com/Chain-Frost/pyrorb/issues/7), [issue #51](https://github.com/Chain-Frost/pyrorb/issues/51). Depends on the S5-P1 [PR #47](https://github.com/Chain-Frost/pyrorb/pull/47), typed native [PR #45](https://github.com/Chain-Frost/pyrorb/pull/45), and separate printed-volume [PR #40](https://github.com/Chain-Frost/pyrorb/pull/40).
 
 ## Inputs and validation
 
@@ -65,4 +65,4 @@ Private evidence commit [`4e7b026`](https://github.com/Chain-Frost/runoff-routin
 
 ## Integration status (14 November 2026)
 
-This diagnostic module was merged into `main` via [PR #52](https://github.com/Chain-Frost/python-runoff-routing/pull/52) at `ad4d822`. [Windows CI #43491149798](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43491149798) passed 386 synthetic tests and strict Ruff/Pyright/wheel checks. Source hashes and raw CMD timestamps were independently verified by the prior exact-wheel private replay; numerical printed parity **FAILED (11/201 within budget; maximum 0.22707848694007993 m³/s)**. The report still states `numerical_acceptance=unassessed`; neither RORB numerical equivalence nor verified print-site identity is claimed.
+This diagnostic module was merged into `main` via [PR #52](https://github.com/Chain-Frost/pyrorb/pull/52) at `ad4d822`. [Windows CI #43491149798](https://github.com/Chain-Frost/python-runoff-routing/actions/runs/43491149798) passed 386 synthetic tests and strict Ruff/Pyright/wheel checks. Source hashes and raw CMD timestamps were independently verified by the prior exact-wheel private replay; numerical printed parity **FAILED (11/201 within budget; maximum 0.22707848694007993 m³/s)**. The report still states `numerical_acceptance=unassessed`; neither RORB numerical equivalence nor verified print-site identity is claimed.

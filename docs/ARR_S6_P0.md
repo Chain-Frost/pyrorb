@@ -1,6 +1,6 @@
 # S6-P0: offline ARR 2026v1 and legacy ARR2016 Data Hub intake
 
-**Status:** S6-P0 source-ingestion implementation **merged via #38**; source validation only. This is **not** an ARR rainfall-method acceptance, hydraulic/numerical acceptance, compliance certificate, or RORB adapter. [Issue #33](https://github.com/Chain-Frost/python-runoff-routing/issues/33) is a first slice of [S6 #8](https://github.com/Chain-Frost/python-runoff-routing/issues/8). The predecessor [source reconnaissance #34](https://github.com/Chain-Frost/python-runoff-routing/pull/34) is retained as a historical record, not a competing active data contract.
+**Status:** S6-P0 source-ingestion implementation **merged via #38**; source validation only. This is **not** an ARR rainfall-method acceptance, hydraulic/numerical acceptance, compliance certificate, or RORB adapter. [Issue #33](https://github.com/Chain-Frost/pyrorb/issues/33) is a first slice of [S6 #8](https://github.com/Chain-Frost/pyrorb/issues/8). The predecessor [source reconnaissance #34](https://github.com/Chain-Frost/pyrorb/pull/34) is retained as a historical record, not a competing active data contract.
 
 ## References and the observed contract
 
@@ -21,7 +21,7 @@ Both formats preserve **source order**, original bytes, SHA-256, content size, o
 
 ## Historical ARR 2026v1 reconnaissance preserved from draft #34
 
-This section carries forward the distinct *source-observation cautions* from [historical #34](https://github.com/Chain-Frost/python-runoff-routing/pull/34) (exact head `1eb4a456eab76170a99546c6239a1124949d8859`) without adding a second schema/parser contract. These are **dated production export observations** and exclusions, not claims that optional ARR2026 datasets have been implemented or numerically accepted.
+This section carries forward the distinct *source-observation cautions* from [historical #34](https://github.com/Chain-Frost/pyrorb/pull/34) (exact head `1eb4a456eab76170a99546c6239a1124949d8859`) without adding a second schema/parser contract. These are **dated production export observations** and exclusions, not claims that optional ARR2026 datasets have been implemented or numerically accepted.
 
 - The production source examples used `All=1`, but the Data Hub's documented **Select All** option does not necessarily include special `All IFD` or **climate-adjusted IFD** datasets. Their absence from an illustrative export is **not** proof that the layers do not exist; request them explicitly and retain source/export options and raw hashes before adding parser support.
 - The production [ARR Data Hub changelog](https://data.arr-software.org/changelog) and a *development-server* changelog may describe different feature deployment states. Do not treat fields observed only on a development server as part of an implemented production schema without a captured original export.
