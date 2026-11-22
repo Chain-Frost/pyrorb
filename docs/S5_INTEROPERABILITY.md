@@ -25,7 +25,7 @@ or access to original project/source directories. All five native
 processes exited 0 without timeout; all 15 emitted input pre/post
 hashes match. Observed verbosity levels 1/2/3 produced genuinely
 different reports. The now merged
-[#142 canonical ryan-tools reader](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+[#142 canonical ryan-tools reader](https://github.com/Chain-Frost/pyrorb/pull/165)
 retained 1,005 native hydrograph ordinates, clocks and source tokens.
 
 The canonical reader integration is **merged**. Owner-authorised authentic RORBWin 6.45 alternative reader acceptance passed 490/490 associations, preserving 1,472 original/distributed file identities. The older distinct 420-event source corpus was not located and is not claimed as validated. The five installed canonical reader results

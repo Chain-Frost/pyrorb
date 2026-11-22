@@ -1,6 +1,6 @@
 # S2: first printed-precision discrepancy relative to runoff onset
 
-**Status:** diagnostic only; not native numerical acceptance. Source stage [#4](https://github.com/Chain-Frost/python-runoff-routing/issues/4) stays open. This intentionally does not duplicate [nonlinear printed-storage balance #41](https://github.com/Chain-Frost/python-runoff-routing/pull/41), the [future-peak budget investigation](https://github.com/Chain-Frost/runoff-routing-investigations/pull/17), or [native-volume convention #40](https://github.com/Chain-Frost/python-runoff-routing/pull/40).
+**Status:** diagnostic only; not native numerical acceptance. Source stage [#4](https://github.com/Chain-Frost/pyrorb/issues/4) stays open. This intentionally does not duplicate [nonlinear printed-storage balance #41](https://github.com/Chain-Frost/pyrorb/pull/41), the [future-peak budget investigation](https://github.com/Chain-Frost/runoff-routing-investigations/pull/17), or [native-volume convention #40](https://github.com/Chain-Frost/pyrorb/pull/40).
 
 The new pure `runoff_routing.onset_diagnostics` module **reuses** `assess_printed_parity` and its pre-existing per-native-token half-last-place budget without selecting any new tolerance. It reports the first strictly discrepant sample relative to the first nonzero value in either the predicted or native series, plus both separate onset indices. The native raw increment and time tokens are optional but must be provided together; they are carried verbatim, **never** shifted onto the model-elapsed axis.
 

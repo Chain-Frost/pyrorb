@@ -1,6 +1,6 @@
 # PAR-led RORB CMD project import — CLI and Python API
 
-The [bounded import scope #140](https://github.com/Chain-Frost/python-runoff-routing/issues/140) supports **RORB CMD** saved parameter files with the characterised `# BEGIN`/`# END` field layout. A recognised RORBwin saved PAR returns an explicit *unsupported/deferred* diagnostic; old computational CAT and combined DAT inputs are excluded. Parsing or importing does **not** establish numerical equivalence.
+The [bounded import scope #140](https://github.com/Chain-Frost/pyrorb/issues/140) supports **RORB CMD** saved parameter files with the characterised `# BEGIN`/`# END` field layout. A recognised RORBwin saved PAR returns an explicit *unsupported/deferred* diagnostic; old computational CAT and combined DAT inputs are excluded. Parsing or importing does **not** establish numerical equivalence.
 
 ## Inspect an existing PAR without loading its dependencies
 
