@@ -29,16 +29,57 @@ server diagnostics must not print to stdout.
 ## Agent contract
 
 - **Read-only tools:** `list_capabilities`, `describe_capability`, `get_engine_capabilities`,
-  `inspect_rorb_file`, `validate_project`, `inspect_event_request`,
-  `summarize_arr_results`. Inspection returns bounded metadata, not full source bytes or hydrographs.
+  `get_api_reference`, `inspect_rorb_file`, `validate_project`, `inspect_event_request`,
+  `summarize_arr_results`, `get_result_summary`. Inspection returns bounded metadata,
+  not full source bytes or hydrographs.
 - **Opt-in compute/write tools:** `run_project`, `run_project_events`, `prepare_arr_design`.
   These delegate to existing engine/project/ARR APIs. Each defaults to `allow_write=false`,
   and requires `allow_write=true`, an unused output filename or prefix and an existing parent directory.
-- **Resources:** `runoff-routing://catalog` and `runoff-routing://engines`.
+- **Resources:** `runoff-routing://catalog`, `runoff-routing://engines`, and
+  versioned `runoff-routing://v1/schemas`, `runoff-routing://v1/examples`,
+  `runoff-routing://v1/api`.
 - **Prompt:** `plan_runoff_work(task)`, for locating existing APIs and acceptance limits.
 - **Discovery states:** `mcp_tool` means callable here; `python_or_cli` means an
   existing API/CLI that has no MCP action adapter; `staged` and `planned`
   are **non-callable placeholders** with links to tracked work.
+
+### Versioned agent references and saved-result inspection
+
+`get_api_reference(area)` returns an allowlisted module/function crosswalk with the
+**live Python signature**, authoritative documentation and associated test file.
+Available areas: `model-editing`, `interoperability`, `execution`, `rainfall`,
+`reporting`, and `verification`. It guides use of the existing APIs; it does
+not introduce editing, export or parsing logic into MCP.
+
+The `runoff-routing://v1/schemas` resource contains JSON Schema 2020-12
+**structural discovery** definitions for project, explicit-event and ARR-design
+JSON, with a named authoritative Python parser for each. These schemas describe
+the outer structure and are deliberately **not complete validation substitutes**:
+nested S1 models, file hashes, rainfall method choices, event failure isolation
+and physical/numerical support must still pass the package's original validators.
+A schema match never implies that the engine can execute the input.
+
+`runoff-routing://v1/examples` gives the real checked-in synthetic project
+generation steps and the event/ARR example payloads. Contract tests ensure the
+embedded event/ARR examples match the files under `examples/`. No authentic
+engineering rainfall or native parity is claimed. `runoff-routing://v1/api`
+provides the same maintained module crosswalk in one resource, while
+`get_api_reference` is preferable for one area at a time.
+
+`get_result_summary(path)` inspects an **existing** JSON report, returning
+file SHA-256, result kind, status counts, failed-event identifiers, engine
+selections and existing qualification labels where supported. It recognises
+single project results, event batches, persisted ARR effective-population
+records and persisted ARR summaries. It refuses unknown formats, non-finite/
+duplicate JSON fields and files larger than **64 MiB**, and does not return full
+hydrographs or modify any file. This is a bounded metadata projection, **not
+a second numerical comparator, parser certification or scientific acceptance**.
+
+Example local Codex workflow: list capabilities, request the `model-editing`
+API area, read the versioned schema and example resources, validate a project,
+run it with an explicitly new output path and `allow_write=true`, then call
+`get_result_summary` on the generated JSON. Read the full existing report
+when detailed ordinates are actually required.
 
 ### Execution tool contracts
 

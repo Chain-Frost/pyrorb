@@ -20,6 +20,8 @@ from .arr_result_summary import read_deterministic_results
 from .engine_execution import run_engine_project, write_engine_result
 from .engine_types import CAPABILITIES, EngineId, EngineSelection
 from .mcp_catalog import CATALOG, Exposure, find_capability
+from .mcp_reference import API_AREAS, REFERENCE_VERSION, ApiArea, api_manifest, example_manifest, schema_manifest
+from .mcp_results import summarize_result_file
 from .project_batch import load_event_request, write_batch_results
 from .project_batch import run_project_events as execute_project_events
 from .project_json import EmbeddedRun, load_project
@@ -27,7 +29,9 @@ from .rorb_inspect import inspect_file
 
 INSTRUCTIONS = (
     "This local server gives read-only discovery plus explicitly opted-in Python computations. "
-    "Call list_capabilities, then describe_capability. Staged and planned entries are not runnable. "
+    "Call list_capabilities, then describe_capability or get_api_reference. "
+    "Versioned reference resources describe schemas, examples and functions. "
+    "Staged and planned entries are not runnable. "
     "Parsing and structural validation do not establish native parity, physical accuracy or engineering acceptance. "
     "Do not silently substitute another engine. Execution requires allow_write=true, new output "
     "destinations and only the python or python-cmd engine. Native CMD is not exposed here."
@@ -63,6 +67,34 @@ def describe_capability(name: str) -> dict[str, object]:
         details["python_signature"] = str(inspect.signature(symbol))
         details["python_docstring"] = (inspect.getdoc(symbol) or "")[:2400]
     return details
+
+
+def _api_record(entrypoint: str, record: dict[str, object]) -> dict[str, object]:
+    """Add the live signature of an allowlisted API; no user-chosen import is performed."""
+    module_name, symbol_name = entrypoint.rsplit(".", maxsplit=1)
+    target = getattr(import_module(module_name), symbol_name)
+    return {**record, "python_signature": str(inspect.signature(target))}
+
+
+@mcp.tool(annotations=_READ_ONLY)
+def get_api_reference(area: ApiArea) -> dict[str, object]:
+    """Find real API functions, source modules, signatures, documentation and test owners."""
+    functions = API_AREAS[area]
+    return {
+        "reference_version": REFERENCE_VERSION,
+        "area": area,
+        "authority": "Existing public Python functions and maintained guides; no duplicated engine logic",
+        "functions": [
+            _api_record(item.entrypoint, asdict(item))
+            for item in functions
+        ],
+    }
+
+
+@mcp.tool(annotations=_READ_ONLY)
+def get_result_summary(path: str) -> dict[str, object]:
+    """Inspect existing single, batch or ARR JSON results without copying their full ordinates."""
+    return summarize_result_file(Path(path))
 
 
 @mcp.tool(annotations=_READ_ONLY)
@@ -340,13 +372,32 @@ def engine_catalog() -> str:
     return json.dumps([asdict(item) for item in CAPABILITIES], indent=2)
 
 
+@mcp.resource("runoff-routing://v1/schemas")
+def schema_reference() -> str:
+    """Discover structural JSON schemas and their authoritative Python validation boundaries."""
+    return json.dumps(schema_manifest(), indent=2, sort_keys=True)
+
+
+@mcp.resource("runoff-routing://v1/examples")
+def example_reference() -> str:
+    """Discover maintained command sequences and checked-in synthetic JSON examples."""
+    return json.dumps(example_manifest(), indent=2, sort_keys=True)
+
+
+@mcp.resource("runoff-routing://v1/api")
+def api_reference() -> str:
+    """Discover the allowlisted Python API crosswalk, docs and test locations."""
+    return json.dumps(api_manifest(), indent=2, sort_keys=True)
+
+
 @mcp.prompt()
 def plan_runoff_work(task: str) -> str:
     """Guide an agent to existing APIs, tests and evidence boundaries for a requested task."""
     return (
         f"Task: {task}\n"
-        "Inspect list_capabilities and describe_capability, then AGENTS.md, linked maintained "
-        "documentation and current issues. Reuse existing kernels, project dispatcher and the "
+        "Inspect list_capabilities, get_api_reference and versioned MCP schema/example resources, "
+        "then AGENTS.md, maintained documentation and current issues. Reuse existing kernels, "
+        "project dispatcher and the "
         "canonical comparator/reader. Do not call placeholder entries or infer numerical parity "
         "from structural/software success. No GUI work."
     )
