@@ -15,7 +15,7 @@ from ryan_library.functions.RORB.output_reader import bind_output_site_columns
 from ryan_library.functions.RORB.reader_types import RorbDocument
 
 from runoff_routing.rorb_documents import HydrographReport, RorbSource
-from runoff_routing.rorb_out import checked_canonical_report
+from runoff_routing.rorb_out import canonical_hydrograph_view, checked_canonical_report
 
 Status = Literal["pass", "fail", "incomplete"]
 
@@ -40,6 +40,7 @@ class SiteMetrics:
     peak: ScalarField | None
     peak_time: ScalarField | None
     volume: ScalarField | None
+    physical_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,10 +130,11 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
     if len(hydrographs) != 1 or not hydrographs[0].valid or tuple(hydrographs[0].columns[3:]) != report.columns:
         message = "Canonical hydrograph scope differs from the selected report"
         raise ValueError(message)
-    if len(hydrographs[0].rows) != len(report.rows) or any(
-        hydrographs[0].source_tokens[i]["Time"] != item.raw_time for i, item in enumerate(report.rows)
-    ):
-        message = "Canonical report tokens differ from the selected hydrograph"
+    # Compare the complete retained canonical view, not just matching names and clocks.
+    # This includes each Inc, source line, exact printed Time, every Q value,
+    # timestep and reported duration; mismatches must fail before scalar binding.
+    if canonical_hydrograph_view(document, hydrographs[0]) != report:
+        message = "Canonical report tokens/metadata differ from the selected hydrograph"
         raise ValueError(message)
     # The canonical shared reader owns the sole numeric Hyd-ordinal grammar.
     # This consumes its source-preserving physical legend/column association
@@ -162,7 +164,7 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
         message = "Native scalar ordinals cannot be bound to reordered physical sites"
         raise ValueError(message)
     return tuple(
-        SiteMetrics(site.column, site.description, peak, time, volume)
+        SiteMetrics(site.column, site.description, peak, time, volume, site.physical_name)
         for site, peak, time, volume in zip(mapped, peaks, times, volumes, strict=True)
     )
 

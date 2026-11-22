@@ -3,6 +3,7 @@
 import hashlib
 import math
 from dataclasses import replace
+from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
 
@@ -88,9 +89,49 @@ def test_scalar_selectors_retain_original_token_and_location() -> None:
     assert report is not None
     actual = bind_report_metrics(original, report)[0]
     assert actual.column == "Hyd001"
+    assert actual.physical_name == "Synthetic outlet"
     assert actual.peak is not None
     field = actual.peak
     assert original.lines[field.line - 1][field.character - 1 :].split()[0] == field.token
+
+
+def test_cross_source_scalar_binding_rejects_different_q_with_same_columns_and_clocks() -> None:
+    original = source()
+    alternate = _source_from_text("\n".join(original.lines).replace("2 1.00 1.500", "2 1.00 9.000") + "\n")
+    report = inspect_output(alternate).hydrographs
+    expected = inspect_output(original).hydrographs
+    assert report is not None and expected is not None
+    assert report.columns == expected.columns
+    assert tuple(row.raw_time for row in report.rows) == tuple(row.raw_time for row in expected.rows)
+    assert report.rows[1].values == (Decimal("9.000"),)
+    with pytest.raises(ValueError, match="Canonical report tokens/metadata differ"):
+        bind_report_metrics(original, report)
+
+
+@pytest.mark.parametrize("mutation", ["increment", "line", "raw_time", "time", "q", "timestep", "duration"])
+def test_metric_binding_rejects_modified_report_fields(mutation: str) -> None:
+    original = source()
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    if mutation in {"increment", "line", "raw_time", "time", "q"}:
+        row = report.rows[1]
+        if mutation == "increment":
+            changed_row = replace(row, increment=12)
+        elif mutation == "line":
+            changed_row = replace(row, line=row.line + 1)
+        elif mutation == "raw_time":
+            changed_row = replace(row, raw_time="1.0")
+        elif mutation == "time":
+            changed_row = replace(row, time_hours=Decimal("2.0"))
+        else:
+            changed_row = replace(row, values=(Decimal("9.000"),))
+        changed = replace(report, rows=(*report.rows[:1], changed_row, *report.rows[2:]))
+    elif mutation == "timestep":
+        changed = replace(report, time_increment_hours=Decimal("1.0"))
+    else:
+        changed = replace(report, reported_duration_increments=123)
+    with pytest.raises(ValueError, match="Canonical report tokens/metadata differ"):
+        bind_report_metrics(original, changed)
 
 
 def test_duplicate_scalar_fields_do_not_disappear() -> None:
@@ -194,6 +235,7 @@ def test_unnamed_single_site_retains_numeric_scalars_but_not_physical_name() -> 
     assert len(fields) == 1
     assert fields[0].column == "Hyd001"
     assert fields[0].label == "Calculated hydrograph,"
+    assert fields[0].physical_name is None
     assert fields[0].peak is not None
     assert fields[0].peak.token == base.lines[2].split()[-1]
 
