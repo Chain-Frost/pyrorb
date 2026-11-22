@@ -143,7 +143,8 @@ def _batch(item: dict[str, object]) -> dict[str, object]:
                 "diagnostic_codes": [
                     entry.get("code")
                     for entry in (
-                        _object(value, "diagnostic") for value in _list(row.get("diagnostics"), "outcome.diagnostics")[:1]
+                        _object(value, "diagnostic")
+                        for value in _list(row.get("diagnostics"), "outcome.diagnostics")[:1]
                     )
                 ],
             }
