@@ -21,6 +21,8 @@
 
 ## ARF calculation — `arr_arf.py`
 
+**ARR Data Hub 2026v1 method review:** [ARR2019 Book 2 v4.2 versus 2026 Data Hub ARF method and source delta matrix](ARR_S6_ARF_2026_METHOD.md). The 2026 Data Hub source update does not establish a new Book 2 ARF equation; explicit source/version guards and published-vs-legacy coefficients are preserved.
+
 `calculate_arr2019_arf(*, catchment_area_km2, duration_min, aep_percent, coefficients=None, ...)` returns a frozen `ARFResult` containing **Decimal** input/output, factor, coefficient source, method-version and exact applied formula steps:
 
 1. Area ≤1 km²: ARF = 1. Area 1–10 km²: Book 2 equation 2.4.4 interpolation from area 10 km².

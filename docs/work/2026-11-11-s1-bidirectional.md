@@ -9,7 +9,7 @@
 - **Validation status:** Do not claim Windows/Python 3.14, lint/type/build/wheel, private-corpus or numerical acceptance until exact checks are observed and recorded for the PR head.
 - **Next action:** Review exact-head Windows CI and run the opt-in private read-only corpus regression on an approved local checkout. Then expand grammar from evidence-backed manual samples, integrate an explicit S2 adapter and verify native compatibility separately. **Do not close issue #3.**
 
-[Public API and capability matrix](../RORB_BIDIRECTIONAL.md) · [Original S1 inspection work](2026-11-10-s1-inspection.md) · [Compatibility contract](../COMPATIBILITY.md).
+[Public API and capability matrix](../RORB_BIDIRECTIONAL.md) · [S1 inspection guide](../S1-INSPECTION.md) · [Compatibility contract](../COMPATIBILITY.md).
 
 ## Windows quality and private corpus audit (2026-11-11)
 
