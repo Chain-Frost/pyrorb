@@ -224,3 +224,166 @@ the native report SHA-256 is
 `3adfffafecc7560958ed6ee6918bf7f3ed3de0cb93c05f7c699eeb57cfd08d6a`.
 Only this sanitised receipt is proposed for staging. Keep **#150/#9 open** and
 **#151 draft/unmerged to main**.
+
+## Independent retained-evidence qualification — 22 November 2026
+
+**Scope:** fresh local Windows audit for #150, not a repeated native campaign or a
+routing implementation change. Refetched draft #151 at
+`09eb01709dc39cd03be97182aeef4a716eaca0e4`, tree
+`ee4ae0fd2a2a55243548489c3efb550bc363126a`; separate topic worktree/branch
+`research/issue150-native-qualification-20261122`. The delivery revision is recorded
+on #150 and the child PR. #151 remains draft; #215 is untouched.
+
+### Authentication, counts and stopping decision
+
+Personally rehashed the installed `C:/Program Files/RORBWin/RORBwin.exe`: **10,923,068
+bytes**, SHA-256 `0ca65bcef548f26a5f9bceda6c99ed4f545a9498b61c93aa59a00400732d1aea`.
+The authenticated retained report identifies **6.52, updated 1 June 2023**; this is a
+report banner, not a new live-window observation. Rehashed local primary references:
+R1 manual `8faf7661a50aedf7c8dbc49511472913c63fa9341c0b73869e8fb35bb8267ed7` and
+R3 notes `96b0624a8b554b7356a634be69978f6e01fa0301705227f0126e420eab45ccb1`.
+Reviewed R1 chapter 8 and R3's MC TP/extraction/preparation sections locally; no
+executable, manual, raw report, source rows or screenshots are published here.
+
+The approved 25-event report, frozen plan, approval receipt and all four source copies
+match the hashes above. Enumerated the actual **complete 5 × 5 division/run grid**,
+one 24-hour duration, **25 unique events**, **12 printed zero peaks**, no missing grid
+members and no explicit error/failure/nonconvergence-marker lines. Absence of a marker
+does not prove every unrounded route successful. Frequency summaries and diagnostics
+are analyses of these same events, not independent replications. There is **one approved
+cohort, zero established independent replications**; timestamps establish neither seed
+independence nor independence between rainfall, TP and loss draws.
+
+Rechecked all **120** entries in the earlier custody inventory: zero changes. That
+includes the excluded 1,000-event deviation as custody evidence only; none of its
+draws is used for the numerical-method controls below. The approved-pilot inventory
+has **52 checked entries, 51 matching and one changed saved-settings file**:
+
+| Object | Recorded SHA-256 / bytes | Current SHA-256 / bytes | Disposition |
+| --- | --- | --- | --- |
+| `owner-review.par` | `67268bbf4ac3fa0ff40eb9830079a58a544d30b2c880ab1fdd72794d33813579` / 29,594 | `6a6c478ae8f95902bb09450aaae0fba90e64c1c891d105a92d0286f96d1b7203` / 29,587 | Drift observed; cause/date unknown. Exclude current PAR as proof of historical effective settings. |
+
+No original file was repaired or overwritten. The separate report/plan/source hashes
+still authenticate the narrow count/printed-field observation; this does **not**
+authenticate a replay configuration from the changed PAR.
+
+**New native work: zero launches, zero simulations, zero generated events, zero
+extractions.** The finite action selected was read-only inventory and retrospective
+arithmetic. No new native cohort was preregistered or executed. Repeating 5 × 5 with
+the same rounded fields would not recover the missing primitive inputs, stratum
+masses or exact transformations; the changed PAR also fails the configuration-identity
+precondition. Standing execution permission is available and is not the blocker.
+
+### Decisions on discriminating numerical controls
+
+These are retrospective controls on the authenticated approved cohort, **not** a
+prespecified distributional acceptance study or fresh confirmation sample.
+
+| Rule/hypothesis tested | Independent calculation and actual result | Decision |
+| --- | --- | --- |
+| TP diagnostic percentages describe this cohort's rank counts | Count each rank directly and calculate `100 × count / 25` with exact rationals; **10/10** printed percentages agree. One rank was not drawn. | **Observed** diagnostic accounting only. Nonselection does not imply zero selection weight; uniform/independent selection remains unresolved. |
+| Loss diagnostic uses a linearly interpolated sample percentile | Sort 25 printed factors; at exceedance `e`, candidate ascending index is `h = 24(1-e)`, linearly interpolate adjacent order statistics. Propagate each input's ±0.005 display interval and the reported percentile's ±0.005 interval. **21/21** native diagnostic percentiles are compatible. The competing clipped `h = 26(1-e)-1` rule is incompatible at **13/21** entries under the same rounding model. | **Inferred**, consistent with type-7-style sample-percentile reporting. No unique algorithm identification, underlying empirical-loss inverse/interpolation or distributional acceptance. |
+| Native selected-AEP summary is a direct discrete inverse over attained sampled peaks | For each summary Q, compare against all 25 sampled Q values. Give both printed values a conservative ±0.01 m³/s interval (one full display quantum, allowing ordinary rounding/truncation). **16/16** summaries have intervals disjoint from every sampled-peak interval. | **Contradicted** for this summary. An attained-support inverse cannot produce these values regardless of weights. This does not identify native smoothing, plotting positions, inversion, warning or extraction algorithms. |
+| Post-run STM is a recoverable sampled effective event | Retained STM has a **1 mm preparation depth**, 24 percentages summing exactly to 100; these match source order 1 among the ten eligible 24-hour/200 km² source patterns. The temporary report is a preliminary model check, not 25 full-Q records. | Preparation pattern binding **observed**; interpreting this STM as the 25 sampled storms is **contradicted**. Zero sampled-event TP bindings or exact routed events recovered. |
+| Printed factors uniquely determine exact effective IL | For an independently specified base `M=24 mm`, factor print 1.00 with nearest-0.01 uncertainty permits `[0.995,1.005] × 24 = [23.88,24.12] mm`, before any additional deterministic-factor or base-parameter uncertainty. | Exact recovery **unresolved**. Multiplying rounded fields produces an interval/estimate, not an exact persisted native loss. |
+
+Independent synthetic arithmetic makes the competing percentile rules reproducible
+without disclosing native rows: for sorted factors `[0,10,20,30]`, nonexceedance
+`p=1/4` gives `h=3/4`, hence **7.5** under `(n-1)p`; clipped `(n+1)p-1=1/4`
+gives **2.5**. Neither formula specifies the native underlying loss sampling law.
+An attained-support inverse must return one of the supplied peaks; linear interpolation
+can return other values. The current project deliberately uses the former policy.
+
+### F1–F6 status and material evidence still missing
+
+This is the selected #150 evidence status, not a replacement CMD feature inventory.
+
+| Gate | Documented / observed / inferred / contradicted | Unresolved native rule and next useful evidence |
+| --- | --- | --- |
+| F1 — IL law | R1 documents scaling by base IL and deterministic factor; retained default-table display is exceedance-directed with unit median. Rounded stochastic factors observed; sample-diagnostic interpolation inferred above. | Corrected ARR source/default-table binding; primitive loss variates; underlying inverse interpolation, endpoints/atoms; rainfall dependence and scale transformation. A diagnostic sample percentile is not the loss generator. Require effective factors or a controlled fixed-variate contrast before admitting #189's loss law. |
+| F2 — TP | Ten source candidates and ten histogram checks observed; preparation-only STM matches one source pattern. R3 documents point AEP filtering separately from nearest-area areal selection. | No emitted per-sample EventID/hyetograph binding, point-category edge ownership, censoring or selection weights. This areal pilot cannot qualify point-category boundaries. Require traceable per-event pattern output and the smallest boundary contrast. |
+| F3 — rainfall | R1 §8.5 documents uniform normal-coordinate interval spacing and probability integration. Actual five-by-five counts observed. Raw probability print is labelled AEP while legend/summary use ARI/1-in-Y; values cannot be treated as fractions. | Exact edges/masses, probability convention/conversion, support/tails, within-bin uniform-p versus uniform-z draw and IFD interpolation/extrapolation. Do not infer edges from five rounded observations per stratum or assume `1/printed_value` is an exact native probability. |
+| F4 — transformations | Fixed parameter echoes and printed deterministic factors observed; report names an ARR areal-reduction method. R3 documents extraction-depth preparation and ARF/preburst caveats. | Exact point/areal depths, effective ARF, preburst and storm/burst IL; transformation order and once-only application. Report/checkbox labels and the 1 mm preparation are insufficient. Require per-event effective increments/loss state before routing comparison. |
+| F5 — streams | No seed/state/primitive RNG field in inspected retained surfaces. | Algorithm, stream independence, replication independence and replay remain unresolved. Different draw tuples or timestamps would not prove independent streams. No native stream-cloning requirement is introduced. |
+| F6 — frequency/selection | Direct attained-peak summary policy contradicted above; stars observed. R1 describes probability integration and the >20% concept; R3 documents single-site extraction and joint peak/depth matching. | Absolute interval weights, tails, ties/zeros, interpolation/inversion, exact warning denominator, representative/event/site binding and full-Q extraction. No arbitrary weight reconstruction, curve fitting or 20% acceptance criterion is admitted. |
+
+### Effective-input comparison and downstream handoff
+
+Compared the recoverable native fields with the actual persisted
+[`SampleRecord`](../../src/runoff_routing/monte_carlo_plan.py) and
+[`EffectiveMCEvent`](../../src/runoff_routing/monte_carlo_effective.py) contracts at the
+staging SHA. **Zero complete exact native effective records can be constructed.** No
+native row was padded into a valid Python record or compared as if it had exact inputs.
+
+| Persisted requirement | Retained native evidence | Comparison status |
+| --- | --- | --- |
+| `aep_fraction` / `rainfall_aep_percent` | Ambiguously labelled rounded probability text | Convention and precision unresolved; preserve original token/unit labels. |
+| `stratum_mass`, `event_probability_weight` | Exact division/run integers, no weights/edges | Unavailable; do not use equal row weights. |
+| `gross_ifd_depth_mm` / `gross_depth_mm`, `arf_factor` | Rounded depth, named ARF method | Gross/effective semantics and exact factor unavailable. |
+| Original TP EventID/order and event increments | Sampled rank only; preparation-only source match | Native rank remains distinct from source ID; no per-event materialisation. |
+| Primitive loss draw, exact ratio and storm/burst IL | Rounded stochastic/deterministic factors, base echoes | Intervals/inference only; dependence and transformation remain unknown. |
+| Preburst/loss policy, source-bound event/site, full Q/time | Historical switches, generic peak label, preliminary check output | Insufficient for physical-event identity or exact replay. |
+
+- **#189 sampling profile: insufficient.** Use only authenticated field availability,
+  source identity distinctions and preparation-only TP match. No full native sampling
+  law is admitted; preserve existing plans/RNG and label unknown native policies unsupported.
+- **#190 frequency policy: insufficient for implementation, sufficient to reject one
+  candidate.** Native summary differs from the adopted project attained-step inverse.
+  The diagnostic loss-percentile hypothesis is separate from flood-frequency inversion.
+  Require original interval weights/contributions, probability semantics, complete tails
+  and a controlled tie/boundary case before selecting a native policy.
+- **#191 comparison adapter: sufficient for a bounded precision/availability contract,
+  insufficient for exact-event numerical acceptance.** Preserve raw tokens and units,
+  source/report hashes, native `(duration, division, run)` identity, separate settings
+  drift, diagnostic/summary/event sections, rounding intervals and unknown fields. Use
+  the canonical reader workstream; this local audit is not another product reader.
+- **#148 convergence study: insufficient for native convergence/equivalence or a
+  1,000-run adequacy verdict.** One count/format pilot is not independent replications;
+  population law, weights, tails and exact effective inputs remain unqualified. Existing
+  project analytical controls and protocol preparation may continue separately.
+
+**Next action:** obtain a traceable, nonexecuting effective-configuration/export path
+and verify whether it can expose per-event inputs/weights. Then freeze **one** F3
+contrast (uniform-p versus uniform-z and source-bracketed IFD mapping), expected
+outcomes, authentic inputs/settings, count and abort mechanism **before** launch.
+Candidate ceiling is one duration, **5 × 5 = 25 events**, one launch/batch/attempt,
+120 seconds, no retry, no extraction. This is a future ceiling, **not** a new executed
+or fully specified preregistration. If native effective counts or discriminating fields
+cannot be established, stop before calculation; do not rerun merely to enlarge rounded
+samples. Exact stream identity is not required for a later valid distributional study,
+but its replication-independence argument and population must be specified separately.
+
+### Reproduction and verification
+
+Local-only evidence directory: `E:/LocalResearch/issue150-qualification-20261122/`.
+The read-only `audit_retained.py` checks fixed historical hashes, inputs/inventories,
+25 unique grid members, TP accounting, exact-rational percentile/rounding controls,
+summary-support separation and preparation-source matching. It does not launch native
+processes, draw randomness, route events or upload files. It exclusively creates its
+output; use a new output filename for a rerun:
+
+```powershell
+py -3.14 E:/LocalResearch/issue150-qualification-20261122/audit_retained.py E:/LocalResearch/issue150-qualification-20261122/fresh-audit.json
+```
+
+Executed on **Windows 10 build 19045 / CPython 3.14.6**; final audit exit **0**.
+Audit script SHA-256:
+`13c574a528f2486959b64bb8e246852d469494d7ed2708e258c8036c4e1d977c`.
+Qualified local JSON SHA-256:
+`d1503e4c3bdff70aecb2379157003cea2fa4f266b8e3d0672018a851c79394f5`.
+Raw/local audit JSON retains numerical details and stays outside both Git repositories.
+
+Three existing source-bound frequency controls passed (**3 passed, zero skips**, exit
+0): unequal-weight attained inverse, noninterpolating support/endpoints, and failed/
+missing/tail accounting in `tests/test_monte_carlo_frequency.py`. Import origin was
+verified under the isolated worktree's `src`. This confirms the current Python policy
+being distinguished; it is not a native comparison or full source/wheel qualification.
+No numerical code, schema, RNG domain, tolerance, public raw fixture or native golden
+changed; no wheel build or scientific simulation campaign was needed for this receipt.
+Documentation hygiene and delivery identity are recorded on #150/the child PR.
+
+**Scientific disposition: incomplete.** New admissions are narrow observed accounting,
+preparation-file scope and an excluded frequency-policy hypothesis. No F1–F6 gate is
+closed; no fitted law, complete probability support, independent stream, native routing,
+representative/full-Q replay or engineering/stability acceptance is claimed. Keep
+**#150/#9 open; #151 draft and unmerged to main**.
