@@ -1,4 +1,4 @@
-# Local MCP server for Codex
+# PyRORB local MCP server for Codex
 
 This optional **local stdio** adapter makes existing Python/CLI functions discoverable to Codex and
 adds opt-in, bounded Python calculation tools. It does not create another engine, parser,

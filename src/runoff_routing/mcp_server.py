@@ -28,7 +28,7 @@ from .project_json import EmbeddedRun, load_project
 from .rorb_inspect import inspect_file
 
 INSTRUCTIONS = (
-    "This local server gives read-only discovery plus explicitly opted-in Python computations. "
+    "This local PyRORB server gives read-only discovery plus explicitly opted-in Python computations. "
     "Call list_capabilities, then describe_capability or get_api_reference. "
     "Versioned reference resources describe schemas, examples and functions. "
     "Staged and planned entries are not runnable. "
@@ -45,7 +45,7 @@ _WRITES_RESULTS = ToolAnnotations(
     idempotent_hint=False,
     open_world_hint=False,
 )
-mcp = MCPServer("python-runoff-routing", instructions=INSTRUCTIONS)
+mcp = MCPServer("PyRORB", instructions=INSTRUCTIONS)
 
 
 @mcp.tool(annotations=_READ_ONLY)

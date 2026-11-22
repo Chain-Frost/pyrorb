@@ -1,6 +1,6 @@
 # S1 read-only RORB inspection (with bidirectional input subset)
 
-[Issue #3](https://github.com/Chain-Frost/python-runoff-routing/issues/3) is a staged parser/model task. The initial CMD/.out inspector remains supported. A limited `.catg`/`.stm` bidirectional parser is now documented in [S1 input model](RORB_BIDIRECTIONAL.md); neither is an accepted native solver or hydrological compatibility claim.
+[Issue #3](https://github.com/Chain-Frost/pyrorb/issues/3) is a staged parser/model task. The initial CMD/.out inspector remains supported. A limited `.catg`/`.stm` bidirectional parser is now documented in [S1 input model](RORB_BIDIRECTIONAL.md); neither is an accepted native solver or hydrological compatibility claim.
 
 ## Usage
 

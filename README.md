@@ -1,10 +1,12 @@
-# Python runoff routing
+# PyRORB
 
-An **in-development** Python package for selected RORB rainfall–runoff procedures, with a canonical report-reader dependency maintained in ryan-tools. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
+**PyRORB** is an **in-development** Python package for selected RORB rainfall–runoff procedures, with a canonical report-reader dependency maintained in ryan-tools. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
+
+The repository and distribution use `pyrorb`; the Python import namespace remains `runoff_routing`. Install from the public checkout below while PyPI publication is deferred. The [naming and compatibility policy](docs/NAMING.md) distinguishes current branding from stable file-format and provenance identifiers.
 
 ## Install and execute a supplied storm
 
-Python **3.13 or 3.14**, on **Linux or Windows**, is supported for pure-Python development. From a public checkout:
+Python **3.13 or 3.14**, on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
 
 ```sh
 python -m pip install -e ".[dev]"
@@ -36,13 +38,13 @@ Projects preserve the engine/profile separately from rainfall source and method.
 
 ## Development priority
 
-The CLI/text-file MVP #119, deterministic rainfall preparation #136/#175, reporting #155 and the import/edit/export/reader programme #138–#143 are **delivered on main**. Current work covers their separately tracked scientific qualifications and the Monte Carlo package staged only in [draft PR #151](https://github.com/Chain-Frost/python-runoff-routing/pull/151). [Current status](docs/STATUS.md) and [the backlog](docs/BACKLOG.md) identify remaining work. Advanced #114–#118 and saved RORBwin PAR #144 remain deferred. Deliverables are CLI, Python API and text files; no graphical-interface implementation, design or planning is included.
+The CLI/text-file MVP #119, deterministic rainfall preparation #136/#175, reporting #155 and the import/edit/export/reader programme #138–#143 are **delivered on main**. Current work covers their separately tracked scientific qualifications and the Monte Carlo package staged only in [draft PR #151](https://github.com/Chain-Frost/pyrorb/pull/151). [Current status](docs/STATUS.md) and [the backlog](docs/BACKLOG.md) identify remaining work. Advanced #114–#118 and saved RORBwin PAR #144 remain deferred. Deliverables are CLI, Python API and text files; no graphical-interface implementation, design or planning is included.
 
 ## Regression and outstanding acceptance
 
 The [self-contained public regression guide](docs/REGRESSION_DATASET.md) uses one maintained register and comparator. Current bounded original-CMD evidence is **50/50 printed Q cases / 19,550 ordinates**, **48 reporting-scalar passes and two undefined all-zero peak-time incompletes**. The former 14 source exclusions were admitted by #132; 36-case results are historical. Original native gaps, authored controls and unresolved feature/site/physical qualifications remain explicit. `--snapshot` compares historical candidate outputs and does not execute the installed engine. Exact source/wheel receipts are linked from [current status](docs/STATUS.md).
 
-The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [batch contract](docs/ENGINEERING_BATCHES.md), [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md) and open [CMD gate #5](https://github.com/Chain-Frost/python-runoff-routing/issues/5) distinguish delivered software from scientific acceptance. Monte Carlo development remains on its own staging branch; release automation and publication remain outside this delivery.
+The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [batch contract](docs/ENGINEERING_BATCHES.md), [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md) and open [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5) distinguish delivered software from scientific acceptance. Monte Carlo development remains on its own staging branch; release automation and publication remain outside this delivery.
 
 ## Documentation and source custody
 
