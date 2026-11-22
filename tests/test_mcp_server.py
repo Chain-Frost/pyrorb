@@ -91,6 +91,7 @@ def test_inspection_is_read_only_and_bounded(tmp_path: Path) -> None:
     assert result["hydrograph_row_count"] is None
     assert path.read_bytes() == before
 
+
 EXAMPLES = Path(__file__).parents[1] / "examples"
 
 
