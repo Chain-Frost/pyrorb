@@ -1,6 +1,6 @@
 # S0 local reference capture and comparison
 
-This is **evidence infrastructure**, not an independent routing solver or proof of numerical parity. No RORB binaries, reference inputs, private absolute paths or third-party manuals belong in Git. Source: [issue #2](https://github.com/Chain-Frost/python-runoff-routing/issues/2), [compatibility contract](COMPATIBILITY.md) and [regression contract](REGRESSION.md).
+This is **evidence infrastructure**, not an independent routing solver or proof of numerical parity. No RORB binaries, reference inputs, private absolute paths or third-party manuals belong in Git. Source: [issue #2](https://github.com/Chain-Frost/pyrorb/issues/2), [compatibility contract](COMPATIBILITY.md) and [regression contract](REGRESSION.md).
 
 ## Runner reuse and explicit native execution
 

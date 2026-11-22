@@ -1,17 +1,19 @@
-# Quickstart — current public product
+# PyRORB quickstart
 
 These commands apply to the public repository and need no private workspace. Python 3.13 **or** 3.14 on Linux **or** Windows is sufficient for pure-Python checks; use the interpreter's actual `python`, `py -3.13` or `py -3.14` command as appropriate. Only native RORB/Windows-specific integration needs a Windows host.
 
-**Current delivery:** CLI/text-file MVP [#119](https://github.com/Chain-Frost/python-runoff-routing/issues/119) / [merged #128](https://github.com/Chain-Frost/python-runoff-routing/pull/128) is completed, including direct CLI acceptance of five original CMD cases / **1,805 ordinates**. [#136](https://github.com/Chain-Frost/python-runoff-routing/pull/136) now adds bounded ARR2019/BoM deterministic design-ensemble software. `python-cmd/cmd-6.44` is the temporary new-project default, independent `python/engineering-v1` the explicit future intended default. The import/edit/export/reader scopes #138–#143, reporting #155 and explicit written-depth preparation #175/#177 are also delivered. Full CMD-native #5 and original rainfall/routed qualification #8 remain open; bounded #137 is complete. See [current status](STATUS.md). No GUI work.
+**Current delivery:** CLI/text-file MVP [#119](https://github.com/Chain-Frost/pyrorb/issues/119) / [merged #128](https://github.com/Chain-Frost/pyrorb/pull/128) is completed, including direct CLI acceptance of five original CMD cases / **1,805 ordinates**. [#136](https://github.com/Chain-Frost/pyrorb/pull/136) now adds bounded ARR2019/BoM deterministic design-ensemble software. `python-cmd/cmd-6.44` is the temporary new-project default, independent `python/engineering-v1` the explicit future intended default. The import/edit/export/reader scopes #138–#143, reporting #155 and explicit written-depth preparation #175/#177 are also delivered. Full CMD-native #5 and original rainfall/routed qualification #8 remain open; bounded #137 is complete. See [current status](STATUS.md). No GUI work.
 
 ## 1. Installation and quality
+
+Run these commands from a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb). The distribution is named `pyrorb`; imports and module commands continue to use `runoff_routing`. PyPI publication is deferred; these are checkout-installation instructions. See the [naming policy](NAMING.md).
 
 ```sh
 python -m pip install -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-Normal package runtime has no third-party dependency. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
+The package installs the pinned canonical ryan-tools report reader; optional CATG writing uses pinned PyRomb. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
 
 ## 2. An explicit, single-storm Python calculation
 
@@ -42,7 +44,7 @@ python -m runoff_routing.project_json run project.json native-result.json --engi
 New schema-2 projects temporarily default to `python-cmd/cmd-6.44`; existing projects
 keep their stored selection, and schema-1 projects preserve their historical
 `python/engineering-v1` selection. The improved `python` engine is available
-by explicit override and remains the intended future default. The merged bounded [CMD-compatible engine #79](https://github.com/Chain-Frost/python-runoff-routing/pull/79) computes supported DESIGN events separately and returns `computed_unvalidated`, **not** native equivalence. Unsupported features fail closed. To create and execute a complete publicly reproducible CMD example:
+by explicit override and remains the intended future default. The merged bounded [CMD-compatible engine #79](https://github.com/Chain-Frost/pyrorb/pull/79) computes supported DESIGN events separately and returns `computed_unvalidated`, **not** native equivalence. Unsupported features fail closed. To create and execute a complete publicly reproducible CMD example:
 
 ```sh
 python examples/create_cmd_project.py
@@ -71,7 +73,7 @@ python -m runoff_routing.arr_design_batch examples/arr-design-config.json .local
 python -m runoff_routing.project_batch cmd-example-project.json .local/arr-replayed --events .local/arr-design.events.json --engine python-cmd
 ```
 
-Its synthetic source CSVs are **not** real design rainfall. Six generated artifacts preserve original source/effective precipitation, ten-member event IDs, statuses and complete routing reports. The [actual 60-event #137 receipt](work/2026-11-15-issue137-actual-execution.md) demonstrates source/wheel execution, **not** accepted native-effective storm/routed parity; the later explicit written-depth profile #175/#177 resolves the reconstructed written-input difference while native internal precision/routed decisions remain under #8. Persisted deterministic summaries are delivered, and native representative/critical-duration rules remain tracked by [#152](https://github.com/Chain-Frost/python-runoff-routing/issues/152). The separate [engineering explicit prepared-batch API](ENGINEERING_BATCHES.md) from completed #6/#99 remains available, but does not establish Monte Carlo or complete CMD physical acceptance.
+Its synthetic source CSVs are **not** real design rainfall. Six generated artifacts preserve original source/effective precipitation, ten-member event IDs, statuses and complete routing reports. The [actual 60-event #137 receipt](work/2026-11-15-issue137-actual-execution.md) demonstrates source/wheel execution, **not** accepted native-effective storm/routed parity; the later explicit written-depth profile #175/#177 resolves the reconstructed written-input difference while native internal precision/routed decisions remain under #8. Persisted deterministic summaries are delivered, and native representative/critical-duration rules remain tracked by [#152](https://github.com/Chain-Frost/pyrorb/issues/152). The separate [engineering explicit prepared-batch API](ENGINEERING_BATCHES.md) from completed #6/#99 remains available, but does not establish Monte Carlo or complete CMD physical acceptance.
 
 ## 5. Public cached regression and mathematical controls
 
@@ -106,7 +108,7 @@ and portable native CMD export. See [PAR projects](PAR_PROJECTS.md),
 records 5/5 successful direct executions of relocated emitted PARs,
 unchanged native input bytes and real verbosity 1/2/3 differences.
 The merged, installed #142 canonical reader retained all 1,005
-original native ordinates. [#142 PR #165](https://github.com/Chain-Frost/python-runoff-routing/pull/165)
+original native ordinates. [#142 PR #165](https://github.com/Chain-Frost/pyrorb/pull/165)
 is merged and its bounded reader software acceptance is evidenced by the owner-authorised authentic 490-event 6.45 population; the historical distinct 420-event population remains unlocated.
 The five reader states remain `partial`; physical site identities
 and numerical equivalence are not accepted. Keep #5 open.
