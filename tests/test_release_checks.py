@@ -119,6 +119,36 @@ def test_wheel_filename_must_match_release(tmp_path: Path) -> None:
     assert any("filename: tag" in error for error in errors)
 
 
+def test_identical_wheel_and_sdist_cannot_hide_changed_source_requirements(tmp_path: Path) -> None:
+    changed = _metadata(requirements=("sample-reader>=2", 'sample-writer>=2; extra == "catg"'))
+    errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, wheel=changed, sdist=changed))
+    assert sum("Requires-Dist differs from source project dependencies" in error for error in errors) == 2
+    assert not any("Wheel and sdist Requires-Dist fields differ" in error for error in errors)
+
+
+def test_unlisted_built_dependency_under_declared_extra_is_rejected(tmp_path: Path) -> None:
+    extra = _metadata(
+        requirements=("sample-reader>=1", 'sample-writer>=2; extra == "catg"', 'unlisted>=9; extra == "catg"')
+    )
+    errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, wheel=extra, sdist=extra))
+    assert sum("Requires-Dist differs from source project dependencies" in error for error in errors) == 2
+
+
+def test_source_and_built_conditional_extra_markers_agree_after_normalization(tmp_path: Path) -> None:
+    project = _project(
+        tmp_path,
+        dependencies=("Sample_Reader[FAST]>=1",),
+        extra=("Sample-Writer>=2; python_version < '3.14' or sys_platform == 'win32'",),
+    )
+    built = _metadata(
+        requirements=(
+            "sample-reader[fast]>=1",
+            'sample-writer>=2; (python_version < "3.14" or sys_platform == "win32") and extra == "catg"',
+        )
+    )
+    assert CHECK_RELEASE(project, "v0.1.0a1", _artifacts(tmp_path, wheel=built, sdist=built)) == []
+
+
 def test_missing_extra_and_different_sdist_requirements_fail(tmp_path: Path) -> None:
     raw = _metadata(requirements=("sample-reader>=2",)).replace(b"Provides-Extra: catg\n", b"")
     errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, sdist=raw))

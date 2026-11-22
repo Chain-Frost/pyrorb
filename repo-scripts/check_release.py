@@ -9,12 +9,14 @@ import sys
 import tarfile
 import tomllib
 import zipfile
+from collections import Counter
 from dataclasses import dataclass
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path, PurePosixPath
 from typing import cast
 
+from packaging.markers import Marker
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.utils import canonicalize_name, parse_sdist_filename, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
@@ -107,6 +109,30 @@ def _requirement_errors(metadata: DistributionMetadata, location: str) -> list[s
     return errors
 
 
+def _requirement_inventory(metadata: DistributionMetadata, *, source: bool) -> Counter[str] | None:
+    """Compare source declarations and built Requires-Dist, including extra markers.
+
+    A malformed requirement is reported separately by _requirement_errors.
+    """
+    inventory: Counter[str] = Counter()
+    optional_prefix = "project.optional-dependencies."
+    for field, text in metadata.requirements:
+        try:
+            requirement = Requirement(text)
+        except InvalidRequirement:
+            return None
+        requirement.name = canonicalize_name(requirement.name)
+        requirement.extras = {canonicalize_name(item) for item in requirement.extras}
+        if source and field.startswith(optional_prefix):
+            extra = canonicalize_name(field.removeprefix(optional_prefix))
+            marker = f'extra == "{extra}"'
+            if requirement.marker is not None:
+                marker = f"({requirement.marker}) and {marker}"
+            requirement.marker = Marker(marker)
+        inventory[str(requirement)] += 1
+    return inventory
+
+
 def _parse_metadata(raw: bytes) -> DistributionMetadata:
     message = BytesParser(policy=policy.default).parsebytes(raw)
     names = message.get_all("Name", [])
@@ -179,6 +205,14 @@ def _artifact_errors(
         errors.append(f"{path.name}: metadata version {metadata.version!r} differs from source {source.version!r}")
     if metadata.extras != source.extras:
         errors.append(f"{path.name}: Provides-Extra differs from project.optional-dependencies")
+    expected_requirements = _requirement_inventory(source, source=True)
+    built_requirements = _requirement_inventory(metadata, source=False)
+    if (
+        expected_requirements is not None
+        and built_requirements is not None
+        and expected_requirements != built_requirements
+    ):
+        errors.append(f"{path.name}: Requires-Dist differs from source project dependencies (including extras)")
     return errors, metadata
 
 
