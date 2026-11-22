@@ -67,9 +67,7 @@ def _read(path: Path) -> tuple[dict[str, object], str, int]:
     if not data or len(data) > MAX_RESULT_BYTES:
         _fail("Result file is empty, changed or oversized")
     try:
-        value: object = json.loads(
-            data.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_constant
-        )
+        value: object = json.loads(data.decode("utf-8-sig"), object_pairs_hook=_pairs, parse_constant=_constant)
     except (UnicodeError, TypeError, ValueError) as exc:
         message = f"Malformed result JSON: {exc}"
         raise ValueError(message) from exc
@@ -158,9 +156,16 @@ def _effective(item: dict[str, object]) -> dict[str, object]:
     if item.get("schema_version") != DESIGN_VERSION:
         _fail("Unknown ARR effective result version")
     fields = (
-        "status", "method_profile", "expected_population", "prepared_population",
-        "input_population_complete", "routing_status_counts", "generated_input_reference_status",
-        "routed_native_reference_status", "representative_event_rule", "critical_duration_rule",
+        "status",
+        "method_profile",
+        "expected_population",
+        "prepared_population",
+        "input_population_complete",
+        "routing_status_counts",
+        "generated_input_reference_status",
+        "routed_native_reference_status",
+        "representative_event_rule",
+        "critical_duration_rule",
     )
     result = {name: item.get(name) for name in fields}
     return {"kind": "arr_effective", **result}
@@ -170,10 +175,18 @@ def _arr_summary(item: dict[str, object]) -> dict[str, object]:
     if item.get("schema_version") != ARR_SUMMARY_VERSION:
         _fail("Unknown persisted ARR result-summary version")
     fields = (
-        "method_profile", "engine", "numerical_profile", "expected_population",
-        "prepared_population", "physical_print_sites", "software_execution_success",
-        "software_population_complete", "selection_qualification",
-        "routed_native_reference_status", "routed_status_counts", "site_population_count",
+        "method_profile",
+        "engine",
+        "numerical_profile",
+        "expected_population",
+        "prepared_population",
+        "physical_print_sites",
+        "software_execution_success",
+        "software_population_complete",
+        "selection_qualification",
+        "routed_native_reference_status",
+        "routed_status_counts",
+        "site_population_count",
     )
     result = {name: item.get(name) for name in fields}
     sites = result.get("physical_print_sites")

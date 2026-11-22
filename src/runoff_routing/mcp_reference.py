@@ -270,9 +270,21 @@ SCHEMAS: dict[SchemaName, dict[str, object]] = {
         "title": "ARR2019/BoM design batch - structural discovery only",
         "type": "object",
         "required": [
-            "format", "schema_version", "project", "bom_ifd", "temporal_patterns",
-            "pattern_kind", "temporal_region", "arf_region", "catchment_area_km2",
-            "durations_min", "aep_labels", "dry_tail_min", "engine", "numerical_profile", "loss",
+            "format",
+            "schema_version",
+            "project",
+            "bom_ifd",
+            "temporal_patterns",
+            "pattern_kind",
+            "temporal_region",
+            "arf_region",
+            "catchment_area_km2",
+            "durations_min",
+            "aep_labels",
+            "dry_tail_min",
+            "engine",
+            "numerical_profile",
+            "loss",
         ],
         "additionalProperties": False,
         "properties": {
@@ -376,8 +388,5 @@ def api_manifest() -> dict[str, object]:
     return {
         "reference_version": REFERENCE_VERSION,
         "validation_scope": "navigation_only",
-        "areas": {
-            name: [asdict(entry) for entry in operations]
-            for name, operations in API_AREAS.items()
-        },
+        "areas": {name: [asdict(entry) for entry in operations] for name, operations in API_AREAS.items()},
     }

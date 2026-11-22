@@ -84,10 +84,7 @@ def get_api_reference(area: ApiArea) -> dict[str, object]:
         "reference_version": REFERENCE_VERSION,
         "area": area,
         "authority": "Existing public Python functions and maintained guides; no duplicated engine logic",
-        "functions": [
-            _api_record(item.entrypoint, asdict(item))
-            for item in functions
-        ],
+        "functions": [_api_record(item.entrypoint, asdict(item)) for item in functions],
     }
 
 
