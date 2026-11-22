@@ -100,7 +100,8 @@ def test_cross_source_scalar_binding_rejects_different_q_with_same_columns_and_c
     alternate = _source_from_text("\n".join(original.lines).replace("2 1.00 1.500", "2 1.00 9.000") + "\n")
     report = inspect_output(alternate).hydrographs
     expected = inspect_output(original).hydrographs
-    assert report is not None and expected is not None
+    assert report is not None
+    assert expected is not None
     assert report.columns == expected.columns
     assert tuple(row.raw_time for row in report.rows) == tuple(row.raw_time for row in expected.rows)
     assert report.rows[1].values == (Decimal("9.000"),)
