@@ -26,6 +26,13 @@ args = ["-m", "runoff_routing.mcp_server"]
 Do not commit machine-specific Python paths. MCP uses stdin/stdout for protocol data;
 server diagnostics must not print to stdout.
 
+For an isolated Windows installation, obtain the interpreter path with
+`python -c "import sys; print(sys.executable)"` inside that environment and pass
+that absolute executable to `codex mcp add` in place of `python`. This avoids
+depending on Codex's inherited PATH. Check the saved command using
+`codex mcp get runoff-routing`. If the current agent cannot reload the new server,
+start a new session; the subprocess test below independently verifies stdio.
+
 ## Agent contract
 
 - **Read-only tools:** `list_capabilities`, `describe_capability`, `get_engine_capabilities`,
@@ -127,5 +134,14 @@ and [backlog](BACKLOG.md).
 The optional dependency uses the official Python MCP SDK **v2** and
 `mcp.server.MCPServer`, not the v1 `FastMCP` import.
 Local test: `python -m pytest tests/test_mcp_server.py -q`.
+
+Full MCP check:
+`python -m pytest tests/test_mcp_server.py tests/test_mcp_reference.py tests/test_mcp_results.py tests/test_mcp_stdio.py -q`.
+The stdio test starts a separate server process with the current interpreter,
+reads every resource and the prompt, calls all API-reference areas, and compares
+complete synthetic single-event, successful/incomplete batch and ten-member ARR
+artifacts with the existing Python APIs. It also checks opt-in, no-overwrite,
+native refusal and malformed/oversized input handling. These remain software
+checks, with no native process launch or scientific acceptance claim.
 
 No remote hosting, native CMD launch, GUI or additional hosted automation is included.

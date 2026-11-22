@@ -28,6 +28,20 @@ class ApiEntry:
 API_AREAS: dict[ApiArea, tuple[ApiEntry, ...]] = {
     "model-editing": (
         ApiEntry(
+            "runoff_routing.project_json.Project",
+            "docs/PROJECT_JSON.md",
+            "tests/test_project_json.py",
+            "Construct a typed project from an embedded run or pinned RORB files.",
+            "New projects default to python-cmd/cmd-6.44; construction is not numerical approval.",
+        ),
+        ApiEntry(
+            "runoff_routing.project_json.write_project",
+            "docs/PROJECT_JSON.md",
+            "tests/test_project_json.py",
+            "Create a new project JSON file using the authoritative exclusive-create writer.",
+            "Python API only; MCP has no project-creation action. Existing files cannot be overwritten.",
+        ),
+        ApiEntry(
             "runoff_routing.project_json.load_project",
             "docs/PROJECT_JSON.md",
             "tests/test_project_json.py",

@@ -6,6 +6,8 @@
 
 ## Delivered implementation and regression receipts
 
+- [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — PR #211 stack, genuine stdio, synthetic API equivalence and isolated-wheel software checks; unmerged.
+
 - [ARR Data Hub 2026v1 ARF method and source qualification (#193)](2026-11-17-issue193-arr2026-arf-method.md) — ten published regional coefficient sets and source boundaries regression-tested; no 2026 formula change found, no native parity or SSP-workflow certification.
 
 - [Issue #143 actual Windows-native CMD 6.44 acceptance](2026-11-16-issue143-native-acceptance.md) — 5/5 executed relocated native PARs, 15 unchanged source hashes and 1,005 canonical reader ordinates; numerical and physical-site acceptance remains separate.
