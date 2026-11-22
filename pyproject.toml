@@ -15,9 +15,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = ["mcp>=2.3,<3"]
 catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
 
-dev = ["build", "pytest", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
+dev = ["build", "pytest", "mcp>=2.3,<3", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
