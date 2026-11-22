@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from collections.abc import Callable
 import json
+from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
 from typing import cast
@@ -16,7 +16,15 @@ from mcp.types import TextResourceContents
 
 from runoff_routing.arr_design_batch import read_design_config
 from runoff_routing.mcp_catalog import CATALOG
-from runoff_routing.mcp_reference import API_AREAS, EXAMPLES, REFERENCE_VERSION, SCHEMAS, SchemaName, api_manifest, schema_manifest
+from runoff_routing.mcp_reference import (
+    API_AREAS,
+    EXAMPLES,
+    REFERENCE_VERSION,
+    SCHEMAS,
+    SchemaName,
+    api_manifest,
+    schema_manifest,
+)
 from runoff_routing.mcp_server import mcp
 from runoff_routing.project_batch import load_event_request
 from runoff_routing.project_json import EmbeddedRun, Project, project_to_dict, project_to_json
