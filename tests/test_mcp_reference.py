@@ -51,7 +51,8 @@ def test_reference_schema_version_and_example_contracts(tmp_path: Path) -> None:
     for name, document in (("project", project_doc), ("events", event_doc), ("arr-design", config_doc)):
         schema = SCHEMAS[cast("SchemaName", name)]
         Draft202012Validator.check_schema(schema)
-        validate_document = cast("Callable[[object], None]", Draft202012Validator(schema).validate)
+        # jsonschema currently leaves validate untyped; suppress only this known callable attribute.
+        validate_document = cast("Callable[[object], None]", Draft202012Validator(schema).validate)  # pyright: ignore[reportUnknownMemberType]
         validate_document(document)
 
     request_path = tmp_path / "events.json"
