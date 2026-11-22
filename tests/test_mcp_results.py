@@ -129,7 +129,7 @@ def test_bad_json_and_excessive_size_fail_closed(tmp_path: Path) -> None:
         summarize_result_file(huge)
     invalid_suffix = tmp_path / "fake.txt"
     invalid_suffix.write_text("{}", encoding="utf-8")
-    with pytest.raises(ValueError, match=r"only \\.json"):
+    with pytest.raises(ValueError, match=r"only \.json"):
         summarize_result_file(invalid_suffix)
 
 

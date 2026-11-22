@@ -60,6 +60,8 @@ def test_in_process_mcp_discovery() -> None:
                 "validate_project",
                 "inspect_event_request",
                 "summarize_arr_results",
+                "get_api_reference",
+                "get_result_summary",
             }
             for entry in listing.tools:
                 assert entry.annotations is not None
