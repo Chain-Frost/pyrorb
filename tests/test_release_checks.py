@@ -114,7 +114,10 @@ def test_built_identity_must_match_selected_release(tmp_path: Path, artifact: st
 
 def test_wheel_filename_must_match_release(tmp_path: Path) -> None:
     dist = _artifacts(tmp_path)
-    (dist / "pyrorb-0.1.0a1-py3-none-any.whl").rename(dist / "pyrorb-0.2.0-py3-none-any.whl")
+    wheel = dist / "pyrorb-0.1.0a1-py3-none-any.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr("pyrorb-0.2.0.dist-info/METADATA", _metadata())
+    wheel.rename(dist / "pyrorb-0.2.0-py3-none-any.whl")
     errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", dist)
     assert any("filename: tag" in error for error in errors)
 
@@ -219,8 +222,8 @@ def test_missing_extra_and_different_sdist_requirements_fail(tmp_path: Path) -> 
 @pytest.mark.parametrize(
     "raw",
     [
-        b"Name: pyrorb\n\n",
-        b"Name: pyrorb\nName: extra\nVersion: 0.1.0a1\n\n",
+        b"Metadata-Version: 2.4\nName: pyrorb\n\n",
+        b"Metadata-Version: 2.4\nName: pyrorb\nName: extra\nVersion: 0.1.0a1\n\n",
         _metadata().replace(b"Metadata-Version:", b"Dynamic: Requires-Dist\nMetadata-Version:"),
     ],
 )
