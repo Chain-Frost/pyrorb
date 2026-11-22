@@ -20,7 +20,8 @@ from .arr_result_summary import read_deterministic_results
 from .engine_execution import run_engine_project, write_engine_result
 from .engine_types import CAPABILITIES, EngineId, EngineSelection
 from .mcp_catalog import CATALOG, Exposure, find_capability
-from .project_batch import load_event_request, run_project_events as execute_project_events, write_batch_results
+from .project_batch import load_event_request, write_batch_results
+from .project_batch import run_project_events as execute_project_events
 from .project_json import EmbeddedRun, load_project
 from .rorb_inspect import inspect_file
 
@@ -35,7 +36,10 @@ MAX_INSPECTION_BYTES = 32 * 1024 * 1024
 MAX_MCP_EVENTS = 500
 _READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 _WRITES_RESULTS = ToolAnnotations(
-    read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=False,
+    open_world_hint=False,
 )
 mcp = MCPServer("python-runoff-routing", instructions=INSTRUCTIONS)
 

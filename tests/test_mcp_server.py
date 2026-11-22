@@ -11,9 +11,6 @@ import pytest
 from mcp import Client
 
 from runoff_routing.engine_types import EngineSelection
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
-from runoff_routing.rorb_model import RunModel, from_json
-
 from runoff_routing.mcp_catalog import CATALOG, find_capability
 from runoff_routing.mcp_server import (
     inspect_rorb_file,
@@ -22,6 +19,8 @@ from runoff_routing.mcp_server import (
     run_project,
     run_project_events,
 )
+from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.rorb_model import RunModel, from_json
 
 
 def test_catalog_has_explicit_placeholders() -> None:
