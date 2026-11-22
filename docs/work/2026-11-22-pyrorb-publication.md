@@ -66,3 +66,27 @@ The original preparation head was reviewed against #213, the allowed workflow in
 A concrete false-pass was identified: if a build emitted **the same incorrect Requires-Dist fields in both wheel and sdist**, their mutual comparison passed despite disagreement with the release branch's source requirements. The checker now normalises PEP 508 dependency names/extras and adds the correct optional-extra markers before comparing the **complete requirement multiset in each built artifact** against the source declarations. Invalid requirements remain independently blocked. Focused new tests cover shared wheel/sdist dependency drift, an undeclared requirement within an existing extra, and legitimate conditional markers (including disjunctions) as rendered by setuptools.
 
 A separate local Python 3.13.5/setuptools 82.0.1 fixture built a real wheel: the normalised source and wheel requirement inventories agreed, while three mutated requirement inventories were rejected. This fixture validates the comparison design, **not** an execution of this repository's full pytest/Ruff/Pyright suite. The original suite/negative-control hashes remain historical evidence above; new head CI and any further verification are reported separately in the PR/issue. No change was made to the inert workflow template, active hosted workflow, dependency pins, version, publication settings, or scientific acceptance.
+
+## Follow-up to fresh independent review — 22 November 2026
+
+The independent review of corrective head `443ed27c03e4ad8f77686e3da14395c209553b40`
+reported two actionable findings: P2, an unrelated internal wheel `.dist-info` name/version
+could pass; P3, absent/duplicate/unsupported `Metadata-Version` and malformed header
+lines were silently accepted. Full reproduction and real-artifact receipt are in
+[the PR's review comment](https://github.com/Chain-Frost/pyrorb/pull/215#issuecomment-7081517147).
+
+Both findings are addressed by bounded changes to the offline checker and focused
+negative controls. Wheel directory identity is matched to its parsed filename
+with name and PEP 440 version normalisation, accepting legitimate historical spellings.
+Built metadata now requires exactly one supported metadata version and rejects parser
+header defects. The Core Metadata specification defines versions through 2.6 as of
+May 2026; unknown future metadata requires deliberate checker qualification.
+
+The reviewer independently executed 25 release tests (29 with repository guards),
+Ruff and strict Pyright successfully on Windows/Python 3.14.6. Its exact-head
+wheel and sdist built successfully and the checker returned the expected
+**19 bootstrap/direct-URL blockers** without unexpected dependency mismatches.
+Those results apply to the *reviewed pre-fix head*, not automatically to these
+subsequent changes. Focused correction verification and current CI must be
+recorded against the resulting revision. No version, pin, hosted workflow,
+permissions, environment, publisher, merge or release decision has changed.

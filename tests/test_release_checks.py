@@ -149,6 +149,65 @@ def test_source_and_built_conditional_extra_markers_agree_after_normalization(tm
     assert CHECK_RELEASE(project, "v0.1.0a1", _artifacts(tmp_path, wheel=built, sdist=built)) == []
 
 
+@pytest.mark.parametrize("directory", ["unrelated-9.9.dist-info", "pyrorb-0.2.0.dist-info"])
+def test_wheel_dist_info_identity_must_match_wheel_filename(tmp_path: Path, directory: str) -> None:
+    dist = _artifacts(tmp_path)
+    wheel = dist / "pyrorb-0.1.0a1-py3-none-any.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(f"{directory}/METADATA", _metadata())
+    errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", dist)
+    assert any(".dist-info directory identity differs from wheel filename" in error for error in errors)
+
+
+def test_wheel_with_second_unrelated_dist_info_directory_is_rejected(tmp_path: Path) -> None:
+    dist = _artifacts(tmp_path)
+    wheel = dist / "pyrorb-0.1.0a1-py3-none-any.whl"
+    with zipfile.ZipFile(wheel, "a") as archive:
+        archive.writestr("unrelated-9.9.dist-info/WHEEL", "Wheel-Version: 1.0")
+    errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", dist)
+    assert any("unrelated top-level .dist-info directory" in error for error in errors)
+
+
+@pytest.mark.parametrize("directory", ["PyRORB-0.1.0a1.dist-info", "pyrorb-0.1a1.dist-info"])
+def test_wheel_dist_info_legacy_equivalent_spelling_is_accepted(tmp_path: Path, directory: str) -> None:
+    dist = _artifacts(tmp_path)
+    wheel = dist / "pyrorb-0.1.0a1-py3-none-any.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(f"{directory}/METADATA", _metadata())
+    assert CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", dist) == []
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (_metadata().replace(b"Metadata-Version: 2.4\n", b""), "exactly one Metadata-Version"),
+        (
+            _metadata().replace(b"Metadata-Version: 2.4\n", b"Metadata-Version: 2.4\nMetadata-Version: 2.4\n"),
+            "exactly one Metadata-Version",
+        ),
+        (_metadata().replace(b"Metadata-Version: 2.4", b"Metadata-Version: 9.0"), "unsupported Metadata-Version"),
+        (_metadata().replace(b"Metadata-Version: 2.4", b"Metadata-Version: 2.7"), "unsupported Metadata-Version"),
+        (
+            _metadata().replace(b"\n\n", b"\nInvalid header without colon\n\n"),
+            "malformed headers",
+        ),
+    ],
+)
+@pytest.mark.parametrize("artifact", ["wheel", "sdist"])
+def test_invalid_core_metadata_headers_block_built_artifacts(
+    tmp_path: Path, raw: bytes, expected: str, artifact: str
+) -> None:
+    dist = _artifacts(tmp_path, wheel=raw if artifact == "wheel" else None, sdist=raw if artifact == "sdist" else None)
+    errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", dist)
+    filename_suffix = ".whl" if artifact == "wheel" else ".tar.gz"
+    assert any(expected in error and filename_suffix in error for error in errors)
+
+
+@pytest.mark.parametrize("metadata_version", ["1.2", "2.5", "2.6"])
+def test_supported_core_metadata_versions_are_accepted(tmp_path: Path, metadata_version: str) -> None:
+    raw = _metadata().replace(b"Metadata-Version: 2.4", f"Metadata-Version: {metadata_version}".encode())
+    assert CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, wheel=raw, sdist=raw)) == []
+
 def test_missing_extra_and_different_sdist_requirements_fail(tmp_path: Path) -> None:
     raw = _metadata(requirements=("sample-reader>=2",)).replace(b"Provides-Extra: catg\n", b"")
     errors = CHECK_RELEASE(_project(tmp_path), "v0.1.0a1", _artifacts(tmp_path, sdist=raw))

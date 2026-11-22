@@ -18,11 +18,13 @@ from typing import cast
 
 from packaging.markers import Marker
 from packaging.requirements import InvalidRequirement, Requirement
-from packaging.utils import canonicalize_name, parse_sdist_filename, parse_wheel_filename
+from packaging.utils import InvalidName, canonicalize_name, parse_sdist_filename, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
 
 ROOT = Path(__file__).absolute().parents[1]
 EXPECTED_NAME = "pyrorb"
+# Versions defined in the Core Metadata specification as of May 2026.
+SUPPORTED_METADATA_VERSIONS = frozenset({"1.0", "1.1", "1.2", "2.1", "2.2", "2.3", "2.4", "2.5", "2.6"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +137,17 @@ def _requirement_inventory(metadata: DistributionMetadata, *, source: bool) -> C
 
 def _parse_metadata(raw: bytes) -> DistributionMetadata:
     message = BytesParser(policy=policy.default).parsebytes(raw)
+    if message.defects:
+        defects = ", ".join(type(defect).__name__ for defect in message.defects)
+        detail = f"Built metadata has malformed headers: {defects}"
+        raise ValueError(detail)
+    metadata_versions = message.get_all("Metadata-Version", [])
+    if len(metadata_versions) != 1:
+        detail = "Built metadata must contain exactly one Metadata-Version"
+        raise ValueError(detail)
+    if str(metadata_versions[0]) not in SUPPORTED_METADATA_VERSIONS:
+        detail = f"Built metadata has unsupported Metadata-Version {metadata_versions[0]!s}"
+        raise ValueError(detail)
     names = message.get_all("Name", [])
     versions = message.get_all("Version", [])
     if len(names) != 1 or len(versions) != 1:
@@ -152,7 +165,7 @@ def _parse_metadata(raw: bytes) -> DistributionMetadata:
     )
 
 
-def _wheel_metadata(path: Path) -> DistributionMetadata:
+def _wheel_metadata(path: Path, filename_name: str, filename_version: Version) -> DistributionMetadata:
     with zipfile.ZipFile(path) as archive:
         entries = [
             entry
@@ -164,6 +177,32 @@ def _wheel_metadata(path: Path) -> DistributionMetadata:
         if len(entries) != 1:
             message = "Wheel must contain exactly one top-level .dist-info/METADATA"
             raise ValueError(message)
+        # The wheel filename and the internal .dist-info directory identify
+        # the same distribution. Accept equivalent historical name/version
+        # spellings, but never an unrelated or malformed directory identity.
+        directory = PurePosixPath(entries[0].filename).parts[0]
+        directories = {
+            PurePosixPath(entry.filename).parts[0]
+            for entry in archive.infolist()
+            if PurePosixPath(entry.filename).parts
+            and PurePosixPath(entry.filename).parts[0].endswith(".dist-info")
+        }
+        if directories != {directory}:
+            detail = "Wheel contains an unrelated top-level .dist-info directory"
+            raise ValueError(detail)
+        identity = directory.removesuffix(".dist-info").split("-")
+        if len(identity) != 2:
+            detail = "Wheel .dist-info directory requires a single distribution-version separator"
+            raise ValueError(detail)
+        try:
+            directory_name = canonicalize_name(identity[0], validate=True)
+            directory_version = Version(identity[1])
+        except (InvalidName, InvalidVersion) as exc:
+            detail = "Wheel .dist-info directory has an invalid distribution or version"
+            raise ValueError(detail) from exc
+        if directory_name != filename_name or directory_version != filename_version:
+            detail = "Wheel .dist-info directory identity differs from wheel filename"
+            raise ValueError(detail)
         return _parse_metadata(archive.read(entries[0]))
 
 
@@ -186,7 +225,7 @@ def _sdist_metadata(path: Path) -> DistributionMetadata:
 def _artifact_metadata(path: Path) -> tuple[str, str, DistributionMetadata]:
     if path.suffix == ".whl":
         name, version, _, _ = parse_wheel_filename(path.name)
-        return name, str(version), _wheel_metadata(path)
+        return name, str(version), _wheel_metadata(path, name, version)
     name, version = parse_sdist_filename(path.name)
     return name, str(version), _sdist_metadata(path)
 
