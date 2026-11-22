@@ -41,7 +41,7 @@ CATALOG: tuple[Capability, ...] = (
     ),
     Capability(
         "inspect_rorb_file", "mcp_tool", "inspection", "runoff_routing.rorb_inspect.inspect_file",
-        "python -m runoff_routing.rorb_inspect", "docs/S1-INSPECTION.md",
+        "python repo-scripts/rorb_inspect.py", "docs/S1-INSPECTION.md",
         "Read-only inspection of PAR, CATG, STM and OUT source files.",
         "Parsed syntax is not execution or native equivalence.",
     ),
