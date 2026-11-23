@@ -329,8 +329,7 @@ def assess_protocol(payload: object) -> dict[str, object]:
             "full_annual_design_flood": _status(full),
         },
         "note": (
-            "All positive results require external source review; "
-            "no native run or flood-AEP conclusion is authorised."
+            "All positive results require external source review; no native run or flood-AEP conclusion is authorised."
         ),
     }
 

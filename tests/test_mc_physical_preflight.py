@@ -43,9 +43,7 @@ def _lane(result: dict[str, object], name: str) -> dict[str, object]:
 def _source_ready() -> dict[str, object]:
     payload = _template()
     cat = cast("dict[str, object]", payload["catchment"])
-    cat.update(
-        {"catchment_id": "test_site", "model_sha256": "a" * 64, "features_admitted": True, "site_ids": ["Q1"]}
-    )
+    cat.update({"catchment_id": "test_site", "model_sha256": "a" * 64, "features_admitted": True, "site_ids": ["Q1"]})
     sources = cast("dict[str, object]", payload["sources"])
     sources.update(
         {
