@@ -20,7 +20,7 @@ import pytest
 from runoff_routing import monte_carlo_execution as mc_execution
 from runoff_routing.bom_ifd import read_bom_ifd_csv
 from runoff_routing.monte_carlo_bridge import prepare_saved_sample_plan
-from runoff_routing.monte_carlo_effective import iter_effective_events, validate_effective_request
+from runoff_routing.monte_carlo_effective import MCInputError, iter_effective_events, validate_effective_request
 from runoff_routing.monte_carlo_execution import MCRunError, execute_mc_request, extend_mc_execution, main
 from runoff_routing.monte_carlo_plan import ifd_from_bom, read_sample_plan, write_sample_plan
 from runoff_routing.project_batch import run_project_events
@@ -82,6 +82,35 @@ def _fixture(root: Path) -> tuple[Path, Path, Path, Path]:
     config = root / "spec.json"
     config.write_text(json.dumps(spec) + "\n", encoding="utf-8")
     return project, config, ifd, patterns
+
+
+def test_preparation_rejects_source_symlink_ancestor_escape(tmp_path: Path) -> None:
+    inside = tmp_path / "inside"
+    inside.mkdir()
+    project, config, ifd, patterns = _fixture(inside)
+    assert main(["plan", str(config), str(inside / "study")]) == 0
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "patterns.csv").write_bytes(patterns.read_bytes())
+    alias = inside / "alias"
+    try:
+        alias.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Directory symlink creation unavailable on this filesystem")
+
+    request = inside / "out.jsonl"
+    with pytest.raises(MCInputError, match="outside effective-request directory"):
+        prepare_saved_sample_plan(
+            project,
+            inside / "study.plan.json",
+            inside / "study.samples.jsonl",
+            request,
+            ifd_path=ifd,
+            patterns_path=alias / "patterns.csv",
+            arf_region="South-West Western Australia",
+            dry_tail_min=120,
+        )
+    assert not request.exists()
 
 
 def test_saved_b_to_e_request_is_decimal_context_independent(tmp_path: Path) -> None:

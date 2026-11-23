@@ -23,6 +23,7 @@ from .monte_carlo_effective import (
     MCInputError,
     MCPopulation,
     MCRequestHeader,
+    is_contained_mc_source,
     materialise_arr_sample,
     preparation_model_sha256,
     sha256_file,
@@ -160,7 +161,9 @@ def _source_files(spec: dict[str, object], request_path: Path, paths: Mapping[st
     result: list[SourceFile] = []
     for role, stored in hashed.items():
         path = paths[role].absolute()
-        if path.is_symlink() or not path.is_file() or sha256_file(path) != stored:
+        if not is_contained_mc_source(path, parent):
+            _fail(f"Original #146 source {role} is a symlink, absent or outside effective-request directory")
+        if sha256_file(path) != stored:
             _fail(f"Original #146 source hash does not match supplied {role} bytes")
         try:
             relative = path.relative_to(parent).as_posix()

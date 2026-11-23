@@ -162,3 +162,17 @@ bounded execution adapter is present.
   between validated provenance and numerical routing.
 - Re-review and fresh exact-head source/wheel quality checks remain
   mandatory before merging E into staging #151.
+
+## 23 November follow-up — fail closed on out-of-population zero allocations
+
+- An audit of draft #151 found that an explicitly authored MC request could carry an additional zero-count stratum scoped to an undeclared scenario/duration. The old header validator verified every **declared** population's mass, but it did not reject extra zero-allocation scope keys, compromising provenance.
+- Reject every original stratum allocation outside the declared scenario/duration populations, including zero-count allocations. Preserve valid zero-count strata within declared populations and the existing immutable-plan, weighting and engine contracts.
+- Add a targeted direct-header regression covering both valid declared zero-count strata and the previously accepted undeclared case. No schema, RNG, sampling, frequency, source fixture, native executable or scientific acceptance change. Hosted exact-head quality and code review remain required before integration into draft #151. Issue #9 and native #150 remain open.
+
+## 23 November independent #151 review — areal bins and source closure
+
+- The full-branch Codex review identified a real incorrect-areal-bin path and a source-custody escape through symlinked parent directories. Neither requires a new hydrological or RORB native method.
+- Reuse the *existing* ARR2019 catchment-size-bin policy when materialising an areal TP; fail closed when the selected source ordinal belongs to a different areal size bin. Do not alter TP sampling weights, RNG, source IDs or the published area thresholds.
+- Compare physically resolved file and request-root identities to enforce source containment in both preparation and saved-effective-request validation. Preserve source path spelling and existing no-leaf-symlink handling; add synthetic parent-symlink regressions, skipping only if OS permissions prevent creating a test symlink.
+- Keep the prior allocation-scope guard on the stacked parent branch. All changes remain a bounded software correctness fix in draft staging #151; F1–F6, #150, #189/#190, #148 and native engineering qualification are still open. No merge to main or product release.
+

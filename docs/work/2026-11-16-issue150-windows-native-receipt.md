@@ -489,8 +489,8 @@ pilot. #150/#9 remain open; #151 stays draft/unmerged; #189/#190/#191/#148 limit
 
 ### Local reproducibility and delivery
 
-Private evidence is retained outside both Git repositories under
-`E:/LocalResearch/issue150-effective-state-20261123/`: custody checks, original/candidate
+Private evidence remains outside both Git repositories in local custody (the
+absolute path is withheld from this public record): custody checks, original/candidate
 file inventories, PDF-page text, page-level findings and PAR-digest search. No raw report,
 manual text, input array, screenshot or identifying source path is included in this public
 update. The local inspection script is read-only with exclusive-create evidence outputs;
@@ -509,3 +509,30 @@ Runtime: **Windows 10 build 19045 / CPython 3.14.6**. Documentation/link and cla
 apply; numerical tests, native campaigns and a new wheel qualification are unnecessary
 for this documentation-only negative result. Exact delivery revision, checks and the
 staging-only child PR are recorded in the issue update.
+
+### Reconciliation with current Monte Carlo staging — 23 November 2026
+
+The investigation above was performed against draft #151 at `b7348d9cf0b6`.
+At the time of this documentation reconciliation, staging is at
+`2a20753df945f9919ec530134ab6cdf1da21417c` and contains the
+independently reviewed software corrections from
+[#217](https://github.com/Chain-Frost/pyrorb/pull/217) and
+[#219](https://github.com/Chain-Frost/pyrorb/pull/219): rejection of
+out-of-population zero-count MC allocations, enforcement of the ARR2019
+areal temporal-pattern size bin and physical source-file containment
+through symlinked parent directories. Existing regression tests accompany
+those fixes. This documentation topic does not change them.
+
+These software fixes do not authenticate native event-specific effective
+inputs, determine F1–F6 method rules, validate probability/weight policies
+or support a new RORBwin experiment. The 120/120 historical inventory and
+51/52 pilot inventory remain **previously reported local custody evidence**,
+not a new rehash by this reconciliation. The drifted PAR remains excluded;
+the observed/inferred/contradicted/unresolved classifications and the
+bounded no-mechanism-found stop decision above are unchanged.
+
+The earlier independent review and CI applied to the pre-reconciliation
+documentation head only. The integrated documentation branch requires its
+own exact-head checks and review before the owner considers merging #218
+into draft #151. Neither #151 to main nor #218 into #151 is authorised
+by this reconciliation. #9/#148/#150/#189/#190/#191 remain open.
