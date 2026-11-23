@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Withdraw unqualified GE 6.45 C T T admission (#204)](2026-11-24-issue204-ctt-withdrawal.md) - explicit rejection restored; asset guards retained; source support deferred.
+
 - [Fifth anonymised model-set addendum](2026-11-19-anonymised-site-e-validation.md) - expanded 6.52 coverage, source/wheel routing, rainfall preparation and reference-association gaps; [fifth-set case metrics](2026-11-19-anonymised-site-e-cases.md).
 
 - [Four anonymised existing-model sets: routing and rainfall audit](2026-11-19-anonymised-site-validation.md) - complete input survey, sampled source/wheel routing, regenerated rainfall and explicit unsupported states; [anonymous case metrics](2026-11-19-anonymised-site-cases.md).

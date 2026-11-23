@@ -439,19 +439,22 @@ def test_graphical_645_padded_section_marker_is_accepted_without_traceback(secti
     assert parse_bytes(changed, ".catg").model == parsed.model
 
 
-def test_graphical_645_background_image_flag_is_noncomputational_without_asset_payload() -> None:
-    """Admit only the image-section flag, retaining the exact source."""
+@pytest.mark.parametrize("extension", [".cat", ".catg"])
+def test_graphical_645_separator_only_ctt_remains_unqualified(extension: str) -> None:
+    """A synthetic flag edit cannot establish original-source compatibility."""
     original, _register = _registered_pyromb_originals()
     source = original.decode("utf-8").replace("\r\n", "\n")
     altered = source.replace("C #BACKGROUND IMAGE\nC  T  F", "C #BACKGROUND IMAGE\nC  T  T")
     assert altered != source
     raw = altered.encode("utf-8")
-    parsed = parse_catg(raw)
-    assert parsed.model == parse_catg(original).model
-    assert original_bytes(parsed) == raw
-    assert parsed.source.sha256 == hashlib.sha256(raw).hexdigest()
-    assert any(item == "C  T  T" for item in parsed.graphical_metadata)
-    assert parse_bytes(raw, ".cat").model == parsed.model
+    with pytest.raises(FormatProblem, match="background-image flags") as caught:
+        parse_bytes(raw, extension)
+    assert caught.value.status == "unsupported"
+    # The characterised original signature and its source identity are intact.
+    parsed = parse_catg(original)
+    assert original_bytes(parsed) == original
+    assert parsed.source.sha256 == hashlib.sha256(original).hexdigest()
+    assert parse_bytes(original, extension).model == parsed.model
 
 
 @pytest.mark.parametrize("payload", ["C image-file.png", "C T F", "unrecognised image bytes"])
@@ -460,10 +463,10 @@ def test_graphical_645_background_asset_payload_is_not_assumed_harmless(payload:
     source = original.decode("utf-8").replace("\r\n", "\n")
     edited = source.replace(
         "C #BACKGROUND IMAGE\nC  T  F\nC\n",
-        f"C #BACKGROUND IMAGE\nC  T  T\n{payload}\nC\n",
+        f"C #BACKGROUND IMAGE\nC  T  F\n{payload}\nC\n",
     )
     assert edited != source
-    with pytest.raises(FormatProblem) as caught:
+    with pytest.raises(FormatProblem, match="asset payload") as caught:
         parse_catg(edited.encode())
     assert caught.value.status == "unsupported"
 

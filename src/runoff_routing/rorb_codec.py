@@ -263,10 +263,10 @@ def _validate_graphical_645(header: tuple[str, ...]) -> None:
             message = f"Graphical {section} content is not characterised"
             raise _problem(message, location + 1, unsupported=True)
     index = next(i for i, line in enumerate(header) if line.strip() == "C #BACKGROUND IMAGE")
-    # The original 6.45 source has C T F; the optional image flag C T T
-    # belongs to the graphical section, not the computational control vector.
-    # Do not silently consume an unknown asset record or other flag set.
-    if index + 1 >= len(header) or re.fullmatch(r"C\s+T\s+[FT]", header[index + 1].strip()) is None:
+    # Only the original C T F signature is characterised. Genuine C T T
+    # sources observed so far carry assets; a separator-only form remains
+    # unqualified. Do not infer its semantics or discard asset records.
+    if index + 1 >= len(header) or re.fullmatch(r"C\s+T\s+F", header[index + 1].strip()) is None:
         message = "Uncharacterised RORB_GE 6.45 background-image flags"
         raise _problem(message, index + 2, unsupported=True)
     next_section = next((i for i in range(index + 2, len(header)) if header[i].strip().startswith("C #")), len(header))
