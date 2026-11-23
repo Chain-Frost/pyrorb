@@ -46,6 +46,8 @@ def test_in_process_mcp_discovery() -> None:
                 "validate_project",
                 "inspect_event_request",
                 "summarize_arr_results",
+                "get_api_reference",
+                "get_result_summary",
                 "run_project",
                 "run_project_events",
                 "prepare_arr_design",
@@ -58,6 +60,8 @@ def test_in_process_mcp_discovery() -> None:
                 "validate_project",
                 "inspect_event_request",
                 "summarize_arr_results",
+                "get_api_reference",
+                "get_result_summary",
             }
             for entry in listing.tools:
                 assert entry.annotations is not None
@@ -74,7 +78,7 @@ def test_in_process_mcp_discovery() -> None:
             assert not engines.is_error
             assert "python-cmd" in str(engines.structured_content)
             resources = await client.list_resources()
-            assert len(resources.resources) == 2
+            assert len(resources.resources) == 5
             prompts = await client.list_prompts()
             assert any(entry.name == "plan_runoff_work" for entry in prompts.prompts)
 

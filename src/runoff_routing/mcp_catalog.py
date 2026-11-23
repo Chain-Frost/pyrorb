@@ -45,6 +45,16 @@ CATALOG: tuple[Capability, ...] = (
         "Only catalogue entries may be introspected; no arbitrary imports.",
     ),
     Capability(
+        "get_api_reference",
+        "mcp_tool",
+        "discovery",
+        "runoff_routing.mcp_server.get_api_reference",
+        None,
+        "docs/MCP.md",
+        "Find module-level Python APIs, live signatures, maintained guides and tests by area.",
+        "Reference index is navigation only; source validators and feature matrix remain authoritative.",
+    ),
+    Capability(
         "get_engine_capabilities",
         "mcp_tool",
         "discovery",
@@ -93,6 +103,16 @@ CATALOG: tuple[Capability, ...] = (
         "docs/ARR_DETERMINISTIC_RESULTS.md",
         "Read-only persisted ARR result population summary.",
         "Observed peak ranks are not native representative selections.",
+    ),
+    Capability(
+        "get_result_summary",
+        "mcp_tool",
+        "reporting",
+        "runoff_routing.mcp_results.summarize_result_file",
+        None,
+        "docs/MCP.md",
+        "Read bounded metadata from existing single, batch and ARR JSON result contracts.",
+        "Structural projection only; full hydrographs remain in the saved files.",
     ),
     Capability(
         "run_project",
