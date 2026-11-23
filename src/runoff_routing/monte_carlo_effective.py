@@ -750,6 +750,12 @@ def _validate_tp_source_id(actual_id: str, expected_id: str | None) -> None:
         _fail("Selected temporal-pattern EventID differs from its source ordinal")
 
 
+def _validate_tp_area_bin(kind: str, area_bin: str | None, area_km2: Decimal) -> None:
+    """Use the same published ARR2019 area selection as the deterministic ensemble."""
+    if kind == "areal" and area_bin != arr2019_area_bin(area_km2):
+        _fail("Selected areal temporal-pattern area bin does not match catchment area")
+
+
 def materialise_arr_sample(
     *,
     model: RunModel,
@@ -797,8 +803,7 @@ def materialise_arr_sample(
     area = _sum_precise(a.area_km2 for a in model.catchment.subareas)
     if pattern_set.kind != ("point" if area < 75 else "areal"):
         _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
-    if pattern_set.kind == "areal" and pattern.area_bin != arr2019_area_bin(area):
-        _fail("Selected areal temporal-pattern area bin does not match catchment area")
+    _validate_tp_area_bin(pattern_set.kind, pattern.area_bin, area)
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
         _fail("Storm duration and dry tail must divide exactly by the source TP timestep")
     if _sum_precise(pattern.increments_percent) != 100:
