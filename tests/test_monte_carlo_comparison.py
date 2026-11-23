@@ -31,9 +31,7 @@ def test_printed_zero_not_exact_zero_and_fortran_token_preserved() -> None:
     assert record.rainfall_probability.decimal == Decimal("1.20")
     expected_source_print = "1.20D+00"
     assert record.rainfall_probability.token == expected_source_print
-    assert record.rainfall_probability.conditional_nearest_print_interval() == (
-        Decimal("1.195"), Decimal("1.205")
-    )
+    assert record.rainfall_probability.conditional_nearest_print_interval() == (Decimal("1.195"), Decimal("1.205"))
 
 
 def test_unavailable_is_not_inferred_or_assigned_source_identity() -> None:
