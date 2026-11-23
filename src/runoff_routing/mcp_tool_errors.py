@@ -67,6 +67,7 @@ def _known_failure(exc: OSError | ValueError) -> str:
         return _filesystem_failure(exc.__cause__)
     return _validation_failure(exc)
 
+
 def explain_expected_errors[**P, R](function: Callable[P, R]) -> Callable[P, R]:
     """Adapt a Python function only at MCP registration, preserving its native API errors."""
 
