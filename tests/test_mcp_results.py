@@ -133,7 +133,6 @@ def test_bad_json_and_excessive_size_fail_closed(tmp_path: Path) -> None:
         summarize_result_file(invalid_suffix)
 
 
-
 def test_large_metadata_cannot_be_copied_into_mcp_summary(tmp_path: Path) -> None:
     """Known report formats cannot smuggle large data through metadata fields."""
     metadata = tmp_path / "large-metadata.json"
