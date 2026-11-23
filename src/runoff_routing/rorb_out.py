@@ -51,6 +51,11 @@ def _report(document: RorbDocument, table: Section) -> HydrographReport:
     return HydrographReport(columns, rows, timestep, duration)
 
 
+def canonical_hydrograph_view(document: RorbDocument, table: Section) -> HydrographReport:
+    """Return the exact source-validated project view of one canonical table."""
+    return _report(document, table)
+
+
 class SourceChangedError(ValueError):
     """The selected report differs from the previously fingerprinted bytes."""
 

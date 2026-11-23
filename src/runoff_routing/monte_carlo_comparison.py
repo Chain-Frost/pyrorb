@@ -16,6 +16,9 @@ FieldQuality = Literal["exact_effective", "rounded_print", "displayed_setting", 
 LaneStatus = Literal["descriptive_only", "unavailable", "not_comparable"]
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_FIELD_QUALITIES = frozenset(("exact_effective", "rounded_print", "displayed_setting", "inferred", "unavailable"))
+_MAX_TOKEN_CHARS = 256
+_MAX_TOKEN_EXPONENT = 10_000
 
 
 class MCComparisonInputError(ValueError):
@@ -99,6 +102,8 @@ class MCField:
     source_line: int | None = None
 
     def __post_init__(self) -> None:
+        if self.quality not in _FIELD_QUALITIES:
+            _fail("unsupported field quality")
         if self.quality == "unavailable":
             if self.token is not None or self.unit is not None or self.source_line is not None:
                 _fail("unavailable fields cannot have invented values or source lines")
@@ -119,6 +124,8 @@ class MCField:
             return None
         if not self.token or self.token != self.token.strip() or "_" in self.token:
             _fail("noncanonical source numeric token")
+        if len(self.token) > _MAX_TOKEN_CHARS:
+            _fail("source numeric token too long")
         try:
             value = Decimal(self.token.replace("D", "E").replace("d", "e"))
         except InvalidOperation as exc:
@@ -126,6 +133,8 @@ class MCField:
             raise MCComparisonInputError(message) from exc
         if not value.is_finite():
             _fail("nonfinite source numeric token")
+        if abs(int(value.as_tuple().exponent)) > _MAX_TOKEN_EXPONENT:
+            _fail("source numeric exponent exceeds safe evidence range")
         return value
 
     def conditional_nearest_print_interval(self) -> tuple[Decimal, Decimal] | None:

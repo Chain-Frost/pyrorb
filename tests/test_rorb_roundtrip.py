@@ -293,6 +293,38 @@ def test_cp1252_labels_preserve_original_encoding() -> None:
     assert original_bytes(parsed) == raw
 
 
+def test_original_zero_length_terminal_code5_is_admitted_without_source_changes() -> None:
+    """Native-observed terminal zero-reach admission preserves original source bytes."""
+    raw = (
+        _catg()
+        .replace(
+            "7, PRINT outlet\nPRINT outlet\n0\n",
+            "5, 0, -99, terminal copy\n7, PRINT outlet\nPRINT outlet\n0\n",
+        )
+        .encode()
+    )
+    assert b"5, 0, -99, terminal copy\n" in raw
+    parsed = parse_catg(raw)
+    assert parsed.model.controls[-2].code == 5
+    assert parsed.model.reaches[-1].length_km == Decimal(0)
+    assert original_bytes(parsed) == raw
+    assert from_json(to_json(parsed.model)) == parsed.model
+    assert parse_bytes(raw, ".cat").model == parsed.model
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        _catg().replace("1, 5.000, -99", "1, 0, -99"),
+        _catg().replace("5, 2.500, -99", "5, 0, -99").replace("7, PRINT outlet\n", "5, 1.000, -99\n7, PRINT outlet\n"),
+        _catg().replace("7, PRINT outlet\n", "5, 0, -99\n5, 0, -99\n7, PRINT outlet\n"),
+    ],
+)
+def test_zero_reach_elsewhere_is_rejected_by_typed_topology(source: str) -> None:
+    with pytest.raises(FormatProblem, match="Zero-length natural reach"):
+        parse_catg(source.encode())
+
+
 def test_code7_physical_location_is_authoritative_not_inline_annotation() -> None:
     source = _catg().replace("7, PRINT outlet\nPRINT outlet", "7, metadata only\nNative outlet")
     parsed = parse_catg(source.encode())
@@ -407,6 +439,96 @@ def test_graphical_645_padded_section_marker_is_accepted_without_traceback(secti
     assert parse_bytes(changed, ".catg").model == parsed.model
 
 
+@pytest.mark.parametrize("extension", [".cat", ".catg"])
+def test_graphical_645_separator_only_ctt_remains_unqualified(extension: str) -> None:
+    """A synthetic flag edit cannot establish original-source compatibility."""
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    altered = source.replace("C #BACKGROUND IMAGE\nC  T  F", "C #BACKGROUND IMAGE\nC  T  T")
+    assert altered != source
+    raw = altered.encode("utf-8")
+    with pytest.raises(FormatProblem, match="background-image flags") as caught:
+        parse_bytes(raw, extension)
+    assert caught.value.status == "unsupported"
+    # The characterised original signature and its source identity are intact.
+    parsed = parse_catg(original)
+    assert original_bytes(parsed) == original
+    assert parsed.source.sha256 == hashlib.sha256(original).hexdigest()
+    assert parse_bytes(original, extension).model == parsed.model
+
+
+@pytest.mark.parametrize("payload", ["C image-file.png", "C T F", "unrecognised image bytes"])
+def test_graphical_645_background_asset_payload_is_not_assumed_harmless(payload: str) -> None:
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    edited = source.replace(
+        "C #BACKGROUND IMAGE\nC  T  F\nC\n",
+        f"C #BACKGROUND IMAGE\nC  T  F\n{payload}\nC\n",
+    )
+    assert edited != source
+    with pytest.raises(FormatProblem, match="asset payload") as caught:
+        parse_catg(edited.encode())
+    assert caught.value.status == "unsupported"
+
+
+def test_graphical_645_characterised_section_order_is_not_interchangeable() -> None:
+    """Two empty comment sections still cannot masquerade as swapped native layout."""
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    assert "C #FILE COMMENTS" in source
+    assert "C #SUB-AREA AREA COMMENTS" in source
+    changed = source.replace("C #FILE COMMENTS", "C #TEMP COMMENT", 1)
+    changed = changed.replace("C #SUB-AREA AREA COMMENTS", "C #FILE COMMENTS", 1)
+    changed = changed.replace("C #TEMP COMMENT", "C #SUB-AREA AREA COMMENTS", 1)
+    assert changed != source
+    with pytest.raises(FormatProblem, match="reordered") as caught:
+        parse_catg(changed.encode())
+    assert caught.value.status == "unsupported"
+
+
+def test_graphical_645_extended_reach_coordinates_preserve_computational_order() -> None:
+    """Four x/y coordinate components after one reach are still display-only."""
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    before = "C          20.500\nC          13.750\n"
+    assert before in source
+    changed = source.replace(before, before + "C 30.0\nC 40.0\n", 1).encode()
+    parsed = parse_catg(changed)
+    assert parsed.model == parse_catg(original).model
+    assert parsed.source.data == changed
+    assert parsed.source.sha256 == hashlib.sha256(changed).hexdigest()
+    assert parse_bytes(changed, ".cat").model == parsed.model
+
+
+@pytest.mark.parametrize(
+    ("where", "reason"),
+    [
+        ("precedes", "precedes its reach record"),
+        ("odd_at_next_reach", "complete x/y pairs"),
+        ("odd_at_end", "complete x/y pairs"),
+    ],
+)
+def test_graphical_645_dangling_reach_coordinates_reject_without_guessing(where: str, reason: str) -> None:
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    if where == "precedes":
+        before = "C #REACHES\nC      7\n"
+        assert before in source
+        changed = source.replace(before, before + "C 999.0\n", 1)
+    elif where == "odd_at_next_reach":
+        before = "C          20.500\nC          13.750\n"
+        assert before in source
+        changed = source.replace(before, before + "C 30.0\n", 1)
+    else:
+        before = "C          83.500\nC          47.500\n"
+        assert before in source
+        changed = source.replace(before, before + "C 30.0\n", 1)
+    assert changed != source
+    with pytest.raises(FormatProblem, match=reason) as caught:
+        parse_catg(changed.encode())
+    assert caught.value.status == "invalid"
+
+
 @pytest.mark.parametrize(
     ("before", "after", "status"),
     [
@@ -416,7 +538,7 @@ def test_graphical_645_padded_section_marker_is_accepted_without_traceback(secti
         ("C #FILE COMMENTS", "C #FILE COMMENTS\\nC 0\\nC #FILE COMMENTS", "unsupported"),
         ("C #STORAGES\\nC      0", "C #STORAGES\\nC      1", "unsupported"),
         ("C #INFLOW/OUTFLOW\\nC      0", "C #INFLOW/OUTFLOW\\nC      1", "unsupported"),
-        ("C #BACKGROUND IMAGE\\nC  T  F", "C #BACKGROUND IMAGE\\nC  T  T", "unsupported"),
+        ("C #BACKGROUND IMAGE\\nC  T  F", "C #BACKGROUND IMAGE\\nC  T  X", "unsupported"),
         ("C END RORB_GE", "C END RORB_GE\\nC END RORB_GE", "invalid"),
     ],
 )

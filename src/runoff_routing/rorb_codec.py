@@ -246,8 +246,8 @@ _GRAPHICAL_645_SECTIONS = (
 def _validate_graphical_645(header: tuple[str, ...]) -> None:
     """Recognise the original 6.45 *header only*; no numerical source inference."""
     markers = tuple(line.strip()[2:] for line in header if line.strip().startswith("C #"))
-    if len(markers) != len(_GRAPHICAL_645_SECTIONS) or set(markers) != set(_GRAPHICAL_645_SECTIONS):
-        message = "Unknown, missing or repeated RORB_GE 6.45 graphical section"
+    if markers != _GRAPHICAL_645_SECTIONS:
+        message = "Unknown, reordered, missing or repeated RORB_GE 6.45 graphical section"
         raise _problem(message, unsupported=True)
     for section in _GRAPHICAL_645_SECTIONS[:3]:
         indices = [index for index, line in enumerate(header) if line.strip() == f"C {section}"]
@@ -263,9 +263,16 @@ def _validate_graphical_645(header: tuple[str, ...]) -> None:
             message = f"Graphical {section} content is not characterised"
             raise _problem(message, location + 1, unsupported=True)
     index = next(i for i, line in enumerate(header) if line.strip() == "C #BACKGROUND IMAGE")
+    # Only the original C T F signature is characterised. Genuine C T T
+    # sources observed so far carry assets; a separator-only form remains
+    # unqualified. Do not infer its semantics or discard asset records.
     if index + 1 >= len(header) or re.fullmatch(r"C\s+T\s+F", header[index + 1].strip()) is None:
         message = "Uncharacterised RORB_GE 6.45 background-image flags"
         raise _problem(message, index + 2, unsupported=True)
+    next_section = next((i for i in range(index + 2, len(header)) if header[i].strip().startswith("C #")), len(header))
+    if any(line.strip() not in ("", "C") for line in header[index + 2 : next_section]):
+        message = "Background-image asset payload is not characterised"
+        raise _problem(message, index + 3, unsupported=True)
 
 
 def _graphical(lines: tuple[str, ...]) -> tuple[int, tuple[str, ...]]:
@@ -276,6 +283,14 @@ def _graphical(lines: tuple[str, ...]) -> tuple[int, tuple[str, ...]]:
         if re.fullmatch(r"C RORB_GE \d+(?:\.\d+)?", line.strip())
     ]
     boundaries = [index for index, line in enumerate(lines) if line.strip() == "C END RORB_GE"]
+    if len(versions) == 1 and versions[0][1] == "C RORB_GE 6.52":
+        # File-format recognition is not graphical grammar qualification.
+        # A separate read-only structural profiler can collect anonymous
+        # evidence; never reinterpret a 6.52 source as a 6.45 computation.
+        message = "RORB_GE 6.52 recognised but unqualified; use --ge-profile to inspect its source structure"
+        status: Status = "unsupported"
+        code = "ge_652_unqualified"
+        raise RorbFormatError(status, code, message, versions[0][0] + 1)
     if len(versions) != 1 or versions[0][1] not in ("C RORB_GE 002", "C RORB_GE 6.45"):
         message = "Only one RORB_GE 002 or original 6.45 graphical header is characterised"
         raise _problem(message, unsupported=True)
@@ -316,6 +331,7 @@ def _graphic_entity_rows(
         len(header) - 1,
     )
     rows: list[tuple[int, tuple[str, ...]]] = []
+    reach_coordinate_components = 0
     for i in range(marker + 2, end):
         line = header[i].strip()
         if not line or line == "C":
@@ -324,13 +340,24 @@ def _graphic_entity_rows(
         # Reach geometry has separate single-coordinate continuation lines;
         # these are retained raw but do not represent another reach.
         if section == "#REACHES" and len(tokens) == 2 and tokens[0] == "C":
+            if not rows:
+                message = "Graphical reach coordinate precedes its reach record"
+                raise _problem(message, i + 1)
             _number(tokens[1], i + 1)
+            reach_coordinate_components += 1
             continue
         if len(tokens) < columns or tokens[0] != "C":
             message = f"Uncharacterised {section} graphical record"
             raise _problem(message, i + 1, unsupported=True)
+        if section == "#REACHES" and reach_coordinate_components % 2:
+            message = "Graphical reach coordinate continuations need complete x/y pairs"
+            raise _problem(message, i + 1)
         _integer(tokens[1], i + 1, minimum=1)
         rows.append((i + 1, tokens))
+        reach_coordinate_components = 0
+    if section == "#REACHES" and reach_coordinate_components % 2:
+        message = "Graphical reach coordinate continuations need complete x/y pairs"
+        raise _problem(message, end)
     if len(rows) != count or tuple(_integer(tokens[1], line, minimum=1) for line, tokens in rows) != tuple(
         range(1, count + 1)
     ):
@@ -452,8 +479,8 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
                 length_token = parts[1]
                 label = parts[3] if len(parts) == 4 else ""
             length = _number(length_token, line_no)
-            if length <= 0:
-                message = "Natural reach length must be positive"
+            if length < 0:
+                message = "Natural reach length must be nonnegative"
                 raise _problem(message, line_no)
             reach_id = f"reach_{len(reaches) + 1}"
             reaches.append(Reach(reach_id, length, label))
