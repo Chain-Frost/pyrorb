@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-**Status — 17 November 2026:** The adopted project sampler, weighted frequency layer, prepared execution and selected-AEP reporting are implemented on **draft staging [PR #151](https://github.com/Chain-Frost/pyrorb/pull/151)**. They are unreleased and do not establish RORBwin statistical equivalence. The owner-directed [RORB method and larger-sample comparison work packs](work/2026-11-17-issue9-rorb-statistical-method-scopes.md) reuse #150 for native evidence and #148 for the physical study, with new #189 sampling/preparation, #190 probability/results and #191 canonical comparison scopes. All changes remain on #151; do not merge main.
+**Status — 23 November 2026 (owner-approved provisional software admission):** The adopted project sampler, weighted frequency layer, prepared execution and selected-AEP text/JSON reporting from [PR #151](https://github.com/Chain-Frost/pyrorb/pull/151) are integrated into main as **provisional CLI/API/text software**. This is **not** RORBwin 6.52 sampling/frequency equivalence, a scientifically validated full-population flood-AEP estimate, or an engineering acceptance for design. The [five-pack programme](work/2026-11-17-issue9-rorb-statistical-method-scopes.md) remains open: #150 native method/effective inputs, #189 native sampling, #190 frequency/tails, #191 canonical native comparison and #148 real-catchment convergence/budget. Publication and activation remain separately held. Do not remove those open gates or change the method silently.
 
 This document retains the adopted `monte-carlo-statistics/1` method and its source/decision distinctions. A verified native-compatible profile will have a separate identity; it must not reinterpret existing saved plans. Measured convergence and comparison results belong in linked dated research reports.
 
@@ -10,7 +10,7 @@ The product surface remains CLI, Python API and text files. Current development 
 
 ## Original scoping baseline — 15 November 2026
 
-The following describes the original pre-Monte-Carlo baseline; the current staged software status and follow-on work are above. The inspected baseline was main `0675d75b05dba7728b389fdd8af743060b4469b2`:
+The following describes the original pre-Monte-Carlo baseline; the current provisional software status and follow-on scientific work are above. The inspected baseline was main `0675d75b05dba7728b389fdd8af743060b4469b2`:
 
 - [#119](https://github.com/Chain-Frost/pyrorb/issues/119) supplies the common [explicit-event and batch contract](PROJECT_BATCH_MVP.md), including prepared geometry reuse and per-event outcomes.
 - Merged [#136](https://github.com/Chain-Frost/pyrorb/pull/136) supplies [deterministic design rainfall](ARR_DESIGN_BATCH.md). Its source readers, temporal-pattern, ARF and loss/preburst components are reusable.
@@ -39,7 +39,7 @@ The [HARC product page](https://harc.com.au/software/rorb/) listed 6.52 at this 
 
 ## Adopted v1 scientific contract (#145)
 
-**Status (adopted 15 November; implementation status refreshed 17 November 2026):** This section is the versioned **project method** `monte-carlo-statistics/1`, now implemented on draft #151. It supersedes tentative choices in the original scoping text below; it is not an admitted numerical RORBwin 6.52 distribution or an engineering-accepted flood-frequency estimate. “Project decision” identifies a deliberate algorithm choice rather than a proven RORBwin implementation. Source IDs refer to [SOURCES.md](SOURCES.md).
+**Status (adopted 15 November; implementation status refreshed 17 November 2026):** This section is the versioned **project method** `monte-carlo-statistics/1`, now implemented in the provisionally admitted software from #151. It supersedes tentative choices in the original scoping text below; it is not an admitted numerical RORBwin 6.52 distribution or an engineering-accepted flood-frequency estimate. “Project decision” identifies a deliberate algorithm choice rather than a proven RORBwin implementation. Source IDs refer to [SOURCES.md](SOURCES.md).
 
 ### Target population and dependencies
 
@@ -80,7 +80,7 @@ The v1 **joint model** is `f(p,L,T)=f_R(p)f(L|p)Pr(T|p,d,region,type)`. A projec
 
 ### Temporal-pattern eligibility and categorical inverse
 
-Do not infer a source AEP bin by nearest IFD row. Use exact source duration, region, point/areal form, area bin and approved `p` category edges. Define **increasing-p half-open category edges** `[lo,hi)` (final category includes its rightmost boundary). Each p belongs to exactly one accepted category. All genuine source member IDs in that category are retained; missing, duplicate, wrong-timestep or non-100%-sum members fail. Require explicit nonnegative member weights summing to 1, or an **explicit `equal-members` project choice** giving `1/k` for `k>0`. A categorical uniform draw selects the first cumulative probability greater than the draw; preserve source order and original TP ID independently of internal ordinals. No substitution from a different AEP category or deterministic selection index. R1 `8.4` historically allows nearest-ARI censoring, and R3 `1.6` documents ARR2016 bins; neither proves selected native cutoffs/weights for #150.
+Do not infer a source AEP bin by nearest IFD row. Use exact source duration, region, point/areal form, area bin and approved `p` category edges. Define **increasing-p half-open category edges** `[lo,hi)` (final category includes its rightmost boundary). Each p belongs to exactly one accepted category. All genuine source member IDs in that category are retained; missing, duplicate, wrong-timestep or non-100%-sum members fail. Require explicit nonnegative member weights summing to 1, or an **explicit `equal-members` project choice** giving `1/k` for `k>0`. A categorical uniform draw selects the first cumulative probability greater than the draw; preserve source order and original TP ID independently of internal ordinals. No substitution from a different AEP category or deterministic selection index. **Provisional v1 source-category guard (23 November 2026):** where an original point/areal TP source carries an explicit `aep_band`, saved B plan conditional-bin `id` must equal that source category label (`frequent`, `intermediate`, `rare` or `very rare`) before materialisation. The existing v1 plan does not carry a separate category-name mapping; arbitrary custom bin IDs paired with source-labelled categories are intentionally unsupported at this boundary until a separately reviewed and versioned mapping is adopted. Source areal files without AEP-band metadata retain their documented area-based selection, without asserting native category equivalence. R1 `8.4` historically allows nearest-ARI censoring, and R3 `1.6` documents ARR2016 bins; neither proves selected native cutoffs/weights for #150.
 
 ### Weighted results and missing-mass requirements (C)
 

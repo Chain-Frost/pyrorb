@@ -113,6 +113,33 @@ def test_preparation_rejects_source_symlink_ancestor_escape(tmp_path: Path) -> N
     assert not request.exists()
 
 
+def test_saved_plan_rejects_wrong_source_aep_category(tmp_path: Path) -> None:
+    project, config, ifd, patterns = _fixture(tmp_path)
+    original = patterns.read_bytes()
+    assert b"SyntheticPoint,rare," in original
+    edited = original.replace(b"SyntheticPoint,rare,", b"SyntheticPoint,frequent,", 2)
+    patterns.write_bytes(edited)
+    spec = json.loads(config.read_text(encoding="utf-8"))
+    spec["sources"]["temporal_patterns"] = hashlib.sha256(edited).hexdigest()
+    config.write_text(json.dumps(spec) + "\n", encoding="utf-8")
+
+    prefix = tmp_path / "mismatched"
+    assert main(["plan", str(config), str(prefix)]) == 0
+    request = tmp_path / "bad-effective.jsonl"
+    with pytest.raises(MCInputError, match="source AEP category"):
+        prepare_saved_sample_plan(
+            project,
+            tmp_path / "mismatched.plan.json",
+            tmp_path / "mismatched.samples.jsonl",
+            request,
+            ifd_path=ifd,
+            patterns_path=patterns,
+            arf_region="South-West Western Australia",
+            dry_tail_min=120,
+        )
+    assert not request.exists()
+
+
 def test_saved_b_to_e_request_is_decimal_context_independent(tmp_path: Path) -> None:
     project, config, ifd, patterns = _fixture(tmp_path)
     prefix = tmp_path / "context-study"

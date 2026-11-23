@@ -1,6 +1,6 @@
 # S7 Monte Carlo effective-event execution boundary (#149)
 
-**Status:** Bounded E execution adapter integrated with B's sampler and C's frequency layer on draft staging #151. Not a qualified RORBwin Monte Carlo implementation. Scope [#146](https://github.com/Chain-Frost/pyrorb/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/pyrorb/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/pyrorb/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
+**Status — 23 November 2026:** Bounded E execution, B sampling and C frequency software from #151 are provisionally admitted on main under the selected project method. **Software acceptance only**: the adapter is not an independently qualified RORBwin Monte Carlo implementation or engineering flood-frequency estimator. Scope [#146](https://github.com/Chain-Frost/pyrorb/issues/146) owns sample plans, probability-to-depth interpolation and the stochastic sampler; [#147](https://github.com/Chain-Frost/pyrorb/issues/147) owns weighted results; [#145](https://github.com/Chain-Frost/pyrorb/issues/145) owns adopted probability/distribution policy. This interface routes already-materialised events using the [existing #119 runner](PROJECT_BATCH_MVP.md), without replacing its geometry cache or numerical solver.
 
 ## API and CLI
 
@@ -74,10 +74,10 @@ The last command exclusively creates selected-event.json, selected-event.csv
 and selected-event.txt, retaining the full ordinary hydrograph, time and
 project/engine provenance.
 
-## Staged B → E → C text-file workflow
+## Provisional B → E → C text-file workflow
 
 The #146 sampler and #147 results module are now incorporated into the
-**#151 staging lineage**. The same CLI exposes the complete sequence
+**#151 software admission**. The same CLI exposes the complete sequence
 without copying either implementation:
 
 ```sh
@@ -258,7 +258,7 @@ envelope policies; the CLI deliberately does not invent those results.
 
 - B/E/C source-backed integration, source identities, saved-draw materialisation,
   event results, weighted frequency, replay and explicit extension are
-  implemented on staging. Each new code revision still requires its own
+  implemented in the provisional software on main. Each subsequent numerical revision still requires its own
   exact-head CI and independent review receipts before merge.
 - The supported engineering subset and `monte-carlo-statistics/1` policy
   remain distinct from native RORBwin qualification. Unmodelled tails,

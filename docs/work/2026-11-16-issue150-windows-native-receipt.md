@@ -536,3 +536,31 @@ documentation head only. The integrated documentation branch requires its
 own exact-head checks and review before the owner considers merging #218
 into draft #151. Neither #151 to main nor #218 into #151 is authorised
 by this reconciliation. #9/#148/#150/#189/#190/#191 remain open.
+
+### Second staging reconciliation — 24 November 2026
+
+This is a later integration-context update, not a new examination of RORBwin
+or a new private-custody rehash. The 23 November bounded negative finding
+and field-availability matrix above are unchanged.
+
+At this reconciliation, the current #151 staging head is
+`41e66cfbe02dfc76c8f63a2282311bfe4b26a73f`. It includes
+the subsequent provisional B/E/C software-admission records, optional
+local MCP integration and another fail-closed check of sampled source
+temporal-pattern AEP category. These changes are inherited from staging
+without modification to product sources, tests, fixtures, method policies
+or public source identities by this documentation branch.
+
+The owner has separately authorised provisional Monte Carlo **software**
+admission, without resolving native/scientific acceptance. The earlier
+statement that #151 must remain draft records its historical state;
+at this later check #151 was marked ready for review, and it was still
+**unmerged to main**. Approval to integrate this documentation-only #218
+contribution into #151 does not itself approve a #151-to-main merge
+by this agent. Scientific #9/#148/#150/#189/#190/#191 remain open.
+
+The future evidence-agent handoff is retained in
+[issue #150](https://github.com/Chain-Frost/pyrorb/issues/150#issuecomment-7106607565).
+Do not restart F1–F6 native calculations without qualifying
+previously unavailable, nonexecuting, version-pinned effective-state
+evidence and a new separately approved finite experiment plan.
