@@ -187,7 +187,8 @@ def _authorize_write(allow_write: bool) -> None:
     """Require deliberate acknowledgement before computing and creating files."""
     if not allow_write:
         message = "Execution is opt-in: set allow_write=true to calculate and create new result files"
-        raise ExpectedMCPError("write_consent_required", message)
+        code = "write_consent_required"
+        raise ExpectedMCPError(code, message)
 
 
 def _check_new_outputs(paths: tuple[Path, ...]) -> None:
@@ -198,7 +199,8 @@ def _check_new_outputs(paths: tuple[Path, ...]) -> None:
     for path in paths:
         if not path.parent.is_dir():
             message = "Output directory must already exist. Create it before retrying."
-            raise ExpectedMCPError("output_directory_missing", message)
+            code = "output_directory_missing"
+            raise ExpectedMCPError(code, message)
         if path.exists() or path.is_symlink():
             message = f"Output destination already exists and cannot be overwritten: {path}"
             raise FileExistsError(message)
@@ -210,13 +212,15 @@ def _python_selection(
     """Validate the actual stored/overridden engine before any dispatcher can launch native CMD."""
     if engine is None and numerical_profile is not None:
         message = "numerical_profile requires an explicit engine override"
-        raise ExpectedMCPError("invalid_engine_selection", message)
+        code = "invalid_engine_selection"
+        raise ExpectedMCPError(code, message)
     override = EngineSelection.for_engine(engine, numerical_profile) if engine is not None else None
     stored = load_project(project_path).project.engine
     effective = stored if override is None else override
     if effective.engine == "rorb-cmd":
         message = "Native rorb-cmd is not exposed through MCP execution; use the explicit native CLI"
-        raise ExpectedMCPError("native_engine_not_available", message)
+        code = "native_engine_not_available"
+        raise ExpectedMCPError(code, message)
     return override, effective
 
 
@@ -232,7 +236,8 @@ def run_project(
     target = Path(output_path).absolute()
     if target.suffix.lower() != ".json":
         message = "Single-project output must have a .json extension"
-        raise ExpectedMCPError("invalid_output_path", message)
+        code = "invalid_output_path"
+        raise ExpectedMCPError(code, message)
     _check_new_outputs((target,))
     source = Path(project_path).absolute()
     override, _ = _python_selection(source, engine, numerical_profile)
@@ -276,7 +281,8 @@ def run_project_events(
     events = load_event_request(Path(events_path).absolute())
     if len(events) > MAX_MCP_EVENTS:
         message = f"MCP batch exceeds the limit of {MAX_MCP_EVENTS} events"
-        raise ExpectedMCPError("event_limit_exceeded", message)
+        code = "event_limit_exceeded"
+        raise ExpectedMCPError(code, message)
     report = execute_project_events(source, events, selection=override)
     written = write_batch_results(prefix, report)
     first = report.outcomes[0]
@@ -322,10 +328,12 @@ def prepare_arr_design(config_path: str, output_prefix: str, allow_write: bool =
     config = read_design_config(source)
     if config.engine.engine == "rorb-cmd":
         message = "Native rorb-cmd ARR batches are not exposed through MCP; use the explicit native CLI"
-        raise ExpectedMCPError("native_engine_not_available", message)
+        code = "native_engine_not_available"
+        raise ExpectedMCPError(code, message)
     if len(config.durations_min) * len(config.aep_labels) * 10 > MAX_MCP_EVENTS:
         message = f"MCP design ensemble exceeds the limit of {MAX_MCP_EVENTS} events"
-        raise ExpectedMCPError("event_limit_exceeded", message)
+        code = "event_limit_exceeded"
+        raise ExpectedMCPError(code, message)
     result = run_design_batch(source)
     written = write_design_outputs(prefix, result)
     effective = result.effective
