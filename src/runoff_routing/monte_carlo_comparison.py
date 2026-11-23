@@ -29,9 +29,15 @@ def _fail(message: str) -> Never:
     raise MCComparisonInputError(message)
 
 
-def _name(value: str, label: str) -> None:
+def _name(value: object, label: str) -> None:
     if not isinstance(value, str) or not value or value != value.strip() or any(ord(ch) < 32 for ch in value):
         _fail(f"{label} must be nonempty trimmed text without controls")
+
+
+def _positive_integer(value: object, label: str) -> None:
+    """Validate runtime values while keeping typed model fields unchanged."""
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        _fail(f"{label} must be a positive integer")
 
 
 def _digest(value: str | None, label: str, *, required: bool = False) -> None:
@@ -84,8 +90,7 @@ class MCEventKey:
             ("division", self.division),
             ("run", self.run),
         ):
-            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
-                _fail(f"{label} must be a positive integer")
+            _positive_integer(value, label)
         if self.scenario_id is not None:
             _name(self.scenario_id, "scenario_id")
         if self.physical_site_id is not None:
@@ -111,10 +116,8 @@ class MCField:
         if self.token is None or self.unit is None:
             _fail("available fields require a source token and unit")
         _name(self.unit, "unit")
-        if self.source_line is not None and (
-            not isinstance(self.source_line, int) or isinstance(self.source_line, bool) or self.source_line < 1
-        ):
-            _fail("source_line must be a positive integer")
+        if self.source_line is not None:
+            _positive_integer(self.source_line, "source_line")
         _ = self.decimal
 
     @property
@@ -175,10 +178,8 @@ class MCNativeRecord:
     native_event_weight: MCField = field(default_factory=lambda: MCField("unavailable"))
 
     def __post_init__(self) -> None:
-        if self.native_tp_rank is not None and (
-            not isinstance(self.native_tp_rank, int) or isinstance(self.native_tp_rank, bool) or self.native_tp_rank < 1
-        ):
-            _fail("native_tp_rank must be a positive integer")
+        if self.native_tp_rank is not None:
+            _positive_integer(self.native_tp_rank, "native_tp_rank")
         if self.original_tp_event_id is not None:
             _name(self.original_tp_event_id, "original_tp_event_id")
         if self.python_sample_id is not None:
