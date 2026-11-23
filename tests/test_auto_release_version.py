@@ -33,7 +33,7 @@ def test_dated_source_version_is_lower_bound() -> None:
 
 @pytest.mark.parametrize("version", ["2026.11.23.1", "26.2.30.1", "26.13.1.1", "26.11.23.0"])
 def test_invalid_calendar_releases_rejected(version: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Invalid calendar release version|day is out of range|month must be in"):
         PARTS(version)
 
 
@@ -42,7 +42,7 @@ def test_unrelated_tags_do_not_affect_calendar_allocation() -> None:
 
 
 def test_malformed_numeric_calendar_tag_is_not_silently_skipped() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Invalid calendar release version|day is out of range|month must be in"):
         NEXT("0.0.0.dev0", ["v26.11.23.0"], dt.date(2026, 11, 23))
 
 
@@ -59,6 +59,6 @@ def test_invalid_stamp_keeps_file_identical(tmp_path: Path) -> None:
     project = tmp_path / "pyproject.toml"
     original = '[project]\nversion = "0.0.0.dev0"\n'
     project.write_text(original, encoding="utf-8")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Invalid calendar release version|day is out of range|month must be in"):
         STAMP(tmp_path, "v26.2.30.1")
     assert project.read_text(encoding="utf-8") == original
