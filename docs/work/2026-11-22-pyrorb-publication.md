@@ -1,4 +1,4 @@
-# Deferred PyRORB publication preparation â€” 22 November 2026
+# Deferred PyRORB publication preparation — 22 November 2026
 
 ## Scope and state
 
@@ -59,7 +59,7 @@ The bootstrap version and direct reader/PyRomb source pins remain unchanged. Fin
 **Next action:** keep this preparation PR in draft while the owner assembles the MVP and final dependency requirements. Once the owner selects release scope, complete the guide's qualification/acceptance gates, then obtain the explicit merge/activation/publication instruction. Configure the actual `pypi` environment and matching Trusted Publisher only at that later stage. No automatic merge, tag-triggered release or publication is authorised by this record.
 
 
-## Focused independent corrective review â€” 22 November 2026
+## Focused independent corrective review — 22 November 2026
 
 The original preparation head was reviewed against #213, the allowed workflow inventory and the current upstream artifact-download inputs. The existing Windows quality run for that original head completed successfully; its result and the 22 focused release tests above apply only to that revision.
 
@@ -67,7 +67,7 @@ A concrete false-pass was identified: if a build emitted **the same incorrect Re
 
 A separate local Python 3.13.5/setuptools 82.0.1 fixture built a real wheel: the normalised source and wheel requirement inventories agreed, while three mutated requirement inventories were rejected. This fixture validates the comparison design, **not** an execution of this repository's full pytest/Ruff/Pyright suite. The original suite/negative-control hashes remain historical evidence above; new head CI and any further verification are reported separately in the PR/issue. No change was made to the inert workflow template, active hosted workflow, dependency pins, version, publication settings, or scientific acceptance.
 
-## Follow-up to fresh independent review â€” 22 November 2026
+## Follow-up to fresh independent review — 22 November 2026
 
 The independent review of corrective head `443ed27c03e4ad8f77686e3da14395c209553b40`
 reported two actionable findings: P2, an unrelated internal wheel `.dist-info` name/version
@@ -91,7 +91,7 @@ subsequent changes. Focused correction verification and current CI must be
 recorded against the resulting revision. No version, pin, hosted workflow,
 permissions, environment, publisher, merge or release decision has changed.
 
-## Separate activation PR staged for review â€” 23 November 2026
+## Separate activation PR staged for review — 23 November 2026
 
 The owner requested a reviewable PyPI publishing workflow PR and comparison with `ryan-tools`. The
 `ryan-tools` chain publishes automatically after verified `main` releases, but **PyRORB retains
@@ -107,7 +107,7 @@ CI, independent review, exact-head local tests and actual publishing remain sepa
 The next release task remains final-MVP dependency qualification and the source/installed-wheel
 gates, not an automatic release or scheduled main-merge publication.
 
-## Owner release policy revision â€” 23 November 2026
+## Owner release policy revision — 23 November 2026
 
 The owner prefers an automatic release after successful main CI, but only
 one initial real public test publication before disabling the publisher until
@@ -124,7 +124,7 @@ or production PyPI upload is made. Current Git/archive dependency URLs
 still block public package metadata qualification. No merge, release,
 tag, publisher/environment setup or upload has been performed.
 
-## Draft one-shot publisher implemented â€” 23 November 2026
+## Draft one-shot publisher implemented — 23 November 2026
 
 Draft PR #220 now proposes workflow_run automation only for the exact
 activation PR #220 merge, after successful main CI and explicit owner
@@ -142,7 +142,7 @@ by direct-URL reader/PyRomb requirements. No publication, merge, real
 workflow execution or independent approval has been asserted.
 
 
-## Local one-shot security follow-up ? 23 November 2026
+## Local one-shot security follow-up - 23 November 2026
 
 Reviewed activation parent `fa9501cf5d6df093ff76e2fa4eec372e643235a6`, tree
 `4e56a780aade8f13fefc00676e32bb202d6e4732`, workflow blob
