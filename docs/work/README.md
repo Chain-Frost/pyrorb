@@ -57,6 +57,8 @@
 
 ## Provisional Monte Carlo software and outstanding scientific research
 
+- [#190 independently checked ARR total-probability reference](2026-11-24-issue190-arr-tpt-reference.md) — source-cited 2013/Book 4 arithmetic checks and explicit outer-bin/missing-mass limits; **not** a RORBwin 6.52 compatibility claim.
+
 - [Current #9 native-method and large-sample work packs](2026-11-17-issue9-rorb-statistical-method-scopes.md) — #150/#189/#190/#191/#148; no premature native/scientific acceptance.
 - [Original Monte Carlo #9 scoping](2026-11-15-issue9-scoping.md) and [#145 adopted statistical contract](2026-11-15-issue145-mc-statistical-method.md) — distinguish initial plans, implemented project choices and native-equivalence gaps.
 - [#146 sampler and persisted-plan work](2026-11-15-issue146-monte-carlo-sampler.md), [#147 weighted-frequency control](2026-11-15-mc-weighted-frequency.md) and [B→E→C execution contract](2026-11-15-s7-execution-slice.md) — verified B/E/C software provisionally admitted to main from #151, with stable replay/weighting identities.
