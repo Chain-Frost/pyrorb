@@ -34,7 +34,10 @@ def test_arr_d2_2013_table_3_with_documented_outer_interval_assumptions() -> Non
     exceeded = (0, 2, 10, 24, 48, 112, 170, 190, 200, 200)
     intervals = tuple(
         ref.TPTInterval(
-            f"published-{index + 1}", Decimal(mass), count, 200,
+            f"published-{index + 1}",
+            Decimal(mass),
+            count,
+            200,
             "frequent" if index == 0 else "rare" if index == 9 else "interior",
         )
         for index, (mass, count) in enumerate(zip(masses, exceeded, strict=True))
@@ -55,8 +58,16 @@ def test_arr_book4_v42_table_443_retains_unmodelled_probability() -> None:
     """
     ref = _reference()
     masses = (
-        "0.061855", "0.042001", "0.026083", "0.014813", "0.007694",
-        "0.003655", "0.001588", "0.000631", "0.000229", "0.000076",
+        "0.061855",
+        "0.042001",
+        "0.026083",
+        "0.014813",
+        "0.007694",
+        "0.003655",
+        "0.001588",
+        "0.000631",
+        "0.000229",
+        "0.000076",
     )
     exceeded = (0, 0, 0, 4, 15, 20, 20, 20, 20, 20)
     rows = tuple(
@@ -89,9 +100,7 @@ def test_hand_calculated_unequal_strata_and_strict_exceedance() -> None:
 
 def test_incomplete_annual_probability_support_does_not_renormalise() -> None:
     ref = _reference()
-    rows = (
-        ref.TPTInterval("modelled", Decimal("0.49"), 1, 2),
-    )
+    rows = (ref.TPTInterval("modelled", Decimal("0.49"), 1, 2),)
     result = ref.total_probability_reference(rows)
     assert result.known_exceedance == Decimal("0.245")
     assert result.unresolved_rainfall_mass == Decimal("0.51")
