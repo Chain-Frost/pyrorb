@@ -178,10 +178,9 @@ def test_areal_mc_pattern_must_match_arr2019_size_bin() -> None:
     model = replace(model, catchment=replace(model.catchment, subareas=(first, *original[1:])))
 
     def areal_source(bin_label: str) -> PatternSet:
-        contents = (
-            "EventID,Duration,TimeStep,Region,Area,AEP,Increments\n"
-            f"A1,60,30,SyntheticPoint,{bin_label},rare,10,90\n"
-        )
+        header = "EventID,Duration,TimeStep,Region,Area,AEP,Increments"
+        row = f"A1,60,30,SyntheticPoint,{bin_label},rare,10,90"
+        contents = f"{header}\n{row}\n"
         return parse_pattern_csv(contents.encode("utf-8"), kind="areal")
 
     def materialise(patterns: PatternSet) -> EffectiveMCEvent:
