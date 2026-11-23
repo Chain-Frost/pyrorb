@@ -29,7 +29,7 @@ def test_publisher_permissions_and_one_shot_disable() -> None:
 
 def test_all_actions_expressions_are_closed() -> None:
     """Reject unclosed and surplus braces in privileged workflow expressions."""
-    expression = re.compile(r"\\$\\{\\{[^{}]+\\}\\}")
+    expression = re.compile(r"\$\{\{[^{}]+\}\}")
     for line in WORKFLOW.read_text(encoding="utf-8").splitlines():
         if "${{" not in line:
             continue
