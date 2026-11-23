@@ -51,7 +51,7 @@ def test_arr_book4_v42_table_443_retains_unmodelled_probability() -> None:
     """Book 4 §4.4 Table 4.4.3, p.69: printed values ≈0.014911.
 
     Six-decimal published widths and conditional counts give 0.0149121. No
-    full-tail closure is inferred from the tabulated 1.0–4.0 z interval.
+    full-tail closure is inferred from the tabulated 1.0-4.0 z interval.
     """
     ref = _reference()
     masses = (
@@ -155,10 +155,10 @@ def test_nonfinite_and_float_masses_are_rejected(mass: object) -> None:
         ref.TPTInterval("bad", mass, 1, 2)
 
 
-@pytest.mark.parametrize("count,trials", [(2, 1), (-1, 1), (True, 1), (0, 0), (1, 1.5), (1, True)])
+@pytest.mark.parametrize(("count", "trials"), [(2, 1), (-1, 1), (True, 1), (0, 0), (1, 1.5), (1, True)])
 def test_invalid_simulation_counts_are_rejected(count: object, trials: object) -> None:
     ref = _reference()
-    with pytest.raises(ValueError, match="Exceedances|Simulations"):
+    with pytest.raises(ValueError, match=r"Exceedances|Simulations"):
         ref.TPTInterval("invalid", Decimal("0.1"), count, trials)
 
 

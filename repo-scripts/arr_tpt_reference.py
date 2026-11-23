@@ -111,11 +111,11 @@ def _conditional_probability(row: TPTInterval, policy: BoundaryPolicy) -> Decima
 def total_probability_reference(
     intervals: tuple[TPTInterval, ...], *, boundary_policy: BoundaryPolicy = "none"
 ) -> TPTReferenceResult:
-    """Calculate Σ p(R_i)×n_i/N_i without renormalising partial support.
+    """Calculate sum_i p(R_i) * n_i / N_i without renormalising partial support.
 
     In 'arr2013_illustration', the first/last bins are the paper's explicit
     frequent/rare outer intervals with already full-tail masses. Conditional
-    exceedances are replaced by geometric means with 0.1×p and 1.0.
+    exceedances are replaced by geometric means with 0.1 * p and 1.0.
     This pragmatic illustrative assumption is NOT a RORBwin or product default.
     """
     _validate_reference_policy(intervals, boundary_policy)
