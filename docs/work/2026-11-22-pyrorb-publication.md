@@ -90,3 +90,19 @@ Those results apply to the *reviewed pre-fix head*, not automatically to these
 subsequent changes. Focused correction verification and current CI must be
 recorded against the resulting revision. No version, pin, hosted workflow,
 permissions, environment, publisher, merge or release decision has changed.
+
+## Separate activation PR staged for review — 23 November 2026
+
+The owner requested a reviewable PyPI publishing workflow PR and comparison with `ryan-tools`. The
+`ryan-tools` chain publishes automatically after verified `main` releases, but **PyRORB retains
+manual-only dispatch** and its own final-MVP release gates. A separate draft PR stacked on
+preparation #215 proposes `.github/workflows/publish.yml` by copying the reviewed inert template,
+then narrowly updates the existing workflow allowlist and its exact-policy test. Its merge remains
+held pending explicit owner approval; `main` retains only `quality.yml` until then.
+
+The change does not alter release identity/version, dependency pins, action permissions outside
+the proposed workflow, publication settings, environment, PyPI account, tags or scientific code.
+Only structural checks on the copied workflow and policy edits are established during PR creation;
+CI, independent review, exact-head local tests and actual publishing remain separately unverified.
+The next release task remains final-MVP dependency qualification and the source/installed-wheel
+gates, not an automatic release or scheduled main-merge publication.

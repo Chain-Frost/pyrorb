@@ -1,0 +1,159 @@
+# Draft activation PR stacked on #215. Do not merge until explicitly authorised.
+# Manual dispatch only; release eligibility and OIDC upload remain separately gated.
+name: Publish selected PyRORB release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing v<version> tag at the reviewed main commit
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: pyrorb-pypi-publication
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      github.repository == 'Chain-Frost/pyrorb' &&
+      github.ref == 'refs/heads/main' &&
+      vars.PYPI_PUBLISH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.distributions.outputs.artifact-id }}
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, reviewed 2026-11-22
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7, reviewed 2026-11-22
+        with:
+          python-version: '3.13'
+      - name: Check selected source and tag
+        run: |
+          python -m pip install build packaging twine
+          python repo-scripts/check_release.py --tag="$RELEASE_TAG"
+          test "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Run existing pure-Python quality and source checks
+        run: |
+          python -m pip install -e '.[dev,catg]'
+          python repo-scripts/check_local.py
+          mkdir "$RUNNER_TEMP/pyrorb-receipts"
+          python repo-scripts/cmd_public_probe.py > "$RUNNER_TEMP/pyrorb-receipts/source-cmd.json"
+      - name: Build and inspect the exact distribution pair
+        run: |
+          python -m build --outdir "$RUNNER_TEMP/pyrorb-dist"
+          python -m twine check --strict "$RUNNER_TEMP/pyrorb-dist/"*
+          python repo-scripts/check_release.py --tag="$RELEASE_TAG" --dist "$RUNNER_TEMP/pyrorb-dist"
+          sha256sum "$RUNNER_TEMP/pyrorb-dist/"* > "$RUNNER_TEMP/pyrorb-receipts/SHA256SUMS"
+          printf 'source=%s\ntag=%s\n' "$GITHUB_SHA" "$RELEASE_TAG" > "$RUNNER_TEMP/pyrorb-receipts/source.txt"
+          python -VV > "$RUNNER_TEMP/pyrorb-receipts/python.txt"
+          python -m pip freeze > "$RUNNER_TEMP/pyrorb-receipts/build-environment.txt"
+      - name: Install wheel and sdist independently outside the checkout
+        run: |
+          # These fresh environments resolve published dependencies, including
+          # CATG writing. Revisit selected extras against the final MVP scope.
+          wheel_files=("$RUNNER_TEMP/pyrorb-dist/"*.whl)
+          for kind in wheel sdist; do
+            if [ "$kind" = wheel ]; then
+              files=("$RUNNER_TEMP/pyrorb-dist/"*.whl)
+            else
+              files=("$RUNNER_TEMP/pyrorb-dist/"*.tar.gz)
+            fi
+            python -m venv "$RUNNER_TEMP/pyrorb-$kind"
+            installed_python="$RUNNER_TEMP/pyrorb-$kind/bin/python"
+            "$installed_python" -m pip install "${files[0]}[catg]"
+            "$installed_python" -m pip check
+            (
+              cd "$RUNNER_TEMP"
+              "$installed_python" -I - "${wheel_files[0]}" <<'PY' > "$RUNNER_TEMP/pyrorb-receipts/$kind-install.txt"
+          import importlib.metadata
+          import os
+          import platform
+          import sys
+          from pathlib import Path
+          import runoff_routing
+          from runoff_routing.engine_provenance import identify_implementation, verify_installed_wheel
+
+          origin = Path(runoff_routing.__file__).resolve()
+          if not origin.is_relative_to(Path(sys.prefix).resolve()):
+              raise SystemExit(f"Package is not isolated in the installed environment: {origin}")
+          version = importlib.metadata.version("pyrorb")
+          if f"v{version}" != os.environ["RELEASE_TAG"]:
+              raise SystemExit(f"Installed version does not match the selected release: {version}")
+          if not (origin.parent / "py.typed").is_file():
+              raise SystemExit("Installed typing marker is missing")
+          print(f"Verified installed distribution {version}: {origin}")
+          print(f"Wheel matching installed source SHA-256: {verify_installed_wheel(Path(sys.argv[1]))}")
+          print(f"Package-code identity: {identify_implementation().revision}")
+          print(f"Interpreter: {sys.version}; platform: {platform.platform()}")
+          PY
+            )
+            cat "$RUNNER_TEMP/pyrorb-receipts/$kind-install.txt"
+            "$installed_python" -m pip freeze > "$RUNNER_TEMP/pyrorb-receipts/$kind-environment.txt"
+          done
+          (
+            cd "$RUNNER_TEMP"
+            "$RUNNER_TEMP/pyrorb-wheel/bin/python" -I "$GITHUB_WORKSPACE/repo-scripts/cmd_public_probe.py" \
+              > "$RUNNER_TEMP/pyrorb-receipts/wheel-cmd.json"
+          )
+          # The existing probe emits stable full per-case JSON, including code
+          # identity, Q/scalar/status results and preserved incomplete outcomes.
+          cmp "$RUNNER_TEMP/pyrorb-receipts/source-cmd.json" "$RUNNER_TEMP/pyrorb-receipts/wheel-cmd.json"
+      - name: Retain review receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pyrorb-release-receipts
+          path: ${{ runner.temp }}/pyrorb-receipts/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Transfer checked distributions
+        id: distributions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pyrorb-distributions
+          path: ${{ runner.temp }}/pyrorb-dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: build
+    if: >-
+      github.repository == 'Chain-Frost/pyrorb' &&
+      github.ref == 'refs/heads/main' &&
+      vars.PYPI_PUBLISH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/p/PyRORB
+    permissions:
+      id-token: write
+    steps:
+      # No source checkout, dependency installation or build in the OIDC job.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist/
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Publish reviewed artifacts using the configured Trusted Publisher
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          packages-dir: dist/
+          skip-existing: 'false'
+          attestations: 'true'
