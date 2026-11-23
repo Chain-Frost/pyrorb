@@ -12,7 +12,7 @@ from mcp.types import TextContent
 
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.mcp_server import mcp, run_project
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.project_json import EmbeddedRun, MAX_SOURCE_BYTES, Project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
@@ -46,8 +46,15 @@ def test_mcp_expected_refusals_have_codes_and_preserve_files(tmp_path: Path) -> 
         ),
         encoding="utf-8",
     )
+    private_key = "SECRET_DUPLICATE_INPUT_KEY_DO_NOT_DISCLOSE"
+    duplicate = tmp_path / "private-duplicate.json"
+    duplicate.write_text(json.dumps({private_key: "first"})[:-1] + f',"{private_key}":"second"' + "}", encoding="utf-8")
+    oversized = tmp_path / "private-oversize.json"
+    with oversized.open("wb") as stream:
+        stream.seek(MAX_SOURCE_BYTES)
+        stream.write(b"x")
     blocked = tmp_path / "blocked.json"
-    original = {path: path.read_bytes() for path in (project, native, malformed, unknown, present, request)}
+    original = {path: path.read_bytes() for path in (project, native, malformed, unknown, present, request, duplicate)}
 
     cases: tuple[tuple[str, dict[str, object], str], ...] = (
         (
@@ -89,6 +96,8 @@ def test_mcp_expected_refusals_have_codes_and_preserve_files(tmp_path: Path) -> 
             {"project_path": str(tmp_path / "not-found.json"), "output_path": str(blocked), "allow_write": True},
             "input_missing",
         ),
+        ("validate_project", {"path": str(oversized)}, "input_limit_exceeded"),
+        ("validate_project", {"path": str(duplicate)}, "invalid_input"),
         ("validate_project", {"path": str(malformed)}, "invalid_input"),
         ("inspect_event_request", {"path": str(malformed)}, "invalid_input"),
         ("get_result_summary", {"path": str(unknown)}, "invalid_input"),
@@ -115,11 +124,15 @@ def test_mcp_expected_refusals_have_codes_and_preserve_files(tmp_path: Path) -> 
                 assert len(message) <= 380, (name, len(message))
                 assert "Traceback" not in message
                 assert 'File "' not in message
+                assert private_key not in message
+                assert str(duplicate) not in message
+                assert str(oversized) not in message
 
     asyncio.run(probe())
     assert not blocked.exists()
     assert not (tmp_path / "large_batch.json").exists()
     assert {path: path.read_bytes() for path in original} == original
+    assert oversized.stat().st_size == MAX_SOURCE_BYTES + 1
 
 
 def test_mcp_wrapping_does_not_change_direct_python_errors(tmp_path: Path) -> None:

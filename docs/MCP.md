@@ -94,6 +94,13 @@ failures as short, stable coded tool errors. For example,
 not be mistaken for `computed_unvalidated`. The SDK returns these messages in
 tool `content`, not `structured_content`.
 
+Messages originating from existing parsers are classified but **never echoed**
+verbatim: their exception text can include absolute filesystem paths or raw
+JSON keys. For example, oversize inputs receive a fixed
+`[input_limit_exceeded]` message and duplicate JSON keys receive an
+`[invalid_input]` message without reproducing the key. The original Python
+API exceptions remain available to a caller explicitly using that API.
+
 Unexpected programming failures remain deliberately sanitised by the MCP SDK;
 full tracebacks and raw filesystem exceptions are not disclosed to the agent.
 Only the MCP protocol boundary converts expected exceptions; direct Python
