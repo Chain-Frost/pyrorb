@@ -14,7 +14,7 @@ from runoff_routing.arr_design_batch import run_design_batch, write_design_outpu
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_batch import load_event_request, run_project_events
-from runoff_routing.project_json import EmbeddedRun, Project, write_project
+from runoff_routing.project_json import MAX_SOURCE_BYTES, EmbeddedRun, Project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 ROOT = Path(__file__).absolute().parents[1]
@@ -52,7 +52,14 @@ def test_stdio_discovery_calculation_and_safeguards(tmp_path: Path) -> None:
     with huge.open("wb") as stream:
         stream.seek(64 * 1024 * 1024)
         stream.write(b"x")
-    inputs = (project, native, config, malformed, unknown)
+    private_key = "SECRET_STDIO_DUPLICATE_KEY_DO_NOT_DISCLOSE"
+    duplicate = workspace / "private-duplicate.json"
+    duplicate.write_text(json.dumps({private_key: "one"})[:-1] + f',"{private_key}":"two"' + "}", encoding="utf-8")
+    oversized_project = workspace / "private-oversize.json"
+    with oversized_project.open("wb") as stream:
+        stream.seek(MAX_SOURCE_BYTES)
+        stream.write(b"x")
+    inputs = (project, native, config, malformed, unknown, duplicate)
     original = [path.read_bytes() for path in inputs]
 
     async def probe() -> None:
@@ -151,6 +158,8 @@ def test_stdio_discovery_calculation_and_safeguards(tmp_path: Path) -> None:
             blocked = str(workspace / "blocked.json")
             base: dict[str, object] = {"project_path": str(project), "output_path": blocked, "allow_write": True}
             failures: tuple[tuple[str, dict[str, object]], ...] = (
+                ("validate_project", {"path": str(oversized_project)}),
+                ("validate_project", {"path": str(duplicate)}),
                 ("validate_project", {"path": str(workspace / "missing.json")}),
                 ("validate_project", {"path": str(malformed)}),
                 ("inspect_event_request", {"path": str(malformed)}),
@@ -163,10 +172,28 @@ def test_stdio_discovery_calculation_and_safeguards(tmp_path: Path) -> None:
                 ("run_project", {**base, "engine": "rorb-cmd"}),
             )
             saved = single.read_bytes()
-            for tool, arguments in failures:
+            expected_codes = (
+                "input_limit_exceeded",
+                "invalid_input",
+                "input_missing",
+                "invalid_input",
+                "invalid_input",
+                "invalid_input",
+                "input_limit_exceeded",
+                "write_consent_required",
+                "output_exists",
+                "invalid_engine_selection",
+                "native_engine_not_available",
+                "native_engine_not_available",
+            )
+            for (tool, arguments), code in zip(failures, expected_codes, strict=True):
                 result = await client.call_tool(tool, arguments)
                 assert result.is_error, (tool, arguments)
-                assert result.content
+                assert result.structured_content is None
+                assert f"[{code}]" in str(result.content), (tool, code, result.content)
+                assert private_key not in str(result.content)
+                assert str(oversized_project) not in str(result.content)
+                assert str(duplicate) not in str(result.content)
             assert not Path(blocked).exists()
             assert single.read_bytes() == saved
 
