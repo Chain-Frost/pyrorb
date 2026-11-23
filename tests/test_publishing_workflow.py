@@ -35,6 +35,5 @@ def test_all_actions_expressions_are_closed() -> None:
             continue
         without_expressions = expression.sub("", line)
         assert "${{" not in without_expressions, f"Unclosed GitHub expression: {line}"
-        assert "{" not in without_expressions and "}" not in without_expressions, (
-            f"Stray GitHub expression brace: {line}"
-        )
+        assert "{" not in without_expressions, f"Stray GitHub expression brace: {line}"
+        assert "}" not in without_expressions, f"Stray GitHub expression brace: {line}"
