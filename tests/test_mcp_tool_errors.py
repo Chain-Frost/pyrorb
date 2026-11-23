@@ -114,7 +114,7 @@ def test_mcp_expected_refusals_have_codes_and_preserve_files(tmp_path: Path) -> 
                 assert f"[{code}]" in message, (name, message)
                 assert len(message) <= 380, (name, len(message))
                 assert "Traceback" not in message
-                assert "File \"" not in message
+                assert 'File "' not in message
 
     asyncio.run(probe())
     assert not blocked.exists()
