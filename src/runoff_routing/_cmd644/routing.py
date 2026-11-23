@@ -194,9 +194,6 @@ def route_reach(
         message = "negative exponents unsupported"
         raise UnsupportedNumericPath(message)
     k = store(geometry.coefficient)
-    if m == 1.0 and hours is None:
-        message = "linear routing requires the actual stored input timestep hours"
-        raise UnsupportedNumericPath(message)
     h = store(hours) if hours is not None else 0.0
     peak = max(incoming[1:], default=0.0)
     budget = max(store(1e-8), safe64(peak * store(0.001)))
@@ -223,6 +220,9 @@ def route_reach(
             (),
             False,
         )
+    if m == 1.0 and hours is None:
+        message = "linear routing requires the actual stored input timestep hours"
+        raise UnsupportedNumericPath(message)
     if m == 1.0:
         states = _linear_states(incoming, k, h)
         return ReachResult(
