@@ -14,7 +14,7 @@ from runoff_routing.arr_design_batch import run_design_batch, write_design_outpu
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.project_batch import load_event_request, run_project_events
-from runoff_routing.project_json import EmbeddedRun, MAX_SOURCE_BYTES, Project, write_project
+from runoff_routing.project_json import MAX_SOURCE_BYTES, EmbeddedRun, Project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 ROOT = Path(__file__).absolute().parents[1]

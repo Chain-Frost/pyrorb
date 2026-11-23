@@ -12,7 +12,7 @@ from mcp.types import TextContent
 
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.mcp_server import mcp, run_project
-from runoff_routing.project_json import EmbeddedRun, MAX_SOURCE_BYTES, Project, write_project
+from runoff_routing.project_json import MAX_SOURCE_BYTES, EmbeddedRun, Project, write_project
 from runoff_routing.rorb_model import RunModel, from_json
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
