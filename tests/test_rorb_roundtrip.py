@@ -439,6 +439,38 @@ def test_graphical_645_padded_section_marker_is_accepted_without_traceback(secti
     assert parse_bytes(changed, ".catg").model == parsed.model
 
 
+@pytest.mark.parametrize("extension", [".cat", ".catg"])
+def test_graphical_645_separator_only_ctt_remains_unqualified(extension: str) -> None:
+    """A synthetic flag edit cannot establish original-source compatibility."""
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    altered = source.replace("C #BACKGROUND IMAGE\nC  T  F", "C #BACKGROUND IMAGE\nC  T  T")
+    assert altered != source
+    raw = altered.encode("utf-8")
+    with pytest.raises(FormatProblem, match="background-image flags") as caught:
+        parse_bytes(raw, extension)
+    assert caught.value.status == "unsupported"
+    # The characterised original signature and its source identity are intact.
+    parsed = parse_catg(original)
+    assert original_bytes(parsed) == original
+    assert parsed.source.sha256 == hashlib.sha256(original).hexdigest()
+    assert parse_bytes(original, extension).model == parsed.model
+
+
+@pytest.mark.parametrize("payload", ["C image-file.png", "C T F", "unrecognised image bytes"])
+def test_graphical_645_background_asset_payload_is_not_assumed_harmless(payload: str) -> None:
+    original, _register = _registered_pyromb_originals()
+    source = original.decode("utf-8").replace("\r\n", "\n")
+    edited = source.replace(
+        "C #BACKGROUND IMAGE\nC  T  F\nC\n",
+        f"C #BACKGROUND IMAGE\nC  T  F\n{payload}\nC\n",
+    )
+    assert edited != source
+    with pytest.raises(FormatProblem, match="asset payload") as caught:
+        parse_catg(edited.encode())
+    assert caught.value.status == "unsupported"
+
+
 @pytest.mark.parametrize(
     ("before", "after", "status"),
     [
@@ -448,7 +480,7 @@ def test_graphical_645_padded_section_marker_is_accepted_without_traceback(secti
         ("C #FILE COMMENTS", "C #FILE COMMENTS\\nC 0\\nC #FILE COMMENTS", "unsupported"),
         ("C #STORAGES\\nC      0", "C #STORAGES\\nC      1", "unsupported"),
         ("C #INFLOW/OUTFLOW\\nC      0", "C #INFLOW/OUTFLOW\\nC      1", "unsupported"),
-        ("C #BACKGROUND IMAGE\\nC  T  F", "C #BACKGROUND IMAGE\\nC  T  T", "unsupported"),
+        ("C #BACKGROUND IMAGE\\nC  T  F", "C #BACKGROUND IMAGE\\nC  T  X", "unsupported"),
         ("C END RORB_GE", "C END RORB_GE\\nC END RORB_GE", "invalid"),
     ],
 )
