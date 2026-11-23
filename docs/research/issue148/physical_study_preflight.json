@@ -1,0 +1,51 @@
+{
+  "format": "pyrorb-mc148-physical-study-preflight/1",
+  "study_id": "unassigned-physical-catchment",
+  "catchment": {
+    "catchment_id": null,
+    "model_sha256": null,
+    "engine_profile": "python-cmd/cmd-6.44",
+    "features_admitted": false,
+    "site_ids": []
+  },
+  "sources": {
+    "bom_ifd_sha256": null,
+    "arr_tp_sha256": null,
+    "loss_sha256": null,
+    "source_admission": "pending"
+  },
+  "population": {
+    "rainfall_aep_lower": "0.01",
+    "rainfall_aep_upper": "0.50",
+    "modelled_mass": "0.49",
+    "unmodelled_mass": "0.51",
+    "tail_policy": "unqualified",
+    "flood_population_interpretation": "unqualified"
+  },
+  "observables": {
+    "durations_minutes": [],
+    "target_flood_aep_fractions": [
+      "0.01",
+      "0.02",
+      "0.05"
+    ],
+    "relative_peak_tolerance": null,
+    "absolute_peak_tolerance_m3s": null,
+    "joint_error_allocation_sha256": null
+  },
+  "replication": {
+    "pilot_max_events": 250,
+    "pilot_max_seconds": 60,
+    "production_events_candidate": 1000,
+    "reference_plan_sha256": null,
+    "confirmation_plan_sha256": null,
+    "python_stream_independence": "unverified",
+    "native_stream_independence": "unverified"
+  },
+  "native": {
+    "method_profile": "unqualified",
+    "reader": "unqualified",
+    "probability_weights": "unqualified",
+    "effective_inputs": "unqualified"
+  }
+}
