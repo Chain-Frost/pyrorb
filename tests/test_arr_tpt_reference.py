@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-from decimal import Decimal, localcontext
+from decimal import Decimal, Inexact, ROUND_DOWN, ROUND_UP, localcontext
 from pathlib import Path
 from types import ModuleType
 
@@ -150,11 +150,30 @@ def test_result_is_decimal_context_independent() -> None:
     )
     with localcontext() as ctx:
         ctx.prec = 9
+        ctx.rounding = ROUND_DOWN
+        ctx.traps[Inexact] = True
         a = ref.total_probability_reference(rows)
     with localcontext() as ctx:
         ctx.prec = 60
+        ctx.rounding = ROUND_UP
+        ctx.traps[Inexact] = False
         b = ref.total_probability_reference(rows)
     assert a == b
+    # One-third cannot be represented exactly; it must not inherit caller
+    # rounding or trip an enabled ambient Inexact trap.
+    third = (ref.TPTInterval("third", Decimal(1), 1, 3),)
+    with localcontext() as ctx:
+        ctx.prec = 6
+        ctx.rounding = ROUND_DOWN
+        ctx.traps[Inexact] = True
+        low = ref.total_probability_reference(third)
+    with localcontext() as ctx:
+        ctx.prec = 28
+        ctx.rounding = ROUND_UP
+        ctx.traps[Inexact] = False
+        high = ref.total_probability_reference(third)
+    assert low == high
+    assert low.known_exceedance > Decimal("0.333333333333333333333333333333")
 
 
 @pytest.mark.parametrize("mass", [Decimal("NaN"), Decimal("Infinity"), Decimal("-0.1"), Decimal("1.01"), 0.5])

@@ -9,7 +9,7 @@ No production sampler, hydrograph solver or saved method is imported.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, localcontext
+from decimal import Context, Decimal, ROUND_HALF_EVEN, localcontext
 from typing import Literal, Never
 
 Boundary = Literal["interior", "frequent", "rare"]
@@ -120,9 +120,8 @@ def total_probability_reference(
     """
     _validate_reference_policy(intervals, boundary_policy)
 
-    # Fix precision so results cannot depend on a caller's ambient Decimal context.
-    with localcontext() as ctx:
-        ctx.prec = 48
+    # Context() resets precision, rounding, traps and exponent limits.
+    with localcontext(Context(prec=48, rounding=ROUND_HALF_EVEN)):
         mass = sum((row.rainfall_mass for row in intervals), Decimal(0))
         if mass > 1:
             _invalid("Rainfall interval masses exceed probability one")
