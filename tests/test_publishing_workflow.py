@@ -38,6 +38,7 @@ def test_all_actions_expressions_are_closed() -> None:
         assert "{" not in without_expressions, f"Stray GitHub expression brace: {line}"
         assert "}" not in without_expressions, f"Stray GitHub expression brace: {line}"
 
+
 def test_missing_unprotected_environment_blocks_publication() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
     assert source.count("environments/pypi") == 2
