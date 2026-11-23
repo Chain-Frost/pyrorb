@@ -153,6 +153,19 @@ def test_large_metadata_cannot_be_copied_into_mcp_summary(tmp_path: Path) -> Non
     assert metadata.read_bytes() == before
 
 
+def test_duplicate_key_error_does_not_echo_unbounded_input(tmp_path: Path) -> None:
+    large_key = "x" * (MAX_SUMMARY_BYTES + 1)
+    path = tmp_path / "duplicate-large-key.json"
+    path.write_text(
+        "{" + json.dumps(large_key) + ": 0, " + json.dumps(large_key) + ": 1}",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Duplicate result JSON key") as error:
+        summarize_result_file(path)
+    assert large_key not in str(error.value)
+    assert len(str(error.value)) < 256
+
+
 def test_mcp_client_reads_existing_result_without_writing(tmp_path: Path) -> None:
     project = _project(tmp_path)
     outcome = run_engine_project(project)

@@ -56,7 +56,7 @@ def _pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for name, value in pairs:
         if name in result:
-            _fail(f"Duplicate result JSON key: {name}")
+            _fail("Duplicate result JSON key")  # Do not echo unbounded, caller-controlled keys.
         result[name] = value
     return result
 
