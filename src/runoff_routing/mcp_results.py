@@ -20,6 +20,7 @@ from .project_batch import REPORT_FORMAT as BATCH_FORMAT
 from .project_batch import REQUEST_VERSION
 
 MAX_RESULT_BYTES = 64 * 1024 * 1024
+MAX_SUMMARY_BYTES = 32 * 1024
 MAX_FAILURES = 10
 
 
@@ -69,7 +70,8 @@ def _read(path: Path) -> tuple[dict[str, object], str, int]:
         _fail("MCP result inspection accepts only .json files")
     if path.stat().st_size > MAX_RESULT_BYTES:
         _fail("MCP result inspection exceeds the 64 MiB limit")
-    data = path.read_bytes()
+    with path.open("rb") as stream:
+        data = stream.read(MAX_RESULT_BYTES + 1)
     if not data or len(data) > MAX_RESULT_BYTES:
         _fail("Result file is empty, changed or oversized")
     try:
@@ -215,7 +217,7 @@ def summarize_result_file(path: Path) -> dict[str, object]:
         report = _single(record)
     else:
         _fail("Unrecognised persisted runoff-routing result contract")
-    return {
+    summary = {
         "path": str(source),
         "source_sha256": digest,
         "size_bytes": size,
@@ -223,3 +225,6 @@ def summarize_result_file(path: Path) -> dict[str, object]:
         "full_ordinates": "retained in source file; not included in MCP response",
         **report,
     }
+    if len(json.dumps(summary, ensure_ascii=True).encode("utf-8")) > MAX_SUMMARY_BYTES:
+        _fail("MCP result summary exceeds the 32 KiB response limit")
+    return summary

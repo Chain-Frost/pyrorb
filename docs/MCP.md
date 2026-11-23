@@ -78,8 +78,9 @@ file SHA-256, result kind, status counts, failed-event identifiers, engine
 selections and existing qualification labels where supported. It recognises
 single project results, event batches, persisted ARR effective-population
 records and persisted ARR summaries. It refuses unknown formats, non-finite/
-duplicate JSON fields and files larger than **64 MiB**, and does not return full
-hydrographs or modify any file. This is a bounded metadata projection, **not
+duplicate JSON fields and files larger than **64 MiB**, and rejects summary
+responses larger than **32 KiB**. It does not return full hydrographs or modify
+any file. This is a bounded metadata projection, **not
 a second numerical comparator, parser certification or scientific acceptance**.
 
 Example local Codex workflow: list capabilities, request the `model-editing`

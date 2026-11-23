@@ -12,7 +12,7 @@ from mcp import Client
 from runoff_routing.arr_design_batch import DESIGN_VERSION, EFFECTIVE_FORMAT
 from runoff_routing.arr_result_summary import REPORT_FORMAT as ARR_SUMMARY_FORMAT
 from runoff_routing.engine_execution import run_engine_project, write_engine_result
-from runoff_routing.mcp_results import MAX_RESULT_BYTES, summarize_result_file
+from runoff_routing.mcp_results import MAX_RESULT_BYTES, MAX_SUMMARY_BYTES, summarize_result_file
 from runoff_routing.mcp_server import get_result_summary, mcp
 from runoff_routing.project_batch import ProjectEvent, run_project_events, write_batch_results
 from runoff_routing.project_json import EmbeddedRun, Project, write_project
@@ -131,6 +131,27 @@ def test_bad_json_and_excessive_size_fail_closed(tmp_path: Path) -> None:
     invalid_suffix.write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match=r"only \.json"):
         summarize_result_file(invalid_suffix)
+
+
+
+def test_large_metadata_cannot_be_copied_into_mcp_summary(tmp_path: Path) -> None:
+    """Known report formats cannot smuggle large data through metadata fields."""
+    metadata = tmp_path / "large-metadata.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "format": EFFECTIVE_FORMAT,
+                "schema_version": DESIGN_VERSION,
+                "status": "incomplete",
+                "method_profile": "x" * MAX_SUMMARY_BYTES,
+            }
+        ),
+        encoding="utf-8",
+    )
+    before = metadata.read_bytes()
+    with pytest.raises(ValueError, match="32 KiB response limit"):
+        summarize_result_file(metadata)
+    assert metadata.read_bytes() == before
 
 
 def test_mcp_client_reads_existing_result_without_writing(tmp_path: Path) -> None:
