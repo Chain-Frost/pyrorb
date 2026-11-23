@@ -9,7 +9,7 @@ No production sampler, hydrograph solver or saved method is imported.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Context, Decimal, ROUND_HALF_EVEN, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, localcontext
 from typing import Literal, Never
 
 Boundary = Literal["interior", "frequent", "rare"]
@@ -18,6 +18,16 @@ BoundaryPolicy = Literal["none", "arr2013_illustration"]
 
 def _invalid(message: str) -> Never:
     raise ValueError(message)
+
+
+def _is_finite_decimal(value: object) -> bool:
+    """Defensively check runtime callers without weakening typed dataclass fields."""
+    return isinstance(value, Decimal) and value.is_finite()
+
+
+def _is_exact_integer(value: object) -> bool:
+    """Reject booleans and unexpected runtime number types at public boundaries."""
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,17 +43,13 @@ class TPTInterval:
     def __post_init__(self) -> None:
         if not self.identifier or not self.identifier.strip():
             _invalid("Interval identifier must not be empty")
-        if not isinstance(self.rainfall_mass, Decimal) or not self.rainfall_mass.is_finite():
+        if not _is_finite_decimal(self.rainfall_mass):
             _invalid("Rainfall mass must be a finite Decimal, not a float")
         if not 0 <= self.rainfall_mass <= 1:
             _invalid("Rainfall mass must be in [0, 1]")
-        if isinstance(self.simulations, bool) or not isinstance(self.simulations, int) or self.simulations <= 0:
+        if not _is_exact_integer(self.simulations) or self.simulations <= 0:
             _invalid("Simulations must be a positive integer")
-        if (
-            isinstance(self.exceedances, bool)
-            or not isinstance(self.exceedances, int)
-            or not 0 <= self.exceedances <= self.simulations
-        ):
+        if not _is_exact_integer(self.exceedances) or not 0 <= self.exceedances <= self.simulations:
             _invalid("Exceedances must be an integer between zero and simulations")
         if self.boundary not in ("interior", "frequent", "rare"):
             _invalid("Unrecognised rainfall boundary category")

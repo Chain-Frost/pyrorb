@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-from decimal import Decimal, Inexact, ROUND_DOWN, ROUND_UP, localcontext
+from decimal import ROUND_DOWN, ROUND_UP, Decimal, Inexact, localcontext
 from pathlib import Path
 from types import ModuleType
 
