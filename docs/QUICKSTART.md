@@ -112,3 +112,9 @@ original native ordinates. [#142 PR #165](https://github.com/Chain-Frost/pyrorb/
 is merged and its bounded reader software acceptance is evidenced by the owner-authorised authentic 490-event 6.45 population; the historical distinct 420-event population remains unlocated.
 The five reader states remain `partial`; physical site identities
 and numerical equivalence are not accepted. Keep #5 open.
+
+## Provisional Monte Carlo software (23 November 2026)
+
+The owner-approved B/E/C Monte Carlo workflow is available on main as **provisional CLI/API/text software**, not as an accepted RORBwin Monte Carlo or design-flood-frequency calculation. It uses the existing `python-cmd/cmd-6.44` event solver for its defined pervious/one-ISA subset, source-backed persisted sample plans, explicit effective-event materialisation, checkpoint/resume, revised-plan reweighting and per-site weighted-frequency reporting. There is no silent engine substitution.
+
+Follow the [versioned Monte Carlo method](MONTE_CARLO.md) and [complete CLI plan → prepare → validate → run → frequency → replay sequence](MONTE_CARLO_EXECUTION.md). Unknown rainfall tails, missed/failed samples, invalid sources and unsupported profiles remain visibly incomplete; there is no automatic full-design-flood AEP when probability support is partial. [Native rules and statistical convergence remain open under #9](https://github.com/Chain-Frost/pyrorb/issues/9). No publication or change to the normal routing defaults is implied.

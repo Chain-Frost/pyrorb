@@ -1,6 +1,6 @@
 # Public backlog and ownership
 
-**Reconciled 17 November 2026 against main `1a5175ad9dbf6be03d78b164b169b3ec836e6a9e`.** [STATUS.md](STATUS.md) is the delivery summary. This page assigns remaining work under [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5); detailed historical acceptance contracts below retain their original evidence identities. Recheck live issue/PR heads before acting.
+**Original 17 November reconciliation (main `1a5175ad`), with 23 November 2026 provisional S7 software-admission decision.** [STATUS.md](STATUS.md) is the delivery summary. This page assigns remaining work under [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1) and [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5); detailed historical acceptance contracts below retain their original evidence identities. Recheck live issue/PR heads before acting.
 
 ## Remaining work — existing owners and finite next actions
 
@@ -16,7 +16,7 @@
 | #3/#7 broader scientific gates | #138–#143 typed editing, PyRomb writing, PAR import, native export, canonical reader and independent workflow acceptance are complete. Retain separately unmet physical-site/native-equivalence requirements under existing scientific issues. |
 | Rainfall #8/#192/#193 | #137 finite evidence and #175 written-depth software are complete. Qualify ARR2019 ARF at observable native precision (#192) and verify authoritative ARR2026 applicability/delta (#193); internal effective-input/routed science remains separate. |
 | Deterministic selection #8/#152 | #155 reporting software and #142 reader are merged. Establish native population/site/effective-event bindings and evidenced representative/tie/critical-duration rules; keep unqualified selections null. |
-| Monte Carlo #9/#151 | Completed software #145/#146/#147/#149/#187 remains staged only. Current packs are native evidence #150, versioned sampling #189, probability/frequency policy #190, canonical comparison adaptation #191 and larger-sample comparison/budgets #148. Use the [five-pack plan](https://github.com/Chain-Frost/python-runoff-routing/blob/ce51b2f975b92952315d957e6ecd31b8bcd342f2/docs/work/2026-11-17-issue9-rorb-statistical-method-scopes.md); no main merge. |
+| Monte Carlo #9 (provisional software #151) | CLI/API/text B/E/C sampler, routed execution, checkpoint/replay and weighted-frequency software admitted to main **provisionally**. **Still OPEN:** native method evidence #150 (no exact effective input export), supported sampling #189, probability tails/native results #190, canonical native/Python comparison #191 and real-catchment convergence/1,000-run adequacy #148. Existing `monte-carlo-statistics/1` is a project method, not an accepted RORBwin-compatible design-flood estimate. Build new work on main; [scope history](work/2026-11-17-issue9-rorb-statistical-method-scopes.md). |
 | Deferred scope | #103, #114–#118, #144, #63 and #10 remain tracked without automatic activation. No GUI work or planning. |
 
 Completed #75/#6/#76/#104/#119/#137/#138–#143/#175 stay closed within their bounded scopes. Their receipts and the current merged guides are linked from [STATUS.md](STATUS.md) and [the evidence index](work/README.md).
