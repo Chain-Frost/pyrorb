@@ -232,6 +232,9 @@ def _check_header_allocations(
     keys = {(a.scenario_id, a.duration_min, a.stratum_id) for a in allocations}
     if len(keys) != len(allocations):
         _fail("Duplicate original MC stratum allocation")
+    declared = {(population.scenario_id, population.duration_min) for population in populations}
+    if any((allocation.scenario_id, allocation.duration_min) not in declared for allocation in allocations):
+        _fail("MC allocation refers to undeclared scenario/duration population")
     if sum(a.planned_samples for a in allocations) != event_count:
         _fail("Full MC allocation count differs from declared event population")
     for pop in populations:

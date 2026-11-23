@@ -162,3 +162,9 @@ bounded execution adapter is present.
   between validated provenance and numerical routing.
 - Re-review and fresh exact-head source/wheel quality checks remain
   mandatory before merging E into staging #151.
+
+## 23 November follow-up — fail closed on out-of-population zero allocations
+
+- An audit of draft #151 found that an explicitly authored MC request could carry an additional zero-count stratum scoped to an undeclared scenario/duration. The old header validator verified every **declared** population's mass, but it did not reject extra zero-allocation scope keys, compromising provenance.
+- Reject every original stratum allocation outside the declared scenario/duration populations, including zero-count allocations. Preserve valid zero-count strata within declared populations and the existing immutable-plan, weighting and engine contracts.
+- Add a targeted direct-header regression covering both valid declared zero-count strata and the previously accepted undeclared case. No schema, RNG, sampling, frequency, source fixture, native executable or scientific acceptance change. Hosted exact-head quality and code review remain required before integration into draft #151. Issue #9 and native #150 remain open.

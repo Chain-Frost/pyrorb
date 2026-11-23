@@ -115,6 +115,31 @@ def _rows(ledger: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
 
 
+def test_header_rejects_undeclared_zero_count_population_allocation() -> None:
+    valid = MCRequestHeader(
+        plan_sha256=hashlib.sha256(b"allocation-scope").hexdigest(),
+        policy_id="authored_control_v1",
+        source_files=(),
+        populations=(MCPopulation("base", 60, Decimal("0.75")),),
+        event_count=2,
+        preparation_model_sha256=hashlib.sha256(b"model").hexdigest(),
+        strata=(
+            MCAllocation("base", 60, "h1", Decimal("0.5"), 2),
+            MCAllocation("base", 60, "h2", Decimal("0.25"), 0),
+        ),
+    )
+    assert valid.strata[1].planned_samples == 0
+
+    with pytest.raises(MCInputError, match="undeclared scenario/duration"):
+        replace(
+            valid,
+            strata=(
+                MCAllocation("base", 60, "h1", Decimal("0.5"), 2),
+                MCAllocation("other", 60, "h2", Decimal("0.25"), 0),
+            ),
+        )
+
+
 def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Path) -> None:
     project, request, events = _input(tmp_path)
     _, digest = validate_effective_request(request)
