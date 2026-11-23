@@ -27,6 +27,15 @@ def test_publisher_permissions_and_one_shot_disable() -> None:
 
 
 def test_all_actions_expressions_are_closed() -> None:
+    """Reject unclosed and surplus braces in privileged workflow expressions."""
+    import re
+
+    expression = re.compile(r"\\$\\{\\{[^{}]+\\}\\}")
     for line in WORKFLOW.read_text(encoding="utf-8").splitlines():
-        if "${{" in line:
-            assert "}}" in line, f"Unclosed GitHub expression: {line}"
+        if "${{" not in line:
+            continue
+        without_expressions = expression.sub("", line)
+        assert "${{" not in without_expressions, f"Unclosed GitHub expression: {line}"
+        assert "{" not in without_expressions and "}" not in without_expressions, (
+            f"Stray GitHub expression brace: {line}"
+        )
