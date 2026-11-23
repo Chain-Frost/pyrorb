@@ -9,7 +9,7 @@ ROOT = Path(__file__).absolute().parents[1]
 def test_only_owner_approved_hosted_workflow() -> None:
     workflow_dir = ROOT / ".github" / "workflows"
     assert workflow_dir.is_dir()
-    assert {path.name for path in workflow_dir.iterdir()} == {"quality.yml"}
+    assert {path.name for path in workflow_dir.iterdir()} == {"quality.yml", "publish.yml"}
 
 
 def test_python_target_and_strict_typing() -> None:

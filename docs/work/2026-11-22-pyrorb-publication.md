@@ -106,3 +106,20 @@ Only structural checks on the copied workflow and policy edits are established d
 CI, independent review, exact-head local tests and actual publishing remain separately unverified.
 The next release task remains final-MVP dependency qualification and the source/installed-wheel
 gates, not an automatic release or scheduled main-merge publication.
+
+## Owner release policy revision — 23 November 2026
+
+The owner prefers an automatic release after successful main CI, but only
+one initial real public test publication before disabling the publisher until
+a final MVP exists. Use the same YY.M.D.N date versions as ryan-tools and
+ryan-culverts (Australia/Perth date, incrementing daily revision). A focused
+allocator and local-only checkout stamper, plus synthetic tests, are staged.
+
+The previous PR #220 Windows CI failed only the scaffold test that still
+required a single workflow (1 failed, 1307 passed, 3 skipped). That separate
+exact-set assertion is now corrected. The **existing one-shot auto-publishing
+workflow conversion remains to be reviewed and completed**; the current
+publishing workflow is still manual-only. No claim of an automatic release
+or production PyPI upload is made. Current Git/archive dependency URLs
+still block public package metadata qualification. No merge, release,
+tag, publisher/environment setup or upload has been performed.
