@@ -387,3 +387,125 @@ preparation-file scope and an excluded frequency-policy hypothesis. No F1–F6 g
 closed; no fitted law, complete probability support, independent stream, native routing,
 representative/full-Q replay or engineering/stability acceptance is claimed. Keep
 **#150/#9 open; #151 draft and unmerged to main**.
+
+## Nonexecuting effective-state investigation — 23 November 2026
+
+**Result: no suitable nonexecuting exact-effective-input mechanism was found in the
+authenticated installation documentation and retained evidence examined. Stop before
+another calculation.** This is a bounded negative result, not proof that an undocumented
+facility cannot exist. No new F1–F6 experiment is proposed: the effective-field and
+configuration preconditions for a discriminating experiment are still unmet. Do not repeat
+the rounded-output pilot.
+
+Inspected staging #151 at `b7348d9cf0b63b1edafe422bbb7b61a430d2d33f`, which includes
+the 22 November evidence through [PR #216](https://github.com/Chain-Frost/pyrorb/pull/216).
+This documentation-only topic targets that staging branch. No numerical implementation,
+statistical contract, saved-plan identity, native file or baseline is changed.
+
+### Authenticated source register and inspection boundary
+
+Rehashed the installed executable, both local primary references, the prior audit script
+and qualified JSON, and the approved report/plan/receipt before using their contents.
+The executable remains **10,923,068 bytes**, SHA-256
+`0ca65bcef548f26a5f9bceda6c99ed4f545a9498b61c93aa59a00400732d1aea`.
+The retained report's version is **RORBwin 6.52, updated 1 June 2023**. No live-window
+version observation is claimed.
+
+| Source key | Pinned identity and applicable surface |
+| --- | --- |
+| R1 | January 2010 Version 6 manual, revision V0.2 / 6.14; SHA-256 `8faf7661a50aedf7c8dbc49511472913c63fa9341c0b73869e8fb35bb8267ed7`. Historical method/UI description, not a 6.52 numerical specification. Printed pp. 98–100, 102 and 144–148 correspond to PDF pages 109–111, 113 and 155–159. |
+| R3 | Installed cumulative v6.52 release notes; SHA-256 `96b0624a8b554b7356a634be69978f6e01fa0301705227f0126e420eab45ccb1`. PDF pages 1–4, 8–12, 15, 19–22 and 30–31; section 1.6 documents design/MC operations. Historical changes within this cumulative document are not all newly introduced in 6.52. |
+| P | Approved pilot report SHA-256 `3adfffafecc7560958ed6ee6918bf7f3ed3de0cb93c05f7c699eeb57cfd08d6a`; frozen plan SHA-256 `676e87217fe7c3b7f5fa70babaec885dfe8bbe6cf8b5fa6129ad575441674d6b`; approval receipt SHA-256 `eeaa0abc311df0c9072c68b087e0f78999ce0c9e44d97425978e38f36a6dd471`. Four source inputs authenticate against that plan. |
+| U | Existing pilot UI/control captures, including the 5/5 count display and final-setting observations, checked against the original 52-entry inventory. Displayed edits remain distinct from accepted computational state; no new UI interaction or screenshot was made. |
+| T | Retained pre/post preparation STM/TMP and ordinary model-check output, checked against the same pilot inventory. Source temporal-pattern EventIDs/increments are available in the plan-pinned input, separately from sampled-event identity. |
+
+All **120/120** earlier inventory entries and **51/52** pilot entries still match.
+`owner-review.par` remains the sole mismatch: recorded
+`67268bbf4ac3fa0ff40eb9830079a58a544d30b2c880ab1fdd72794d33813579` / 29,594 bytes,
+current `6a6c478ae8f95902bb09450aaae0fba90e64c1c891d105a92d0286f96d1b7203` /
+29,587 bytes. Its current configuration contents were not used as historical proof.
+An exact-byte search of the six retained PAR files in the examined #150 directories
+found **no copy matching the original pilot PAR digest**. No file was restored or saved.
+An authenticated saved PAR would still require evidence of application/commit to the run.
+
+Read-only inspection covered the installed documentation/sample-file inventory and the
+retained count-control, original-native, owner-assisted and qualification directories.
+Uninventoried auxiliary files were treated as discovery candidates, not authenticated
+historical settings. The earlier unintended cohort remains excluded from scientific
+comparisons; no additional arithmetic was fitted to either cohort. PDFs were extracted
+locally for page-level reading. No executable strings, disassembly, memory, hooks or
+process traces were used. No application was launched; GUI experimentation was unnecessary.
+
+### Source- and version-pinned field-availability matrix
+
+Classifications describe the named evidence claim: **documented** is an explicit source
+description; **observed** is an authenticated retained field/file; **inferred** is a limited
+interpretation; **contradicted** rejects the named interpretation; **unresolved** means the
+requested exact computational value or mechanism is not established. Several can apply to
+different claims in the same row. A printed number is observed text, not automatically its
+unrounded computational value.
+
+| Requested field/mechanism | Sources and classification | Availability and limitation |
+| --- | --- | --- |
+| Committed duration, rainfall divisions and samples/division | R1 pp. 144–146 **documented**; U display **observed**; P completed grid/count echo **observed** | The historical approved run is 24 h, five divisions and five samples/division, with 25 unique grid members. These exact discrete counts are established retrospectively. Reading/editing a spin control or a saved file alone does not establish a newly committed run; a safe pre-calculation effective-state readback/export is **unresolved**. |
+| Editable/saved configuration versus historical effective state | R1 p. 100 **documented** parameter-file persistence; U **observed** controls; pilot PAR custody **contradicted** as unchanged historical evidence | The current PAR is excluded. Prior duration-selection correction also prevents assuming that Cancel universally discards every edited setting. No authenticated complete configuration snapshot tied to the accepted native internal state was recovered. |
+| Rainfall stratum boundaries, probability masses and support/tails | R1 §8.5, pp. 98–99 **documented** normal-coordinate interval spacing and total-probability integration; exact 6.52 edges/masses **unresolved** | Neither P nor T emits an exact edge/mass table. Source IFD knots are input values, not emitted sampling boundaries. The integration description does not expose native endpoint ownership, tail treatment or the implemented weights. |
+| Primitive within-stratum draw coordinates and probability conversion | P **observed** division/run and rounded probability text; primitive p/z and exact AEP/ARI/EY conversion **unresolved** | R3 p. 31 documents probability-formatting and 12EY fixes; more decimal places improve readability without proving full computational precision. No seed/state/primitive-coordinate export was found. Do not derive exact p from rounded reciprocal-year labels. |
+| Per-event gross/effective rainfall depth | P **observed** rounded depth; R1 p. 147 **documented** summary field; exact value and transformation stage **unresolved** | The native individual-run report is a summary, not an exact rainfall ledger. A displayed depth does not independently identify point depth, areal depth and all preburst/filtering stages. |
+| Per-event original TP EventID | Plan-pinned pattern source **observed** exact source EventIDs/order; P **observed** sampled rank; rank-to-source identity **unresolved** | R3 p. 8 documents areal nearest-standard-area selection and point AEP bins. A rank or matching histogram is insufficient to bind each native sampled event to an original EventID after selection/filtering. The previous preparation-only member match is **observed**; interpreting that preparation as a sampled-event identity is unsupported **inference**, not an event export. |
+| Effective rainfall increments and retained intermediates | T **observed** preparation files; interpretation as 25 sampled storms **contradicted** | The post-run STM is the already identified 1 mm preparation storm. Both 788-byte TMP files are identical data-check transcripts; neither is a draw/state ledger. The ordinary output refers to the preparation STM and has no native division/run-to-hydrograph binding. Exact sampled increments remain **unresolved**. |
+| Stochastic initial-loss factor, base loss and deterministic adjustments | R1 p. 147 **documented** factor multiplication; P/U **observed** parameter/factor displays; exact sampled loss **unresolved** | Printed stochastic IL and deterministic IL/rate factors remain rounded. Source tables and displayed base parameters do not reveal each primitive draw, full-precision factor, storm/burst loss or transformation order. No diagnostic percentile fitting was repeated. |
+| ARF and preburst transformations | R3 pp. 19–22, 30–31 **documented** coefficient/preburst editing and historical fixes; P **observed** named method/echoes; exact event state **unresolved** | IFD Save As, editable ARF coefficients and preburst tables expose declared inputs. They do not export the actual sampled depth/factor, applied loss state or once-only transformation sequence. A checkbox/table is configuration evidence, not executed-state evidence. |
+| Embedded-burst filtering diagnostics | R3 p. 15 **documented** optional per-run original/filtered depths and patterns in `*Temp_Pat_Filter_mc.out`; retained matching artifact **unresolved/unavailable** | This is a useful documented partial diagnostic, generated during calculation when the option is enabled. No such file was found in the examined retained directories. Its numerical precision, original EventID binding and coverage of IL/weights are not qualified. Do not enable/run it to fill this investigation's gap. |
+| Representative-event STM/output extraction | R3 pp. 10–12 **documented** run-time extraction for selected AEPs and one print location; nonexecuting replay/export of all existing events **unresolved** | The documented sequence performs MC calculation before generating selected files. Selection matches summary peak/depth with tolerances; it is not an exhaustive draw ledger. R3 explicitly warns that extracted STM metadata does not separately retain the correct ARF/preburst because these are already applied to depth. Treating those flags as original effective-state history is **contradicted** by the documentation. No extraction was invoked. |
+| Hydrograph CSV and subarea-excess CSV | R3 pp. 1–4 **documented** outputs produced when the model runs; suitable existing per-event artifact **unresolved/unavailable** | Hydrograph output is not primitive-input/weight output. Excess CSV contains a calculated response, not uniquely invertible losses or gross rainfall. Neither documented surface supplies a nonexecuting exact MC input/configuration ledger; neither was generated here. |
+| Native frequency interval weights, contributions and warnings | R1 pp. 98–99, 148 **documented** integration/warning concept; P **observed** summaries/stars; exact weights/denominator **unresolved** | No per-interval mass/contribution export was located. Prior rejection of the attained-peak summary hypothesis remains a negative result only; do not infer a replacement law, equal row weights or tails from it. |
+| Source result/event/site identities | P **observed** report hash and duration/division/run; source hashes **observed**; full physical-event mapping **unresolved** | The pilot has a generic unnamed hydrograph label. Source identity and ordinal count do not establish independently named physical-site equivalence or complete per-event Q/time provenance. R3's selected-site extraction cannot repair missing historical event identity without new evidence. |
+
+### Mechanism assessment and stopping decision
+
+The documented nonexecuting facilities can inspect or save **declared inputs**: IFD tables,
+ARF coefficients, preburst tables, loss-distribution choices and parameter files. Existing
+native report text supplies exact discrete completed counts plus rounded event summaries.
+Neither category supplies a reliable complete sampled effective-input record. The retained
+control enumeration labels “Stratified Sample” and “Output details” are group-box headings
+in the authenticated screenshot, not hidden export buttons; they provide no extra mechanism.
+
+The potentially richer outputs have an explicit calculation dependency. R1 p. 145 states
+that accepting the MC details starts calculation; its subsequent Cancel discussion concerns
+halting an already running simulation and returning intermediate results. R3's representative
+extraction follows calculation, and its filtering/excess outputs are written during runs.
+These are not harmless preview/readback operations. No new launch, click, save, cancellation,
+export, extraction, native event, batch or statistical replication was performed.
+
+**Decision:** no experiment plan meets this request's conditional trigger. The previous
+25-event/120-second ceiling is not converted into authorisation or a new preregistration.
+Before considering an F1–F6 experiment, obtain a custodian-documented or already retained
+nonexecuting mechanism that exposes committed configuration and discriminating full-precision
+fields, with source/event/site and interval-weight identities. Then verify its precision,
+count readback and reproducibility on disposable copies without calculation. Until then,
+do not schedule a cohort, invent predicted alternatives from rounded values or repeat the
+pilot. #150/#9 remain open; #151 stays draft/unmerged; #189/#190/#191/#148 limitations remain.
+
+### Local reproducibility and delivery
+
+Private evidence is retained outside both Git repositories under
+`E:/LocalResearch/issue150-effective-state-20261123/`: custody checks, original/candidate
+file inventories, PDF-page text, page-level findings and PAR-digest search. No raw report,
+manual text, input array, screenshot or identifying source path is included in this public
+update. The local inspection script is read-only with exclusive-create evidence outputs;
+it verifies expected digests before reading documents and never imports or launches a
+native executable. Reproducing it requires a new empty output directory and the same
+locally held files; absence or mismatch is an evidence failure, not a passing field check.
+
+Local `inspect_state.py` SHA-256:
+`a0f69b41b40b28a7f4ac12db3976e243d575500cc110c6ceba94da190878b733`.
+Final private `effective-state-findings.json` SHA-256:
+`5f7f92bb9d40f84e774d728e64b17310b6a80b0e43d3927b2b425e27d7f9af41`.
+The closing check rehashed every pinned object and all pilot files against the start
+of this inspection: no further byte changes, including no repair of the drifted PAR.
+
+Runtime: **Windows 10 build 19045 / CPython 3.14.6**. Documentation/link and claim checks
+apply; numerical tests, native campaigns and a new wheel qualification are unnecessary
+for this documentation-only negative result. Exact delivery revision, checks and the
+staging-only child PR are recorded in the issue update.
