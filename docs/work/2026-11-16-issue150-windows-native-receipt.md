@@ -564,3 +564,31 @@ The future evidence-agent handoff is retained in
 Do not restart F1–F6 native calculations without qualifying
 previously unavailable, nonexecuting, version-pinned effective-state
 evidence and a new separately approved finite experiment plan.
+
+### Mainline reconciliation after provisional software admission — 24 November 2026
+
+While this documentation-only topic was being prepared, the separate
+owner-approved provisional Monte Carlo B/E/C software admission
+[#151](https://github.com/Chain-Frost/pyrorb/pull/151) was squash-merged
+into `main` as `645bc151a040beaa6ae8d35499b99e0dc071b40a`.
+That merge accepted **bounded software**, not F1–F6 RORBwin/native
+sampling, event routing, frequency, real-catchment convergence or engineering
+flood-frequency equivalence. The historical #151 draft/ready states
+mentioned above apply only to their respective dated inspections.
+
+GitHub retargeted outstanding #218 from the now-closed staging PR to
+`main`. This contribution has therefore been reconciled as **documentation
+only against main**, preserving all main source, tests, MCP and numerical
+policy blobs. No merge of #218 into `main` is made by this task; the original
+approval was to integrate into staging, so direct main admission requires
+a separate owner decision.
+
+The bounded nonexecuting negative finding and 120/120 versus 51/52
+previously reported custody evidence remain intact, with the drifted
+`owner-review.par` excluded. Neither new native evidence nor experiment
+authority arises from the provisional software merge.
+
+Deferred F1–F6 follow-up is recorded in
+[the owner issue #150 future-agent handoff](https://github.com/Chain-Frost/pyrorb/issues/150#issuecomment-7106607565).
+Stop before any further native event without the stated qualifying
+evidence and a separately reviewed/approved finite plan.
