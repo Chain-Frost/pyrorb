@@ -33,9 +33,7 @@ def next_version(current: str, tags: list[str], today: dt.date) -> str:
     if current != BOOTSTRAP:
         known.append(calendar_parts(current))
     known.extend(
-        calendar_parts(tag[1:])
-        for tag in tags
-        if tag.startswith("v") and tag != "v0.0.0.dev0" and tag[1:2].isdigit()
+        calendar_parts(tag[1:]) for tag in tags if tag.startswith("v") and tag != "v0.0.0.dev0" and tag[1:2].isdigit()
     )
     if not 2000 <= today.year <= 2099:
         message = "YY calendar versions require a year between 2000 and 2099"

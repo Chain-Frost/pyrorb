@@ -50,9 +50,7 @@ def test_stamping_is_local_and_preserves_unrelated_toml(tmp_path: Path) -> None:
     project = tmp_path / "pyproject.toml"
     project.write_text('[project]\nversion = "0.0.0.dev0"\n[tool.test]\na = 1\n', encoding="utf-8")
     STAMP(tmp_path, "v26.11.23.1")
-    assert project.read_text(encoding="utf-8") == (
-        '[project]\nversion = "26.11.23.1"\n[tool.test]\na = 1\n'
-    )
+    assert project.read_text(encoding="utf-8") == ('[project]\nversion = "26.11.23.1"\n[tool.test]\na = 1\n')
 
 
 def test_invalid_stamp_keeps_file_identical(tmp_path: Path) -> None:
