@@ -41,3 +41,7 @@ This preflight intentionally does not decide annual-flood design tolerances, a n
 - The preflight is a **protocol admissibility aid**, not the source of truth for scientific qualification; the broader decision remains under [#148](https://github.com/Chain-Frost/pyrorb/issues/148), [#9](https://github.com/Chain-Frost/pyrorb/issues/9) and their dependency issues. They all remain open. No raw or private native evidence is published.
 
 **Next condition:** supply one independently admissible physical catchment and matched BoM IFD, ARR TP and loss sources with physical site IDs and an eligible supported engine profile. Fill the template only against that source evidence, review the restricted-domain protocol and cost cap, then separately decide whether to authorise a *bounded* Python pilot. RORBwin experiments remain stopped until #150's distinct evidence trigger is met.
+
+### Additional independent-review corrections
+
+The original exact-head Codex review found strict typed-container narrowing, ambiguous duplicate JSON keys and ambient-context Decimal rounding deficiencies. The updated preflight uses validated typed collection boundaries, rejects repeated JSON object members at every depth, bounds numeric token exponent/precision and checks annual-probability masses inside a sufficiently precise local Decimal context. New synthetic tests demonstrate rejection of duplicate fields, extreme exponents and high-precision mass drift even with a caller precision of 3. No statistical distribution, sample stream, event runner or native acceptance is changed.

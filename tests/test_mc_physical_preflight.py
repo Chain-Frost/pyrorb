@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from collections.abc import Callable
+from decimal import localcontext
 from pathlib import Path
 from types import ModuleType
 from typing import cast
@@ -210,6 +211,39 @@ def test_reference_confirmation_plan_hashes_must_be_distinct() -> None:
     replications["confirmation_plan_sha256"] = "a" * 64
     with pytest.raises(ValueError, match="distinct identities"):
         _record(payload)
+
+
+def test_high_precision_mass_accounting_is_exact_under_changed_context() -> None:
+    payload = _template()
+    cast("dict[str, object]", payload["population"])["rainfall_aep_lower"] = "0.0100000000000000000000000000001"
+    with pytest.raises(ValueError, match="probability interval"):
+        _record(payload)
+    with localcontext() as ctx:
+        ctx.prec = 3
+        valid = _record(_template())
+    assert valid["modelled_rainfall_mass"] == "0.49"
+
+
+@pytest.mark.parametrize("token", ["1E-9999999", "0." + "1" * 200])
+def test_unbounded_decimal_inputs_are_rejected(token: str) -> None:
+    payload = _template()
+    cast("dict[str, object]", payload["population"])["rainfall_aep_lower"] = token
+    with pytest.raises(ValueError, match="precision"):
+        _record(payload)
+
+
+def test_cli_rejects_duplicate_json_members(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    fn = cast("Callable[[list[str]], int]", _module().main)
+    source = TEMPLATE.read_text(encoding="utf-8")
+    altered = source.replace(
+        '"source_admission": "pending"',
+        '"source_admission": "pending", "source_admission": "independently_admitted"',
+    )
+    assert altered != source
+    target = tmp_path / "duplicate.json"
+    target.write_text(altered, encoding="utf-8")
+    assert fn([str(target)]) == 2
+    assert "duplicate JSON member" in str(json.loads(capsys.readouterr().out)["reason"])
 
 
 def test_cli_prints_blocked_without_writing_or_launching(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

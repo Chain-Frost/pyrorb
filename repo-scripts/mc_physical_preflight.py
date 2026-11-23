@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path
 from typing import Never, cast
 
@@ -18,6 +18,10 @@ RESULT_FORMAT = "pyrorb-mc148-physical-study-preflight-result/1"
 _MAX_BYTES = 256 * 1024
 _MAX_EVENTS = 1_000_000
 _MAX_DURATION_MIN = 10080
+_MAX_DECIMAL_DIGITS = 128
+_MAX_DECIMAL_EXPONENT = 32
+_MIN_DECIMAL_EXPONENT = -128
+_DECIMAL_ACCOUNTING_PREC = 256
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
 
@@ -31,9 +35,12 @@ def _fail(reason: str) -> Never:
 
 
 def _object(value: object, keys: set[str], label: str) -> dict[str, object]:
-    if not isinstance(value, dict) or set(value) != keys:
+    if not isinstance(value, dict):
         _fail(f"{label} must contain exactly {', '.join(sorted(keys))}")
-    return cast("dict[str, object]", value)
+    record = cast("dict[object, object]", value)
+    if set(record) != keys:
+        _fail(f"{label} must contain exactly {', '.join(sorted(keys))}")
+    return cast("dict[str, object]", record)
 
 
 def _identifier(value: object, label: str, *, optional: bool = False) -> bool:
@@ -70,6 +77,14 @@ def _decimal(value: object, label: str, *, optional: bool = False) -> Decimal | 
         raise PreflightError(message) from exc
     if not number.is_finite():
         _fail(f"{label} must be finite")
+    exponent = number.as_tuple().exponent
+    if (
+        not isinstance(exponent, int)
+        or exponent < _MIN_DECIMAL_EXPONENT
+        or exponent > _MAX_DECIMAL_EXPONENT
+        or len(number.as_tuple().digits) > _MAX_DECIMAL_DIGITS
+    ):
+        _fail(f"{label} exceeds bounded decimal precision")
     return number
 
 
@@ -82,29 +97,34 @@ def _positive_int(value: object, label: str) -> int:
 def _identifiers(value: object, label: str) -> list[str]:
     if not isinstance(value, list):
         _fail(f"{label} must be an array")
-    for item in value:
+    raw = cast("list[object]", value)
+    for item in raw:
         _identifier(item, label)
-    if len(set(value)) != len(value):
+    names = cast("list[str]", raw)
+    if len(set(names)) != len(names):
         _fail(f"{label} must not contain duplicates")
-    return cast("list[str]", value)
+    return names
 
 
 def _durations(value: object) -> list[int]:
     if not isinstance(value, list):
         _fail("durations_minutes must be an array")
-    for item in value:
+    raw = cast("list[object]", value)
+    for item in raw:
         if _positive_int(item, "duration") > _MAX_DURATION_MIN:
             _fail("duration exceeds 10080 minutes")
-    if len(set(value)) != len(value):
+    durations = cast("list[int]", raw)
+    if len(set(durations)) != len(durations):
         _fail("durations_minutes must not contain duplicates")
-    return cast("list[int]", value)
+    return durations
 
 
 def _fractions(value: object) -> list[Decimal]:
     if not isinstance(value, list) or not value:
         _fail("target_flood_aep_fractions must be a nonempty array")
+    raw = cast("list[object]", value)
     results: list[Decimal] = []
-    for text in value:
+    for text in raw:
         number = _decimal(text, "target flood AEP")
         if number is None or not 0 < number < 1:
             _fail("target flood AEP must be strictly between zero and one")
@@ -176,8 +196,12 @@ def _population(pop: dict[str, object]) -> tuple[Decimal, Decimal, str, str]:
     missing = _decimal(pop["unmodelled_mass"], "unmodelled_mass")
     if lower is None or upper is None or mass is None or missing is None:
         _fail("rainfall support and masses are required")
-    if not 0 < lower < upper < 1 or mass != upper - lower or missing != 1 - mass:
-        _fail("rainfall probability interval/mass accounting is inconsistent")
+    # The bounded input precision is <= 128 digits/decimal places. A 256-digit
+    # local context therefore preserves both interval subtractions exactly.
+    with localcontext() as ctx:
+        ctx.prec = _DECIMAL_ACCOUNTING_PREC
+        if not 0 < lower < upper < 1 or mass != upper - lower or missing != 1 - mass:
+            _fail("rainfall probability interval/mass accounting is inconsistent")
     choices = {"unqualified", "independently_admitted"}
     tail = _choice(pop["tail_policy"], "tail_policy", choices)
     flood = _choice(pop["flood_population_interpretation"], "flood_population_interpretation", choices)
@@ -311,6 +335,16 @@ def assess_protocol(payload: object) -> dict[str, object]:
     }
 
 
+def _unique_json_members(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguity before semantic validation at every JSON object depth."""
+    value: dict[str, object] = {}
+    for name, item in pairs:
+        if name in value:
+            _fail("duplicate JSON member")
+        value[name] = item
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("protocol", type=Path)
@@ -318,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.protocol.stat().st_size > _MAX_BYTES:
             _fail("preflight input exceeds 256 KiB")
-        payload = json.loads(args.protocol.read_text(encoding="utf-8"))
+        payload = json.loads(args.protocol.read_text(encoding="utf-8"), object_pairs_hook=_unique_json_members)
         report = assess_protocol(payload)
     except (OSError, UnicodeError, ValueError) as exc:
         print(json.dumps({"format": RESULT_FORMAT, "status": "invalid_protocol", "reason": str(exc)}))
