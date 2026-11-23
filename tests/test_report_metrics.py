@@ -3,6 +3,7 @@
 import hashlib
 import math
 from dataclasses import replace
+from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
 
@@ -88,9 +89,50 @@ def test_scalar_selectors_retain_original_token_and_location() -> None:
     assert report is not None
     actual = bind_report_metrics(original, report)[0]
     assert actual.column == "Hyd001"
+    assert actual.physical_name == "Synthetic outlet"
     assert actual.peak is not None
     field = actual.peak
     assert original.lines[field.line - 1][field.character - 1 :].split()[0] == field.token
+
+
+def test_cross_source_scalar_binding_rejects_different_q_with_same_columns_and_clocks() -> None:
+    original = source()
+    alternate = _source_from_text("\n".join(original.lines).replace("2 1.00 1.500", "2 1.00 9.000") + "\n")
+    report = inspect_output(alternate).hydrographs
+    expected = inspect_output(original).hydrographs
+    assert report is not None
+    assert expected is not None
+    assert report.columns == expected.columns
+    assert tuple(row.raw_time for row in report.rows) == tuple(row.raw_time for row in expected.rows)
+    assert report.rows[1].values == (Decimal("9.000"),)
+    with pytest.raises(ValueError, match="Canonical report tokens/metadata differ"):
+        bind_report_metrics(original, report)
+
+
+@pytest.mark.parametrize("mutation", ["increment", "line", "raw_time", "time", "q", "timestep", "duration"])
+def test_metric_binding_rejects_modified_report_fields(mutation: str) -> None:
+    original = source()
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    if mutation in {"increment", "line", "raw_time", "time", "q"}:
+        row = report.rows[1]
+        if mutation == "increment":
+            changed_row = replace(row, increment=12)
+        elif mutation == "line":
+            changed_row = replace(row, line=row.line + 1)
+        elif mutation == "raw_time":
+            changed_row = replace(row, raw_time="1.0")
+        elif mutation == "time":
+            changed_row = replace(row, time_hours=Decimal("2.0"))
+        else:
+            changed_row = replace(row, values=(Decimal("9.000"),))
+        changed = replace(report, rows=(*report.rows[:1], changed_row, *report.rows[2:]))
+    elif mutation == "timestep":
+        changed = replace(report, time_increment_hours=Decimal("1.0"))
+    else:
+        changed = replace(report, reported_duration_increments=123)
+    with pytest.raises(ValueError, match="Canonical report tokens/metadata differ"):
+        bind_report_metrics(original, changed)
 
 
 def test_duplicate_scalar_fields_do_not_disappear() -> None:
@@ -105,7 +147,7 @@ def test_wrong_site_legend_does_not_bind_by_position_alone() -> None:
     original = source(legend="02")
     report = inspect_output(original).hydrographs
     assert report is not None
-    with pytest.raises(ValueError, match="legend identity/order"):
+    with pytest.raises(ValueError, match="no matching physical site"):
         bind_report_metrics(original, report)
 
 
@@ -115,6 +157,88 @@ def test_nonfinite_peak_summary_rejected_even_with_valid_table() -> None:
     assert report is not None
     with pytest.raises(ValueError, match="finite and nonnegative"):
         bind_report_metrics(original, report)
+
+
+def _source_from_text(text: str) -> RorbSource:
+    raw = text.encode("utf-8")
+    return RorbSource(
+        Path("physical-sites.out").absolute(),
+        hashlib.sha256(raw).hexdigest(),
+        len(raw),
+        "utf-8",
+        tuple(text.splitlines()),
+    )
+
+
+def test_canonical_physical_binding_accepts_zero_padding_without_changing_scalar_scope() -> None:
+    base = source()
+    raw = "\n".join(base.lines).replace("Inc Time Hyd001", "Inc Time Hyd0001") + "\n"
+    original = _source_from_text(raw)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    matched = bind_report_metrics(original, report)
+    assert len(matched) == 1
+    assert matched[0].column == "Hyd0001"
+    assert matched[0].label == "Synthetic outlet"
+    assert matched[0].peak is not None
+    assert matched[0].peak.token == base.lines[2].split()[-1]
+
+
+def test_reordered_hyd_columns_bind_only_named_sites_when_scalars_are_absent() -> None:
+    text = (
+        "RORBWin Output File\nProgram version 6.44\n"
+        "Time increment (hours)= 0.50\nDuration of calculations: 2\n"
+        "Hydrograph summary\nSite Description\n"
+        "01 Calculated hydrograph, Upstream\n"
+        "02 Calculated hydrograph, Downstream\n"
+        "Inc Time Hyd002 Hyd001\n"
+        "1 0.50 0.000 0.000\n2 1.00 1.500 1.000\n3 1.50 0.000 0.000\n"
+    )
+    original = _source_from_text(text)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    matched = bind_report_metrics(original, report)
+    assert [(item.column, item.label) for item in matched] == [
+        ("Hyd002", "Calculated hydrograph, Downstream"),
+        ("Hyd001", "Calculated hydrograph, Upstream"),
+    ]
+    assert all(item.peak is None and item.peak_time is None and item.volume is None for item in matched)
+
+
+def test_reordered_hyd_columns_reject_unqualified_scalar_ordinal_association() -> None:
+    text = (
+        "RORBWin Output File\nProgram version 6.44\n"
+        "Time increment (hours)= 0.50\nDuration of calculations: 2\n"
+        "Peak discharge,m³/s 1.500 1.000\n"
+        "Hydrograph summary\nSite Description\n"
+        "01 Calculated hydrograph, Upstream\n"
+        "02 Calculated hydrograph, Downstream\n"
+        "Inc Time Hyd002 Hyd001\n"
+        "1 0.50 0.000 0.000\n2 1.00 1.500 1.000\n3 1.50 0.000 0.000\n"
+    )
+    original = _source_from_text(text)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+    with pytest.raises(ValueError, match="scalar ordinals cannot be bound"):
+        bind_report_metrics(original, report)
+
+
+def test_unnamed_single_site_retains_numeric_scalars_but_not_physical_name() -> None:
+    base = source()
+    raw = "\n".join(base.lines).replace("01 Synthetic outlet", "01 Calculated hydrograph,") + "\n"
+    original = _source_from_text(raw)
+    report = inspect_output(original).hydrographs
+    assert report is not None
+
+    # The source-derived single-terminal CMD scalar is still comparable;
+    # the raw legend gives no physical print label or verification.
+    fields = bind_report_metrics(original, report)
+    assert len(fields) == 1
+    assert fields[0].column == "Hyd001"
+    assert fields[0].label == "Calculated hydrograph,"
+    assert fields[0].physical_name is None
+    assert fields[0].peak is not None
+    assert fields[0].peak.token == base.lines[2].split()[-1]
 
 
 def test_missing_volume_does_not_block_peak_comparison() -> None:

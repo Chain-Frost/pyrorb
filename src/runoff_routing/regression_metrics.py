@@ -11,10 +11,11 @@ from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from typing import Literal
 
+from ryan_library.functions.RORB.output_reader import bind_output_site_columns
 from ryan_library.functions.RORB.reader_types import RorbDocument
 
 from runoff_routing.rorb_documents import HydrographReport, RorbSource
-from runoff_routing.rorb_out import checked_canonical_report
+from runoff_routing.rorb_out import canonical_hydrograph_view, checked_canonical_report
 
 Status = Literal["pass", "fail", "incomplete"]
 
@@ -32,13 +33,14 @@ class ScalarField:
 
 @dataclass(frozen=True, slots=True)
 class SiteMetrics:
-    """Explicit report legend identity and three original native scalars."""
+    """Reported column and raw legend text; physical print identity is unverified."""
 
     column: str
     label: str
     peak: ScalarField | None
     peak_time: ScalarField | None
     volume: ScalarField | None
+    physical_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,7 +118,7 @@ def _site_scalars(fields: tuple[ScalarField, ...], count: int) -> tuple[ScalarFi
 
 
 def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[SiteMetrics, ...]:
-    """Bind source-scoped canonical scalar/legend records without parsing lines."""
+    """Bind source-scoped ordinal/scalar records, not verified physical print sites."""
     document = checked_canonical_report(source)
     if document.kind != "standard_output":
         message = "Canonical report is not a supported native output"
@@ -128,28 +130,42 @@ def bind_report_metrics(source: RorbSource, report: HydrographReport) -> tuple[S
     if len(hydrographs) != 1 or not hydrographs[0].valid or tuple(hydrographs[0].columns[3:]) != report.columns:
         message = "Canonical hydrograph scope differs from the selected report"
         raise ValueError(message)
-    if len(hydrographs[0].rows) != len(report.rows) or any(
-        hydrographs[0].source_tokens[i]["Time"] != item.raw_time for i, item in enumerate(report.rows)
-    ):
-        message = "Canonical report tokens differ from the selected hydrograph"
+    # Compare the complete retained canonical view, not just matching names and clocks.
+    # This includes each Inc, source line, exact printed Time, every Q value,
+    # timestep and reported duration; mismatches must fail before scalar binding.
+    if canonical_hydrograph_view(document, hydrographs[0]) != report:
+        message = "Canonical report tokens/metadata differ from the selected hydrograph"
         raise ValueError(message)
-    site_section = document.section("sites")
-    if not site_section.valid:
-        message = "Original site descriptions are invalid"
+    # The canonical shared reader owns the sole numeric Hyd-ordinal grammar.
+    # This consumes its source-preserving physical legend/column association
+    # rather than reformatting HydNNN identifiers with a second local parser.
+    # CMD original reports routinely omit the location name for their one
+    # printed hydrograph. Preserve its numeric ordinal for source-derived
+    # scalar comparisons without claiming a verified physical print identity.
+    # The canonical reader remains strict by default in physical-site contexts.
+    mapped = bind_output_site_columns(document, allow_unnamed=True)
+    if len(mapped) != 1 and any(site.physical_name is None for site in mapped):
+        message = "Multiple unnamed physical sites cannot be bound to scalar comparison"
         raise ValueError(message)
-    labels = tuple((f"Hyd{int(str(row['id'])[3:]):03d}", str(row["description"])) for row in site_section.rows)
-    columns = tuple(f"Hyd{int(column[3:]):03d}" for column in report.columns)
-    if tuple(name for name, _ in labels) != columns:
-        message = "Native legend identity/order does not match actual table columns"
+    if tuple(site.column for site in mapped) != report.columns:
+        message = "Native physical site binding differs from the actual table columns"
         raise ValueError(message)
 
     count = len(report.columns)
     peaks = _site_scalars(_scalars(document, "Peak discharge,m³/s", "m3/s"), count)
     times = _site_scalars(_scalars(document, "Time to peak,h", "h"), count)
     volumes = _site_scalars(_scalars(document, "Volume,m³", "m3"), count)
+    if any(value is not None for value in (*peaks, *times, *volumes)) and tuple(
+        site.site_id for site in mapped
+    ) != tuple(row["id"] for row in document.section("sites").rows):
+        # Printed scalar ordinals have no separately verified site IDs. A
+        # reordered hydrograph header is safe for Q identity but must not
+        # silently remap peaks, times or volumes by list position.
+        message = "Native scalar ordinals cannot be bound to reordered physical sites"
+        raise ValueError(message)
     return tuple(
-        SiteMetrics(column, label, peak, time, volume)
-        for column, (_, label), peak, time, volume in zip(report.columns, labels, peaks, times, volumes, strict=True)
+        SiteMetrics(site.column, site.description, peak, time, volume, site.physical_name)
+        for site, peak, time, volume in zip(mapped, peaks, times, volumes, strict=True)
     )
 
 
