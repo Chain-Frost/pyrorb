@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from decimal import Decimal
+from decimal import Context, Decimal, localcontext
 from typing import cast
 
 import pytest
 
 from runoff_routing.monte_carlo_comparison import (
+    assess_native_comparison,
+    comparison_json_ready,
     MCComparisonInputError,
     MCEventKey,
     MCField,
     MCNativeRecord,
     MCNativeSource,
-    assess_native_comparison,
-    comparison_json_ready,
 )
 
 
@@ -38,7 +38,8 @@ def test_printed_zero_not_exact_zero_and_fortran_token_preserved() -> None:
     assert record.peak_m3s.quality == "rounded_print"
     assert record.peak_m3s.conditional_nearest_print_interval() == (Decimal("-0.005"), Decimal("0.005"))
     assert record.rainfall_probability.decimal == Decimal("1.20")
-    assert record.rainfall_probability.token == "1.20D+00"
+    expected_source_print = "1.20D+00"
+    assert record.rainfall_probability.token == expected_source_print
     assert record.rainfall_probability.conditional_nearest_print_interval() == (
         Decimal("1.195"), Decimal("1.205")
     )
@@ -66,13 +67,13 @@ def test_native_identity_must_include_cohort_duration_and_site() -> None:
         assess_native_comparison((_record(), _record()))
 
 
-@pytest.mark.parametrize("value", ("NaN", "Infinity", "1_2", "1.2 foo", " 1.2", "1.2 "))
+@pytest.mark.parametrize("value", ["NaN", "Infinity", "1_2", "1.2 foo", " 1.2", "1.2 "])
 def test_invalid_numeric_tokens_fail_closed(value: str) -> None:
     with pytest.raises(MCComparisonInputError, match="source numeric token"):
         MCField("rounded_print", value, "mm", 1)
 
 
-@pytest.mark.parametrize("count", (0, -1, True))
+@pytest.mark.parametrize("count", [0, -1, True])
 def test_invalid_event_scope_fails_closed(count: int) -> None:
     with pytest.raises(MCComparisonInputError, match="positive integer"):
         MCEventKey("C", "R", 1440, count, 1)
@@ -100,3 +101,24 @@ def test_unverified_weight_cannot_enable_native_reaggregation() -> None:
     reported_weight = MCField("rounded_print", "0.20", "unknown-native-weight", 15)
     record = replace(_record(), native_event_weight=reported_weight, original_tp_event_id="A1")
     assert assess_native_comparison((record,)).native_weighted_reaggregation == "unavailable"
+
+
+def test_print_interval_is_context_independent_for_high_precision() -> None:
+    long_print = MCField("rounded_print", "1.2345678901234567890123456789", "mm", 6)
+    first = long_print.conditional_nearest_print_interval()
+    assert first == (
+        Decimal("1.23456789012345678901234567885"),
+        Decimal("1.23456789012345678901234567895"),
+    )
+    with localcontext(Context(prec=3)):
+        assert long_print.conditional_nearest_print_interval() == first
+        assert MCField("rounded_print", "1234.00", "mm", 7).conditional_nearest_print_interval() == (
+            Decimal("1233.995"),
+            Decimal("1234.005"),
+        )
+
+
+def test_negative_print_interval_uses_exact_signed_coefficients() -> None:
+    with localcontext(Context(prec=3)):
+        value = MCField("rounded_print", "-1.20", "mm", 5)
+        assert value.conditional_nearest_print_interval() == (Decimal("-1.205"), Decimal("-1.195"))

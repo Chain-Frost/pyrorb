@@ -38,6 +38,12 @@ def _digest(value: str | None, label: str, *, required: bool = False) -> None:
         _fail(f"{label} must be a lowercase SHA-256 digest")
 
 
+def _decimal_endpoint(coefficient: int, exponent: int) -> Decimal:
+    """Construct an exact decimal endpoint without ambient Context arithmetic."""
+    digits = tuple(int(digit) for digit in str(abs(coefficient)))
+    return Decimal((int(coefficient < 0), digits, exponent))
+
+
 @dataclass(frozen=True, slots=True)
 class MCNativeSource:
     """Report provenance separate from executable/catchment identity and claims."""
@@ -133,9 +139,17 @@ class MCField:
         number = self.decimal
         if number is None:
             _fail("printed field is missing its source token")
-        step = Decimal(1).scaleb(int(number.as_tuple().exponent))
-        half = step / 2
-        return number - half, number + half
+        # Construct each endpoint from an exact signed integer coefficient.
+        # Decimal arithmetic would depend on the caller's precision and could
+        # erase the half-print-unit (especially for printed zeros or long tokens).
+        parts = number.as_tuple()
+        coefficient = 0
+        for digit in parts.digits:
+            coefficient = coefficient * 10 + digit
+        if parts.sign:
+            coefficient = -coefficient
+        exponent = int(parts.exponent) - 1
+        return _decimal_endpoint(coefficient * 10 - 5, exponent), _decimal_endpoint(coefficient * 10 + 5, exponent)
 
 
 @dataclass(frozen=True, slots=True)
