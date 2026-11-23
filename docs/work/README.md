@@ -7,6 +7,7 @@
 ## Delivered implementation and regression receipts
 
 - [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
+- [Deferred PyRORB publication preparation (#213)](2026-11-22-pyrorb-publication.md) — inert template, tested offline metadata guard, current version/dependency blockers and later activation gates; draft/merge and publication remain held.
 - [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — merged #208/#209/#211 source/stdio checks and 23 November accepted *actual Codex CLI* dedicated-wheel installation; expected-error improvements are tracked under [#221](https://github.com/Chain-Frost/pyrorb/issues/221).
 - [Monte Carlo provisional main-admission decision (23 November 2026)](2026-11-23-mc-provisional-main-admission.md) — owner-approved software-only gate, retained numerical/native uncertainties and post-merge qualification requirements.
 - [Monte Carlo #151 reconciliation with main (22 November 2026)](2026-11-22-issue9-main-reconciliation.md) — exact merge inputs, current documentation reconciliation, preserved MC identities and unperformed checks.
@@ -54,7 +55,7 @@
 - [Original Monte Carlo #9 scoping](2026-11-15-issue9-scoping.md) and [#145 adopted statistical contract](2026-11-15-issue145-mc-statistical-method.md) — distinguish initial plans, implemented project choices and native-equivalence gaps.
 - [#146 sampler and persisted-plan work](2026-11-15-issue146-monte-carlo-sampler.md), [#147 weighted-frequency control](2026-11-15-mc-weighted-frequency.md) and [B→E→C execution contract](2026-11-15-s7-execution-slice.md) — verified B/E/C software provisionally admitted to main from #151, with stable replay/weighting identities.
 - [#148 independent-seed synthetic convergence](2026-11-15-issue148-convergence.md) — no qualified physical-catchment population or universal 1,000-run conclusion.
-- [#150 independent native/source qualification](2026-11-15-mc150-independent-qualification.md), [local Windows handoff](2026-11-16-issue150-local-windows-native-handoff.md) and [bounded native observation receipt](2026-11-16-issue150-windows-native-receipt.md) — 22 November local rehash/rounded-field controls, saved-settings drift and excluded attained-peak frequency hypothesis; F1–F6 remain incomplete, no native MC parity.
+- [#150 independent native/source qualification](2026-11-15-mc150-independent-qualification.md), [local Windows handoff](2026-11-16-issue150-local-windows-native-handoff.md) and [bounded native observation receipt](2026-11-16-issue150-windows-native-receipt.md) — 22 November retained rehash and 23 November bounded nonexecuting field/export investigation; saved-PAR drift excluded; F1–F6/native equivalence unresolved. [Deferred future-agent prompt](https://github.com/Chain-Frost/pyrorb/issues/150#issuecomment-7106607565).
 
 ## Retained diagnostic/reference evidence
 - [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) — original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.
