@@ -73,7 +73,8 @@ is stamped with the selected date version.
 Draft PR #220 proposes a single automatic release when existing Windows
 quality completes on main for the **exact merged commit of activation PR
 #220**. It also requires PYPI_ONE_SHOT_ENABLED=true and no existing pyrorb
-PyPI project. Later ordinary main merges are permanently ineligible.
+PyPI project. Both the quality run and publisher must be first attempts;
+reruns are ineligible. Later ordinary main merges are permanently ineligible.
 Release preflight, source CMD comparisons and isolated wheel/sdist acceptance
 must succeed *before* any GitHub release or tag is created. The published
 wheel/sdist come only from that qualified build. The publisher uses a
@@ -82,7 +83,8 @@ rechecking the exact main SHA, tag and PyPI identity before upload.
 The `pypi` environment must exist before any publication attempt: GitHub
 otherwise creates missing environments without review protection. This
 workflow fails closed unless the environment has exactly one required
-reviewer, `Chain-Frost`, and a restricted deployment-branch policy; both
+reviewer, `Chain-Frost`, and custom deployment rules containing exactly one
+branch rule named `main` (no tag rules, wildcards or extra branches); both
 conditions are checked before creating the tag and again before upload.
 During owner setup, restrict the environment to `main` and confirm its
 required reviewer can approve the deployment.
@@ -142,3 +144,11 @@ These are planned matching values, not confirmation that the environment or publ
 - [GitHub: `workflow_dispatch`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch) describes manual workflow execution and default-branch availability.
 - [GitHub: secure use](https://docs.github.com/en/actions/reference/security/secure-use) describes least privilege, pinned action revisions and safe handling of workflow inputs.
 - [Setuptools: direct URL dependencies](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#direct-url-dependencies) explains why current Git/archive requirements block an index release.
+
+
+The environment and deployment-branch-policy REST reads require only the existing
+job-scoped `actions: read` permission; no administration permission is requested.
+See GitHub's [environment endpoint](https://docs.github.com/en/rest/deployments/environments#get-an-environment)
+and [deployment policy endpoint](https://docs.github.com/en/rest/deployments/branch-policies#list-deployment-branch-policies).
+A protected-branches-only policy is insufficient because it can include branches
+other than `main`. API failures or incomplete policy inventories block release.

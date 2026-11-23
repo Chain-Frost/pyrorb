@@ -20,6 +20,8 @@ jobs:
       github.repository == 'Chain-Frost/pyrorb' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.run_attempt == 1 &&
+      github.run_attempt == 1 &&
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       vars.PYPI_ONE_SHOT_ENABLED == 'true'
@@ -57,7 +59,9 @@ jobs:
           test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
           # Missing GitHub environments are created without protection; fail closed.
           test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
-            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy != null)')" = true
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy.protected_branches == false) and (.deployment_branch_policy.custom_branch_policies == true)')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi/deployment-branch-policies?per_page=100" --jq \
+            '.total_count == 1 and (.branch_policies | length) == 1 and .branch_policies[0].name == "main" and .branch_policies[0].type == "branch"')" = true
           python - <<'PY'
           import urllib.error
           import urllib.request
@@ -226,6 +230,8 @@ jobs:
       github.repository == 'Chain-Frost/pyrorb' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.run_attempt == 1 &&
+      github.run_attempt == 1 &&
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       vars.PYPI_ONE_SHOT_ENABLED == 'true'
@@ -259,7 +265,9 @@ jobs:
           test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
           # Missing GitHub environments are created without protection; fail closed.
           test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
-            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy != null)')" = true
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy.protected_branches == false) and (.deployment_branch_policy.custom_branch_policies == true)')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi/deployment-branch-policies?per_page=100" --jq \
+            '.total_count == 1 and (.branch_policies | length) == 1 and .branch_policies[0].name == "main" and .branch_policies[0].type == "branch"')" = true
           python - <<'PY'
           import urllib.error
           import urllib.request

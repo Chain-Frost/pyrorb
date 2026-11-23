@@ -41,9 +41,15 @@ def test_all_actions_expressions_are_closed() -> None:
 
 def test_missing_unprotected_environment_blocks_publication() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
-    assert source.count("environments/pypi") == 2
+    assert source.count("environments/pypi") == 4
     assert source.count('reviewer.login == "Chain-Frost"') == 2
-    assert source.count("deployment_branch_policy != null") == 2
+    assert source.count("deployment_branch_policy.custom_branch_policies == true") == 2
+    assert source.count("deployment_branch_policy.protected_branches == false") == 2
+    assert source.count("deployment-branch-policies?per_page=100") == 2
+    assert source.count(".total_count == 1") == 2
+    assert source.count("(.branch_policies | length) == 1") == 2
+    assert source.count('.branch_policies[0].name == "main"') == 2
+    assert source.count('.branch_policies[0].type == "branch"') == 2
     assert source.count("actions: read") == 2
 
 
@@ -56,3 +62,12 @@ def test_public_github_release_requires_successful_pypi_upload() -> None:
     assert "needs: [build, publish]" in release_job
     assert "needs: [publish, release]" in source
     assert "always() && needs.publish.result == 'success'" in source
+
+
+def test_reruns_of_quality_or_publisher_are_ineligible() -> None:
+    """Both the upstream run and this publisher must be first attempts."""
+    source = WORKFLOW.read_text(encoding="utf-8")
+    for job in ("build", "publish"):
+        block = source.split(f"  {job}:\n", 1)[1].split("    runs-on:", 1)[0]
+        assert "github.event.workflow_run.run_attempt == 1" in block
+        assert "github.run_attempt == 1" in block

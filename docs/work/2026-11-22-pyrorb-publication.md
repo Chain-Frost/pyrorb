@@ -1,4 +1,4 @@
-# Deferred PyRORB publication preparation — 22 November 2026
+# Deferred PyRORB publication preparation â€” 22 November 2026
 
 ## Scope and state
 
@@ -59,7 +59,7 @@ The bootstrap version and direct reader/PyRomb source pins remain unchanged. Fin
 **Next action:** keep this preparation PR in draft while the owner assembles the MVP and final dependency requirements. Once the owner selects release scope, complete the guide's qualification/acceptance gates, then obtain the explicit merge/activation/publication instruction. Configure the actual `pypi` environment and matching Trusted Publisher only at that later stage. No automatic merge, tag-triggered release or publication is authorised by this record.
 
 
-## Focused independent corrective review — 22 November 2026
+## Focused independent corrective review â€” 22 November 2026
 
 The original preparation head was reviewed against #213, the allowed workflow inventory and the current upstream artifact-download inputs. The existing Windows quality run for that original head completed successfully; its result and the 22 focused release tests above apply only to that revision.
 
@@ -67,7 +67,7 @@ A concrete false-pass was identified: if a build emitted **the same incorrect Re
 
 A separate local Python 3.13.5/setuptools 82.0.1 fixture built a real wheel: the normalised source and wheel requirement inventories agreed, while three mutated requirement inventories were rejected. This fixture validates the comparison design, **not** an execution of this repository's full pytest/Ruff/Pyright suite. The original suite/negative-control hashes remain historical evidence above; new head CI and any further verification are reported separately in the PR/issue. No change was made to the inert workflow template, active hosted workflow, dependency pins, version, publication settings, or scientific acceptance.
 
-## Follow-up to fresh independent review — 22 November 2026
+## Follow-up to fresh independent review â€” 22 November 2026
 
 The independent review of corrective head `443ed27c03e4ad8f77686e3da14395c209553b40`
 reported two actionable findings: P2, an unrelated internal wheel `.dist-info` name/version
@@ -91,7 +91,7 @@ subsequent changes. Focused correction verification and current CI must be
 recorded against the resulting revision. No version, pin, hosted workflow,
 permissions, environment, publisher, merge or release decision has changed.
 
-## Separate activation PR staged for review — 23 November 2026
+## Separate activation PR staged for review â€” 23 November 2026
 
 The owner requested a reviewable PyPI publishing workflow PR and comparison with `ryan-tools`. The
 `ryan-tools` chain publishes automatically after verified `main` releases, but **PyRORB retains
@@ -107,7 +107,7 @@ CI, independent review, exact-head local tests and actual publishing remain sepa
 The next release task remains final-MVP dependency qualification and the source/installed-wheel
 gates, not an automatic release or scheduled main-merge publication.
 
-## Owner release policy revision — 23 November 2026
+## Owner release policy revision â€” 23 November 2026
 
 The owner prefers an automatic release after successful main CI, but only
 one initial real public test publication before disabling the publisher until
@@ -124,7 +124,7 @@ or production PyPI upload is made. Current Git/archive dependency URLs
 still block public package metadata qualification. No merge, release,
 tag, publisher/environment setup or upload has been performed.
 
-## Draft one-shot publisher implemented — 23 November 2026
+## Draft one-shot publisher implemented â€” 23 November 2026
 
 Draft PR #220 now proposes workflow_run automation only for the exact
 activation PR #220 merge, after successful main CI and explicit owner
@@ -140,3 +140,52 @@ No version, runtime dependency, account setting, tag or release was
 changed outside this draft. Current source metadata is still blocked
 by direct-URL reader/PyRomb requirements. No publication, merge, real
 workflow execution or independent approval has been asserted.
+
+
+## Local one-shot security follow-up ? 23 November 2026
+
+Reviewed activation parent `fa9501cf5d6df093ff76e2fa4eec372e643235a6`, tree
+`4e56a780aade8f13fefc00676e32bb202d6e4732`, workflow blob
+`e550ded56ffcdb7dcb17d1c743637fd42f8232a7`, against unchanged draft preparation
+`287ae3dd5c225170c10fdb904048a308054629aa`. Resulting revision and current
+CI/independent-review status are recorded in PR #220's exact-head receipt.
+
+Two reproducible gaps were corrected only on #220: a non-null environment
+policy admitted protected-branch sets or unrelated custom branch/tag rules;
+and first-attempt guards were missing for quality/publisher reruns. Both
+build preflight and publish recheck now require custom policies enabled,
+protected-branches mode disabled, and exactly one returned rule of type
+`branch` named `main`. API errors and incomplete inventories fail closed.
+Both job selectors reject upstream or publisher run attempts other than 1.
+No permission was expanded: environment and policy reads are supported by
+GitHub's documented job-scoped `actions: read` installation-token permission.
+No publishing-job token was minted or live upload workflow executed.
+
+Executed locally on Windows 10 build 19045, CPython 3.14.6: gh 2.102.0
+(authenticated Chain-Frost via keyring), actionlint 1.7.12 (Go 1.26.1),
+GNU Bash 5.3.15, Node 22.16.0 and jq 1.8.2. Actionlint on the actual workflow
+passes; all eight Bash blocks pass `bash -n`, both JavaScript fragments
+pass Node module syntax checks, all six pinned action commits resolve to
+verified upstream commits. Twelve real-jq environment/policy controls and
+eight event-selector controls pass without API mutations. Focused release,
+allocator, workflow, repository and scaffold suites: 68 passed, no skips;
+Ruff lint/format, strict Pyright and 550-file repository/link hygiene pass.
+The existing source negative control rejects exactly five expected blockers:
+bootstrap version, illustrative tag mismatch, reader URL and both writer
+URL declarations. No version or dependency selection was made.
+
+Read-only live inventory: no repository variables; no environments (pypi
+GET returns expected HTTP 404, not 403); workflow registry lists quality
+and publish.yml active, while publish.yml remains absent from main. No
+workflow was enabled/disabled or run by this task. This inventory does not
+prove environment/OIDC acceptance: actual reviewer/branch protection and
+publisher setup remain absent and block publication. GitHub documents
+both environment reads as accessible with Actions read for installation
+tokens; authenticated API inventory was checked, not a future job token.
+
+Prior successful exact-head CI/review applies to the former head, not
+implicitly to this correction. Fresh CI and an independent Codex review
+are required before accepting the corrected head. #215/#220 remain draft
+and unmerged; #213 stays open. Final MVP, published dependency APIs and
+all extras, licence/package contents, clean index installs and owner-only
+environment/publisher/enable-variable configuration remain separate gates.
