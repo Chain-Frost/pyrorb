@@ -1,6 +1,6 @@
 # PyRORB publication preparation
 
-**Status: preparation and draft activation review only; publication and merge remain deferred until the owner finalises the MVP.** [Issue #213](https://github.com/Chain-Frost/pyrorb/issues/213) owns this work under [release parent #10](https://github.com/Chain-Frost/pyrorb/issues/10). The separate [identity scope #212](https://github.com/Chain-Frost/pyrorb/issues/212) can flow into active feature PRs now.
+**Status: a one-shot automatic release is staged in an unmerged draft; PyPI activation still requires qualified dependencies and account-level setup.** [Issue #213](https://github.com/Chain-Frost/pyrorb/issues/213) owns this work under [release parent #10](https://github.com/Chain-Frost/pyrorb/issues/10). The separate [identity scope #212](https://github.com/Chain-Frost/pyrorb/issues/212) can flow into active feature PRs now.
 
 The [workflow template](../packaging/pypi/publish.yml.in) lives outside `.github/workflows`, so it cannot execute in the preparation PR. A separate **draft activation PR**, stacked on the preparation PR, proposes a copy at `.github/workflows/publish.yml` and the narrow repository-guard/test changes. That activation change must not merge without owner approval and completion of the release gates below. Neither PR creates a release tag, GitHub environment, PyPI publisher, upload or enabled repository variable. A successful metadata check does not authorise publication or establish numerical acceptance.
 
@@ -61,38 +61,49 @@ The checker enforces:
 
 The source-only mode explicitly reports that artifacts were not checked. The source-to-artifact comparison is deliberately conservative about marker representation; review any backend-specific marker transformations during final package qualification rather than bypassing a mismatch. Archive metadata is inspected without extracting files. This is a bounded packaging gate: it does not check whether named dependencies exist on PyPI, qualify dependency behaviour, validate the licence, prove reproducibility, inspect every package member or replace [source/installed-wheel acceptance](REGRESSION_DATASET.md#portable-offline-vm-target-installation). `twine check --strict` adds distribution metadata and long-description validation. A later clean install must actually resolve the selected published dependencies.
 
-## Proposed manual workflow
+## One-shot automated PyPI test release (draft #220)
 
-The template stays inert; a separate, unmerged activation PR prepares its executable workflow location and narrowly expands the workflow allowlist. Once that PR is explicitly approved and merged, the workflow still has **only `workflow_dispatch`**, requires `main` in `Chain-Frost/pyrorb` and repository variable `PYPI_PUBLISH_ENABLED=true`, and checks that the supplied existing `v<version>` tag points to the exact dispatched commit. It never creates a tag or a GitHub release. Dispatch from another branch, or dispatch with an older tag against a newer main commit, cannot publish. Retrying an interrupted release requires reviewing its state; the upload action keeps `skip-existing=false` so an existing file is not silently treated as a complete release.
+PyRORB will use the same YY.M.D.N date-based versions as ryan-tools and
+ryan-culverts, for example v26.11.23.1 if first released on 23 November
+2026. The release date uses Australia/Perth. The revision is allocated
+monotonically against known release tags. The development checkout retains
+0.0.0.dev0 until a qualified release; only the temporary release checkout
+is stamped with the selected date version.
 
-The build job has read-only repository access and no OIDC publishing permission. It runs the existing pure-Python quality suite and original-CMD fixture probe, builds and checks both artifacts, installs wheel and sdist into separate fresh environments outside the checkout, and checks import origin and installed version. The existing `verify_installed_wheel` function verifies that both installations' package sources match the exact built wheel before recording its digest and package-code fingerprint. The job then compares the complete source and installed-wheel probe JSON, preserving per-case Q/scalar/status details. This reuses the existing comparator and retains its numerical limitations; it is not a second feature matrix or a new scientific acceptance runner. The provisional install selection includes the `catg` extra; revisit that selection against all extras and supported workflows in the final MVP.
+Draft PR #220 proposes a single automatic release when existing Windows
+quality completes on main for the **exact merged commit of activation PR
+#220**. It also requires PYPI_ONE_SHOT_ENABLED=true and no existing pyrorb
+PyPI project. Later ordinary main merges are permanently ineligible.
+Release preflight, source CMD comparisons and isolated wheel/sdist acceptance
+must succeed *before* any GitHub release or tag is created. The published
+wheel/sdist come only from that qualified build. The publisher uses a
+protected GitHub pypi environment and PyPI Trusted Publishing (OIDC),
+rechecking the exact main SHA, tag and PyPI identity before upload.
+On upload success a separate actions:write job attempts to disable
+publish.yml automatically. If disabling fails, execute
+gh workflow disable publish.yml with suitable GitHub permissions.
 
-The publish job receives only the checked distribution artifact by its same-run immutable artifact ID, with download digest mismatch treated as an error. It performs no source checkout, project dependency installation or build. Only that job requests `id-token: write`, enters environment `pypi` and uses the official PyPA publishing action with Trusted Publishing and attestations. The environment must be configured with the owner-selected review/protection settings **before** activation; merely naming an environment in YAML does not configure a review gate. Keep any required reviewer gate ahead of upload so the exact build receipts can be examined.
+This is a REAL public release and not a TestPyPI simulation. The current
+source has direct Git/archive requirements for the canonical reader and
+PyRomb writer; these are blocked by PyPI upload metadata policy and the
+release checker. Qualify published versions of these dependencies with
+the final required fixes; do not substitute outdated distributions merely
+to create a release. Public engineering claims and scientific acceptance
+remain separate even after the first package is published.
 
-Successful runs retain artifact hashes, exact source commit/tag, tool/dependency versions and complete existing source/wheel CMD JSON for 30 days. Copy the selected receipts to the established work record/evidence location before retention expires. The same built wheel and sdist are transferred for upload. The template uses a Linux/Python 3.13 release build, consistent with the current single-platform pure-Python policy; it neither launches native RORB nor claims a Windows-native execution result.
+Before merging #215 then #220: establish release scope and dependent
+published versions, validate clean source/wheel/sdist installs, configure
+a protected GitHub environment named pypi, configure PyPI's matching
+Trusted Publisher (Chain-Frost / pyrorb / publish.yml / pypi), and set
+the repository variable PYPI_ONE_SHOT_ENABLED=true. The first pending
+publisher does not reserve the PyPI name. The exact activation merge's
+successful main CI is the only eligible automatic release trigger.
+Confirm artifacts and attestations, then verify that publish.yml is
+disabled. Future normal automatic releases require a separate MVP PR.
 
-### Action revisions
-
-These pins were resolved from official upstream refs on 22 November 2026. Re-read the current action and PyPI guidance and review newer fixes before activation; the preparation date is not a permanent approval of a dependency revision.
-
-| Action | Reviewed upstream ref | Commit used by template |
-| --- | --- | --- |
-| `actions/checkout` | [`v7`](https://github.com/actions/checkout/tree/v7) | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
-| `actions/setup-python` | [`v7`](https://github.com/actions/setup-python/tree/v7) | `6d4fd22b20465ccc0f7354476588e8df7c9ca0e0` |
-| `actions/upload-artifact` | [`v7.0.2`](https://github.com/actions/upload-artifact/releases/tag/v7.0.2) | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
-| `actions/download-artifact` | [`v8.0.2`](https://github.com/actions/download-artifact/releases/tag/v8.0.2) | `9000827ccba6bdab643e8b6fd33ac0654aef8333` |
-| `pypa/gh-action-pypi-publish` | [`v1.14.3`](https://github.com/pypa/gh-action-pypi-publish/releases/tag/v1.14.3) | `7245906fb61fa33a13554f9d5fb856fe61758086` |
-
-The template keeps development tools consistent with the repository's current dependency policy; it does not introduce a release lock. Select and record reproducible release build/dependency constraints during final package qualification, and update the template's install commands if that decision requires them.
-
-## Later activation sequence
-
-1. **Select the MVP and integrated revision.** Confirm which active PRs enter the release and document supported behaviour, incomplete outcomes and deferred capability/scientific work. A bounded alpha need not close every full-CMD or post-MVP issue, but its claims must match its evidence.
-2. **Qualify dependencies and package contents.** Obtain suitable published canonical reader/PyRomb versions, remove direct URLs from all uploaded extras, select the version and release constraints, and review notices/licence, provenance, public data and included files. Confirm source, wheel and sdist imports and each supported optional workflow in fresh environments with index dependencies.
-3. **Complete applicable acceptance.** Use the existing local/approved quality tools and source/installed-wheel procedure. Retain exact revision, wheel/sdist hashes, package-code fingerprint, interpreter/platform, complete per-case reports and every relevant limitation. Keep independent scientific qualification separate from software checks.
-4. **Obtain the owner's instruction to merge and activate.** Both preparation and stacked activation PRs remain draft/held until that instruction. Re-review the selected action pins and activation diff (`.github/workflows/publish.yml` plus the exact workflow allowlist and its test), update any current policy requirements, then merge them in the correct order only with explicit approval. Do not weaken the default workflow guard.
-5. **Configure the real environment and publisher.** Create/configure `pypi`, select its reviewers/branch restrictions, and configure the matching PyPI Trusted Publisher. Inspect any existing publisher targeting the previous repository name and replace its repository binding as appropriate; a GitHub rename does not rewrite that external configuration. Set `PYPI_PUBLISH_ENABLED=true` only as part of the approved activation.
-6. **Select and execute the release.** With explicit publication instruction, create the chosen `v<version>` tag on the reviewed main commit, dispatch from that same commit, inspect the exact artifacts/receipts before environment approval, then verify published metadata and an isolated index installation. Record the resulting release URL and acceptance receipt. Neither the template nor this document performs those actions now.
+The manual-only template under packaging/pypi/publish.yml.in remains an
+inert preparation asset of PR #215; this activated one-shot proposal
+supersedes that template.
 
 ### PyPI pending-publisher fields
 

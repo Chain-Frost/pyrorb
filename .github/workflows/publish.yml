@@ -1,35 +1,38 @@
-# Draft activation PR stacked on #215. Do not merge until explicitly authorised.
-# Manual dispatch only; release eligibility and OIDC upload remain separately gated.
-name: Publish selected PyRORB release
+# One-shot: only exact main squash merge of PR #220 can publish.
+# The final job disables the workflow after the single successful PyPI upload.
+name: Publish one PyRORB test release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_tag:
-        description: Existing v<version> tag at the reviewed main commit
-        required: true
-        type: string
+  workflow_run:
+    workflows: [Windows quality]
+    types: [completed]
+    branches: [main]
 
 permissions: {}
 
 concurrency:
-  group: pyrorb-pypi-publication
+  group: pyrorb-pypi-one-shot
   cancel-in-progress: false
 
 jobs:
   build:
     if: >-
       github.repository == 'Chain-Frost/pyrorb' &&
-      github.ref == 'refs/heads/main' &&
-      vars.PYPI_PUBLISH_ENABLED == 'true'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.PYPI_ONE_SHOT_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
     outputs:
       artifact_id: ${{ steps.distributions.outputs.artifact-id }}
+      tag: ${{ steps.plan.outputs.tag }}
+      sha: ${{ steps.plan.outputs.sha }}
     env:
-      RELEASE_TAG: ${{ inputs.release_tag }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
     defaults:
       run:
         shell: bash --noprofile --norc -euo pipefail {0}
@@ -42,25 +45,68 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7, reviewed 2026-11-22
         with:
           python-version: '3.13'
-      - name: Check selected source and tag
+      - name: Qualify one exact merged PR and allocate a calendar release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }
         run: |
-          python -m pip install build packaging twine
-          python repo-scripts/check_release.py --tag="$RELEASE_TAG"
-          test "$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merged')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
+          python - <<'PY'
+          import urllib.error
+          import urllib.request
+          try:
+              with urllib.request.urlopen("https://pypi.org/pypi/pyrorb/json", timeout=30):
+                  raise SystemExit("PyPI project already exists; second release refused")
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+          PY
+          python - <<'PY' > "$RUNNER_TEMP/pyrorb-release-request.json"
+          import datetime as dt
+          import json
+          import subprocess
+          import tomllib
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          with Path("pyproject.toml").open("rb") as stream:
+              current = tomllib.load(stream)["project"]["version"]
+          tags = subprocess.run(["git", "tag", "--list"], check=True, capture_output=True, text=True).stdout.splitlines()
+          today = dt.datetime.now(ZoneInfo("Australia/Perth")).date().isoformat()
+          print(json.dumps({"current": current, "tags": tags, "today": today}))
+          PY
+          next_version="$(python repo-scripts/auto_release_version.py next < "$RUNNER_TEMP/pyrorb-release-request.json")"
+          old_tag="$(git tag --points-at "$SOURCE_SHA" | grep -E '^v[0-9]{2}\.[0-9]{1,2}\.[0-9]{1,2}\.[1-9][0-9]*$' || true)"
+          if [ -n "$old_tag" ]; then
+            test "$(printf '%s\n' "$old_tag" | wc -l)" -eq 1
+            selected="$old_tag"
+          else
+            selected="v$next_version"
+          fi
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=$selected" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_TAG=$selected" >> "$GITHUB_ENV"
+      - name: Install release tooling
+        run: python -m pip install build packaging twine
       - name: Run existing pure-Python quality and source checks
         run: |
           python -m pip install -e '.[dev,catg]'
           python repo-scripts/check_local.py
           mkdir "$RUNNER_TEMP/pyrorb-receipts"
           python repo-scripts/cmd_public_probe.py > "$RUNNER_TEMP/pyrorb-receipts/source-cmd.json"
+      - name: Stamp temporary version and reject unqualified dependencies
+        run: |
+          python repo-scripts/auto_release_version.py stamp "$RELEASE_TAG"
+          python repo-scripts/check_release.py --tag "$RELEASE_TAG"
       - name: Build and inspect the exact distribution pair
         run: |
           python -m build --outdir "$RUNNER_TEMP/pyrorb-dist"
           python -m twine check --strict "$RUNNER_TEMP/pyrorb-dist/"*
           python repo-scripts/check_release.py --tag="$RELEASE_TAG" --dist "$RUNNER_TEMP/pyrorb-dist"
           sha256sum "$RUNNER_TEMP/pyrorb-dist/"* > "$RUNNER_TEMP/pyrorb-receipts/SHA256SUMS"
-          printf 'source=%s\ntag=%s\n' "$GITHUB_SHA" "$RELEASE_TAG" > "$RUNNER_TEMP/pyrorb-receipts/source.txt"
+          printf 'source=%s\ntag=%s\n' "$SOURCE_SHA" "$RELEASE_TAG" > "$RUNNER_TEMP/pyrorb-receipts/source.txt"
           python -VV > "$RUNNER_TEMP/pyrorb-receipts/python.txt"
           python -m pip freeze > "$RUNNER_TEMP/pyrorb-receipts/build-environment.txt"
       - name: Install wheel and sdist independently outside the checkout
@@ -130,19 +176,80 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  publish:
+  release:
     needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      SOURCE_SHA: ${{ needs.build.outputs.sha }
+      RELEASE_TAG: ${{ needs.build.outputs.tag }
+    steps:
+      - name: Create or verify only the selected GitHub release
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const sha = process.env.SOURCE_SHA;
+            const tag = process.env.RELEASE_TAG;
+            const {data: main} = await github.rest.git.getRef({owner,repo,ref:'heads/main'});
+            const {data: pr} = await github.rest.pulls.get({owner,repo,pull_number:220});
+            if (main.object.sha !== sha || !pr.merged_at || pr.merge_commit_sha !== sha) {
+              throw new Error('Only exact merged activation PR #220 can be released.');
+            }
+            const result = await fetch('https://pypi.org/pypi/pyrorb/json',
+              {signal:AbortSignal.timeout(30000)});
+            await result.body?.cancel();
+            if (result.status !== 404) {
+              throw new Error('First PyPI project is no longer vacant: HTTP ' + result.status);
+            }
+            let ref;
+            try {
+              ref = (await github.rest.git.getRef({owner,repo,ref:'tags/' + tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              ref = (await github.rest.git.createRef({owner,repo,ref:'refs/tags/' + tag,sha})).data;
+            }
+            if (ref.object.type !== 'commit' || ref.object.sha !== sha) {
+              throw new Error('Release tag must point to the qualified main merge.');
+            }
+            let release;
+            try {
+              release = (await github.rest.repos.getReleaseByTag({owner,repo,tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              release = (await github.rest.repos.createRelease({
+                owner,repo,tag_name:tag,target_commitish:sha,name:tag,
+                draft:false,prerelease:false,generate_release_notes:true,
+                body:'One preliminary PyRORB release. Publication is not scientific or MVP acceptance.'
+              })).data;
+            }
+            if (release.draft || release.prerelease || !release.published_at || release.tag_name !== tag) {
+              throw new Error('A matching published stable GitHub Release is required.');
+            }
+            core.info('Release selected: ' + release.html_url);
+
+  publish:
+    needs: [build, release]
     if: >-
       github.repository == 'Chain-Frost/pyrorb' &&
-      github.ref == 'refs/heads/main' &&
-      vars.PYPI_PUBLISH_ENABLED == 'true'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.PYPI_ONE_SHOT_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/p/PyRORB
     permissions:
+      contents: read
       id-token: write
+    env:
+      SOURCE_SHA: ${{ needs.build.outputs.sha }}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}
     steps:
       # No source checkout, dependency installation or build in the OIDC job.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -151,9 +258,43 @@ jobs:
           path: dist/
           merge-multiple: true
           digest-mismatch: error
+      - name: Recheck source/tag identity and PyPI vacancy immediately before upload
+        env:
+          GH_TOKEN: ${{ github.token }
+        shell: bash
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')" = "$SOURCE_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
+          python - <<'PY'
+          import urllib.error
+          import urllib.request
+          try:
+              with urllib.request.urlopen("https://pypi.org/pypi/pyrorb/json", timeout=30):
+                  raise SystemExit("Refusing second PyPI release")
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+          PY
       - name: Publish reviewed artifacts using the configured Trusted Publisher
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: dist/
           skip-existing: 'false'
           attestations: 'true'
+
+  disable:
+    needs: publish
+    if: needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Disable this publisher until the MVP
+        env:
+          GH_TOKEN: ${{ github.token }
+        shell: bash
+        run: |
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/disable"
+          echo "Disabled one-shot publication after upload."

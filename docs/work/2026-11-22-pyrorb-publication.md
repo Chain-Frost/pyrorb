@@ -123,3 +123,20 @@ publishing workflow is still manual-only. No claim of an automatic release
 or production PyPI upload is made. Current Git/archive dependency URLs
 still block public package metadata qualification. No merge, release,
 tag, publisher/environment setup or upload has been performed.
+
+## Draft one-shot publisher implemented — 23 November 2026
+
+Draft PR #220 now proposes workflow_run automation only for the exact
+activation PR #220 merge, after successful main CI and explicit owner
+PYPI_ONE_SHOT_ENABLED opt-in. The version script selects YY.M.D.N
+(Australia/Perth) and stamps only the local release checkout. All
+source and packaging gates precede tag/release creation. Upload uses
+PyPI Trusted Publishing via a pypi GitHub environment and an OIDC-only
+job; an independent actions:write job attempts to disable publish.yml
+after the first successful upload. A PyPI-project vacancy check and
+exact merged-PR SHA guard prevent second and unrelated releases.
+
+No version, runtime dependency, account setting, tag or release was
+changed outside this draft. Current source metadata is still blocked
+by direct-URL reader/PyRomb requirements. No publication, merge, real
+workflow execution or independent approval has been asserted.
