@@ -13,7 +13,7 @@ from typing import cast
 
 import pytest
 
-from runoff_routing.arr_patterns import read_pattern_file
+from runoff_routing.arr_patterns import PatternSet, parse_pattern_csv, read_pattern_file
 from runoff_routing.engine_types import EngineSelection
 from runoff_routing.monte_carlo_effective import (
     EffectiveMCEvent,
@@ -21,6 +21,8 @@ from runoff_routing.monte_carlo_effective import (
     MCInputError,
     MCPopulation,
     MCRequestHeader,
+    encode_jsonl_line,
+    is_contained_mc_source,
     materialise_arr_sample,
     preparation_model_sha256,
     read_header,
@@ -138,6 +140,74 @@ def test_header_rejects_undeclared_zero_count_population_allocation() -> None:
                 MCAllocation("other", 60, "h2", Decimal("0.25"), 0),
             ),
         )
+
+
+def test_effective_request_rejects_symlinked_parent_source_escape(tmp_path: Path) -> None:
+    inside = tmp_path / "inside"
+    inside.mkdir()
+    _, request, events = _input(inside, count=1)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "patterns.csv").write_bytes((inside / "patterns.csv").read_bytes())
+    alias = inside / "alias"
+    try:
+        alias.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Directory symlink creation unavailable on this filesystem")
+
+    assert not is_contained_mc_source(alias / "patterns.csv", inside)
+    original_header = read_header(request)
+    new_source = SourceFile("alias/patterns.csv", hashlib.sha256((outside / "patterns.csv").read_bytes()).hexdigest())
+    forged_header = replace(original_header, source_files=(new_source,))
+    attempted = inside / "forged.jsonl"
+    with pytest.raises(MCInputError, match="outside request directory"):
+        write_effective_request(attempted, forged_header, events)
+    assert not attempted.exists()
+
+    original = request.read_bytes().splitlines(keepends=True)
+    request.write_bytes(encode_jsonl_line(forged_header.to_dict()) + b"".join(original[1:]))
+    with pytest.raises(MCInputError, match="outside request directory"):
+        validate_effective_request(request)
+
+
+def test_areal_mc_pattern_must_match_arr2019_size_bin() -> None:
+    model = _source_model()
+    original = model.catchment.subareas
+    initial_area = sum((item.area_km2 for item in original), Decimal(0))
+    first = replace(original[0], area_km2=original[0].area_km2 + Decimal(1000) - initial_area)
+    model = replace(model, catchment=replace(model.catchment, subareas=(first, *original[1:])))
+
+    def areal_source(bin_label: str) -> PatternSet:
+        contents = (
+            "EventID,Duration,TimeStep,Region,Area,AEP,Increments\n"
+            f"A1,60,30,SyntheticPoint,{bin_label},rare,10,90\n"
+        )
+        return parse_pattern_csv(contents.encode("utf-8"), kind="areal")
+
+    def materialise(patterns: PatternSet) -> EffectiveMCEvent:
+        return materialise_arr_sample(
+            model=model,
+            pattern_set=patterns,
+            pattern_source_order=1,
+            sample_id="areal-review",
+            scenario_id="base",
+            stratum_id="h1",
+            stratum_mass=Decimal(1),
+            stratum_size=1,
+            rainfall_aep_percent=Decimal(2),
+            gross_depth_mm=Decimal(20),
+            bom_source_sha256=hashlib.sha256(b"synthetic_bom").hexdigest(),
+            arf_region="South-West Western Australia",
+            storm_initial_loss_mm=Decimal(1),
+            preburst_depth_mm=Decimal(0),
+            preburst_policy="none",
+            dry_tail_min=60,
+        )
+
+    with pytest.raises(MCInputError, match="areal temporal-pattern area bin"):
+        materialise(areal_source("100"))
+    accepted = materialise(areal_source("1000"))
+    assert accepted.tp_area_bin == "1000"
 
 
 def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Path) -> None:

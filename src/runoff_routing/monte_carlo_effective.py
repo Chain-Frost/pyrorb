@@ -19,6 +19,7 @@ from typing import Literal, Never, cast
 
 from .arr_arf import apply_arr2019_arf_to_bom_storm, calculate_arr2019_arf, published_coefficients
 from .arr_patterns import PatternSet
+from .arr_selection import arr2019_area_bin
 from .arr_storm import RawHyetograph
 from .project_batch import ProjectEvent
 from .project_json import SourceFile
@@ -647,6 +648,16 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def is_contained_mc_source(candidate: Path, directory: Path) -> bool:
+    """Require a real file physically within the request directory; do not follow leaf links."""
+    if candidate.is_symlink() or not candidate.is_file():
+        return False
+    try:
+        return candidate.resolve(strict=True).is_relative_to(directory.resolve(strict=True))
+    except (OSError, RuntimeError):
+        return False
+
+
 def _validate_effective_policy(header: MCRequestHeader, record: EffectiveMCEvent) -> None:
     """Prevent an unreviewed clamp from masquerading as the adopted v1 policy."""
     if header.policy_id == "monte-carlo-statistics/1" and record.loss_policy == "subtract_clamp":
@@ -683,10 +694,11 @@ def _check_record_allocations(
 def validate_effective_request(path: Path) -> tuple[MCRequestHeader, str]:
     """Validate full population mass/counts and source hashes without loading routed Q."""
     header = read_header(path)
+    directory = path.absolute().parent
     for source in header.source_files:
-        candidate = path.absolute().parent / source.path
-        if not candidate.is_file() or candidate.is_symlink() or sha256_file(candidate) != source.sha256:
-            _fail(f"MC source is missing, modified or a symlink: {source.path}")
+        candidate = directory / source.path
+        if not is_contained_mc_source(candidate, directory) or sha256_file(candidate) != source.sha256:
+            _fail(f"MC source is missing, modified, a symlink or outside request directory: {source.path}")
     target = {(p.scenario_id, p.duration_min): p.modelled_mass for p in header.populations}
     strata: dict[tuple[str, int, str], tuple[Decimal, int, int]] = {}
     seen: set[str] = set()
@@ -785,6 +797,8 @@ def materialise_arr_sample(
     area = _sum_precise(a.area_km2 for a in model.catchment.subareas)
     if pattern_set.kind != ("point" if area < 75 else "areal"):
         _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
+    if pattern_set.kind == "areal" and pattern.area_bin != arr2019_area_bin(area):
+        _fail("Selected areal temporal-pattern area bin does not match catchment area")
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
         _fail("Storm duration and dry tail must divide exactly by the source TP timestep")
     if _sum_precise(pattern.increments_percent) != 100:
