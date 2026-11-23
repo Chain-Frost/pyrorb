@@ -28,3 +28,9 @@ Other software on main, including optional local MCP discovery/execution from #2
 
 - Integrate latest main through `83ae60981829c29d412e54104c5ffde99c43bc88` (optional MCP #208/#209/#211) with the bounded #151 code and all existing regression/research artifacts; resolve overlapping documentation and `pyproject.toml` without dropping either the `mcp` or research-only `scipy` extra.
 - Require current-head Windows 3.13 quality, complete non-native tests, source and installed-wheel original CMD probes and independent review. Do not regard an unrun native RORBwin process as a pass. Use a **squash PR merge** to main after readiness; main branch ruleset stays active. Record the actual merge SHA, CI run and independent review on [PR #151](https://github.com/Chain-Frost/pyrorb/pull/151) and #9; no further numerical or scientific acceptance is implied.
+
+## Additional pre-merge P2 category-eligibility review
+
+An independent exact-head Codex review triggered when #151 became ready identified one further bounded fail-closed defect: a source TP member can have `frequent` AEP metadata while B's sampled conditional bin is `rare`, even if both source hash and EventID match. No native method or rainfall-probability boundary is inferred from this finding.
+
+Software correction: when an original pattern includes its AEP category, compare it to the saved plan's existing conditional-bin ID before routing; retain source-areal files without AEP metadata under their existing area-only policy. This is a stricter source-eligibility check, not a new interpolation, numerical model, sampler stream, schema version or revised weight. Add one actual B→E negative test with hash-updated mismatched source, plus positive and negative areal-category controls. This does not establish RORBwin category thresholds. Require a new exact-head full CI and independent review before main admission; previous green receipts belong to earlier source revisions only.

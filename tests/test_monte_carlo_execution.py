@@ -177,9 +177,9 @@ def test_areal_mc_pattern_must_match_arr2019_size_bin() -> None:
     first = replace(original[0], area_km2=original[0].area_km2 + Decimal(1000) - initial_area)
     model = replace(model, catchment=replace(model.catchment, subareas=(first, *original[1:])))
 
-    def areal_source(bin_label: str) -> PatternSet:
+    def areal_source(bin_label: str, aep_band: str = "rare") -> PatternSet:
         header = "EventID,Duration,TimeStep,Region,Area,AEP,Increments"
-        row = f"A1,60,30,SyntheticPoint,{bin_label},rare,10,90"
+        row = f"A1,60,30,SyntheticPoint,{bin_label},{aep_band},10,90"
         contents = f"{header}\n{row}\n"
         return parse_pattern_csv(contents.encode("utf-8"), kind="areal")
 
@@ -188,6 +188,7 @@ def test_areal_mc_pattern_must_match_arr2019_size_bin() -> None:
             model=model,
             pattern_set=patterns,
             pattern_source_order=1,
+            tp_bin_id="rare",
             sample_id="areal-review",
             scenario_id="base",
             stratum_id="h1",
@@ -207,6 +208,9 @@ def test_areal_mc_pattern_must_match_arr2019_size_bin() -> None:
         materialise(areal_source("100"))
     accepted = materialise(areal_source("1000"))
     assert accepted.tp_area_bin == "1000"
+    assert accepted.tp_aep_band == "rare"
+    with pytest.raises(MCInputError, match="source AEP category"):
+        materialise(areal_source("1000", "frequent"))
 
 
 def test_materialise_once_and_replay_matches_existing_event_runner(tmp_path: Path) -> None:

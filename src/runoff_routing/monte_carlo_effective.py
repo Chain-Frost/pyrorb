@@ -756,6 +756,12 @@ def _validate_tp_area_bin(kind: str, area_bin: str | None, area_km2: Decimal) ->
         _fail("Selected areal temporal-pattern area bin does not match catchment area")
 
 
+def _validate_tp_source_aep_band(source_band: str | None, conditional_bin_id: str | None) -> None:
+    """A source-labelled frequency category must match B's approved conditional bin."""
+    if source_band is not None and conditional_bin_id is not None and source_band != conditional_bin_id:
+        _fail("Selected temporal-pattern source AEP category differs from approved conditional bin")
+
+
 def materialise_arr_sample(
     *,
     model: RunModel,
@@ -804,6 +810,7 @@ def materialise_arr_sample(
     if pattern_set.kind != ("point" if area < 75 else "areal"):
         _fail("MC project restriction requires point TP below 75 km2 and areal TP above; stricter than native advice")
     _validate_tp_area_bin(pattern_set.kind, pattern.area_bin, area)
+    _validate_tp_source_aep_band(pattern.aep_band, tp_bin_id)
     if pattern.duration_min % pattern.timestep_min or dry_tail_min % pattern.timestep_min:
         _fail("Storm duration and dry tail must divide exactly by the source TP timestep")
     if _sum_precise(pattern.increments_percent) != 100:
