@@ -189,8 +189,7 @@ def test_stability_requires_joint_confidence_run_reliability_and_exact_candidate
     )
     missing = cast("list[str]", _lane(_record(payload), "restricted_domain_single_1000_stability")["missing"])
     assert "prespecified_joint_confidence_and_run_reliability" in missing
-    obs["joint_confidence_level"] = "0.95"
-    obs["required_whole_run_pass_probability"] = "0.95"
+    obs.update({"joint_confidence_level": "0.95", "required_whole_run_pass_probability": "0.95"})
     reps["production_events_candidate"] = 500
     missing = cast("list[str]", _lane(_record(payload), "restricted_domain_single_1000_stability")["missing"])
     assert missing == ["production_run_candidate_has_1000_events"]
