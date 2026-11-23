@@ -20,7 +20,7 @@ def test_publisher_requires_only_one_successful_main_ci_merge() -> None:
 def test_publisher_permissions_and_one_shot_disable() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
     assert source.count("id-token: write") == 1
-    assert "needs: publish" in source
+    assert "needs: [publish, release]" in source
     assert "actions: write" in source
     assert "/actions/workflows/publish.yml/disable" in source
     assert "ref: ${{ github.event.workflow_run.head_sha }}" in source
@@ -37,3 +37,21 @@ def test_all_actions_expressions_are_closed() -> None:
         assert "${{" not in without_expressions, f"Unclosed GitHub expression: {line}"
         assert "{" not in without_expressions, f"Stray GitHub expression brace: {line}"
         assert "}" not in without_expressions, f"Stray GitHub expression brace: {line}"
+
+def test_missing_unprotected_environment_blocks_publication() -> None:
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert source.count("environments/pypi") == 2
+    assert source.count('reviewer.login == "Chain-Frost"') == 2
+    assert source.count("deployment_branch_policy != null") == 2
+    assert source.count("actions: read") == 2
+
+
+def test_public_github_release_requires_successful_pypi_upload() -> None:
+    source = WORKFLOW.read_text(encoding="utf-8")
+    tag_job = source.split("  tag:\n", 1)[1].split("  publish:\n", 1)[0]
+    release_job = source.split("  release:\n", 1)[1].split("  disable:\n", 1)[0]
+    assert "createRelease" not in tag_job
+    assert "createRelease" in release_job
+    assert "needs: [build, publish]" in release_job
+    assert "needs: [publish, release]" in source
+    assert "always() && needs.publish.result == 'success'" in source

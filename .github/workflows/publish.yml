@@ -27,6 +27,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      actions: read
     outputs:
       artifact_id: ${{ steps.distributions.outputs.artifact-id }}
       tag: ${{ steps.plan.outputs.tag }}
@@ -54,6 +55,9 @@ jobs:
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merged')" = true
           test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
+          # Missing GitHub environments are created without protection; fail closed.
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy != null)')" = true
           python - <<'PY'
           import urllib.error
           import urllib.request
@@ -176,7 +180,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  release:
+  tag:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -186,7 +190,7 @@ jobs:
       SOURCE_SHA: ${{ needs.build.outputs.sha }}
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
     steps:
-      - name: Create or verify only the selected GitHub release
+      - name: Create or verify only the selected tag after acceptance
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
@@ -214,24 +218,10 @@ jobs:
             if (ref.object.type !== 'commit' || ref.object.sha !== sha) {
               throw new Error('Release tag must point to the qualified main merge.');
             }
-            let release;
-            try {
-              release = (await github.rest.repos.getReleaseByTag({owner,repo,tag})).data;
-            } catch (error) {
-              if (error.status !== 404) throw error;
-              release = (await github.rest.repos.createRelease({
-                owner,repo,tag_name:tag,target_commitish:sha,name:tag,
-                draft:false,prerelease:false,generate_release_notes:true,
-                body:'One preliminary PyRORB release. Publication is not scientific or MVP acceptance.'
-              })).data;
-            }
-            if (release.draft || release.prerelease || !release.published_at || release.tag_name !== tag) {
-              throw new Error('A matching published stable GitHub Release is required.');
-            }
-            core.info('Release selected: ' + release.html_url);
+            core.info('Qualified tag selected: ' + tag);
 
   publish:
-    needs: [build, release]
+    needs: [build, tag]
     if: >-
       github.repository == 'Chain-Frost/pyrorb' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -246,6 +236,7 @@ jobs:
       url: https://pypi.org/p/PyRORB
     permissions:
       contents: read
+      actions: read
       id-token: write
     env:
       SOURCE_SHA: ${{ needs.build.outputs.sha }}
@@ -266,6 +257,9 @@ jobs:
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/pulls/220" --jq '.merge_commit_sha')" = "$SOURCE_SHA"
+          # Missing GitHub environments are created without protection; fail closed.
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy != null)')" = true
           python - <<'PY'
           import urllib.error
           import urllib.request
@@ -283,9 +277,52 @@ jobs:
           skip-existing: 'false'
           attestations: 'true'
 
-  disable:
-    needs: publish
+  release:
+    needs: [build, publish]
     if: needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      SOURCE_SHA: ${{ needs.build.outputs.sha }}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - name: Create a public GitHub Release only after successful PyPI upload
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const sha = process.env.SOURCE_SHA;
+            const tag = process.env.RELEASE_TAG;
+            const {data: main} = await github.rest.git.getRef({owner,repo,ref:'heads/main'});
+            const {data: pr} = await github.rest.pulls.get({owner,repo,pull_number:220});
+            if (main.object.sha !== sha || !pr.merged_at || pr.merge_commit_sha !== sha) {
+              throw new Error('Only exact merged activation PR #220 can be released.');
+            }
+            const ref = (await github.rest.git.getRef({owner,repo,ref:'tags/' + tag})).data;
+            if (ref.object.type !== 'commit' || ref.object.sha !== sha) {
+              throw new Error('Release tag must point to the qualified main merge.');
+            }
+            let release;
+            try {
+              release = (await github.rest.repos.getReleaseByTag({owner,repo,tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              release = (await github.rest.repos.createRelease({
+                owner,repo,tag_name:tag,target_commitish:sha,name:tag,
+                draft:false,prerelease:false,generate_release_notes:true,
+                body:'One preliminary PyRORB release after PyPI upload. This is not scientific or MVP acceptance.'
+              })).data;
+            }
+            if (release.draft || release.prerelease || !release.published_at || release.tag_name !== tag) {
+              throw new Error('A matching published stable GitHub Release is required.');
+            }
+            core.info('Release selected after PyPI upload: ' + release.html_url);
+
+  disable:
+    needs: [publish, release]
+    if: always() && needs.publish.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

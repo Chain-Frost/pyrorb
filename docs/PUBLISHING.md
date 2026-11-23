@@ -79,9 +79,23 @@ must succeed *before* any GitHub release or tag is created. The published
 wheel/sdist come only from that qualified build. The publisher uses a
 protected GitHub pypi environment and PyPI Trusted Publishing (OIDC),
 rechecking the exact main SHA, tag and PyPI identity before upload.
-On upload success a separate actions:write job attempts to disable
-publish.yml automatically. If disabling fails, execute
-gh workflow disable publish.yml with suitable GitHub permissions.
+The `pypi` environment must exist before any publication attempt: GitHub
+otherwise creates missing environments without review protection. This
+workflow fails closed unless the environment has exactly one required
+reviewer, `Chain-Frost`, and a restricted deployment-branch policy; both
+conditions are checked before creating the tag and again before upload.
+During owner setup, restrict the environment to `main` and confirm its
+required reviewer can approve the deployment.
+
+The qualified Git tag is created before PyPI upload. A **public GitHub
+Release is created only after upload succeeds**, so failed uploads leave at
+most a tag, not a falsely published GitHub Release. A separate
+`actions:write` job disables `publish.yml` after the upload succeeds,
+even if GitHub Release creation fails. If disabling fails, execute
+`gh workflow disable publish.yml` with suitable GitHub permissions. If
+GitHub Release creation fails after a successful PyPI upload, verify the
+PyPI distributions and create/verify the exact matching GitHub Release
+manually; never rerun an upload merely to repair the GitHub Release.
 
 This is a REAL public release and not a TestPyPI simulation. The current
 source has direct Git/archive requirements for the canonical reader and
@@ -96,7 +110,10 @@ published versions, validate clean source/wheel/sdist installs, configure
 a protected GitHub environment named pypi, configure PyPI's matching
 Trusted Publisher (Chain-Frost / pyrorb / publish.yml / pypi), and set
 the repository variable PYPI_ONE_SHOT_ENABLED=true. The first pending
-publisher does not reserve the PyPI name. The exact activation merge's
+publisher does not reserve the PyPI name. **After #215 merges, retarget
+#220 from the preparation topic branch to `main`, confirm its diff contains
+only activation changes, complete exact-head CI/independent Codex review,
+and squash-merge the approved activation PR.** Its actual merge commit's
 successful main CI is the only eligible automatic release trigger.
 Confirm artifacts and attestations, then verify that publish.yml is
 disabled. Future normal automatic releases require a separate MVP PR.
