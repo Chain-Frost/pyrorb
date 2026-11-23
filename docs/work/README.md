@@ -2,11 +2,13 @@
 
 **Live work is tracked in the [public backlog](../BACKLOG.md) and [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1)**. This directory contains dated receipts, not a second active-owner table, capability matrix, command runner or acceptance policy. Recheck exact GitHub heads and current source before treating an older record as a proposed next action. The current [quickstart](../QUICKSTART.md) and [public regression guide](../REGRESSION_DATASET.md) are the normal user entry points.
 
-**Current navigation:** use [STATUS.md](../STATUS.md) for delivered software and [BACKLOG.md](../BACKLOG.md) for remaining work. #119/#136/#155/#175, #110/#125 and #138–#143 are delivered; #137 is a completed finite evidence task. Original CMD, rainfall and selection scientific limits remain separately tracked under #5/#8/#152/#192/#193. Monte Carlo stays on draft #151 with its own method/comparison packs. Older receipt counts, blocked dependencies and next actions apply only to the revisions recorded below.
+**Current navigation:** use [STATUS.md](../STATUS.md) for delivered software and [BACKLOG.md](../BACKLOG.md) for remaining work. #119/#136/#155/#175, #110/#125 and #138–#143 are delivered; #137 is a completed finite evidence task. Original CMD, rainfall and selection scientific limits remain separately tracked under #5/#8/#152/#192/#193. Monte Carlo B/E/C software is admitted to main **provisionally**; scientific method/comparison issues stay open. Older receipt counts, blocked dependencies and next actions apply only to the revisions recorded below.
 
 ## Delivered implementation and regression receipts
 
 - [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
+- [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — merged #208/#209/#211 opt-in local stdio discovery and isolated-wheel software checks; scientific limitations remain separate.
+- [Monte Carlo provisional main-admission decision (23 November 2026)](2026-11-23-mc-provisional-main-admission.md) — owner-approved software-only gate, retained numerical/native uncertainties and post-merge qualification requirements.
 - [Monte Carlo #151 reconciliation with main (22 November 2026)](2026-11-22-issue9-main-reconciliation.md) — exact merge inputs, current documentation reconciliation, preserved MC identities and unperformed checks.
 
 - [ARR Data Hub 2026v1 ARF method and source qualification (#193)](2026-11-17-issue193-arr2026-arf-method.md) — ten published regional coefficient sets and source boundaries regression-tested; no 2026 formula change found, no native parity or SSP-workflow certification.
@@ -46,11 +48,11 @@
 - [CMD scalar timestep storage comparator review](2026-11-15-cmd-scalar-time-storage.md) — bounded original reference binary32/p53 clock binding; distinguish historical concern from later merged #135 comparator review.
 - [Current programme documentation reconciliation](2026-11-15-programme-current-reconciliation.md) — #1/#5 current owner map and evidence separation; original historical receipts remain dated.
 
-## Monte Carlo staging and research (draft PR #151, not released)
+## Provisional Monte Carlo software and outstanding scientific research
 
 - [Current #9 native-method and large-sample work packs](2026-11-17-issue9-rorb-statistical-method-scopes.md) — #150/#189/#190/#191/#148; no premature native/scientific acceptance.
 - [Original Monte Carlo #9 scoping](2026-11-15-issue9-scoping.md) and [#145 adopted statistical contract](2026-11-15-issue145-mc-statistical-method.md) — distinguish initial plans, implemented project choices and native-equivalence gaps.
-- [#146 sampler and persisted-plan work](2026-11-15-issue146-monte-carlo-sampler.md), [#147 weighted-frequency control](2026-11-15-mc-weighted-frequency.md) and [B→E→C execution contract](2026-11-15-s7-execution-slice.md) — software staged on #151, with stable replay/weighting identities.
+- [#146 sampler and persisted-plan work](2026-11-15-issue146-monte-carlo-sampler.md), [#147 weighted-frequency control](2026-11-15-mc-weighted-frequency.md) and [B→E→C execution contract](2026-11-15-s7-execution-slice.md) — verified B/E/C software provisionally admitted to main from #151, with stable replay/weighting identities.
 - [#148 independent-seed synthetic convergence](2026-11-15-issue148-convergence.md) — no qualified physical-catchment population or universal 1,000-run conclusion.
 - [#150 independent native/source qualification](2026-11-15-mc150-independent-qualification.md), [local Windows handoff](2026-11-16-issue150-local-windows-native-handoff.md) and [bounded native observation receipt](2026-11-16-issue150-windows-native-receipt.md) — 22 November local rehash/rounded-field controls, saved-settings drift and excluded attained-peak frequency hypothesis; F1–F6 remain incomplete, no native MC parity.
 

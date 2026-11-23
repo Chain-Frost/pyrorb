@@ -7,6 +7,7 @@
 - [Quickstart](QUICKSTART.md) — install, engine selection, single event, batches, public regression and wheel.
 - [Current backlog and work owners](BACKLOG.md) — remaining work and links to live issues; [roadmap #1](https://github.com/Chain-Frost/pyrorb/issues/1) is the programme of record.
 - [Current capability status](STATUS.md) — delivered software, staged work and scientific limitations; the [single merged CMD feature matrix](CMD_FEATURE_MATRIX.md) from [PR #84](https://github.com/Chain-Frost/pyrorb/pull/84) is authoritative for feature-level recognition, execution, outputs and qualification.
+- [Optional local Codex MCP server](MCP.md) — discovery and bounded local execution; scientific qualification is separate.
 - [CLI/text-file selected-engine batch MVP](PROJECT_BATCH_MVP.md) — import/validate/run, ordered explicit events, complete CSV/JSON and plain-text results (#119).
 - [Engine contract](ENGINES.md), [default engineering method](ENGINEERING_METHOD.md), [prepared explicit-event batches](ENGINEERING_BATCHES.md), [JSON project format](PROJECT_JSON.md), [development and quality](DEVELOPMENT.md), [compatibility](COMPATIBILITY.md), [regression policy](REGRESSION.md) and [public regression dataset](REGRESSION_DATASET.md).
 - [Agent instructions](../AGENTS.md) and [current work/evidence receipts](work/README.md).
@@ -26,9 +27,9 @@
 - [BoM IFD and source pattern gross storms](ARR_BOM_TP_GROSS.md), [ARR2019 selection/ARF](ARR_S6_P2_SELECTION_ARF.md), [preburst and explicit losses](ARR_S6_P3_PREBURST_LOSSES.md).
 - [Optional experimental RORBwin loss profile](EXPERIMENTAL_RORBWIN_652_LOSSES.md) — not selected by default and not native-accepted.
 
-## Staged Monte Carlo (draft, not on main)
+## Provisional Monte Carlo software (on main; scientific gates open)
 
-- [Adopted method and scientific limitations](MONTE_CARLO.md), [effective-event and replay execution](MONTE_CARLO_EXECUTION.md) and [weighted-frequency result contract](MONTE_CARLO_FREQUENCY.md) — B/E/C staged on PR #151, separately unqualified against RORBwin.
+- [Adopted method and scientific limitations](MONTE_CARLO.md), [effective-event and replay execution](MONTE_CARLO_EXECUTION.md) and [weighted-frequency result contract](MONTE_CARLO_FREQUENCY.md) — B/E/C CLI/API/text software provisionally admitted through PR #151; RORBwin statistical equivalence and engineering flood-AEP accuracy are not accepted.
 - [Synthetic convergence research](research/MONTE_CARLO_CONVERGENCE.md) — analytical evidence only; physical-catchment stability and native agreement remain open.
 
 ## Planning and historical evidence
