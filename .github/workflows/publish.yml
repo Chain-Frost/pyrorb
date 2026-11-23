@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, reviewed 2026-11-22
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7, reviewed 2026-11-22
@@ -48,7 +48,7 @@ jobs:
       - name: Qualify one exact merged PR and allocate a calendar release
         id: plan
         env:
-          GH_TOKEN: ${{ github.token }
+          GH_TOKEN: ${{ github.token }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
@@ -183,8 +183,8 @@ jobs:
     permissions:
       contents: write
     env:
-      SOURCE_SHA: ${{ needs.build.outputs.sha }
-      RELEASE_TAG: ${{ needs.build.outputs.tag }
+      SOURCE_SHA: ${{ needs.build.outputs.sha }}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}
     steps:
       - name: Create or verify only the selected GitHub release
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -248,8 +248,8 @@ jobs:
       contents: read
       id-token: write
     env:
-      SOURCE_SHA: ${{ needs.build.outputs.sha }}
-      RELEASE_TAG: ${{ needs.build.outputs.tag }}
+      SOURCE_SHA: ${{ needs.build.outputs.sha }}}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}}
     steps:
       # No source checkout, dependency installation or build in the OIDC job.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -260,7 +260,7 @@ jobs:
           digest-mismatch: error
       - name: Recheck source/tag identity and PyPI vacancy immediately before upload
         env:
-          GH_TOKEN: ${{ github.token }
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$SOURCE_SHA"
@@ -293,7 +293,7 @@ jobs:
     steps:
       - name: Disable this publisher until the MVP
         env:
-          GH_TOKEN: ${{ github.token }
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           gh api --method PUT "repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/disable"
