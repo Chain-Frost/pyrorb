@@ -8,6 +8,7 @@
 
 - [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
 - [Deferred PyRORB publication preparation (#213)](2026-11-22-pyrorb-publication.md) — inert template, tested offline metadata guard, current version/dependency blockers and later activation gates; draft/merge and publication remain held.
+- [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — PR #211 stack, genuine stdio, synthetic API equivalence and isolated-wheel software checks; unmerged.
 
 - [ARR Data Hub 2026v1 ARF method and source qualification (#193)](2026-11-17-issue193-arr2026-arf-method.md) — ten published regional coefficient sets and source boundaries regression-tested; no 2026 formula change found, no native parity or SSP-workflow certification.
 

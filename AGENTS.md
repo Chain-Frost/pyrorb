@@ -1,5 +1,7 @@
 # Agent instructions
 
+For local Codex discovery of available APIs and tracked placeholders see [docs/MCP.md](docs/MCP.md); it is not a numerical acceptance matrix.
+
 Read [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [docs/work/README.md](docs/work/README.md), the selected stage issue and [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) before changing code. The current implementation plan distinguishes delivered software, original comparisons, independent feature qualifications, limitations and deferred scope.
 
 ## Current product scope and ownership
