@@ -10,7 +10,6 @@ import pytest
 
 from runoff_routing import monte_carlo_comparison as mc
 
-
 _DIGEST = "a" * 64
 
 
