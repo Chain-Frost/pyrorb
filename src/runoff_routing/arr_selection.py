@@ -59,7 +59,8 @@ class TemporalPatternSelection:
         return tuple(pattern.event_id for pattern in self.patterns)
 
 
-def _area_bin(area_km2: Decimal) -> str | None:
+def arr2019_area_bin(area_km2: Decimal) -> str | None:
+    """Return ARR2019 prescribed areal size bin, or None for point patterns."""
     if not area_km2.is_finite() or area_km2 <= 0:
         msg = "Catchment area must be a positive finite Decimal in km2"
         raise ARRFormatError(msg)
@@ -93,7 +94,7 @@ def select_arr2019_ensemble(
     An areal CSV without an AEP field is selected by area and duration only;
     its missing frequency metadata is retained as None.
     """
-    area_bin = _area_bin(catchment_area_km2)
+    area_bin = arr2019_area_bin(catchment_area_km2)
     if not region or not region.strip():
         msg = "Temporal-pattern region must be explicitly supplied"
         raise ARRFormatError(msg)

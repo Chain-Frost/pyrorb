@@ -4,7 +4,7 @@
 
 The deliverable remains **CLI, Python API and text-file I/O only**. The #119 MVP, #136/#175 deterministic rainfall, #155 persisted reporting, #138–#143 file workflow and #110/#125 independent Python counterparts are delivered. [STATUS.md](STATUS.md) is the current delivery summary and links exact receipts. Full CMD #5, native rainfall/selection and independent engineering accuracy remain separately qualified.
 
-Current work follows [BACKLOG.md](BACKLOG.md): C/#96 upstream producer acceptance, A/#90–#92 genuine native feature/site/edge gaps, B/#100 the comparator, #8/#192/#193 rainfall/ARF science and #152 native representative/critical-duration rules. Monte Carlo #9 stays on draft #151; its current #150/#189/#190/#191/#148 packs build on completed staged software. Completed implementation issues are not reassigned. Advanced #114–#118, #103, #144, #63 and release #10 remain deferred. Preserve the [single matrix](CMD_FEATURE_MATRIX.md).
+Current work follows [BACKLOG.md](BACKLOG.md): C/#96 upstream producer acceptance, A/#90–#92 genuine native feature/site/edge gaps, B/#100 the comparator, #8/#192/#193 rainfall/ARF science and #152 native representative/critical-duration rules. Monte Carlo #9's verified B/E/C CLI/API/text software is admitted on main as a **provisional capability** following the 23 November owner decision; #150/#189/#190/#191/#148 retain native statistical methods, comparison and physical-catchment qualification. Do not label these scientific gates complete or publish on the basis of software CI. Completed implementation issues are not reassigned. Advanced #114–#118, #103, #144, #63 and release #10 remain deferred. Preserve the [single matrix](CMD_FEATURE_MATRIX.md).
 
 ## Development engines and offline CMD reference
 
