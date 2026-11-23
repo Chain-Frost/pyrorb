@@ -31,7 +31,9 @@
     ],
     "relative_peak_tolerance": null,
     "absolute_peak_tolerance_m3s": null,
-    "joint_error_allocation_sha256": null
+    "joint_error_allocation_sha256": null,
+    "joint_confidence_level": null,
+    "required_whole_run_pass_probability": null
   },
   "replication": {
     "pilot_max_events": 250,

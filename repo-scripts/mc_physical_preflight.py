@@ -66,7 +66,8 @@ def _decimal(value: object, label: str, *, optional: bool = False) -> Decimal | 
     try:
         number = Decimal(value)
     except InvalidOperation as exc:
-        raise PreflightError(f"{label} must be a finite decimal string") from exc
+        message = f"{label} must be a finite decimal string"
+        raise PreflightError(message) from exc
     if not number.is_finite():
         _fail(f"{label} must be finite")
     return number
@@ -131,22 +132,35 @@ def _sections(root: dict[str, object]) -> tuple[dict[str, object], ...]:
         (
             "population",
             {
-                "rainfall_aep_lower", "rainfall_aep_upper", "modelled_mass", "unmodelled_mass",
-                "tail_policy", "flood_population_interpretation",
+                "rainfall_aep_lower",
+                "rainfall_aep_upper",
+                "modelled_mass",
+                "unmodelled_mass",
+                "tail_policy",
+                "flood_population_interpretation",
             },
         ),
         (
             "observables",
             {
-                "durations_minutes", "target_flood_aep_fractions", "relative_peak_tolerance",
-                "absolute_peak_tolerance_m3s", "joint_error_allocation_sha256",
+                "durations_minutes",
+                "target_flood_aep_fractions",
+                "relative_peak_tolerance",
+                "absolute_peak_tolerance_m3s",
+                "joint_error_allocation_sha256",
+                "joint_confidence_level",
+                "required_whole_run_pass_probability",
             },
         ),
         (
             "replication",
             {
-                "pilot_max_events", "pilot_max_seconds", "production_events_candidate",
-                "reference_plan_sha256", "confirmation_plan_sha256", "python_stream_independence",
+                "pilot_max_events",
+                "pilot_max_seconds",
+                "production_events_candidate",
+                "reference_plan_sha256",
+                "confirmation_plan_sha256",
+                "python_stream_independence",
                 "native_stream_independence",
             },
         ),
@@ -170,7 +184,7 @@ def _population(pop: dict[str, object]) -> tuple[Decimal, Decimal, str, str]:
     return mass, missing, tail, flood
 
 
-def _observables(obs: dict[str, object]) -> tuple[bool, bool, bool, bool]:
+def _observables(obs: dict[str, object]) -> tuple[bool, bool, bool, bool, bool]:
     durations = _durations(obs["durations_minutes"])
     _fractions(obs["target_flood_aep_fractions"])
     relative = _decimal(obs["relative_peak_tolerance"], "relative_peak_tolerance", optional=True)
@@ -180,10 +194,24 @@ def _observables(obs: dict[str, object]) -> tuple[bool, bool, bool, bool]:
     if absolute is not None and absolute <= 0:
         _fail("absolute_peak_tolerance_m3s must be positive")
     joint = _digest(obs["joint_error_allocation_sha256"], "joint_error_allocation_sha256")
-    return bool(durations), relative is not None, absolute is not None, joint
+    confidence = _decimal(obs["joint_confidence_level"], "joint_confidence_level", optional=True)
+    reliability = _decimal(
+        obs["required_whole_run_pass_probability"], "required_whole_run_pass_probability", optional=True
+    )
+    if confidence is not None and not 0 < confidence < 1:
+        _fail("joint_confidence_level must be within (0,1)")
+    if reliability is not None and not 0 < reliability < 1:
+        _fail("required_whole_run_pass_probability must be within (0,1)")
+    return (
+        bool(durations),
+        relative is not None,
+        absolute is not None,
+        joint,
+        confidence is not None and reliability is not None,
+    )
 
 
-def _replication(reps: dict[str, object]) -> tuple[str, str, bool]:
+def _replication(reps: dict[str, object]) -> tuple[str, str, bool, bool]:
     for label in ("pilot_max_events", "pilot_max_seconds", "production_events_candidate"):
         _positive_int(reps[label], label)
     choices = {"unverified", "independently_audited"}
@@ -191,7 +219,9 @@ def _replication(reps: dict[str, object]) -> tuple[str, str, bool]:
     native_seed = _choice(reps["native_stream_independence"], "native_stream_independence", choices)
     reference = _digest(reps["reference_plan_sha256"], "reference_plan_sha256")
     confirmation = _digest(reps["confirmation_plan_sha256"], "confirmation_plan_sha256")
-    return python_seed, native_seed, reference and confirmation
+    if reference and confirmation and reps["reference_plan_sha256"] == reps["confirmation_plan_sha256"]:
+        _fail("reference and confirmation plans must have distinct identities")
+    return python_seed, native_seed, reference and confirmation, reps["production_events_candidate"] == 1000
 
 
 def assess_protocol(payload: object) -> dict[str, object]:
@@ -209,18 +239,15 @@ def assess_protocol(payload: object) -> dict[str, object]:
     if not isinstance(cat["features_admitted"], bool):
         _fail("features_admitted must be boolean")
     sites = _identifiers(cat["site_ids"], "site_ids")
-    has_durations, has_relative, has_absolute, has_joint = _observables(obs)
+    has_durations, has_relative, has_absolute, has_joint, has_probability_targets = _observables(obs)
     mass, missing_mass, tail, flood = _population(pop)
-    python_seed, native_seed, disjoint_plans = _replication(reps)
+    python_seed, native_seed, disjoint_plans, is_1000_event_candidate = _replication(reps)
     source_admission = _choice(sources["source_admission"], "source_admission", {"pending", "independently_admitted"})
     for label, value in native.items():
         _choice(value, f"native.{label}", {"unqualified", "independently_admitted"})
     has_model = _identifier(cat["catchment_id"], "catchment_id", optional=True)
     has_model_hash = _digest(cat["model_sha256"], "model_sha256")
-    source_hashes = [
-        _digest(sources[key], key)
-        for key in ("bom_ifd_sha256", "arr_tp_sha256", "loss_sha256")
-    ]
+    source_hashes = [_digest(sources[key], key) for key in ("bom_ifd_sha256", "arr_tp_sha256", "loss_sha256")]
     pilot = _missing(
         (
             (has_model and has_model_hash, "qualified_catchment_identity"),
@@ -247,8 +274,10 @@ def assess_protocol(payload: object) -> dict[str, object]:
             (
                 (has_relative and has_absolute, "prespecified_relative_and_absolute_peak_margins"),
                 (has_joint, "joint_confidence_error_allocation"),
+                (has_probability_targets, "prespecified_joint_confidence_and_run_reliability"),
                 (disjoint_plans, "disjoint_reference_and_confirmation_plans"),
                 (python_seed == "independently_audited", "independent_python_replicates"),
+                (is_1000_event_candidate, "production_run_candidate_has_1000_events"),
             )
         )
     )

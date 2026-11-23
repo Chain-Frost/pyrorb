@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, cast
+from typing import cast
 
 import pytest
 
@@ -98,6 +99,8 @@ def test_joint_stability_and_annual_tail_are_separate() -> None:
             "relative_peak_tolerance": "0.02",
             "absolute_peak_tolerance_m3s": "0.1",
             "joint_error_allocation_sha256": "e" * 64,
+            "joint_confidence_level": "0.95",
+            "required_whole_run_pass_probability": "0.95",
         }
     )
     reps = cast("dict[str, object]", payload["replication"])
@@ -131,7 +134,7 @@ def test_bad_probability_rejected(value: str) -> None:
 def test_probability_mass_accounting_rejects_invention(value: str) -> None:
     payload = _template()
     cast("dict[str, object]", payload["population"])["modelled_mass"] = value
-    with pytest.raises(ValueError, match="modelled_mass|probability interval"):
+    with pytest.raises(ValueError, match=r"modelled_mass|probability interval"):
         _record(payload)
 
 
@@ -161,7 +164,51 @@ def test_bad_source_digest_and_unknown_native_status_fail_closed() -> None:
         _record(payload)
     payload = _template()
     cast("dict[str, object]", payload["native"])["reader"] = "native_equal"
-    with pytest.raises(ValueError, match="native.reader"):
+    with pytest.raises(ValueError, match=r"native\.reader"):
+        _record(payload)
+
+
+def test_stability_requires_joint_confidence_run_reliability_and_exact_candidate_count() -> None:
+    payload = _source_ready()
+    obs = cast("dict[str, object]", payload["observables"])
+    obs.update(
+        {
+            "relative_peak_tolerance": "0.02",
+            "absolute_peak_tolerance_m3s": "0.1",
+            "joint_error_allocation_sha256": "e" * 64,
+        }
+    )
+    reps = cast("dict[str, object]", payload["replication"])
+    reps.update(
+        {
+            "reference_plan_sha256": "f" * 64,
+            "confirmation_plan_sha256": "0" * 64,
+            "python_stream_independence": "independently_audited",
+        }
+    )
+    missing = cast("list[str]", _lane(_record(payload), "restricted_domain_single_1000_stability")["missing"])
+    assert "prespecified_joint_confidence_and_run_reliability" in missing
+    obs["joint_confidence_level"] = "0.95"
+    obs["required_whole_run_pass_probability"] = "0.95"
+    reps["production_events_candidate"] = 500
+    missing = cast("list[str]", _lane(_record(payload), "restricted_domain_single_1000_stability")["missing"])
+    assert missing == ["production_run_candidate_has_1000_events"]
+
+
+@pytest.mark.parametrize("name", ["joint_confidence_level", "required_whole_run_pass_probability"])
+def test_invalid_statistical_thresholds_rejected(name: str) -> None:
+    payload = _template()
+    cast("dict[str, object]", payload["observables"])[name] = "1.0"
+    with pytest.raises(ValueError, match=name):
+        _record(payload)
+
+
+def test_reference_confirmation_plan_hashes_must_be_distinct() -> None:
+    payload = _template()
+    replications = cast("dict[str, object]", payload["replication"])
+    replications["reference_plan_sha256"] = "a" * 64
+    replications["confirmation_plan_sha256"] = "a" * 64
+    with pytest.raises(ValueError, match="distinct identities"):
         _record(payload)
 
 
