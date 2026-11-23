@@ -1,5 +1,6 @@
 """Protect the automated PyPI workflow against broad release triggers."""
 
+import re
 from pathlib import Path
 
 WORKFLOW = Path(__file__).absolute().parents[1] / ".github" / "workflows" / "publish.yml"
@@ -28,8 +29,6 @@ def test_publisher_permissions_and_one_shot_disable() -> None:
 
 def test_all_actions_expressions_are_closed() -> None:
     """Reject unclosed and surplus braces in privileged workflow expressions."""
-    import re
-
     expression = re.compile(r"\\$\\{\\{[^{}]+\\}\\}")
     for line in WORKFLOW.read_text(encoding="utf-8").splitlines():
         if "${{" not in line:
