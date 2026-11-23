@@ -33,6 +33,74 @@ depending on Codex's inherited PATH. Check the saved command using
 `codex mcp get runoff-routing`. If the current agent cannot reload the new server,
 start a new session; the subprocess test below independently verifies stdio.
 
+## Accepted dedicated-wheel Codex installation
+
+The 23 November 2026 **operator-reported** local Codex acceptance used:
+Codex CLI `0.171.0-alpha.13`, Windows CPython `3.14.6`,
+`pyrorb==0.0.0.dev0` from a **dedicated wheel-installed virtual environment**,
+MCP SDK `2.3.0`, and source main `83ae609`. The Codex process used an
+absolute interpreter path and loaded `runoff_routing` from that environment's
+`Lib/site-packages`, not the source checkout or another global installation.
+
+The reported fresh Codex session exited successfully; 12 tools and five
+resources were exercised, all six API areas and 19 live signatures checked,
+and single/batch/ten-member ARR calculations matched the established Python
+API outputs. Refusals, input hashes and protocol-only stdout were checked.
+The host's CLI did not provide MCP prompt retrieval, although a separate raw
+stdio client retrieved the existing development prompt. This is **local software
+integration**, not RORB native-equivalence or scientific acceptance.
+
+To reproduce the robust installation on Windows, build an exact source wheel
+and use a dedicated interpreter, not a mutable development editable install:
+
+```powershell
+py -3.14 -m venv .local/mcp-codex/venv
+$python = (Resolve-Path ".local/mcp-codex/venv/Scripts/python.exe").Path
+& $python -m pip install build
+& $python -m build --wheel
+$wheel = (Get-ChildItem .\dist\pyrorb-*.whl |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+& $python -m pip install --force-reinstall $wheel "mcp>=2.3,<3"
+& $python -I -c "import sys, runoff_routing; print(sys.executable); print(runoff_routing.__file__)"
+codex mcp get runoff-routing
+```
+
+Check the existing registration first. If `runoff-routing` points to an old
+interpreter, replace **only that named entry**, after preserving its current
+settings, with:
+
+```powershell
+codex mcp remove runoff-routing
+codex mcp add runoff-routing -- $python -m runoff_routing.mcp_server
+codex mcp get runoff-routing
+codex mcp list
+```
+
+Do not put the machine-specific interpreter path in this repository. Start a
+**fresh** Codex CLI session to reload the registration. Updating an existing
+`0.0.0.dev0` wheel may require `--force-reinstall`; a correct registration
+alone does not prove that the installed wheel contains the latest source.
+After source updates, rebuild and reinstall the new wheel deliberately.
+Unrelated Codex registrations must remain unchanged.
+
+## Expected MCP refusal diagnostics
+
+The MCP adapter exposes **anticipated** file, input, engine and write-protection
+failures as short, stable coded tool errors. For example,
+`[write_consent_required]`, `[output_exists]`, `[input_missing]`,
+`[invalid_engine_selection]`, `[native_engine_not_available]` and
+`[input_limit_exceeded]` include a corrective action. The result retains
+`is_error=true`; it is **not** returned as a successful JSON result and must
+not be mistaken for `computed_unvalidated`. The SDK returns these messages in
+tool `content`, not `structured_content`.
+
+Unexpected programming failures remain deliberately sanitised by the MCP SDK;
+full tracebacks and raw filesystem exceptions are not disclosed to the agent.
+Only the MCP protocol boundary converts expected exceptions; direct Python
+calls retain their established exception classes. Client presentation may
+still be restricted by the Codex host, so examine the returned tool content
+rather than relying solely on an outer UI summary.
+
 ## Agent contract
 
 - **Read-only tools:** `list_capabilities`, `describe_capability`, `get_engine_capabilities`,

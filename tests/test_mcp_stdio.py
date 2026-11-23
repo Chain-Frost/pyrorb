@@ -163,10 +163,23 @@ def test_stdio_discovery_calculation_and_safeguards(tmp_path: Path) -> None:
                 ("run_project", {**base, "engine": "rorb-cmd"}),
             )
             saved = single.read_bytes()
-            for tool, arguments in failures:
+            expected_codes = (
+                "input_missing",
+                "invalid_input",
+                "invalid_input",
+                "invalid_input",
+                "input_limit_exceeded",
+                "write_consent_required",
+                "output_exists",
+                "invalid_engine_selection",
+                "native_engine_not_available",
+                "native_engine_not_available",
+            )
+            for (tool, arguments), code in zip(failures, expected_codes, strict=True):
                 result = await client.call_tool(tool, arguments)
                 assert result.is_error, (tool, arguments)
-                assert result.content
+                assert result.structured_content is None
+                assert f"[{code}]" in str(result.content), (tool, code, result.content)
             assert not Path(blocked).exists()
             assert single.read_bytes() == saved
 

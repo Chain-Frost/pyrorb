@@ -7,7 +7,7 @@
 ## Delivered implementation and regression receipts
 
 - [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
-- [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — merged #208/#209/#211 opt-in local stdio discovery and isolated-wheel software checks; scientific limitations remain separate.
+- [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — merged #208/#209/#211 source/stdio checks and 23 November accepted *actual Codex CLI* dedicated-wheel installation; expected-error improvements are tracked under [#221](https://github.com/Chain-Frost/pyrorb/issues/221).
 - [Monte Carlo provisional main-admission decision (23 November 2026)](2026-11-23-mc-provisional-main-admission.md) — owner-approved software-only gate, retained numerical/native uncertainties and post-merge qualification requirements.
 - [Monte Carlo #151 reconciliation with main (22 November 2026)](2026-11-22-issue9-main-reconciliation.md) — exact merge inputs, current documentation reconciliation, preserved MC identities and unperformed checks.
 
