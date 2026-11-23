@@ -28,10 +28,8 @@ def _detail(exc: ValueError) -> str:
     return "".join(character if character.isprintable() else " " for character in preview).strip()
 
 
-def _known_failure(exc: OSError | ValueError) -> str:
-    """Classify only caller-correctable failures; never expose raw filesystem errors."""
-    if isinstance(exc, ExpectedMCPError):
-        return f"[{exc.code}] {_detail(exc)}"
+def _filesystem_failure(exc: OSError) -> str:
+    """Report a corrective action, not the potentially sensitive OS exception text."""
     if isinstance(exc, FileExistsError):
         return "[output_exists] Destination already exists. Choose an unused output filename or prefix."
     if isinstance(exc, FileNotFoundError):
@@ -40,17 +38,19 @@ def _known_failure(exc: OSError | ValueError) -> str:
         return "[invalid_file_path] A file path names a directory. Supply a regular file."
     if isinstance(exc, PermissionError):
         return "[file_permission_denied] Cannot access the selected local file. Check permissions."
+    return "[file_io_error] Local file access failed. Check paths and permissions; no retry was attempted."
+
+
+def _known_failure(exc: OSError | ValueError) -> str:
+    """Classify caller-correctable failures, including wrapped filesystem causes."""
+    if isinstance(exc, ExpectedMCPError):
+        return f"[{exc.code}] {_detail(exc)}"
     if isinstance(exc, OSError):
-        return "[file_io_error] Local file access failed. Check paths and permissions; no retry was attempted."
-    # Existing project/source readers preserve the original OS failure as __cause__.
-    # Classify the cause before forwarding their ValueError text, which may contain
-    # an absolute local path that the MCP client does not need.
-    if isinstance(exc.__cause__, FileNotFoundError):
-        return "[input_missing] Required project or source file was not found. Check its path and retry."
-    if isinstance(exc.__cause__, PermissionError):
-        return "[file_permission_denied] Cannot read the project or source file. Check its permissions."
+        return _filesystem_failure(exc)
+    # The existing project reader wraps its original OSError in ProjectError;
+    # follow that cause rather than exposing its potentially absolute source path.
     if isinstance(exc.__cause__, OSError):
-        return "[file_io_error] Could not read the project or source file. Check paths and permissions."
+        return _filesystem_failure(exc.__cause__)
     message = _detail(exc)
     lowered = message.lower()
     if "exceeds" in lowered or "too large" in lowered or "larger than" in lowered:
@@ -60,7 +60,6 @@ def _known_failure(exc: OSError | ValueError) -> str:
     if "unsupported" in lowered or "not supported" in lowered:
         return f"[unsupported_input] {message} Check the capability catalogue and source documentation."
     return f"[invalid_input] {message} Correct the input and revalidate before retrying."
-
 
 def explain_expected_errors[**P, R](function: Callable[P, R]) -> Callable[P, R]:
     """Adapt a Python function only at MCP registration, preserving its native API errors."""
