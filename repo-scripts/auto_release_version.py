@@ -23,7 +23,11 @@ def calendar_parts(value: str) -> tuple[int, int, int, int]:
         raise ValueError(message)
     year = int(match["year"]) + 2000
     month, day, revision = (int(match[key]) for key in ("month", "day", "revision"))
-    dt.date(year, month, day)
+    try:
+        dt.date(year, month, day)
+    except ValueError as exc:
+        message = f"Invalid calendar release version {value!r}"
+        raise ValueError(message) from exc
     return year, month, day, revision
 
 
