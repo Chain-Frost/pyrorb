@@ -61,6 +61,7 @@ def _known_failure(exc: OSError | ValueError) -> str:
         return f"[unsupported_input] {message} Check the capability catalogue and source documentation."
     return f"[invalid_input] {message} Correct the input and revalidate before retrying."
 
+
 def explain_expected_errors[**P, R](function: Callable[P, R]) -> Callable[P, R]:
     """Adapt a Python function only at MCP registration, preserving its native API errors."""
 
