@@ -22,3 +22,15 @@ def test_python_target_and_strict_typing() -> None:
 def test_namespace_is_present() -> None:
     assert (ROOT / "src" / "runoff_routing" / "__init__.py").is_file()
     assert (ROOT / "src" / "runoff_routing" / "py.typed").is_file()
+
+
+def test_canonical_reader_has_no_upstream_distribution_dependency() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as stream:
+        project = tomllib.load(stream)["project"]
+    requirements = [*project["dependencies"]]
+    for extra in project["optional-dependencies"].values():
+        requirements.extend(extra)
+    assert all("ryan-rorb-readers" not in item and "ryan-tools" not in item for item in requirements)
+    assert all(" @ " not in item for item in requirements)
+    source = ROOT / "src" / "runoff_routing"
+    assert all("from ryan_library" not in path.read_text(encoding="utf-8") for path in source.rglob("*.py"))

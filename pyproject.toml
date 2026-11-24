@@ -12,7 +12,6 @@ license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
   "typing_extensions>=4.12",
-  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/df6e8bc2dda24d2b376e888156e4105588f028fa.tar.gz#subdirectory=packaging/rorb-readers",
 ]
 
 [project.optional-dependencies]
