@@ -6,14 +6,14 @@ The repository and distribution use `pyrorb`; the Python import namespace remain
 
 ## Install and execute a supplied storm
 
-Python **3.13 or 3.14**, on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
+Python **3.11, 3.12, 3.13 or 3.14** (3.14 preferred for development), on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
 
 ```sh
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The first command installs the package and development tools; the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
+The first command installs the package, development tools and the optional PR-pinned PyRomb writer. To install only the core checkout, use `python -m pip install -e .`; edited CATG export requires the separately installed writer. See [CATG authoring](docs/RORB_GE_AUTHORING.md). the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
 
 ```python
 from pathlib import Path
@@ -51,3 +51,5 @@ The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [
 - [Quickstart and commands](docs/QUICKSTART.md) · [documentation index](docs/README.md) · [development guide](docs/DEVELOPMENT.md) · [source register](docs/SOURCES.md) · [regression policy](docs/REGRESSION.md).
 - Preserve authentic native inputs, original source identities/hashes, exact raw clocks, full horizons and frozen metrics. Approved, path-sanitised public data are versioned test evidence; original and transformed bytes are not interchangeable.
 - The private investigations repository is for agent research only. No executable, manual, restricted capture, client data or private installation path is distributed. The optional RORBwin loss profile is experimental and not the default method. This project is not endorsed by RORB's authors or custodians.
+
+Python compatibility: [24 November 2026 migration receipt](docs/work/2026-11-24-python311-compatibility.md).

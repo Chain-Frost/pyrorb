@@ -52,7 +52,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
       - name: Run existing pure-Python quality and source checks
         run: |
-          python -m pip install -e '.[dev,catg]'
+          python -m pip install -r requirements-catg.txt -e '.[dev]'
           python repo-scripts/check_local.py
           mkdir "$RUNNER_TEMP/pyrorb-receipts"
           python repo-scripts/cmd_public_probe.py > "$RUNNER_TEMP/pyrorb-receipts/source-cmd.json"
@@ -67,8 +67,8 @@ jobs:
           python -m pip freeze > "$RUNNER_TEMP/pyrorb-receipts/build-environment.txt"
       - name: Install wheel and sdist independently outside the checkout
         run: |
-          # These fresh environments resolve published dependencies, including
-          # CATG writing. Revisit selected extras against the final MVP scope.
+          # First resolve the published package dependencies; install the
+          # separately pinned PR-only CATG writer only after the base install.
           wheel_files=("$RUNNER_TEMP/pyrorb-dist/"*.whl)
           for kind in wheel sdist; do
             if [ "$kind" = wheel ]; then
@@ -78,7 +78,9 @@ jobs:
             fi
             python -m venv "$RUNNER_TEMP/pyrorb-$kind"
             installed_python="$RUNNER_TEMP/pyrorb-$kind/bin/python"
-            "$installed_python" -m pip install "${files[0]}[catg]"
+            "$installed_python" -m pip install "${files[0]}"
+            "$installed_python" -m pip check
+            "$installed_python" -m pip install -r "$GITHUB_WORKSPACE/requirements-catg.txt"
             "$installed_python" -m pip check
             (
               cd "$RUNNER_TEMP"

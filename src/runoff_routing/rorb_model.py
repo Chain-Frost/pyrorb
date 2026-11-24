@@ -11,7 +11,9 @@ import re
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
 from enum import IntEnum, StrEnum
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeVar, cast
+
+_NATIVE_CODE_T = TypeVar("_NATIVE_CODE_T", bound=IntEnum)
 
 SCHEMA_VERSION = 1
 
@@ -41,7 +43,7 @@ class PatternBasis(StrEnum):
     COMBINED_PREBURST_PERCENT = "combined_preburst_percent"
 
 
-def _native_code[T: IntEnum](value: object, enum_type: type[T], label: str) -> T:
+def _native_code(value: object, enum_type: type[_NATIVE_CODE_T], label: str) -> _NATIVE_CODE_T:
     """Reject bool before native-code enum conversion (bool is an int subtype)."""
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(label)
@@ -241,7 +243,8 @@ class Reach:
 
     def __post_init__(self) -> None:
         _identity(self.identifier, "Reach")
-        _finite(self.length_km, "natural reach length", positive=True)
+        # A zero-length reach is valid only in the terminal code-5 copy form.
+        _finite(self.length_km, "natural reach length")
 
 
 @dataclass(frozen=True, slots=True)
@@ -313,6 +316,16 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
         raise ValueError(message)
     if any(step.code == 2 for step in model.controls) and model.reach_mode != "explicit_reach_types":
         message = "Source control code 2 requires an explicitly characterised reach encoding"
+        raise ValueError(message)
+    zero_reaches = {reach.identifier for reach in model.reaches if reach.length_km == 0}
+    if zero_reaches and (
+        len(zero_reaches) != 1
+        or len(model.controls) < 2
+        or model.controls[-2].code != 5
+        or model.controls[-2].reach_id != model.reaches[-1].identifier
+        or zero_reaches != {model.reaches[-1].identifier}
+    ):
+        message = "Zero-length natural reach is supported only as terminal code 5 before the final code-7 print"
         raise ValueError(message)
     _distinct(tuple(area.identifier for area in model.subareas), "subarea")
     _distinct(tuple(reach.identifier for reach in model.reaches), "reach")

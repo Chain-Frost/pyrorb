@@ -9,11 +9,11 @@ These commands apply to the public repository and need no private workspace. Pyt
 Run these commands from a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb). The distribution is named `pyrorb`; imports and module commands continue to use `runoff_routing`. PyPI publication is deferred; these are checkout-installation instructions. See the [naming policy](NAMING.md).
 
 ```sh
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The package installs the pinned canonical ryan-tools report reader; optional CATG writing uses pinned PyRomb. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
+The package installs the canonical ryan-tools report reader from its permanent merged source revision until the standalone reader is published. Edited CATG writing uses the separately installed pinned PyRomb PR; see [CATG authoring](RORB_GE_AUTHORING.md). A core checkout install (`python -m pip install -e .`) does not install the writer. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
 
 ## 2. An explicit, single-storm Python calculation
 
@@ -88,6 +88,21 @@ python -m pytest tests/test_regression_dataset.py tests/test_regression_scalars.
 ```
 
 The `--snapshot` path authenticates a historical candidate snapshot, *not* a fresh execution of `python` or `python-cmd`. The **all-case scalar cached comparison is intentionally non-success** because two all-zero peak times are unavailable; do not suppress its exit code or claim full success. Ordinary `--csv` submission of `computed_unvalidated` legacy output is deliberately rejected. All original hashes, clocks, horizons, status labels and frozen budgets must remain intact. Use [the maintained regression dataset contract](REGRESSION_DATASET.md) for full/subset/wheel commands and the expected status of each case.
+
+## RORB_GE 6.52 graphical source profiling
+
+For a **private** CATG that is not yet admitted, run the read-only, redacted
+structural profiler to identify its graphical version, known section counts
+and record shapes without copying or modifying the model:
+
+```sh
+python repo-scripts/rorb_inspect.py "path/to/catchment.catg" --ge-profile
+```
+
+A successful profile **does not** imply typed 6.52 import, executable
+support or numerical equivalence. The default JSON excludes model names,
+paths, coordinates, operands, raw lines and the source SHA. See
+[the exact qualification boundary](GE_652_SOURCE_PROFILE.md).
 
 ## 6. Installed wheel and acceptance
 

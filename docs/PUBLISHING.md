@@ -1,8 +1,8 @@
 # PyRORB publication preparation
 
-**Status: a one-shot automatic release is staged in an unmerged draft; PyPI activation still requires qualified dependencies and account-level setup.** [Issue #213](https://github.com/Chain-Frost/pyrorb/issues/213) owns this work under [release parent #10](https://github.com/Chain-Frost/pyrorb/issues/10). The separate [identity scope #212](https://github.com/Chain-Frost/pyrorb/issues/212) can flow into active feature PRs now.
+**Status: preparation #215 is merged; one-shot activation #220 remains draft and held pending reader publication and final qualification.** [Issue #213](https://github.com/Chain-Frost/pyrorb/issues/213) owns this work under [release parent #10](https://github.com/Chain-Frost/pyrorb/issues/10). The separate [identity scope #212](https://github.com/Chain-Frost/pyrorb/issues/212) can flow into active feature PRs now.
 
-The [workflow template](../packaging/pypi/publish.yml.in) lives outside `.github/workflows`, so it cannot execute in the preparation PR. A separate **draft activation PR**, stacked on the preparation PR, proposes a copy at `.github/workflows/publish.yml` and the narrow repository-guard/test changes. That activation change must not merge without owner approval and completion of the release gates below. Neither PR creates a release tag, GitHub environment, PyPI publisher, upload or enabled repository variable. A successful metadata check does not authorise publication or establish numerical acceptance.
+The [workflow template](../packaging/pypi/publish.yml.in) remains inert. Draft #220 proposes the separate active one-shot workflow and its narrow policy changes; no release tag, repository variable, environment, publisher or upload has been created by this reconciliation. A successful metadata check does not authorise publication or establish numerical acceptance.
 
 ## Agreed identity
 
@@ -22,9 +22,9 @@ The project name does not require an import rename or a new CLI executable. Seri
 
 The unchanged development version is `0.0.0.dev0`; it is not a selected release. The owner must choose the first version explicitly, for example `0.1.0a1`, after defining the supported MVP. The example is not a version assignment or a release commitment.
 
-Current package metadata includes a direct archive URL for `ryan-rorb-readers` and a direct Git URL for PyRomb in the `catg` and `dev` extras. PyPI rejects direct-URL dependencies in uploaded distribution metadata; hiding them behind an extra or an inactive environment marker does not remove them from `Requires-Dist`. Pip accepting a local source checkout is not evidence that the same distribution can be uploaded. See [setuptools' direct-URL dependency guidance](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#direct-url-dependencies).
+The remaining package metadata blocker is the direct archive URL for `ryan-rorb-readers`, now pinned to the merged Python 3.11-compatible ryan-tools revision. The owner retains PyRomb at its reviewed PR-only commit, explicitly installed from `requirements-catg.txt` rather than declared in the `catg` or `dev` extras. PyPI rejects direct-URL dependencies in uploaded distribution metadata; hiding them behind an extra or an inactive environment marker does not remove them from `Requires-Dist`. Pip accepting a local source checkout is not evidence that the same distribution can be uploaded. See [setuptools' direct-URL dependency guidance](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#direct-url-dependencies).
 
-Qualify published versions containing the actual reader/writer APIs and fixes consumed by the **final integrated MVP**. The staged source work in [PR #203](https://github.com/Chain-Frost/pyrorb/pull/203) consumes a newer reader revision than main; do not pick a release solely because it is available on an index. Preserve the canonical `ryan-rorb-readers` and PyRomb implementations and the accepted reuse/licence decision. Development-only source pins can move to development constraints or requirements outside uploaded metadata when appropriate; they must not remain in an uploaded `dev` extra. Review every final extra, including the MCP and research extras now on main (`mcp>=2.3,<3`, `scipy>=1.15`), before selecting a release.
+Qualify the standalone published reader with the actual required APIs (including merged PR #203 site binding) under [ryan-tools #337](https://github.com/Chain-Frost/ryan-tools/issues/337). Replace its source URL with the exact verified published version only after successful index installation. PyRomb remains a separately installed source dependency, not a prerequisite for base installation and not a dependency on an unqualified public PyRomb wheel. Preserve the canonical reader and writer implementations and accepted licences. Check all remaining extras, including MCP and research, independently.
 
 The identity work, source integration and release scope must be assembled before package qualification. This preparation does not select published dependency versions, change the version, or claim that a clean PyPI installation currently works. The existing [compatibility qualifications](COMPATIBILITY.md), [feature matrix](CMD_FEATURE_MATRIX.md) and [status](STATUS.md) continue to define the supported numerical scope.
 
@@ -72,7 +72,7 @@ is stamped with the selected date version.
 
 Draft PR #220 proposes a single automatic release when existing Windows
 quality completes on main for the **exact merged commit of activation PR
-#220**. It also requires PYPI_ONE_SHOT_ENABLED=true and no existing pyrorb
+#220** with the full Python 3.11–3.14 matrix and its fail-closed aggregate. It also requires PYPI_ONE_SHOT_ENABLED=true and no existing pyrorb
 PyPI project. Both the quality run and publisher must be first attempts;
 reruns are ineligible. Later ordinary main merges are permanently ineligible.
 Release preflight, source CMD comparisons and isolated wheel/sdist acceptance
@@ -99,23 +99,9 @@ GitHub Release creation fails after a successful PyPI upload, verify the
 PyPI distributions and create/verify the exact matching GitHub Release
 manually; never rerun an upload merely to repair the GitHub Release.
 
-This is a REAL public release and not a TestPyPI simulation. The current
-source has direct Git/archive requirements for the canonical reader and
-PyRomb writer; these are blocked by PyPI upload metadata policy and the
-release checker. Qualify published versions of these dependencies with
-the final required fixes; do not substitute outdated distributions merely
-to create a release. Public engineering claims and scientific acceptance
-remain separate even after the first package is published.
+This is a real public release, not TestPyPI. The mandatory reader must be a qualified index release from [ryan-tools #337](https://github.com/Chain-Frost/ryan-tools/issues/337), not a direct archive requirement. The pinned PyRomb PR remains intentionally external to uploaded metadata in `requirements-catg.txt`; do not wait for or substitute a PyRomb index release. Fresh release environments first verify the base install, then published `mcp`, `dev` and `research` extras, then the explicitly installed writer. Public engineering and scientific claims remain separate.
 
-Before merging #215 then #220: establish release scope and dependent
-published versions, validate clean source/wheel/sdist installs, configure
-a protected GitHub environment named pypi, configure PyPI's matching
-Trusted Publisher (Chain-Frost / pyrorb / publish.yml / pypi), and set
-the repository variable PYPI_ONE_SHOT_ENABLED=true. The first pending
-publisher does not reserve the PyPI name. **After #215 merges, retarget
-#220 from the preparation topic branch to `main`, confirm its diff contains
-only activation changes, complete exact-head CI/independent Codex review,
-and squash-merge the approved activation PR.** Its actual merge commit's
+Preparation #215 is already merged. Merge and qualify the separate PR-only writer preparation and published-reader dependency first. The owner reports the PyRORB PyPI account configuration is already complete; verify its matching publisher and protected environment rather than recreating it. Enable PYPI_ONE_SHOT_ENABLED only after all release checks. Confirm #220 contains only activation changes after the dependency work is merged, complete exact-head CI and independent downstream review, then squash-merge the approved activation PR. A pending publisher does not reserve the project name. Its actual merge commit's
 successful main CI is the only eligible automatic release trigger.
 Confirm artifacts and attestations, then verify that publish.yml is
 disabled. Future normal automatic releases require a separate MVP PR.
@@ -134,7 +120,7 @@ supersedes that template.
 | Workflow name | `publish.yml` (filename only, not the display name or full path) |
 | Environment name | `pypi` |
 
-These are planned matching values, not confirmation that the environment or publisher exists. A [pending publisher](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/) does not reserve the project name or create a public project until a successful first publication. No PyPI account configuration was inspected during preparation.
+These are the required matching values; the owner confirms PyPI setup, while live environment and publisher acceptance remain to be verified. A [pending publisher](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/) does not reserve the project name or create a public project until a successful first publication. No PyPI account configuration was inspected during preparation.
 
 ## Authoritative references
 

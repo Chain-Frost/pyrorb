@@ -15,7 +15,7 @@ def test_only_owner_approved_hosted_workflow() -> None:
 def test_python_target_and_strict_typing() -> None:
     with (ROOT / "pyproject.toml").open("rb") as stream:
         config = tomllib.load(stream)
-    assert config["project"]["requires-python"] == ">=3.13"
+    assert config["project"]["requires-python"] == ">=3.11"
     assert config["tool"]["pyright"]["typeCheckingMode"] == "strict"
 
 

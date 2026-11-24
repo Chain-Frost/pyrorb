@@ -71,3 +71,13 @@ def test_reruns_of_quality_or_publisher_are_ineligible() -> None:
         block = source.split(f"  {job}:\n", 1)[1].split("    runs-on:", 1)[0]
         assert "github.event.workflow_run.run_attempt == 1" in block
         assert "github.run_attempt == 1" in block
+
+
+def test_pr_only_writer_is_installed_outside_release_metadata() -> None:
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert ".[dev,catg]" not in source
+    assert "[catg]" not in source
+    assert "-r requirements-catg.txt -e '.[dev]'" in source
+    assert 'pip install "${files[0]}"' in source
+    assert 'pip install "${files[0]}[mcp,dev,research]"' in source
+    assert '-m pip install -r "$GITHUB_WORKSPACE/requirements-catg.txt"' in source

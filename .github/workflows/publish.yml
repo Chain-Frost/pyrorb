@@ -100,7 +100,7 @@ jobs:
         run: python -m pip install build packaging twine
       - name: Run existing pure-Python quality and source checks
         run: |
-          python -m pip install -e '.[dev,catg]'
+          python -m pip install -r requirements-catg.txt -e '.[dev]'
           python repo-scripts/check_local.py
           mkdir "$RUNNER_TEMP/pyrorb-receipts"
           python repo-scripts/cmd_public_probe.py > "$RUNNER_TEMP/pyrorb-receipts/source-cmd.json"
@@ -119,8 +119,8 @@ jobs:
           python -m pip freeze > "$RUNNER_TEMP/pyrorb-receipts/build-environment.txt"
       - name: Install wheel and sdist independently outside the checkout
         run: |
-          # These fresh environments resolve published dependencies, including
-          # CATG writing. Revisit selected extras against the final MVP scope.
+          # First verify a base install with only index dependencies. Then
+          # exercise all published extras and the separately pinned CATG writer.
           wheel_files=("$RUNNER_TEMP/pyrorb-dist/"*.whl)
           for kind in wheel sdist; do
             if [ "$kind" = wheel ]; then
@@ -130,8 +130,14 @@ jobs:
             fi
             python -m venv "$RUNNER_TEMP/pyrorb-$kind"
             installed_python="$RUNNER_TEMP/pyrorb-$kind/bin/python"
-            "$installed_python" -m pip install "${files[0]}[catg]"
+            "$installed_python" -m pip install "${files[0]}"
             "$installed_python" -m pip check
+            "$installed_python" -I -c "import importlib.util, runoff_routing; assert importlib.util.find_spec('pyromb') is None; from ryan_library.functions.RORB.output_reader import bind_output_site_columns"
+            "$installed_python" -m pip install "${files[0]}[mcp,dev,research]"
+            "$installed_python" -m pip check
+            "$installed_python" -m pip install -r "$GITHUB_WORKSPACE/requirements-catg.txt"
+            "$installed_python" -m pip check
+            "$installed_python" -I -c "from pyromb.models.rorb import render_ordered_catg; assert callable(render_ordered_catg)"
             (
               cd "$RUNNER_TEMP"
               "$installed_python" -I - "${wheel_files[0]}" <<'PY' > "$RUNNER_TEMP/pyrorb-receipts/$kind-install.txt"
