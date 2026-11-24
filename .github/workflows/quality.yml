@@ -242,9 +242,45 @@ jobs:
             }
           }
 
+  release-configuration:
+    name: Read-only one-shot configuration preflight
+    if: github.repository == 'Chain-Frost/pyrorb' && github.event_name == 'pull_request' && github.event.pull_request.number == 220 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Verify armed one-shot and existing protected environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ONE_SHOT_ENABLED: ${{ vars.PYPI_ONE_SHOT_ENABLED }}
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          if [ "$ONE_SHOT_ENABLED" != true ]; then
+            echo "::error::Set repository Actions variable PYPI_ONE_SHOT_ENABLED=true before merging #220."
+            exit 1
+          fi
+          # No environment deployment, OIDC, checkout or upload in this job.
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy.protected_branches == false) and (.deployment_branch_policy.custom_branch_policies == true)')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi/deployment-branch-policies?per_page=100" --jq \
+            '.total_count == 1 and (.branch_policies | length) == 1 and .branch_policies[0].name == "main" and .branch_policies[0].type == "branch"')" = true
+          python - <<'PY'
+          import urllib.error
+          import urllib.request
+          try:
+              with urllib.request.urlopen("https://pypi.org/pypi/pyrorb/json", timeout=30):
+                  raise SystemExit("PyPI project already exists; refuse first-release activation")
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+          PY
+          echo "Armed one-shot variable, protected main-only environment and PyPI vacancy verified."
+
   windows-python-313:
     name: windows-python-313
-    needs: [windows-python-versions]
+    needs: [windows-python-versions, release-configuration]
     if: ${{ !cancelled() }}
     runs-on: windows-latest
     timeout-minutes: 5
@@ -253,7 +289,16 @@ jobs:
         shell: pwsh
         env:
           MATRIX_RESULT: ${{ needs.windows-python-versions.result }}
+          CONFIG_RESULT: ${{ needs.release-configuration.result }}
+          ACTIVATION_PR: ${{ github.repository == 'Chain-Frost/pyrorb' && github.event_name == 'pull_request' && github.event.pull_request.number == 220 && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           if ($env:MATRIX_RESULT -ne 'success') {
             throw 'All Python compatibility quality lanes must pass.'
+          }
+          if ($env:ACTIVATION_PR -eq 'true') {
+            if ($env:CONFIG_RESULT -ne 'success') {
+              throw 'The live one-shot configuration must be verified before activation.'
+            }
+          } elseif ($env:CONFIG_RESULT -ne 'skipped') {
+            throw 'Release-configuration preflight is restricted to activation PR #220.'
           }

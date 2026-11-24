@@ -87,3 +87,22 @@ def test_release_base_uses_internal_canonical_reader() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "from runoff_routing.rorb_readers.output_reader import bind_output_site_columns" in source
     assert "from ryan_library" not in source
+
+
+def test_activation_requires_read_only_live_configuration_preflight() -> None:
+    quality = WORKFLOW.with_name("quality.yml").read_text(encoding="utf-8")
+    preflight = quality.split("  release-configuration:\n", 1)[1].split("  windows-python-313:\n", 1)[0]
+    assert "github.event.pull_request.number == 220" in preflight
+    assert "github.event.pull_request.head.repo.full_name == github.repository" in preflight
+    assert "vars.PYPI_ONE_SHOT_ENABLED" in preflight
+    assert "id-token:" not in preflight
+    assert "actions: write" not in preflight
+    assert "contents: write" not in preflight
+    assert "actions: read" in preflight
+    assert "environment:" not in preflight
+    assert "deployment-branch-policies?per_page=100" in preflight
+    assert "gh api" in preflight
+    aggregate = quality.split("  windows-python-313:\n", 1)[1]
+    assert "needs: [windows-python-versions, release-configuration]" in aggregate
+    assert "$env:CONFIG_RESULT -ne 'success'" in aggregate
+    assert "$env:CONFIG_RESULT -ne 'skipped'" in aggregate
