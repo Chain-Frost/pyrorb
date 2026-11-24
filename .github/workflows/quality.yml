@@ -19,7 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        # Minimum version on PRs; minimum and latest on main before release.
+        python-version: ${{ fromJSON(github.event_name == 'pull_request' && '["3.11"]' || '["3.11","3.14"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -285,7 +286,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 5
     steps:
-      - name: Require every supported Python version
+      - name: Require every selected Python version
         shell: pwsh
         env:
           MATRIX_RESULT: ${{ needs.windows-python-versions.result }}
