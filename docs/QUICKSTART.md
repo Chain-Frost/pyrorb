@@ -13,7 +13,7 @@ python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The package installs the canonical ryan-tools report reader from its permanent merged source revision until the standalone reader is published. Edited CATG writing uses the separately installed pinned PyRomb PR; see [CATG authoring](RORB_GE_AUTHORING.md). A core checkout install (`python -m pip install -e .`) does not install the writer. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
+The package includes the canonical RORB reader directly; no ryan-tools or separate reader distribution is required. Edited CATG writing uses the separately installed pinned PyRomb PR; see [CATG authoring](RORB_GE_AUTHORING.md). A core checkout install (`python -m pip install -e .`) does not install the writer. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
 
 ## 2. An explicit, single-storm Python calculation
 

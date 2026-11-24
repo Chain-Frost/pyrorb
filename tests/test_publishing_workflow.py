@@ -81,3 +81,9 @@ def test_pr_only_writer_is_installed_outside_release_metadata() -> None:
     assert 'pip install "${files[0]}"' in source
     assert 'pip install "${files[0]}[mcp,dev,research]"' in source
     assert '-m pip install -r "$GITHUB_WORKSPACE/requirements-catg.txt"' in source
+
+
+def test_release_base_uses_internal_canonical_reader() -> None:
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "from runoff_routing.rorb_readers.output_reader import bind_output_site_columns" in source
+    assert "from ryan_library" not in source

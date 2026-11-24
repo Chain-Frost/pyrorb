@@ -1,7 +1,7 @@
-"""Bind the canonical ryan-tools RORB report to runoff's existing evidence contract.
+"""Bind the canonical PyRORB RORB report to runoff's existing evidence contract.
 
 All native report grammar, numeric token parsing, source preservation, increment
-validation and scalar recognition live in ryan-tools. This adapter supplies only
+validation and scalar recognition live in PyRORB. This adapter supplies only
 the project-facing immutable inspection shape consumed by the CMD/regression
 contracts. It does not infer physical Hyd identities or shift printed clocks.
 """
@@ -11,10 +11,9 @@ from __future__ import annotations
 from decimal import Decimal
 from hashlib import sha256
 
-from ryan_library.functions.RORB.reader_types import RorbDocument, Section, exact_number
-from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file
-
 from .rorb_documents import Diagnostic, HydrographReport, HydrographRow, Inspection, RorbSource
+from .rorb_readers.reader_types import RorbDocument, Section, exact_number
+from .rorb_readers.readers import read_rorb_bytes, read_rorb_file
 
 
 def _diagnostics(document: RorbDocument) -> list[Diagnostic]:
@@ -83,7 +82,7 @@ def _reauthenticated_inline_bytes(source: RorbSource) -> bytes:
 
 
 def checked_canonical_report(source: RorbSource) -> RorbDocument:
-    """Read and authenticate a file or exact in-memory source through ryan-tools."""
+    """Read and authenticate a file or exact in-memory source through the canonical reader."""
     if source.path.is_file():
         canonical = read_rorb_file(source.path)
     else:
@@ -111,7 +110,7 @@ def _has_non_scalar_errors(diagnostics: list[Diagnostic]) -> bool:
 
 
 def inspect_output(source: RorbSource) -> Inspection:
-    """Inspect a selected source via ryan-tools; never infer HydNNN physical sites."""
+    """Inspect a selected source via the canonical reader; never infer HydNNN physical sites."""
     try:
         canonical = checked_canonical_report(source)
     except SourceChangedError as exc:

@@ -132,7 +132,7 @@ jobs:
             installed_python="$RUNNER_TEMP/pyrorb-$kind/bin/python"
             "$installed_python" -m pip install "${files[0]}"
             "$installed_python" -m pip check
-            "$installed_python" -I -c "import importlib.util, runoff_routing; assert importlib.util.find_spec('pyromb') is None; from ryan_library.functions.RORB.output_reader import bind_output_site_columns"
+            "$installed_python" -I -c "import importlib.util, runoff_routing; assert importlib.util.find_spec('pyromb') is None; assert importlib.util.find_spec('ryan_library') is None; from runoff_routing.rorb_readers.output_reader import bind_output_site_columns"
             "$installed_python" -m pip install "${files[0]}[mcp,dev,research]"
             "$installed_python" -m pip check
             "$installed_python" -m pip install -r "$GITHUB_WORKSPACE/requirements-catg.txt"

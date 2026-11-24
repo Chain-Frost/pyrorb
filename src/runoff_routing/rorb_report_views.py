@@ -1,4 +1,4 @@
-"""Read-only JSON/CSV presentations of the canonical ryan-tools report records.
+"""Read-only JSON/CSV presentations of the canonical PyRORB report records.
 
 This module contains no RORB report grammar, event selection, physical-site
 mapping, numerical acceptance, source-file mutation or executable invocation.
@@ -12,8 +12,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from ryan_library.functions.RORB.reader_types import RorbDocument, Section
-from ryan_library.functions.RORB.readers import read_rorb_file
+from .rorb_readers.reader_types import RorbDocument, Section
+from .rorb_readers.readers import read_rorb_file
 
 MAX_VIEW_ROWS = 10_000
 _SUPPORTED_REPORTS = frozenset({"standard_output", "batch_output", "hydrograph_csv"})
