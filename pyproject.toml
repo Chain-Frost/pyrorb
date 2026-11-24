@@ -12,14 +12,12 @@ license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
   "typing_extensions>=4.12",
-  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/bf2d9c61e4a4bafdc56142c6779785c918e0ce10.tar.gz#subdirectory=packaging/rorb-readers",
+  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/df6e8bc2dda24d2b376e888156e4105588f028fa.tar.gz#subdirectory=packaging/rorb-readers",
 ]
 
 [project.optional-dependencies]
 mcp = ["mcp>=2.3,<3"]
-catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@ecd5caa45e5c9204233d9a793e4cae9656bbe778"]
-
-dev = ["build", "pytest", "mcp>=2.3,<3", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@ecd5caa45e5c9204233d9a793e4cae9656bbe778"]
+dev = ["build", "pytest", "mcp>=2.3,<3", "pyright", "ruff==0.16.6"]
 research = ["scipy>=1.15"]
 
 [tool.setuptools.packages.find]

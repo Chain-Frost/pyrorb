@@ -19,7 +19,7 @@ Frozen `cmd644-report-scalars-v1` is unchanged: **19,550 ordinate rows pass**, p
 Use fresh output names: existing destinations are rejected. Install only from the public checkout:
 
 ```powershell
-py -3.13 -m pip install -e ".[dev]"
+py -3.13 -m pip install -r requirements-catg.txt -e ".[dev]"
 New-Item -ItemType Directory -Force .local | Out-Null
 $Register = 'tests/fixtures/regression-v1/register.json'
 py -3.13 -m runoff_routing.regression_dataset preflight $Register --set cmd-eligible --full-index --output .local/preflight.json
