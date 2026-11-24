@@ -30,6 +30,7 @@
 ## Provisional Monte Carlo software (on main; scientific gates open)
 
 - [Adopted method and scientific limitations](MONTE_CARLO.md), [effective-event and replay execution](MONTE_CARLO_EXECUTION.md) and [weighted-frequency result contract](MONTE_CARLO_FREQUENCY.md) — B/E/C CLI/API/text software provisionally admitted through PR #151; RORBwin statistical equivalence and engineering flood-AEP accuracy are not accepted.
+- [Monte Carlo software vs scientific qualification ownership](work/2026-11-24-mc-science-software-ownership.md) — separate source-qualified implementations (#189/#190/#191, upstream reader #334) from native method/tails/real-catchment scientific acceptance (#150/#228/#148; parent #9).
 - [Synthetic convergence research](research/MONTE_CARLO_CONVERGENCE.md) — analytical evidence only; physical-catchment stability and native agreement remain open.
 
 ## Planning and historical evidence
