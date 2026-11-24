@@ -5,19 +5,19 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).absolute().parents[1]
-MINIMUM_PYTHON = (3, 13)  # Match the supported Python version floor.
+MINIMUM_PYTHON = (3, 11)  # Match the supported Python version floor.
 COMMANDS: tuple[tuple[str, ...], ...] = (
     ("repo-scripts/check_repository.py",),
     ("-m", "ruff", "check", "--no-fix", "."),
     ("-m", "ruff", "format", "--check", "."),
-    ("-m", "pyright"),
+    ("-m", "pyright", "--pythonpath", sys.executable),
     ("-m", "pytest", "-m", "not native and not benchmark"),
 )
 
 
 def main() -> int:
     if sys.version_info[:2] < MINIMUM_PYTHON:
-        print("Python 3.13 or newer is required for this check suite.", file=sys.stderr)
+        print("Python 3.11 or newer is required for this check suite.", file=sys.stderr)
         return 2
     for arguments in COMMANDS:
         print(f"Checking: {sys.executable} {' '.join(arguments)}", flush=True)

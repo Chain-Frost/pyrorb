@@ -11,7 +11,9 @@ import re
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
 from enum import IntEnum, StrEnum
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeVar, cast
+
+_NATIVE_CODE_T = TypeVar("_NATIVE_CODE_T", bound=IntEnum)
 
 SCHEMA_VERSION = 1
 
@@ -41,7 +43,7 @@ class PatternBasis(StrEnum):
     COMBINED_PREBURST_PERCENT = "combined_preburst_percent"
 
 
-def _native_code[T: IntEnum](value: object, enum_type: type[T], label: str) -> T:
+def _native_code(value: object, enum_type: type[_NATIVE_CODE_T], label: str) -> _NATIVE_CODE_T:
     """Reject bool before native-code enum conversion (bool is an int subtype)."""
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(label)
