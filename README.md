@@ -9,11 +9,11 @@ The repository and distribution use `pyrorb`; the Python import namespace remain
 Python **3.11, 3.12, 3.13 or 3.14** (3.14 preferred for development), on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
 
 ```sh
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The first command installs the package and development tools; the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
+The first command installs the package, development tools and the optional PR-pinned PyRomb writer. To install only the core checkout, use `python -m pip install -e .`; edited CATG export requires the separately installed writer. See [CATG authoring](docs/RORB_GE_AUTHORING.md). the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
 
 ```python
 from pathlib import Path

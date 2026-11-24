@@ -454,7 +454,7 @@ def test_parsing_remains_available_without_pyromb(monkeypatch: pytest.MonkeyPatc
     assert parse_catg(original.source.data).model == original.model
     with pytest.raises(ValueError, match="optional dependency") as caught:
         serialize_catg(model)
-    assert "install .[catg]" in str(caught.value)
+    assert "install -r requirements-catg.txt" in str(caught.value)
 
 
 def test_graphical_node_name_overwidth_fails_without_truncation() -> None:

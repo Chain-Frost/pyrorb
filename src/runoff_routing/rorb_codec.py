@@ -812,7 +812,7 @@ def render_catg_with_graphics(
     try:
         writer = importlib.import_module("pyromb.models.rorb")
     except ImportError as exc:
-        message = "PyRomb CATG writing requires the pinned optional dependency: install .[catg]"
+        message = "PyRomb CATG writing requires the pinned optional dependency: install -r requirements-catg.txt"
         raise ValueError(message) from exc
     control_factory = cast("Callable[[int, Decimal | None, str, str], object]", writer.OrderedControl)
     node_factory = cast("Callable[..., object]", writer.OrderedNode)
