@@ -9,7 +9,7 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).absolute().parents[1]
 FORBIDDEN_SUFFIXES = {".exe", ".dll", ".whl", ".pyc", ".pdf"}
-ALLOWED_WORKFLOWS = {".github/workflows/quality.yml"}
+ALLOWED_WORKFLOWS = {".github/workflows/quality.yml", ".github/workflows/publish.yml"}
 LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 
 

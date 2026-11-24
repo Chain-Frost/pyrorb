@@ -181,9 +181,106 @@ jobs:
             Pop-Location
           }
 
+      - name: Preflight release artifacts before merging activation PR
+        if: matrix.python-version == '3.11' && github.event_name == 'pull_request' && github.event.pull_request.number == 220
+        shell: pwsh
+        run: |
+          # Qualification-only version: no tag, release, source push or upload.
+          $root = Join-Path $env:RUNNER_TEMP 'pyrorb-release-preflight'
+          $src = Join-Path $root 'source'
+          $dist = Join-Path $root 'dist'
+          New-Item -ItemType Directory -Path $src,$dist | Out-Null
+          $archive = Join-Path $root 'source.tar'
+          git archive --format=tar --output $archive HEAD
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          tar.exe -xf $archive -C $src
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install twine
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Push-Location $src
+          try {
+            python repo-scripts/auto_release_version.py stamp v26.11.24.1
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python -m build --outdir $dist
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $files = @(Get-ChildItem $dist -File)
+            if ($files.Count -ne 2) { throw 'Expected one wheel and one sdist' }
+            python -m twine check --strict @($files.FullName)
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python repo-scripts/check_release.py --tag=v26.11.24.1 --dist $dist
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
+          $wheel = @(Get-ChildItem $dist -Filter '*.whl')
+          $sdist = @(Get-ChildItem $dist -Filter '*.tar.gz')
+          if ($wheel.Count -ne 1 -or $sdist.Count -ne 1) { throw 'Unexpected distribution inventory' }
+          foreach ($kind in @('wheel','sdist')) {
+            $file = if ($kind -eq 'wheel') { $wheel[0] } else { $sdist[0] }
+            $venv = Join-Path $root $kind
+            python -m venv $venv
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $installed = Join-Path $venv 'Scripts/python.exe'
+            & $installed -m pip install $file.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & $installed -m pip check
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Push-Location $root
+            try {
+              & $installed -I -c "import importlib.metadata,importlib.util,pathlib,sys; import runoff_routing; from runoff_routing.rorb_readers.output_reader import bind_output_site_columns; from runoff_routing.engine_provenance import verify_installed_wheel; assert importlib.metadata.version('pyrorb')=='26.11.24.1'; assert importlib.util.find_spec('ryan_library') is None; assert importlib.util.find_spec('pyromb') is None; assert pathlib.Path(runoff_routing.__file__).resolve().is_relative_to(pathlib.Path(sys.prefix).resolve()); print(verify_installed_wheel(pathlib.Path(sys.argv[1])))" $wheel[0].FullName
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            } finally {
+              Pop-Location
+            }
+            if ($kind -eq 'wheel') {
+              & $installed -m pip install "$($file.FullName)[mcp,dev,research]"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $installed -m pip check
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $installed -I -c "import mcp,scipy; print('Published extras resolve')"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          }
+
+  release-configuration:
+    name: Read-only one-shot configuration preflight
+    if: github.repository == 'Chain-Frost/pyrorb' && github.event_name == 'pull_request' && github.event.pull_request.number == 220 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Verify armed one-shot and existing protected environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ONE_SHOT_ENABLED: ${{ vars.PYPI_ONE_SHOT_ENABLED }}
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          if [ "$ONE_SHOT_ENABLED" != true ]; then
+            echo "::error::Set repository Actions variable PYPI_ONE_SHOT_ENABLED=true before merging #220."
+            exit 1
+          fi
+          # No environment deployment, OIDC, checkout or upload in this job.
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi" --jq \
+            '([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]?] | length) == 1 and ([.protection_rules[]? | select(.type == "required_reviewers") | .reviewers[]? | select(.type == "User" and .reviewer.login == "Chain-Frost")] | length) == 1 and (.deployment_branch_policy.protected_branches == false) and (.deployment_branch_policy.custom_branch_policies == true)')" = true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/environments/pypi/deployment-branch-policies?per_page=100" --jq \
+            '.total_count == 1 and (.branch_policies | length) == 1 and .branch_policies[0].name == "main" and .branch_policies[0].type == "branch"')" = true
+          python - <<'PY'
+          import urllib.error
+          import urllib.request
+          try:
+              with urllib.request.urlopen("https://pypi.org/pypi/pyrorb/json", timeout=30):
+                  raise SystemExit("PyPI project already exists; refuse first-release activation")
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+          PY
+          echo "Armed one-shot variable, protected main-only environment and PyPI vacancy verified."
+
   windows-python-313:
     name: windows-python-313
-    needs: [windows-python-versions]
+    needs: [windows-python-versions, release-configuration]
     if: ${{ !cancelled() }}
     runs-on: windows-latest
     timeout-minutes: 5
@@ -192,7 +289,16 @@ jobs:
         shell: pwsh
         env:
           MATRIX_RESULT: ${{ needs.windows-python-versions.result }}
+          CONFIG_RESULT: ${{ needs.release-configuration.result }}
+          ACTIVATION_PR: ${{ github.repository == 'Chain-Frost/pyrorb' && github.event_name == 'pull_request' && github.event.pull_request.number == 220 && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           if ($env:MATRIX_RESULT -ne 'success') {
             throw 'All Python compatibility quality lanes must pass.'
+          }
+          if ($env:ACTIVATION_PR -eq 'true') {
+            if ($env:CONFIG_RESULT -ne 'success') {
+              throw 'The live one-shot configuration must be verified before activation.'
+            }
+          } elseif ($env:CONFIG_RESULT -ne 'skipped') {
+            throw 'Release-configuration preflight is restricted to activation PR #220.'
           }

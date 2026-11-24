@@ -28,5 +28,5 @@ def test_external_links_are_not_fetched(tmp_path: Path) -> None:
     assert MARKDOWN_ERRORS(document, "README.md") == []
 
 
-def test_only_owner_approved_quality_workflow_is_allowed() -> None:
-    assert CHECKS["ALLOWED_WORKFLOWS"] == {".github/workflows/quality.yml"}
+def test_only_explicitly_approved_workflows_are_allowed() -> None:
+    assert CHECKS["ALLOWED_WORKFLOWS"] == {".github/workflows/quality.yml", ".github/workflows/publish.yml"}
