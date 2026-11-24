@@ -20,7 +20,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import asdict, dataclass, replace
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 
 from .cmd_engine import CmdBoundaryError, PreparedCmdModel, prepare_cmd_model
 from .engine_execution import (
@@ -51,6 +51,8 @@ from .rorb_model import (
     to_json,
 )
 from .single_storm import PreparedCatchment
+
+_VALIDATED_OVERRIDE_T = TypeVar("_VALIDATED_OVERRIDE_T")
 
 REQUEST_FORMAT = "python-runoff-routing-explicit-events"
 REQUEST_VERSION = 1
@@ -298,7 +300,12 @@ def _derive_routing(original: ParameterSet, raw: object) -> ParameterSet:
     return restored
 
 
-def _validated_override[T](original: T, raw: object, converter: Callable[[T, object], T], code: str) -> T:
+def _validated_override(
+    original: _VALIDATED_OVERRIDE_T,
+    raw: object,
+    converter: Callable[[_VALIDATED_OVERRIDE_T, object], _VALIDATED_OVERRIDE_T],
+    code: str,
+) -> _VALIDATED_OVERRIDE_T:
     """Retain typed per-event failure codes without obscuring unsupported fields."""
     try:
         return converter(original, raw)

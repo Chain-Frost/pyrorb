@@ -1,7 +1,7 @@
 # Explicit rule families adapted from ryan-tools/ruff.toml (reviewed 2026-11-09).
 # Keep this version identical to the development dependency in pyproject.toml.
 required-version = "==0.16.6"
-target-version = "py313"
+target-version = "py311"
 line-length = 120
 preview = false
 fix = false

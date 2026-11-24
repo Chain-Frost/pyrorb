@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Python 3.11 compatibility migration (#226)](2026-11-24-python311-compatibility.md) — current-main integration and software validation; scientific gates remain separate.
+
 - [Withdraw unqualified GE 6.45 C T T admission (#204)](2026-11-24-issue204-ctt-withdrawal.md) - explicit rejection restored; asset guards retained; source support deferred.
 
 - [Fifth anonymised model-set addendum](2026-11-19-anonymised-site-e-validation.md) - expanded 6.52 coverage, source/wheel routing, rainfall preparation and reference-association gaps; [fifth-set case metrics](2026-11-19-anonymised-site-e-cases.md).

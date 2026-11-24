@@ -38,3 +38,5 @@
 - [Implementation sequence](IMPLEMENTATION_PLAN.md), [work-record index](work/README.md), [reviewable PR template](../.github/pull_request_template.md).
 - [Deferred publication preparation](PUBLISHING.md) — offline package gates, inactive workflow template and owner-controlled activation after the MVP is finalised; no current PyPI release.
 - Dated work records are **revision-specific history**, not current handoff instructions. Superseded handoffs and old status snapshots live in ordinary Git history instead of this navigation index. Original source hashes, clocks, accounting policies, analytical oracles and curated regression data are preserved separately from prose.
+
+- [Python 3.11 compatibility migration](work/2026-11-24-python311-compatibility.md).

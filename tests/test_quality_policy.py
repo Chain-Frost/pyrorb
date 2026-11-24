@@ -14,7 +14,7 @@ def test_ruff_version_is_pinned_consistently() -> None:
     assert ruff["required-version"] == "==0.16.6"
     assert "ruff==0.16.6" in project["project"]["optional-dependencies"]["dev"]
     assert "ruff" not in project["tool"]
-    assert ruff["target-version"] == "py313"
+    assert ruff["target-version"] == "py311"
     assert ruff["line-length"] == 120
 
 

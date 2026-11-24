@@ -8,8 +8,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
+from typing import ParamSpec, TypeVar
 
 from mcp.server.mcpserver.exceptions import ToolError
+
+_EXPLAIN_EXPECTED_ERRORS_P = ParamSpec("_EXPLAIN_EXPECTED_ERRORS_P")
+_EXPLAIN_EXPECTED_ERRORS_R = TypeVar("_EXPLAIN_EXPECTED_ERRORS_R")
 
 MAX_DETAIL_CHARS = 200
 
@@ -68,11 +72,15 @@ def _known_failure(exc: OSError | ValueError) -> str:
     return _validation_failure(exc)
 
 
-def explain_expected_errors[**P, R](function: Callable[P, R]) -> Callable[P, R]:
+def explain_expected_errors(
+    function: Callable[_EXPLAIN_EXPECTED_ERRORS_P, _EXPLAIN_EXPECTED_ERRORS_R],
+) -> Callable[_EXPLAIN_EXPECTED_ERRORS_P, _EXPLAIN_EXPECTED_ERRORS_R]:
     """Adapt a Python function only at MCP registration, preserving its native API errors."""
 
     @wraps(function)
-    def invoke(*args: P.args, **kwargs: P.kwargs) -> R:
+    def invoke(
+        *args: _EXPLAIN_EXPECTED_ERRORS_P.args, **kwargs: _EXPLAIN_EXPECTED_ERRORS_P.kwargs
+    ) -> _EXPLAIN_EXPECTED_ERRORS_R:
         try:
             return function(*args, **kwargs)
         except (OSError, ValueError) as exc:
