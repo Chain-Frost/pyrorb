@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
 import subprocess
 from dataclasses import replace
 from decimal import Decimal
@@ -33,6 +34,14 @@ from runoff_routing.project_json import (
     write_project,
 )
 from runoff_routing.rorb_model import RoutingValue, RunModel, from_json
+
+
+@pytest.fixture(autouse=True)
+def _cache_platform_details() -> None:
+    # Python 3.11 uses subprocess for Windows version discovery. Cache before
+    # native-process mocks so they intercept only the manufactured engine run.
+    platform.platform()
+
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
 
