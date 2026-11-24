@@ -1,6 +1,6 @@
 # Local MCP integration and validation — 22 November 2026
 
-Status: software validation complete on the PR #211 stack; no merge authorised.
+Status: dated 22 November source/wheel review of the then-open PR stack; see the later actual Codex CLI acceptance below.
 Owner: local development agent. Review/update date: 2026-11-22.
 
 ## Identity and scope
@@ -106,3 +106,39 @@ engineering accuracy. The broader gates in [STATUS](../STATUS.md) and the
 [single CMD feature matrix](../CMD_FEATURE_MATRIX.md) remain unchanged.
 Next action: review PR #211's validation changes and its existing stack; no merge,
 release, publication or additional hosted automation is authorised.
+
+## Subsequent actual Codex CLI acceptance - 23 November 2026
+
+**Status: local MCP installation and software integration acceptance complete.**
+This is an operator-supplied result following the 22 November source/stdio tests
+above; this documentation update did not repeat that local execution.
+
+The accepted configuration used main `83ae609`, a dedicated wheel-installed
+`pyrorb==0.0.0.dev0` environment with Python 3.14.6, MCP SDK 2.3.0 and
+Codex CLI `0.171.0-alpha.13`. The global `runoff-routing` registration
+points to the environment's absolute Python executable. Source imports
+resolve to `Lib/site-packages/runoff_routing`, not the checkout.
+A new Codex session exited successfully (0).
+
+The operator exercised **12 tools**, read **five resources**, checked six
+API areas and **19 signatures**. The `python-cmd/cmd-6.44` single result
+had six ordinates; the event batch was **3/3 computed_unvalidated** and
+the ARR population **10/10 prepared/routed**. All persisted single, batch,
+and six ARR artifacts matched direct Python APIs. Missing write consent,
+existing outputs, native selections, absent/malformed inputs and invalid/
+oversized results were refused. Source hashes were unchanged. Server stdout
+was JSON-RPC-only. No native launch, push, merge or publication was performed
+during the local test.
+
+The Codex CLI does not directly expose MCP prompt retrieval; a separate raw
+stdio client verified the prompt. Generic display of expected tool failures
+is tracked separately in [#221](https://github.com/Chain-Frost/pyrorb/issues/221).
+This limitation does not invalidate the **accepted local software workflow**.
+
+Machine-specific registration paths and the original evidence remain only
+under ignored `.local/mcp-codex-acceptance-20261123/`; they are not committed.
+See [MCP.md](../MCP.md) for portable dedicated-wheel setup and upgrading.
+
+This closes only the local **software** integration task. Original CMD/native
+equivalence, rainfall selection, unimplemented features and scientific or
+physical accuracy remain separate outstanding work.

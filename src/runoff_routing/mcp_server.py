@@ -22,6 +22,7 @@ from .engine_types import CAPABILITIES, EngineId, EngineSelection
 from .mcp_catalog import CATALOG, Exposure, find_capability
 from .mcp_reference import API_AREAS, REFERENCE_VERSION, ApiArea, api_manifest, example_manifest, schema_manifest
 from .mcp_results import summarize_result_file
+from .mcp_tool_errors import ExpectedMCPError, explain_expected_errors
 from .project_batch import load_event_request, write_batch_results
 from .project_batch import run_project_events as execute_project_events
 from .project_json import EmbeddedRun, load_project
@@ -88,7 +89,6 @@ def get_api_reference(area: ApiArea) -> dict[str, object]:
     }
 
 
-@mcp.tool(annotations=_READ_ONLY)
 def get_result_summary(path: str) -> dict[str, object]:
     """Inspect existing single, batch or ARR JSON results without copying their full ordinates."""
     return summarize_result_file(Path(path))
@@ -106,7 +106,6 @@ def get_engine_capabilities() -> dict[str, object]:
     }
 
 
-@mcp.tool(annotations=_READ_ONLY)
 def inspect_rorb_file(path: str) -> dict[str, object]:
     """Inspect a local RORB document, returning bounded diagnostics rather than raw contents."""
     source_path = Path(path).absolute()
@@ -133,7 +132,6 @@ def inspect_rorb_file(path: str) -> dict[str, object]:
     }
 
 
-@mcp.tool(annotations=_READ_ONLY)
 def validate_project(path: str) -> dict[str, object]:
     """Verify the project's JSON structure and pinned files; do not execute any engine."""
     loaded = load_project(Path(path))
@@ -153,7 +151,6 @@ def validate_project(path: str) -> dict[str, object]:
     }
 
 
-@mcp.tool(annotations=_READ_ONLY)
 def inspect_event_request(path: str) -> dict[str, object]:
     """Verify the versioned request envelope; individual events are checked during execution."""
     events = load_event_request(Path(path))
@@ -165,7 +162,6 @@ def inspect_event_request(path: str) -> dict[str, object]:
     }
 
 
-@mcp.tool(annotations=_READ_ONLY)
 def summarize_arr_results(effective_path: str, routed_path: str) -> dict[str, object]:
     """Read persisted ARR outcomes and return compact summary metadata, not full hydrographs."""
     summary = read_deterministic_results(Path(effective_path), Path(routed_path)).data
@@ -191,7 +187,8 @@ def _authorize_write(allow_write: bool) -> None:
     """Require deliberate acknowledgement before computing and creating files."""
     if not allow_write:
         message = "Execution is opt-in: set allow_write=true to calculate and create new result files"
-        raise ValueError(message)
+        code = "write_consent_required"
+        raise ExpectedMCPError(code, message)
 
 
 def _check_new_outputs(paths: tuple[Path, ...]) -> None:
@@ -201,8 +198,9 @@ def _check_new_outputs(paths: tuple[Path, ...]) -> None:
         raise ValueError(message)
     for path in paths:
         if not path.parent.is_dir():
-            message = f"Output directory must already exist: {path.parent}"
-            raise ValueError(message)
+            message = "Output directory must already exist. Create it before retrying."
+            code = "output_directory_missing"
+            raise ExpectedMCPError(code, message)
         if path.exists() or path.is_symlink():
             message = f"Output destination already exists and cannot be overwritten: {path}"
             raise FileExistsError(message)
@@ -214,17 +212,18 @@ def _python_selection(
     """Validate the actual stored/overridden engine before any dispatcher can launch native CMD."""
     if engine is None and numerical_profile is not None:
         message = "numerical_profile requires an explicit engine override"
-        raise ValueError(message)
+        code = "invalid_engine_selection"
+        raise ExpectedMCPError(code, message)
     override = EngineSelection.for_engine(engine, numerical_profile) if engine is not None else None
     stored = load_project(project_path).project.engine
     effective = stored if override is None else override
     if effective.engine == "rorb-cmd":
         message = "Native rorb-cmd is not exposed through MCP execution; use the explicit native CLI"
-        raise ValueError(message)
+        code = "native_engine_not_available"
+        raise ExpectedMCPError(code, message)
     return override, effective
 
 
-@mcp.tool(annotations=_WRITES_RESULTS)
 def run_project(
     project_path: str,
     output_path: str,
@@ -237,7 +236,8 @@ def run_project(
     target = Path(output_path).absolute()
     if target.suffix.lower() != ".json":
         message = "Single-project output must have a .json extension"
-        raise ValueError(message)
+        code = "invalid_output_path"
+        raise ExpectedMCPError(code, message)
     _check_new_outputs((target,))
     source = Path(project_path).absolute()
     override, _ = _python_selection(source, engine, numerical_profile)
@@ -263,7 +263,6 @@ def run_project(
     }
 
 
-@mcp.tool(annotations=_WRITES_RESULTS)
 def run_project_events(
     project_path: str,
     events_path: str,
@@ -282,7 +281,8 @@ def run_project_events(
     events = load_event_request(Path(events_path).absolute())
     if len(events) > MAX_MCP_EVENTS:
         message = f"MCP batch exceeds the limit of {MAX_MCP_EVENTS} events"
-        raise ValueError(message)
+        code = "event_limit_exceeded"
+        raise ExpectedMCPError(code, message)
     report = execute_project_events(source, events, selection=override)
     written = write_batch_results(prefix, report)
     first = report.outcomes[0]
@@ -315,7 +315,6 @@ def run_project_events(
     }
 
 
-@mcp.tool(annotations=_WRITES_RESULTS)
 def prepare_arr_design(config_path: str, output_prefix: str, allow_write: bool = False) -> dict[str, object]:
     """Prepare AND route a bounded ARR/BoM design ensemble, saving six existing report formats."""
     _authorize_write(allow_write)
@@ -329,10 +328,12 @@ def prepare_arr_design(config_path: str, output_prefix: str, allow_write: bool =
     config = read_design_config(source)
     if config.engine.engine == "rorb-cmd":
         message = "Native rorb-cmd ARR batches are not exposed through MCP; use the explicit native CLI"
-        raise ValueError(message)
+        code = "native_engine_not_available"
+        raise ExpectedMCPError(code, message)
     if len(config.durations_min) * len(config.aep_labels) * 10 > MAX_MCP_EVENTS:
         message = f"MCP design ensemble exceeds the limit of {MAX_MCP_EVENTS} events"
-        raise ValueError(message)
+        code = "event_limit_exceeded"
+        raise ExpectedMCPError(code, message)
     result = run_design_batch(source)
     written = write_design_outputs(prefix, result)
     effective = result.effective
@@ -355,6 +356,18 @@ def prepare_arr_design(config_path: str, output_prefix: str, allow_write: bool =
         "output_paths": [str(path) for path in written],
         "full_diagnostics_in": str(written[0]),
     }
+
+
+# Register protocol-specific wrappers without changing direct Python call semantics.
+# functools.wraps preserves published MCP tool names, signatures and input schemas.
+mcp.tool(annotations=_READ_ONLY)(explain_expected_errors(get_result_summary))
+mcp.tool(annotations=_READ_ONLY)(explain_expected_errors(inspect_rorb_file))
+mcp.tool(annotations=_READ_ONLY)(explain_expected_errors(validate_project))
+mcp.tool(annotations=_READ_ONLY)(explain_expected_errors(inspect_event_request))
+mcp.tool(annotations=_READ_ONLY)(explain_expected_errors(summarize_arr_results))
+mcp.tool(annotations=_WRITES_RESULTS)(explain_expected_errors(run_project))
+mcp.tool(annotations=_WRITES_RESULTS)(explain_expected_errors(run_project_events))
+mcp.tool(annotations=_WRITES_RESULTS)(explain_expected_errors(prepare_arr_design))
 
 
 @mcp.resource("runoff-routing://catalog")
