@@ -59,6 +59,7 @@
 
 ## Provisional Monte Carlo software and outstanding scientific research
 
+- [#9 Monte Carlo software/science ownership separation (24 November 2026)](2026-11-24-mc-science-software-ownership.md) — scientific #9/#150/#228/#148 vs bounded implementation #189/#190/#191 and upstream reader #334; completed #151/#223/#225 software remains delivered.
 - [#191 source-neutral native MC comparison evidence contract](2026-11-24-issue191-comparison-contract.md) — bounded identity, printed-token precision and explicit unsupported native lanes; upstream canonical MC reader evidence in ryan-tools #334 remains required.
 - [Current #9 native-method and large-sample work packs](2026-11-17-issue9-rorb-statistical-method-scopes.md) — #150/#189/#190/#191/#148; no premature native/scientific acceptance.
 - [Original Monte Carlo #9 scoping](2026-11-15-issue9-scoping.md) and [#145 adopted statistical contract](2026-11-15-issue145-mc-statistical-method.md) — distinguish initial plans, implemented project choices and native-equivalence gaps.
