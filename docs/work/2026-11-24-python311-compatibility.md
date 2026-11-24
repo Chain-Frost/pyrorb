@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Active: original-base local validation passes; current-main integration and final review pending |
+| Status | Needs review: current-main local four-version validation passes; final hosted gate pending |
 | Updated | 2026-11-24 |
 | Next review | 2026-11-25 |
 | Original baseline | a080d005051fe2d15b93e46491e0f857ac3384e3 |
@@ -32,7 +32,7 @@ No local filesystem dependency reference is committed. There is still only one c
 Original-base Windows isolated checks: Python 3.11.11, 3.12.14, 3.13.15 and 3.14.6;
 1,526 tests pass on each, with platform/privilege skips (seven in the final 3.11 run).
 The complete local quality runner on 3.11.11 passes pinned Ruff, strict Pyright and pytest.
-Wheel and sdist construction pass. Final clean-wheel/current-main receipts will be added to the PR.
+Wheel and sdist construction pass. Current-main installation and strict typing pass on all four interpreters. The integrated suite passes **1,554 tests / seven skips on each interpreter**. Final clean-wheel receipts are recorded in the PR.
 
 The fresh public CMD probe executes all 50 registered cases with no native process: 50 printed-output passes;
 fresh scalar/reporting status remains 48 pass and two incomplete. Both original 36-case retained gates pass.
@@ -55,3 +55,10 @@ No merge or package publication is authorized by the compatibility task.
 ## Next action
 
 Complete current-main integration, clean wheel/source numerical equivalence and independent review; publish the compatibility PR.
+
+## Final review checkpoint
+
+Independent review identified a required-check naming regression: a bare matrix replaces the protected
+windows-python-313 context with suffixed names. Preserve that exact required check through a fail-closed
+aggregate job over every version lane. The original workflow/action/security controls remain unchanged.
+The reviewer independently passed 3.11.11 generic specialization, variance, annotation, decorator and byte-roundtrip checks.

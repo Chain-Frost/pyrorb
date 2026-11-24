@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  windows-python-313:
+  windows-python-versions:
     runs-on: windows-latest
     timeout-minutes: 20
     strategy:
@@ -151,4 +151,20 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } finally {
             Pop-Location
+          }
+
+  windows-python-313:
+    name: windows-python-313
+    needs: [windows-python-versions]
+    if: ${{ !cancelled() }}
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every supported Python version
+        shell: pwsh
+        env:
+          MATRIX_RESULT: ${{ needs.windows-python-versions.result }}
+        run: |
+          if ($env:MATRIX_RESULT -ne 'success') {
+            throw 'All Python compatibility quality lanes must pass.'
           }
