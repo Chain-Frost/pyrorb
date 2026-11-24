@@ -2,7 +2,7 @@
 
 This module neither parses native text nor reconstructs native event weights,
 random streams, effective inputs or statistical policies. Only the pinned
-canonical ryan-tools reader may admit original source tokens (#191/#334).
+canonical PyRORB reader may admit original source tokens (#191/#231).
 """
 
 from __future__ import annotations

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from ryan_library.functions.RORB.readers import read_rorb_file
 
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineSelection
@@ -42,6 +41,7 @@ from runoff_routing.rorb_codec import (
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_model import RunModel
 from runoff_routing.rorb_out import inspect_output
+from runoff_routing.rorb_readers.readers import read_rorb_file
 
 DATA = Path(__file__).absolute().parent / "fixtures" / "regression-v1"
 SOURCE_CASE_IDS = (
@@ -214,7 +214,7 @@ def test_source_gate_does_not_admit_unknown_par_or_old_plain_formats() -> None:
 
 @pytest.mark.parametrize("case_id", SOURCE_CASE_IDS)
 def test_existing_retained_cmd_report_preserves_registered_rows_and_clock(case_id: str) -> None:
-    """Current .out baseline only: final ryan-tools dependency acceptance is separate."""
+    """Current .out baseline only: canonical installed-wheel reader acceptance is separate."""
     case = _case(case_id)
     reference = case["reference"]
     source = RorbSource.read(DATA / reference["path"])
@@ -240,7 +240,7 @@ def test_existing_retained_cmd_report_preserves_registered_rows_and_clock(case_i
 def test_public_rorbwin_652_original_report_bytes_are_authenticated(
     filename: str, size_bytes: int, git_blob: str
 ) -> None:
-    """Pin exact public GUI bytes; installed ryan-tools parsing is a distinct gate."""
+    """Pin exact public GUI bytes; installed canonical PyRORB parsing is a distinct gate."""
     path = DATA.parent / "s5-acceptance" / filename
     data = path.read_bytes()
     assert len(data) == size_bytes

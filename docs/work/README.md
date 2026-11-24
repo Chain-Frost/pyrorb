@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Canonical reader ownership transfer (#231)](2026-11-24-canonical-reader-transfer.md) — source provenance, test transfer and staged dependency reversal; no new native/scientific acceptance claim.
+
 - [Python 3.11 compatibility migration (#226)](2026-11-24-python311-compatibility.md) — current-main integration and software validation; scientific gates remain separate.
 
 - [Withdraw unqualified GE 6.45 C T T admission (#204)](2026-11-24-issue204-ctt-withdrawal.md) - explicit rejection restored; asset guards retained; source support deferred.

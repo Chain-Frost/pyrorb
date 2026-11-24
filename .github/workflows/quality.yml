@@ -24,6 +24,26 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Checkout approved public reader fixtures (one lane only)
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v7
+        with:
+          repository: Chain-Frost/ryan-tools-test-data
+          ref: 4535ff86ea978666b990748d72d927695be2158c
+          path: .local/reader-test-data
+          persist-credentials: false
+          submodules: false
+          lfs: false
+          sparse-checkout: RORB
+      - name: Verify pinned public reader fixture identity
+        if: matrix.python-version == '3.11'
+        shell: pwsh
+        run: |
+          $commit = git -C .local/reader-test-data rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $commit.Trim() -ne '4535ff86ea978666b990748d72d927695be2158c') { throw 'Reader fixture identity mismatch' }
+          foreach ($name in @('example-par-file.par','6.45-490-event-reader-example/manifest.json','6.45-490-event-reader-example/validation.json','6.45-490-event-reader-example/RORB_14141_batch.out','12hr-areal-example/Fig6_7_batch.out','24hr-areal-example/Fig6_7_batch.out','48hr-areal-example/Fig6_7_batch.out','12hr-areal-example/Fig6_7_ aep0p2EY_du12hourtp1.out')) {
+            if (!(Test-Path -LiteralPath (Join-Path '.local/reader-test-data/RORB' $name) -PathType Leaf)) { throw "Missing required reader fixture $name" }
+          }
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
@@ -56,6 +76,10 @@ jobs:
           $publicSummaryTests = (Resolve-Path 'tests/test_arr_result_summary.py').Path
           $s5AcceptanceTests = (Resolve-Path 'tests/test_s5_workflow_acceptance.py').Path
           $publicFrequencyTests = (Resolve-Path 'tests/test_monte_carlo_frequency.py').Path
+          $readerContractTests = (Resolve-Path 'tests/test_rorb_reader_contract.py').Path
+          $canonicalReaderTests = (Resolve-Path 'tests/test_canonical_rorb_reader.py').Path
+          $reader645Tests = (Resolve-Path 'tests/test_original_645_readers.py').Path
+          $reader652Tests = (Resolve-Path 'tests/test_original_652_readers.py').Path
           $publicMCExecutionTests = (Resolve-Path 'tests/test_monte_carlo_execution.py').Path
           $publicMCBridgeTests = (Resolve-Path 'tests/test_monte_carlo_bridge.py').Path
           $publicMCIntegrationTests = (Resolve-Path 'tests/test_monte_carlo_integration.py').Path
@@ -93,6 +117,8 @@ jobs:
             # Source fixtures remain read-only; the package under test is this
             # exact wheel installed in $target outside the source checkout.
             python -m pytest "$publicMCExecutionTests" "$publicMCBridgeTests" "$publicMCIntegrationTests" "$publicMCScientificTests" -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pytest "$readerContractTests" "$canonicalReaderTests" "$reader645Tests" "$reader652Tests" -q
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             python -c "from decimal import Decimal; from runoff_routing.rorbwin_losses import calculate_rorbwin_652_excess; r=calculate_rorbwin_652_excess((Decimal(10),), timestep_min=60, initial_loss_mm=Decimal(0), continuing_loss_mm_per_hour=Decimal(0)); assert r.excess_increments_mm == (Decimal(10),); print('S6 experimental installed-wheel smoke OK')"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

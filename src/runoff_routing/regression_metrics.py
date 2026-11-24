@@ -11,11 +11,10 @@ from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from typing import Literal
 
-from ryan_library.functions.RORB.output_reader import bind_output_site_columns
-from ryan_library.functions.RORB.reader_types import RorbDocument
-
 from runoff_routing.rorb_documents import HydrographReport, RorbSource
 from runoff_routing.rorb_out import canonical_hydrograph_view, checked_canonical_report
+from runoff_routing.rorb_readers.output_reader import bind_output_site_columns
+from runoff_routing.rorb_readers.reader_types import RorbDocument
 
 Status = Literal["pass", "fail", "incomplete"]
 

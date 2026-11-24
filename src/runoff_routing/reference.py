@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 from uuid import uuid4
 
-from ryan_library.functions.RORB.readers import read_rorb_table_file
+from .rorb_readers.readers import read_rorb_table_file
 
 SCHEMA_VERSION = 1
 Outcome = Literal[
@@ -208,7 +208,7 @@ def _check_report(
     """Apply source-specific capture policy to the canonical unverified table.
 
     The full Inc/Time grammar, numeric validation, source records, contiguous
-    increments and clock monotonicity are owned by ryan-tools. This consumer
+    increments and clock monotonicity are owned by the canonical PyRORB reader. This consumer
     admits a native capture only against its separately declared print IDs,
     horizon and provenance; a readable table is not numerical acceptance.
     """
