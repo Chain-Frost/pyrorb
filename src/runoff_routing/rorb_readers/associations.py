@@ -84,7 +84,7 @@ def _require_path_override(value: object) -> Path:
     """Reject invalid caller overrides without assuming a free-form path string."""
     if not isinstance(value, Path):
         message = "CSV override must be a pathlib.Path"
-        raise ValueError(message)
+        raise ValueError(message)  # noqa: TRY004 -- retain the existing ValueError API for invalid override values
     return value
 
 
@@ -147,13 +147,13 @@ def associate_batch_csvs(  # noqa: C901 - bounded event association keeps explic
                 reference = str(doc.metadata.get("output_reference", ""))
                 if doc.kind != "hydrograph_csv" or doc.status == "invalid":
                     msg = "Candidate is not a valid RORB hydrograph CSV."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught in this parser boundary to record candidate mismatch
                 if _basename(reference) != candidate.with_suffix(".out").name:
                     msg = "CSV preamble does not reference the corresponding output filename."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught in this parser boundary to record candidate mismatch
                 if not _matches_peaks(batch, row, doc):
                     msg = "Hydrograph site labels or rounded peaks do not agree with this batch row."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught in this parser boundary to record candidate mismatch
                 record.update(
                     status="corroborated",
                     path=str(candidate),

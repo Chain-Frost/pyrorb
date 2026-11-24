@@ -56,19 +56,19 @@ def read_cmd_parameters(doc: RorbDocument) -> None:  # noqa: C901 - preserve ord
             line_no, value = take(strip=False)
             if not value:
                 msg = "Empty input reference."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught at the parameter parser boundary to preserve diagnostics
             section.rows.append({"line": line_no, "field": field, "value": value})
         line_no, value = take()
         if value.upper() not in {"T", "F"}:
             msg = "Expected T/F lumped-kc flag."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301 -- caught at the parameter parser boundary to preserve diagnostics
         lumped = value.upper() == "T"
         section.rows.append({"line": line_no, "field": "lumped_kc", "value": lumped})
         line_no, value = take()
         verbosity = integer(value, 1)
         if verbosity not in {1, 2, 3}:
             msg = "Output-detail flag is outside the documented V2 values."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301 -- caught at the parameter parser boundary to preserve diagnostics
         section.rows.append({"line": line_no, "field": "verbosity", "value": verbosity})
         line_no, value = take()
         loss_model = integer(value, 1)
@@ -84,7 +84,7 @@ def read_cmd_parameters(doc: RorbDocument) -> None:  # noqa: C901 - preserve ord
         count = integer(value, 1)
         if count > 10000:
             msg = "Interstation count exceeds reader limit."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301 -- caught at the parameter parser boundary to preserve diagnostics
         section.rows.append({"line": line_no, "field": "interstation_count", "value": count})
         for isa in range(1, (1 if lumped else count) + 1):
             line_no, kc, m = pair()
@@ -159,7 +159,7 @@ def read_saved_settings(doc: RorbDocument) -> None:
         try:
             if len(tokens) != 2:
                 msg = "Pair does not match the observed saved-settings layout."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to retain the unverified saved-settings diagnostic
             records.rows.append(
                 {
                     "line": index + 1,

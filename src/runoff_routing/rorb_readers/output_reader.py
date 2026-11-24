@@ -69,7 +69,7 @@ def bind_output_site_columns(  # noqa: C901 -- strict physical identity and miss
         role = site["role"]
         if not isinstance(site_id, str) or not isinstance(site_id_token, str) or not isinstance(description, str):
             msg = "Invalid physical site description"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004 -- retain the documented ValueError for invalid site records
         raw_name = name if role is not None else description
         if (
             isinstance(raw_name, str)
@@ -136,7 +136,7 @@ def _numeric_table(doc: RorbDocument, start: int, columns: list[str], name: str)
         try:
             if len(tokens) != len(columns):
                 msg = "Numeric record width differs from header."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the original row diagnostic
             row: Record = {"line": i + 1, columns[0]: integer(tokens[0])}
             row.update({c: number(v) for c, v in zip(columns[1:], tokens[1:], strict=True)})
             table.rows.append(row)
@@ -246,7 +246,7 @@ def read_output(doc: RorbDocument) -> None:  # noqa: C901 - preserve ordered for
                 value = number(match[1])
                 if value <= 0 or (timestep is not None and timestep != value):
                     msg = "Invalid or conflicting time increment."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the original report diagnostic
                 timestep = value
                 timestep_text = match[1]
                 doc.metadata["time_increment_hours"] = timestep

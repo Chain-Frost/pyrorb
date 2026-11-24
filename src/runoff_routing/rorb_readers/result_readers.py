@@ -36,7 +36,7 @@ def report_metadata(doc: RorbDocument) -> None:  # noqa: C901 - preserve ordered
             try:
                 if match is None:
                     msg = "Unsupported routing-parameter layout."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve routing-record diagnostics
                 parameters.rows.append({"line": i + 1, "kc": number(match[1]), "m": number(match[2])})
                 parameters.source_tokens.append({"kc": match[1], "m": match[2]})
             except ValueError as exc:
@@ -60,7 +60,7 @@ def report_metadata(doc: RorbDocument) -> None:  # noqa: C901 - preserve ordered
                 values = doc.lines[j].split() if j < len(doc.lines) else []
                 if len(values) != 2:
                     msg = "Expected two loss values."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve loss-record diagnostics
                 parameters.rows.append(
                     {"line": j + 1, "IL": number(values[0]), model: number(values[1]), "loss_model": "IL/" + model}
                 )
@@ -168,22 +168,22 @@ def read_batch(doc: RorbDocument) -> None:  # noqa: C901 - preserve ordered form
         try:
             if len(tokens) != len(header) + 1:
                 msg = "Run row width differs from header."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the exact invalid batch row diagnostic
             run, tp = integer(tokens[0], 1), integer(tokens[4], 1)
             duration = number(tokens[1])
             unit = tokens[2].casefold()
             if unit not in {"hour", "minute"} or duration <= 0:
                 msg = "Duration must be positive with hour or minute units."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the exact invalid batch row diagnostic
             duration_hours = duration if unit == "hour" else duration / 60
             freq = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)(%|EY)", tokens[3])
             if freq is None or number(freq[1]) <= 0 or (freq[2] == "%" and number(freq[1]) > 100):
                 msg = "Unsupported or invalid frequency label."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the exact invalid batch row diagnostic
             key = (run, tokens[3], duration_hours, tp)
             if key in keys:
                 msg = "Duplicate run/duration/frequency/pattern record."
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the exact invalid batch row diagnostic
             keys.add(key)
             row: Record = {
                 "line": i + 1,
@@ -242,10 +242,10 @@ def read_csv(doc: RorbDocument) -> None:
         section.columns = ["line", *columns]
         if columns[:2] != ["Inc", "Time (hrs)"] or len(columns) < 3 or len(set(columns)) != len(columns):
             msg = "Expected unique Inc, Time (hrs), and hydrograph columns."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301 -- caught at the CSV boundary to preserve header diagnostics
         if any(re.fullmatch(r".+ hydrograph:\s*.*", c, re.IGNORECASE) is None for c in columns[2:]):
             msg = "Unrecognized hydrograph column role."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301 -- caught at the CSV boundary to preserve header diagnostics
         for values in reader:
             line_number = reader.line_num + 2
             if not values:
@@ -253,7 +253,7 @@ def read_csv(doc: RorbDocument) -> None:
             try:
                 if len(values) != len(columns):
                     msg = "CSV row width differs from header."
-                    raise ValueError(msg)
+                    raise ValueError(msg)  # noqa: TRY301 -- caught locally to preserve the exact invalid CSV row diagnostic
                 row: Record = {"line": line_number, "Inc": integer(values[0].strip())}
                 row.update({c: number(v.strip()) for c, v in zip(columns[1:], values[1:], strict=True)})
                 section.rows.append(row)
