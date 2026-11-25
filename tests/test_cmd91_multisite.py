@@ -309,11 +309,12 @@ def _native_two_prints() -> RunModel:
     return replace(model, catchment=updated)
 
 
-@pytest.mark.parametrize("complete", [True, False])
+@pytest.mark.parametrize("report_kind", ["complete", "missing", "diagnostic"])
 def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, complete: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, report_kind: Literal["complete", "missing", "diagnostic"]
 ) -> None:
     """Actual selected native adapter, manufactured process: no RORB parity claim."""
+    complete = report_kind != "missing"
     model = _native_two_prints()
     files: list[SourceFile] = []
     for name, data in zip(("model.par", "model.catg", "model.stm"), canonical_run_bytes(model), strict=True):
@@ -351,8 +352,21 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
             f"{index} {index * 0.5:.2f} {index - 1:.4f}" + (f" {2 * (index - 1):.4f}" if complete else "")
             for index in range(1, 7)
         ]
+        prefix = (
+            "RORBWin Output File\nProgram version 6.44\n"
+            "Hydrograph summary\nSite Description\n"
+            "01 Sub-area inflow point, sub-area A - Upstream\n"
+            "02 Sub-area inflow point, sub-area A - Rain ex.\n\n"
+            if report_kind == "diagnostic"
+            else ""
+        )
         (root / "native.out").write_text(
-            "Time increment (hours)= 0.5\nDuration of calculations: 5\n" + head + "\n" + "\n".join(records) + "\nEnd\n",
+            prefix
+            + "Time increment (hours)= 0.5\nDuration of calculations: 5\n"
+            + head
+            + "\n"
+            + "\n".join(records)
+            + "\nEnd\n",
             encoding="utf-8",
         )
         return subprocess.CompletedProcess([executable.name], 0, b"", b"")
@@ -362,9 +376,12 @@ def test_mocked_native_two_site_columns_preserve_identities_or_reject_missing(
     assert result.effective_selection.engine == "rorb-cmd"
     assert result.requested_print_ids == ("print_1", "print_2")
     assert result.capture_manifest_path is not None
-    if not complete:
+    if report_kind != "complete":
         assert result.status == "incomplete_output"
         assert result.hydrographs == ()
+        assert result.physical_time_hours == ()
+        if report_kind == "diagnostic":
+            assert result.diagnostics[0].code == "native_diagnostic_columns"
         return
     assert result.status == "computed_unvalidated", result.diagnostics
     assert tuple(h.print_id for h in result.hydrographs) == ("print_1", "print_2")
