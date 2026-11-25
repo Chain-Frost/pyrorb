@@ -216,3 +216,39 @@ def test_legacy_datahub_arfs_keep_original_coefficient_precision_and_source_hash
     )
     assert result.coefficient_origin == "legacy_datahub"
     assert result.coefficient_source_sha256 == doc.source.sha256
+
+
+# Independent, published-method analytical factors from the issue #192
+# qualification record. The 12-decimal representation is a reference budget,
+# not a native ARF tolerance. No original native inputs/outputs are fixtures.
+@pytest.mark.parametrize(
+    ("area", "duration", "aep", "expected"),
+    [
+        ("158", 720, "5", "0.914759275701"),
+        ("158", 1080, "5", "0.929370614484"),
+        ("158", 1440, "5", "0.943981953267"),
+        ("158", 720, "2", "0.908331637457"),
+        ("158", 1080, "2", "0.924443427504"),
+        ("158", 1440, "2", "0.940555217552"),
+        ("158", 720, "1", "0.903469316829"),
+        ("158", 1080, "1", "0.920716154441"),
+        ("158", 1440, "1", "0.937962992052"),
+        ("158", 719, "2", "0.908293750869"),
+        ("158", 721, "2", "0.908376392429"),
+        ("158", 1439, "2", "0.940510462579"),
+        ("158", 1441, "2", "0.940567639089"),
+        ("0.99", 1080, "5", "1.000000000000"),
+        ("1", 1080, "5", "1.000000000000"),
+        ("1.01", 1080, "5", "0.999935391559"),
+        ("9.99", 1080, "5", "0.975523035709"),
+        ("10", 1080, "5", "0.975505814868"),
+        ("10.01", 1080, "5", "0.975494314198"),
+        ("158", 30, "1", "0.680472288756"),
+        ("158", 2880, "5", "0.955021061960"),
+    ],
+)
+def test_independent_published_south_west_wa_transition_controls(
+    area: str, duration: int, aep: str, expected: str
+) -> None:
+    result = _arf(area, duration, aep, region="South-West Western Australia")
+    assert abs(result - Decimal(expected)) <= Decimal("0.0000000000005")
