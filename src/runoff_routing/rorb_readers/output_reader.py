@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Literal
 
 from .reader_types import Record, RorbDocument, Section, exact_number, integer, number, validate_series
 from .result_readers import read_sites, report_metadata
@@ -28,7 +29,7 @@ def _hyd_ordinal(token: str) -> int:
     return int(match[1])
 
 
-def bind_output_site_columns(  # noqa: C901 -- strict physical identity and missing-data guards
+def _bind_site_columns(  # noqa: C901 -- strict physical identity and missing-data guards
     document: RorbDocument, *, table_name: str = "hydrographs_1", allow_unnamed: bool = False
 ) -> tuple[HydrographSiteColumn, ...]:
     """Match Hyd ordinals without guessing physical names or table positions.
@@ -113,6 +114,152 @@ def bind_output_site_columns(  # noqa: C901 -- strict physical identity and miss
         msg = "Physical site list differs from the hydrograph table"
         raise ValueError(msg)
     return tuple(matched)
+
+
+CmdDiagnosticQuantity = Literal[
+    "subarea_upstream_flow",
+    "rainfall_excess_flow",
+    "reach_downstream_flow",
+    "reach_upstream_flow",
+    "calculated_flow",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class CmdDiagnosticColumn:
+    """Report-local flow identity, not a verified model print or physical node."""
+
+    site_id: str
+    column: str
+    description: str
+    site_record_line: int
+    site_id_token: str
+    quantity_kind: CmdDiagnosticQuantity
+    units: Literal["m3/s"] = "m3/s"
+
+
+# Only the retained CMD 6.44 Figure 6.7 code-11 legend is characterised.
+# Do not generalise to another subarea, reach, print mode or native profile.
+_CMD_DIAGNOSTIC_LAYOUT: dict[int, tuple[str, CmdDiagnosticQuantity]] = {
+    1: ("Sub-area inflow point, sub-area A - Upstream", "subarea_upstream_flow"),
+    2: ("Sub-area inflow point, sub-area A - Rain ex.", "rainfall_excess_flow"),
+    3: ("Normal storage, reach no. 0 1 - Downstream", "reach_downstream_flow"),
+    4: ("Normal storage, reach no. 0 1 - Upstream", "reach_upstream_flow"),
+    5: ("Calculated hydrograph,", "calculated_flow"),
+}
+
+
+def _has_cmd_diagnostic_legend(document: RorbDocument) -> bool:
+    """Detect the diagnostic family, even if a member of its legend is malformed."""
+    return document.metadata.get("program_version") == "6.44" and any(
+        str(row.get("description")).startswith(("Sub-area inflow point, sub-area ", "Normal storage, reach no."))
+        for section in document.sections
+        if section.name == "sites"
+        for row in section.rows
+    )
+
+
+def bind_output_site_columns(
+    document: RorbDocument, *, table_name: str = "hydrographs_1", allow_unnamed: bool = False
+) -> tuple[HydrographSiteColumn, ...]:
+    """Bind ordinary physical output sites; never promote diagnostic flow identities."""
+    if _has_cmd_diagnostic_legend(document):
+        msg = "CMD diagnostic columns cannot be bound as ordinary physical print sites"
+        raise ValueError(msg)
+    return _bind_site_columns(document, table_name=table_name, allow_unnamed=allow_unnamed)
+
+
+def _check_cmd_diagnostic_units(document: RorbDocument) -> None:
+    """Require the retained three discharge-summary groups, without binding their scalars."""
+    scalars = document.section("reported_scalars")
+    peaks = [row for row in scalars.rows if row["family"] == "Peak discharge"]
+    if (
+        not scalars.valid
+        or tuple(row["ordinal"] for row in peaks) != (1, 2, 1, 2, 1)
+        or any(row["unit"] != "m³/s" for row in peaks)
+    ):
+        msg = "CMD diagnostic discharge units or summary group counts are unsupported"
+        raise ValueError(msg)
+
+
+def bind_cmd_diagnostic_columns(document: RorbDocument) -> tuple[CmdDiagnosticColumn, ...]:
+    """Bind only the observed five-column report legend; never establish model or native parity.
+
+    The banner and legend do not prove source control 11 or executable identity.
+    Preserve the report's actual column order, raw IDs and source lines.
+    """
+    if document.metadata.get("program_version") != "6.44":
+        msg = "CMD diagnostic output requires the characterised 6.44 report layout"
+        raise ValueError(msg)
+    sites = _bind_site_columns(document, allow_unnamed=True)
+    if {_hyd_ordinal(site.site_id) for site in sites} != set(_CMD_DIAGNOSTIC_LAYOUT):
+        msg = "Unsupported CMD diagnostic legend or column population"
+        raise ValueError(msg)
+    table = document.section("hydrographs_1")
+    step = document.metadata.get("time_increment_raw")
+    if (
+        table.completeness != "reported_increment_count"
+        or table.increment_origin != 1
+        or not isinstance(step, str)
+        or table.source_decimal(0, "Time") != exact_number(step)
+    ):
+        msg = "CMD diagnostic output requires a complete one-based report clock"
+        raise ValueError(msg)
+    _check_cmd_diagnostic_units(document)
+
+    result: list[CmdDiagnosticColumn] = []
+    for site in sites:
+        description, kind = _CMD_DIAGNOSTIC_LAYOUT[_hyd_ordinal(site.site_id)]
+        if " ".join(site.description.split()) != description:
+            msg = f"Unsupported CMD diagnostic legend for {site.column}: {site.description}"
+            raise ValueError(msg)
+        if any(table.source_decimal(index, site.column) < 0 for index in range(len(table.rows))):
+            msg = f"Unsupported negative CMD diagnostic flow in {site.column}"
+            raise ValueError(msg)
+        result.append(
+            CmdDiagnosticColumn(
+                site.site_id, site.column, site.description, site.site_record_line, site.site_id_token, kind
+            )
+        )
+    return tuple(result)
+
+
+def _record_cmd_diagnostic_columns(document: RorbDocument) -> None:
+    """Expose report-local typed identities through the canonical JSON/CSV section views."""
+    if not _has_cmd_diagnostic_legend(document):
+        return
+    document.issue(
+        "cmd_diagnostic_report",
+        "CMD diagnostic flows are not ordinary physical print sites; model binding remains unverified.",
+    )
+    section = Section(
+        "cmd_diagnostic_sites",
+        ["line", "id", "id_token", "column", "description", "quantity_kind", "units", "physical_site_verified"],
+    )
+    document.sections.append(section)
+    try:
+        columns = bind_cmd_diagnostic_columns(document)
+    except ValueError as exc:
+        section.valid = False
+        document.issue("cmd_diagnostic_binding", str(exc))
+        return
+    for item in columns:
+        section.rows.append(
+            {
+                "line": item.site_record_line,
+                "id": item.site_id,
+                "id_token": item.site_id_token,
+                "column": item.column,
+                "description": item.description,
+                "quantity_kind": item.quantity_kind,
+                "units": item.units,
+                "physical_site_verified": False,
+            }
+        )
+        section.source_tokens.append(
+            {"id_token": item.site_id_token, "column": item.column, "description": item.description}
+        )
+    section.completeness = "observed_legend_binding"
 
 
 def _numeric_table(doc: RorbDocument, start: int, columns: list[str], name: str) -> Section:
@@ -363,6 +510,7 @@ def read_output(doc: RorbDocument) -> None:  # noqa: C901 - preserve ordered for
             error=True,
         )
     doc.metadata["hydrograph_time_unit"] = "hours"
+    _record_cmd_diagnostic_columns(doc)
     doc.issue(
         "uninterpreted_sections",
         "Routing instructions, other input/output sections and unsupported tables remain in raw text.",
