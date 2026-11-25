@@ -2,7 +2,7 @@
 
 **PyRORB** is an **in-development** Python package for selected RORB rainfall–runoff procedures, including canonical dependency-light RORB report readers maintained in PyRORB. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a scientifically accepted hydrologic product. A preliminary package is published; final MVP release acceptance remains open.
 
-The repository and distribution use `pyrorb`; the Python import namespace remains `runoff_routing`. Install from the public checkout below while PyPI publication is deferred. The [naming and compatibility policy](docs/NAMING.md) distinguishes current branding from stable file-format and provenance identifiers.
+The repository and distribution use `pyrorb`; the Python import namespace remains `runoff_routing`. Use the public checkout instructions below for development; the preliminary package is also published. The [naming and compatibility policy](docs/NAMING.md) distinguishes current branding from stable file-format and provenance identifiers.
 
 ## Install and execute a supplied storm
 
