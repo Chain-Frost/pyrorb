@@ -285,8 +285,8 @@ def test_cmd_diagnostic_unsupported_or_ambiguous_layout_never_binds(original: st
     document = read_rorb_bytes(source.encode("utf-8"))
     with pytest.raises(
         ValueError,
-        match="structurally valid|Incomplete or invalid|Ambiguous physical|Duplicate hydrograph|Unsupported CMD|"
-        "complete one-based|Unsupported negative",
+        match=r"structurally valid|Incomplete or invalid|Ambiguous physical|Duplicate hydrograph|Unsupported CMD|"
+        r"complete one-based|Unsupported negative",
     ):
         bind_cmd_diagnostic_columns(document)
     with pytest.raises(ValueError, match="diagnostic columns"):
