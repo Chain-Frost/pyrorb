@@ -14,7 +14,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
-from typing import Literal, cast
+from typing import Generic, Literal, cast
+
+from typing_extensions import TypeVar
 
 from .rorb_documents import RorbSource, decimal_number
 from .rorb_model import (
@@ -32,6 +34,9 @@ from .rorb_model import (
     SubArea,
 )
 from .rorb_par import inspect_cmd_parameters
+
+T = TypeVar("T", infer_variance=True)
+_ORIGINAL_BYTES_T = TypeVar("_ORIGINAL_BYTES_T")
 
 Dialect = Literal[
     "cmd_v2", "rorb_ge_002", "rorb_ge_645", "design_explicit", "design_relative_weights", "design_preburst_combined"
@@ -105,7 +110,7 @@ class SourceDocument:
 
 
 @dataclass(frozen=True, slots=True)
-class ParsedDocument[T]:
+class ParsedDocument(Generic[T]):
     """An untouched parsed source and its immutable, syntax-independent model."""
 
     dialect: Dialect
@@ -115,7 +120,9 @@ class ParsedDocument[T]:
     graphical_metadata: tuple[str, ...] = ()
 
 
-def original_bytes[T](parsed: ParsedDocument[T], *, current_model: T | None = None) -> bytes:
+def original_bytes(
+    parsed: ParsedDocument[_ORIGINAL_BYTES_T], *, current_model: _ORIGINAL_BYTES_T | None = None
+) -> bytes:
     """Original-byte mode: reject a changed model rather than silently discard edits."""
     if current_model is not None and current_model != parsed.model:
         message = "Original-byte export cannot represent edits; choose canonical export"
@@ -805,7 +812,7 @@ def render_catg_with_graphics(
     try:
         writer = importlib.import_module("pyromb.models.rorb")
     except ImportError as exc:
-        message = "PyRomb CATG writing requires the pinned optional dependency: install .[catg]"
+        message = "PyRomb CATG writing requires the pinned optional dependency: install -r requirements-catg.txt"
         raise ValueError(message) from exc
     control_factory = cast("Callable[[int, Decimal | None, str, str], object]", writer.OrderedControl)
     node_factory = cast("Callable[..., object]", writer.OrderedNode)

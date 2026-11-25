@@ -6,6 +6,7 @@ All controls are manufactured. Original code-11 native output remains incomplete
 from __future__ import annotations
 
 import hashlib
+import platform
 import subprocess
 from dataclasses import replace
 from decimal import Decimal
@@ -34,6 +35,12 @@ from runoff_routing.rorb_model import (
 )
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "synthetic-run.json"
+
+
+@pytest.fixture(autouse=True)
+def _cache_platform_details() -> None:
+    # Python 3.11 Windows version discovery uses subprocess before native mocks.
+    platform.platform()
 
 
 def _model() -> RunModel:

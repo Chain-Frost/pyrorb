@@ -1,4 +1,4 @@
-"""Cross-repository canonical reader consumption; no native RORB execution."""
+"""Canonical reader package consumption; no native RORB execution."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from importlib.resources import files
 from pathlib import Path
 
 import pytest
-from ryan_library.functions.RORB.reader_types import RorbDocument
-from ryan_library.functions.RORB.readers import read_rorb_bytes, read_rorb_file, read_rorb_table_file
 
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
+from runoff_routing.rorb_readers.reader_types import RorbDocument
+from runoff_routing.rorb_readers.readers import read_rorb_bytes, read_rorb_file, read_rorb_table_file
 
 
 def _report(increments: str = "1 0.50 0.000\n2 1.00 12.345000\n3 1.50 0.000\n") -> bytes:
@@ -26,8 +26,8 @@ def _report(increments: str = "1 0.50 0.000\n2 1.00 12.345000\n3 1.50 0.000\n") 
     return source.replace("\n", "\r\n").encode("cp1252")
 
 
-def test_reader_dependency_is_pep561_typed() -> None:
-    assert files("ryan_library").joinpath("py.typed").is_file()
+def test_canonical_reader_package_is_pep561_typed() -> None:
+    assert files("runoff_routing").joinpath("py.typed").is_file()
 
 
 def test_canonical_reader_preserves_native_bytes_and_one_based_report(tmp_path: Path) -> None:

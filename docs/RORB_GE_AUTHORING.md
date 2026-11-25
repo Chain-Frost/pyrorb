@@ -20,10 +20,23 @@ It reports 242 Windows/QGIS/OGR tests passed; its writer and traversal blobs are
 unchanged from upstream main, so these results alone do not certify native
 RORB file acceptance.
 
-No PyROMB dependency, GDAL runtime, NumPy, pandas or Matplotlib are required
-for the source-level or direct-geometry writer. GDAL/OGR is loaded only when
-calling the *optional* `drawing_from_layers` GIS boundary under QGIS/OSGeo4W.
-No QGIS or GDAL packages are downloaded or installed automatically.
+Ordinary parsing, routing and unchanged-source export require no PyRomb.
+Edited CATG rendering uses the exact separately installed [PyRomb fork PR #3](https://github.com/phantom-branch/pyromb/pull/3)
+commit `ecd5caa45e5c9204233d9a793e4cae9656bbe778`. It remains PR-only by owner decision; do not substitute the older public PyRomb release or require a further upstream merge.
+
+From a PyRORB checkout, install the optional writer in the same environment:
+
+```sh
+python -m pip install -r requirements-catg.txt
+````
+
+For an installed distribution without a checkout, use the equivalent explicit source requirement:
+
+```sh
+python -m pip install "pyromb @ git+https://github.com/phantom-branch/pyromb.git@ecd5caa45e5c9204233d9a793e4cae9656bbe778"
+````
+
+PyPI distribution metadata intentionally contains no PyRomb source URL or `catg` extra. The writer's dependencies resolve only when the user explicitly installs it. GDAL/OGR is loaded when calling the optional `drawing_from_layers` GIS boundary under QGIS/OSGeo4W. No QGIS or GDAL packages are downloaded or installed automatically.
 
 ## Pure authoring from an existing typed model
 

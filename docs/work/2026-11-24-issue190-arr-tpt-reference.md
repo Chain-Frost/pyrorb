@@ -1,6 +1,6 @@
 # Issue #190: independent ARR total-probability reference
 
-**24 November 2026 — research/verification only.** This reference supports scientific
+**24 November 2026 — research/verification only.** This reference supports the bounded software scope of
 [#190](https://github.com/Chain-Frost/pyrorb/issues/190) and parent
 [#9](https://github.com/Chain-Frost/pyrorb/issues/9). It does not change the
 provisionally delivered `monte-carlo-statistics/1` policy, expand sampled AEP support,
@@ -57,7 +57,7 @@ sampling distribution, output frequency inversion or treatment of boundary bins.
 tables, unequal weights, strict exceedance/ties and a real zero sample,
 the existing 0.49/0.51 modelled/unmodelled mass example, opt-in boundaries,
 invalid sample counts/weights, duplicate intervals and Decimal-context invariance.
-Run `python -m pytest -q tests/test_arr_tpt_reference.py` on Python 3.13/3.14.
+Run `python -m pytest -q tests/test_arr_tpt_reference.py` on a supported Python 3.11–3.14 interpreter.
 
 **Local isolated preflight:** 19 focused pytest tests passed on Python 3.13.5.
 Full repository Ruff, strict Pyright and hosted Windows CI must be checked on
@@ -67,4 +67,7 @@ file modified; no product runtime module or saved method was changed.
 The retained [#150 native evidence](2026-11-16-issue150-windows-native-receipt.md)
 rejects a simple attained-peak-only explanation for RORBwin's frequency summaries
 but does not establish its interval weighting, interpolation, smoothing, tails or
-precise sampled effective-event inputs. Leave #190, #150 and #9 scientifically OPEN.
+precise sampled effective-event inputs. The native-compatible software policy in #190
+remains blocked on admitted F6 evidence from #150; scientific acceptance remains
+open under #9, #150, #228 (annual support/tails) and #148 (physical convergence).
+This bounded arithmetic reference does not close those issues.

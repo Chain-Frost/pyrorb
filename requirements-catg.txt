@@ -1,0 +1,4 @@
+# Optional edited-CATG writer, intentionally outside PyPI distribution metadata.
+# Reviewed PR-only Python 3.11-compatible source; do not replace with PyPI pyromb 0.3.0.
+# https://github.com/phantom-branch/pyromb/pull/3
+pyromb @ git+https://github.com/phantom-branch/pyromb.git@ecd5caa45e5c9204233d9a793e4cae9656bbe778

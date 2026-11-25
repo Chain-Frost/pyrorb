@@ -9,11 +9,11 @@ These commands apply to the public repository and need no private workspace. Pyt
 Run these commands from a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb). The distribution is named `pyrorb`; imports and module commands continue to use `runoff_routing`. PyPI publication is deferred; these are checkout-installation instructions. See the [naming policy](NAMING.md).
 
 ```sh
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The package installs the pinned canonical ryan-tools report reader; optional CATG writing uses pinned PyRomb. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
+The package includes the canonical RORB reader directly; no ryan-tools or separate reader distribution is required. Edited CATG writing uses the separately installed pinned PyRomb PR; see [CATG authoring](RORB_GE_AUTHORING.md). A core checkout install (`python -m pip install -e .`) does not install the writer. The local checker runs repository/link hygiene, pinned Ruff lint and formatting, strict Pyright and non-native/non-benchmark pytest. It does not launch CMD, require private data or perform a numerical acceptance campaign. [Development details](DEVELOPMENT.md).
 
 ## 2. An explicit, single-storm Python calculation
 

@@ -9,16 +9,14 @@ description = "PyRORB: an in-development Python rainfall-runoff routing implemen
 readme = "README.md"
 license = "LicenseRef-SUL-1.0"
 license-files = ["LICENSE"]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-  "ryan-rorb-readers @ https://github.com/Chain-Frost/ryan-tools/archive/1c0dd0ad1b44d69b4d090b39ca56071a4d71ff83.tar.gz#subdirectory=packaging/rorb-readers",
+  "typing_extensions>=4.12",
 ]
 
 [project.optional-dependencies]
 mcp = ["mcp>=2.3,<3"]
-catg = ["pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
-
-dev = ["build", "pytest", "mcp>=2.3,<3", "pyright", "ruff==0.16.6", "pyromb @ git+https://github.com/phantom-branch/pyromb.git@8653babdb544d400775d754b409c1571e773f7bb"]
+dev = ["build", "pytest", "mcp>=2.3,<3", "pyright", "ruff==0.16.6"]
 research = ["scipy>=1.15"]
 
 [tool.setuptools.packages.find]
@@ -30,7 +28,7 @@ runoff_routing = ["py.typed"]
 [tool.pyright]
 include = ["src", "repo-scripts", "tests"]
 exclude = [".local", "tests/fixtures", "build", "dist"]
-pythonVersion = "3.13"
+pythonVersion = "3.11"
 pythonPlatform = "Windows"
 typeCheckingMode = "strict"
 

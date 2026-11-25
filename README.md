@@ -1,19 +1,19 @@
 # PyRORB
 
-**PyRORB** is an **in-development** Python package for selected RORB rainfall–runoff procedures, with a canonical report-reader dependency maintained in ryan-tools. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
+**PyRORB** is an **in-development** Python package for selected RORB rainfall–runoff procedures, including canonical dependency-light RORB report readers maintained in PyRORB. Normal Python runs and the public regression suite require **no private repository and no native RORB executable**. This is not a certified full CMD replacement or a released hydrologic product.
 
 The repository and distribution use `pyrorb`; the Python import namespace remains `runoff_routing`. Install from the public checkout below while PyPI publication is deferred. The [naming and compatibility policy](docs/NAMING.md) distinguishes current branding from stable file-format and provenance identifiers.
 
 ## Install and execute a supplied storm
 
-Python **3.13 or 3.14**, on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
+Python **3.11, 3.12, 3.13 or 3.14** (3.14 preferred for development), on **Linux or Windows**, is supported for pure-Python development. From a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb):
 
 ```sh
-python -m pip install -e ".[dev]"
+python -m pip install -r requirements-catg.txt -e ".[dev]"
 python repo-scripts/check_local.py
 ```
 
-The first command installs the package and development tools; the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
+The first command installs the package, development tools and the optional PR-pinned PyRomb writer. To install only the core checkout, use `python -m pip install -e .`; edited CATG export requires the separately installed writer. See [CATG authoring](docs/RORB_GE_AUTHORING.md). the second runs repository, Ruff, strict Pyright and non-native test checks. A virtual environment is optional. For an existing explicit S1 run document, run the checked-in synthetic example:
 
 ```python
 from pathlib import Path
@@ -44,10 +44,12 @@ The CLI/text-file MVP #119, deterministic rainfall preparation #136/#175, report
 
 The [self-contained public regression guide](docs/REGRESSION_DATASET.md) uses one maintained register and comparator. Current bounded original-CMD evidence is **50/50 printed Q cases / 19,550 ordinates**, **48 reporting-scalar passes and two undefined all-zero peak-time incompletes**. The former 14 source exclusions were admitted by #132; 36-case results are historical. Original native gaps, authored controls and unresolved feature/site/physical qualifications remain explicit. `--snapshot` compares historical candidate outputs and does not execute the installed engine. Exact source/wheel receipts are linked from [current status](docs/STATUS.md).
 
-The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [batch contract](docs/ENGINEERING_BATCHES.md), [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md) and open [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5) distinguish delivered software from scientific acceptance. Monte Carlo's independently verified software subset is admitted **provisionally**, while [#9](https://github.com/Chain-Frost/pyrorb/issues/9) remains open for native/source/statistical/physical-catchment qualification. Release automation, dependency publication and PyPI distribution remain outside this delivery.
+The [engineering method and CMD deviation policy](docs/ENGINEERING_METHOD.md), [batch contract](docs/ENGINEERING_BATCHES.md), [single CMD feature matrix](docs/CMD_FEATURE_MATRIX.md) and open [CMD gate #5](https://github.com/Chain-Frost/pyrorb/issues/5) distinguish delivered software from scientific acceptance. Monte Carlo's independently verified software subset is admitted **provisionally**, while [#9](https://github.com/Chain-Frost/pyrorb/issues/9) remains open for native/source/statistical/physical-catchment qualification. The first public release remains separately gated; the reader implementation is now owned by PyRORB, with ryan-tools compatibility imports planned after that release.
 
 ## Documentation and source custody
 
 - [Quickstart and commands](docs/QUICKSTART.md) · [documentation index](docs/README.md) · [development guide](docs/DEVELOPMENT.md) · [source register](docs/SOURCES.md) · [regression policy](docs/REGRESSION.md).
 - Preserve authentic native inputs, original source identities/hashes, exact raw clocks, full horizons and frozen metrics. Approved, path-sanitised public data are versioned test evidence; original and transformed bytes are not interchangeable.
 - The private investigations repository is for agent research only. No executable, manual, restricted capture, client data or private installation path is distributed. The optional RORBwin loss profile is experimental and not the default method. This project is not endorsed by RORB's authors or custodians.
+
+Python compatibility: [24 November 2026 migration receipt](docs/work/2026-11-24-python311-compatibility.md).
