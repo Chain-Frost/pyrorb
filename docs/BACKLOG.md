@@ -4,7 +4,7 @@
 
 ## Remaining work — existing owners and finite next actions
 
-**Current release/reader update — 25 November 2026:** #212/#215/#230/#233/#220 are merged; [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published and [successful upload, release and publisher-disable run](https://github.com/Chain-Frost/pyrorb/actions/runs/45392180579) passed. #213/#10 own final-MVP selection, exact artifact qualification and separately authorised future release policy. Do not reactivate the one-shot publisher. [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) owns downstream compatibility migration.
+**Current release/reader update — 25 November 2026:** #212/#215/#230/#233/#220 are merged; [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published and [successful upload, release and publisher-disable run](https://github.com/Chain-Frost/pyrorb/actions/runs/45392180579) passed. #213/#10 own final-MVP selection, exact artifact qualification and separately authorised future release policy. Do not reactivate the one-shot publisher. [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) owns downstream compatibility migration; [draft PR #344](https://github.com/Chain-Frost/ryan-tools/pull/344) is under that owner's acceptance process.
 
 | Workstream | Disposition and next finite step |
 | --- | --- |
