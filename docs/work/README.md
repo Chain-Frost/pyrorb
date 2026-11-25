@@ -16,8 +16,8 @@
 
 ## Delivered implementation and regression receipts
 
-- [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; publication remains held for the final MVP.
-- [Deferred PyRORB publication preparation (#213)](2026-11-22-pyrorb-publication.md) — inert template, tested offline metadata guard, current version/dependency blockers and later activation gates; draft/merge and publication remain held.
+- [PyRORB identity and deferred release-preparation scopes (#212/#213)](2026-11-22-pyrorb-identity.md) — current branding/distribution compatibility, propagation through open PR stacks and separate inactive publication preparation; historical preparation; preliminary release subsequently completed.
+- [Deferred PyRORB publication preparation (#213)](2026-11-22-pyrorb-publication.md) — inert template, tested offline metadata guard, current version/dependency blockers and later activation gates; historical draft state; see current publishing guide for subsequent release.
 - [Local MCP integration and validation](2026-11-22-mcp-local-validation.md) — merged #208/#209/#211 source/stdio checks and 23 November accepted *actual Codex CLI* dedicated-wheel installation; expected-error improvements are tracked under [#221](https://github.com/Chain-Frost/pyrorb/issues/221).
 - [Monte Carlo provisional main-admission decision (23 November 2026)](2026-11-23-mc-provisional-main-admission.md) — owner-approved software-only gate, retained numerical/native uncertainties and post-merge qualification requirements.
 - [Monte Carlo #151 reconciliation with main (22 November 2026)](2026-11-22-issue9-main-reconciliation.md) — exact merge inputs, current documentation reconciliation, preserved MC identities and unperformed checks.
@@ -61,9 +61,9 @@
 
 ## Provisional Monte Carlo software and outstanding scientific research
 
-- [#9 Monte Carlo software/science ownership separation (24 November 2026)](2026-11-24-mc-science-software-ownership.md) — scientific #9/#150/#228/#148 vs bounded implementation #189/#190/#191 and upstream reader #334; completed #151/#223/#225 software remains delivered.
+- [#9 Monte Carlo software/science ownership separation (24 November 2026)](2026-11-24-mc-science-software-ownership.md) — scientific #9/#150/#228/#148 vs bounded implementation #189/#190/#191 and former upstream reader #334 (now PyRORB #232); completed #151/#223/#225 software remains delivered.
 - [#190 independently checked ARR total-probability reference](2026-11-24-issue190-arr-tpt-reference.md) — source-cited 2013/Book 4 arithmetic checks and explicit outer-bin/missing-mass limits; **not** a RORBwin 6.52 compatibility claim.
-- [#191 source-neutral native MC comparison evidence contract](2026-11-24-issue191-comparison-contract.md) — bounded identity, printed-token precision and explicit unsupported native lanes; upstream canonical MC reader evidence in ryan-tools #334 remains required.
+- [#191 source-neutral native MC comparison evidence contract](2026-11-24-issue191-comparison-contract.md) — bounded identity, printed-token precision and explicit unsupported native lanes; canonical MC reader source admission remains required under PyRORB #232 (formerly ryan-tools #334).
 - [Current #9 native-method and large-sample work packs](2026-11-17-issue9-rorb-statistical-method-scopes.md) — #150/#189/#190/#191/#148; no premature native/scientific acceptance.
 - [Original Monte Carlo #9 scoping](2026-11-15-issue9-scoping.md) and [#145 adopted statistical contract](2026-11-15-issue145-mc-statistical-method.md) — distinguish initial plans, implemented project choices and native-equivalence gaps.
 - [#146 sampler and persisted-plan work](2026-11-15-issue146-monte-carlo-sampler.md), [#147 weighted-frequency control](2026-11-15-mc-weighted-frequency.md) and [B→E→C execution contract](2026-11-15-s7-execution-slice.md) — verified B/E/C software provisionally admitted to main from #151, with stable replay/weighting identities.
