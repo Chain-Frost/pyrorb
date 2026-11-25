@@ -234,9 +234,8 @@ def _diagnostic_report() -> str:
 
 
 def test_cmd_diagnostic_binding_uses_id_not_column_position_and_exports_roles() -> None:
-    source = _diagnostic_report().replace(
-        "Hyd001 Hyd002 Hyd003 Hyd004 Hyd005", "Hyd005 Hyd003 Hyd002 Hyd001 Hyd004"
-    ).replace("2 1.00 0 2 1 2 3", "2 1.00 3 1 2 0 2")
+    source = _diagnostic_report().replace("Hyd001 Hyd002 Hyd003 Hyd004 Hyd005", "Hyd005 Hyd003 Hyd002 Hyd001 Hyd004")
+    source = source.replace("2 1.00 0 2 1 2 3", "2 1.00 3 1 2 0 2")
     document = read_rorb_bytes(source.encode("utf-8"))
     columns = bind_cmd_diagnostic_columns(document)
     assert tuple(item.column for item in columns) == ("Hyd005", "Hyd003", "Hyd002", "Hyd001", "Hyd004")
@@ -253,7 +252,8 @@ def test_cmd_diagnostic_binding_uses_id_not_column_position_and_exports_roles() 
     assert page["selection"]["rows"][2]["values"]["quantity_kind"] == "rainfall_excess_flow"
     assert page["selection"]["rows"][2]["values"]["physical_site_verified"] is False
     rows = list(csv.DictReader(io.StringIO(report_csv(document, section.name))))
-    assert rows[2]["source_token__id_token"] == "02"
+    assert tuple(item.site_id_token for item in columns) == ("05", "03", "02", "01", "04")
+    assert rows[2]["source_token__id_token"] == columns[2].site_id_token
     assert rows[2]["units"] == "m3/s"
 
 
@@ -272,7 +272,11 @@ def test_cmd_diagnostic_binding_uses_id_not_column_position_and_exports_roles() 
 def test_cmd_diagnostic_unsupported_or_ambiguous_layout_never_binds(original: str, replacement: str) -> None:
     source = _diagnostic_report().replace(original, replacement)
     document = read_rorb_bytes(source.encode("utf-8"))
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="structurally valid|Incomplete or invalid|Ambiguous physical|Duplicate hydrograph|Unsupported CMD|"
+        "complete one-based|Unsupported negative",
+    ):
         bind_cmd_diagnostic_columns(document)
     with pytest.raises(ValueError, match="diagnostic columns"):
         bind_output_site_columns(document, allow_unnamed=True)
@@ -284,6 +288,6 @@ def test_cmd_diagnostic_unsupported_or_ambiguous_layout_never_binds(original: st
 def test_cmd_diagnostic_other_native_version_is_not_admitted() -> None:
     source = _diagnostic_report().replace("6.44", "6.52")
     document = read_rorb_bytes(source.encode("utf-8"))
-    with pytest.raises(ValueError, match="6.44"):
+    with pytest.raises(ValueError, match=r"6\.44"):
         bind_cmd_diagnostic_columns(document)
     assert all(section.name != "cmd_diagnostic_sites" for section in document.sections)
