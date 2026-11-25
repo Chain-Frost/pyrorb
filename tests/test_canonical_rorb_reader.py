@@ -213,6 +213,17 @@ def test_cmd_diagnostic_original_legend_and_horizon() -> None:
     peaks = tuple(max(table.source_decimal(index, item.column) for index in range(len(table.rows))) for item in columns)
     assert peaks == tuple(map(Decimal, ("0.0000", "49.9197", "34.9086", "49.9197", "170.782")))
     assert all(row["Hyd002"] == row["Hyd004"] for row in table.source_tokens)
+    # Equal effective parameters and original storm; no new comparator or parity promotion.
+    ordinary_sha = "5ee8604dd981b9c9c3a5dc64f2d578590d9e7107174f63f293c464ac38488e99"
+    ordinary_raw = path.with_name(f"{ordinary_sha}.out").read_bytes()
+    assert len(ordinary_raw) == 19721
+    assert hashlib.sha256(ordinary_raw).hexdigest() == ordinary_sha
+    ordinary = read_rorb_bytes(ordinary_raw).section("hydrographs_1")
+    assert ordinary.valid
+    assert len(ordinary.rows) == 301
+    assert [(row["Inc"], row["Time"], row["Hyd005"]) for row in table.source_tokens] == [
+        (row["Inc"], row["Time"], row["Hyd001"]) for row in ordinary.source_tokens
+    ]
     with pytest.raises(ValueError, match="diagnostic columns"):
         bind_output_site_columns(document, allow_unnamed=True)
 
@@ -285,9 +296,12 @@ def test_cmd_diagnostic_unsupported_or_ambiguous_layout_never_binds(original: st
     assert not section.rows
 
 
-def test_cmd_diagnostic_other_native_version_is_not_admitted() -> None:
-    source = _diagnostic_report().replace("6.44", "6.52")
+@pytest.mark.parametrize("version_line", ["Program version 6.52\n", ""])
+def test_cmd_diagnostic_other_native_version_is_not_admitted(version_line: str) -> None:
+    source = _diagnostic_report().replace("Program version 6.44\n", version_line)
     document = read_rorb_bytes(source.encode("utf-8"))
     with pytest.raises(ValueError, match=r"6\.44"):
         bind_cmd_diagnostic_columns(document)
-    assert all(section.name != "cmd_diagnostic_sites" for section in document.sections)
+    with pytest.raises(ValueError, match="diagnostic columns"):
+        bind_output_site_columns(document, allow_unnamed=True)
+    assert not document.section("cmd_diagnostic_sites").valid

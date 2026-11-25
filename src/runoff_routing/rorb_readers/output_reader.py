@@ -151,8 +151,12 @@ _CMD_DIAGNOSTIC_LAYOUT: dict[int, tuple[str, CmdDiagnosticQuantity]] = {
 
 def _has_cmd_diagnostic_legend(document: RorbDocument) -> bool:
     """Detect the diagnostic family, even if a member of its legend is malformed."""
-    return document.metadata.get("program_version") == "6.44" and any(
-        str(row.get("description")).startswith(("Sub-area inflow point, sub-area ", "Normal storage, reach no."))
+    return any(
+        str(row.get("description")).startswith("Sub-area inflow point, sub-area ")
+        or (
+            document.metadata.get("program_version") == "6.44"
+            and str(row.get("description")).startswith("Normal storage, reach no.")
+        )
         for section in document.sections
         if section.name == "sites"
         for row in section.rows
@@ -171,7 +175,11 @@ def bind_output_site_columns(
 
 def _check_cmd_diagnostic_units(document: RorbDocument) -> None:
     """Require the retained three discharge-summary groups, without binding their scalars."""
-    scalars = document.section("reported_scalars")
+    try:
+        scalars = document.section("reported_scalars")
+    except StopIteration as exc:
+        msg = "Missing CMD diagnostic discharge summary groups"
+        raise ValueError(msg) from exc
     peaks = [row for row in scalars.rows if row["family"] == "Peak discharge"]
     if (
         not scalars.valid
