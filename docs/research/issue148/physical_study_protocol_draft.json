@@ -57,7 +57,7 @@
     "pilot_threshold_rule": "per site/duration the three median pilot Python 1000-event conditional quantiles; deduplicate exactly; freeze before reference and confirmation; if invalid stop",
     "primary_population_comparison": [
       "conditional_peak_quantile_by_site_duration_target_m3s",
-      "conditional_cdf_supremum_difference",
+      "conditional_cdf_at_frozen_pilot_thresholds_by_site_duration",
       "conditional_exact_zero_probability"
     ],
     "initial_peak_vector_size_proposed": 6,
@@ -78,7 +78,8 @@
       "native_printed_summary",
       "full_Q_selected_attribution",
       "between_run_SD_CV_and_quantile_spread",
-      "elapsed_time_and_storage"
+      "elapsed_time_and_storage",
+      "whole_conditional_cdf_monotonic_grid_envelope_not_equivalence"
     ]
   },
   "margins": {
@@ -107,7 +108,7 @@
     "site_count_candidate": 2,
     "strata_proposed": 50,
     "stratum_edges_and_weights": null,
-    "streams_python": "distinct uniformly generated 64-bit root seeds, existing HMAC domain separation, independently audited non-overlap and computational independence assumption",
+    "streams_python": "independently generated uniform 64-bit roots with replacement; abort unresolved on duplicate root or overlapping identities; existing HMAC domain separation; within-cohort independent pseudorandom draws an explicit computational assumption",
     "streams_native": "unverified; require source-backed independence and effective allocation before inference",
     "seed_manifests": null,
     "reference_plan_sha256": null,
@@ -178,15 +179,33 @@
     "reference_alpha_native": "0.01",
     "whole_run_lower_alpha_each_engine": "0.0075",
     "whole_run_upper_alpha_each_engine": "0.0075",
-    "reference_method": "stratum-wise DKW for lower/upper observable endpoint CDFs with union allocation; combine known absolute weights and divide by fixed domain mass only for conditional diagnostic; invert envelope without density assumption",
-    "reference_family_size_per_engine": "2 * H * S * D; H actual strata, S sites, D durations",
+    "reference_method": "weighted Hoeffding on pilot-frozen finite thresholds, using independent reference draws across and within strata, lower/upper observable endpoint indicators, known conditional stratum weights; union allocation and conservative grid inversion",
+    "reference_family_size_per_engine": "K = 2 * sum(site,duration) unique frozen threshold count; max 512 initially",
     "native_print_precision": "known convention interval per token or unavailable; propagate interval endpoints; never substitute exact zero",
     "reference_pooling": "combine conditional CDF contributions using complete planned draw counts and frozen stratum weights, never average batch quantiles",
-    "equivalence": "simultaneous reference-region differences wholly within prespecified margins; no separate alpha consumed for transformations of same joint regions",
+    "equivalence": "simultaneous reference-region differences wholly within prespecified margins for quantiles, fixed CDF thresholds and zero mass; no whole-CDF claim; no separate alpha consumed for transformations of same joint regions",
     "single_run": "definite pass if every output within margin for all reference/observation values; definite fail if no admissible reference/observation vector meets all margins; otherwise indeterminate; conservative rectangle check may return indeterminate",
     "reliability": "one-sided exact CP lower on definite passes and upper on possible passes (including indeterminate); adequacy if lower >= target; inadequacy if upper < target; otherwise unresolved",
     "coverage_power_validation": "required separately authorised synthetic validation, finite manifest and MC uncertainty on coverage/power, not performed here",
-    "full_annual": "not inferred"
+    "full_annual": "not inferred",
+    "reference_grid": {
+      "status": "proposed_freeze_before_reference_and_confirmation",
+      "thresholds": "0, pooled weighted Python screening conditional attained quantiles at nonexceedance 0.01..1.00 by 0.01 (1.00=max), and max(0,m_j+k*Delta_j) for each of three pilot median peak quantiles and k in [-2,-1,-0.5,-0.25,0,0.25,0.5,1,2]; sort/deduplicate",
+      "max_thresholds_per_site_duration": 128,
+      "same_grid_both_implementations": true,
+      "adaptive_refinement": false
+    },
+    "reference_half_width": "sqrt(0.5 * sum_h(v_h^2/n_h) * log(2*K/alpha_ref)), v_h = w_h/0.49; n_h planned pooled independent reference count",
+    "reference_feasibility": {
+      "rejected_uniform_dkw": {
+        "reason": "50 strata x 10000 reference draws, 2 sites, 1 duration, alpha_h=0.00005; epsilon ~0.023 precludes finite 0.98/0.99 lower-CDF inverse and 0.01 joint difference margin",
+        "disposition": "diagnostic_only"
+      },
+      "ideal_equal_weight_hoeffding_half_width_approx": "0.0034",
+      "actual_weight_check_required": true,
+      "adequacy_not_established": true
+    },
+    "quantile_bounds": "max(0, greatest grid x with U(x)<1-a); least grid x with L(x)>=1-a or unbounded; monotonic tightening; no interpolation"
   },
   "decisions_pending": [
     "private_source_authentication_and_permissions",
