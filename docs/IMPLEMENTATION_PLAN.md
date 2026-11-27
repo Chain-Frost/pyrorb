@@ -20,7 +20,7 @@ The temporary project/CLI default is `python-cmd/cmd-6.44`; `python/engineering-
 | Rainfall #8/#193 | Method/version review complete via #194; no new ARF equation found. Preserve source-selection/applicability limits and separate native ARF #192. |
 | Deterministic selection #152 | Use the merged #142 reader to bind complete native populations/sites/effective events and distinguish representative, tie, missing-member and cross-duration rules. Existing reporting software remains delivered. |
 | Monte Carlo #9/#189–#191/#232 | #151 is merged provisionally; branch from current main. #223/#225 delivered bounded comparison contract and read-only study preflight. Scientific #150/#228/#148 remain distinct from bounded software #189/#190/#191/#232; #224 is research-only ARR TPT arithmetic. |
-| Reader #231 / [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) | #233 transfer and preliminary publication complete; downstream migration remains open. |
+| Reader #231 / [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) | Completed: #233 transfer, preliminary publication, downstream #344 integration and accepted 3.11/3.14 main CI; #231 and downstream #340/#337 closed. Native MC grammar #232 remains separate. |
 | Release #10/#213 | [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) published; final MVP selection, exact artifact qualification and owner-approved future policy remain open. |
 
 ## Monte Carlo follow-up sequence

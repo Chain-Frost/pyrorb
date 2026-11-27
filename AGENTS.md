@@ -14,7 +14,7 @@ Read [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [docs/work/README.md](docs/work
 
 ## Canonical reader ownership
 
-The owner-approved [#231](https://github.com/Chain-Frost/pyrorb/issues/231) moves the six canonical reader modules into `src/runoff_routing/rorb_readers`. All reusable RORB report grammar and source-token changes belong here; native MC grammar is [#232](https://github.com/Chain-Frost/pyrorb/issues/232), superseding ryan-tools #334. Do not recreate a standalone reader distribution or depend on ryan-tools. #233 is merged and [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published. [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) owns downstream compatibility imports and packaging retirement; do not duplicate this work. Preserve SUL provenance and existing evidence contracts.
+The owner-approved [#231](https://github.com/Chain-Frost/pyrorb/issues/231) moved the six canonical reader modules into `src/runoff_routing/rorb_readers`. All reusable RORB report grammar and source-token changes belong here; native MC grammar is [#232](https://github.com/Chain-Frost/pyrorb/issues/232), superseding ryan-tools #334. Do not recreate a standalone reader distribution or depend on ryan-tools. #233 is merged and [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published. [ryan-tools #340](https://github.com/Chain-Frost/ryan-tools/issues/340) completed downstream compatibility imports and standalone packaging/publisher retirement through [merged ryan-tools PR #344](https://github.com/Chain-Frost/ryan-tools/pull/344); #231 is closed. Do not duplicate this work. Preserve SUL provenance and existing evidence contracts.
 
 ## Scope and delivery
 
