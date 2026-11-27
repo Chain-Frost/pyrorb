@@ -98,9 +98,7 @@ def test_bad_horizon_or_depths_fail() -> None:
     ("losses", "expected"),
     [(Losses(25, 2), (0.0, 24.0, 69.0)), (Losses(25, 0, 0.5), (0.0, 12.5, 35.0))],
 )
-def test_combined_preburst_normalizes_total_depth_and_carries_loss(
-    losses: Losses, expected: tuple[float, ...]
-) -> None:
+def test_combined_preburst_normalizes_total_depth_and_carries_loss(losses: Losses, expected: tuple[float, ...]) -> None:
     model = Catchment((Control(1, 1), Control(7)), (1.0,))
     storm = Storm(0.5, 5, (20.0, 30.0, 70.0), (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
     result = calculate_storm(model, storm, losses=losses, kc=0, m=1)
