@@ -1,0 +1,230 @@
+{
+  "format": "pyrorb-mc148-python-only-study-design-draft/1",
+  "status": "proposed_unfrozen",
+  "simulation_authorised": false,
+  "owner_direction": "prioritise restricted-domain Python-only preparation; no approved numerical loss values, tolerances, cap, freeze or execution",
+  "repository_base": "ec395112a8d7fea026ed22585beecaec536ef7cd",
+  "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
+  "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
+  "historical_protocol": "physical_study_protocol_draft.json",
+  "unchanged_preflight_declaration": "physical_study_draft_declaration.json",
+  "retained_preflight_result": "physical_study_draft_preflight_result.json",
+  "scope": {
+    "study": "single fixed physically derived computational response population, conditional numerical reliability only",
+    "candidate_alias": "M04",
+    "candidate_revision": "owner-selected immutable 19 November archived capture; original and unique derivative SHA/size verified in attributed local receipt",
+    "source_admission": "pending",
+    "physical_site_aliases": [
+      "P01",
+      "P02"
+    ],
+    "actual_site_ids": null,
+    "source_manifest_sha256": null,
+    "physical_calibration": "unverified",
+    "uncalibrated_case_route": "requires independent applicability decision; no engineering or physical calibration claim",
+    "engine_profile": "python-cmd/cmd-6.44",
+    "sampling_policy": "monte-carlo-statistics/1",
+    "frequency_profile": "monte-carlo-statistics/1:weighted-step-inverse-v1",
+    "scenario_id": null,
+    "duration_minutes_proposed": 1440,
+    "durations_admitted": [],
+    "scenario_count": 1,
+    "duration_count": 1,
+    "engine_count": 1,
+    "site_count": 2,
+    "native": "excluded; zero allocation and #150 stop unchanged",
+    "annual_flood_interpretation": "unqualified",
+    "duration_expansion": "excluded"
+  },
+  "sources": {
+    "archived_ifd": "authenticated matched candidate export per B; 24h six anchors",
+    "archived_tp": "authenticated areal file and metadata per B; 10 source IDs at 24h, area category common to both sites per A",
+    "areal_tp_weights_proposed": "one explicit full-domain conditional pool of ten eligible members at 0.1 each; independent approval required",
+    "median_storm_il_mm": null,
+    "continuing_loss_mm_per_h": null,
+    "loss_source_sha256": null,
+    "loss_basis": "NaN archived Data Hub values are not evidence; do not re-label archived deterministic IL/CL; source-backed regional/transfer or actual adopted storm-loss record, or expressly separate numerical scenario if approved",
+    "loss_factor_table": "candidate corrected empirical factors, source/erratum/endpoint and applicability review pending",
+    "dependence": "explicitly proposed independent empirical loss conditional on rainfall and eligible TP; not approved",
+    "preburst_proposal": "none/PB=0 as conditional numerical assumption only; no subtraction/clamp or climate change default without decision",
+    "arf": "applicable pinned ARR2019 region/area formula once, no extensions; review #192",
+    "permissions": null,
+    "calibration_or_limited_scope_decision": null,
+    "feature_site_review": null
+  },
+  "probability": {
+    "rainfall_aep_bounds": [
+      "0.01",
+      "0.50"
+    ],
+    "domain_mass": "0.49",
+    "outside_rare": "0.01",
+    "outside_frequent": "0.50",
+    "conditional_response_exceedance_targets": [
+      "0.01",
+      "0.02",
+      "0.05"
+    ],
+    "conditional_cdf_denominator": "fixed 0.49 of planned rainfall-coordinate mass; all failed/unstarted weights retained",
+    "target_preflight_field": "legacy target_flood_aep_fractions interpreted only as conditional response targets in research sidecar",
+    "production_full_domain_quantiles": "incomplete; no production renormalisation or frequency change",
+    "no_extrapolation": true
+  },
+  "estimands": {
+    "primary": "latent numerical whole-1000-run reliability for frozen conditional population and margin rule; conditional on independent screening result",
+    "secondary": "operational complete result counts/status and observed run spread, not latent reliability or mean uncertainty",
+    "components": [
+      "six conditional peak quantiles at 2 sites x 3 targets",
+      "exact-zero mass at each site",
+      "conditional CDF at three pilot-frozen median thresholds per site, exact deduplication"
+    ],
+    "max_components": 14,
+    "margin_relative_proposed": "0.02",
+    "margin_relative_sensitivity_descriptive": [
+      "0.01",
+      "0.02",
+      "0.05"
+    ],
+    "margin_abs_m3s_by_site": null,
+    "margin_abs_basis_proposed": "positive site-specific numerical reporting floor based on explicitly reviewed archived reporting unit or independent numerical decision; no engineering tolerance inferred",
+    "margin_cdf_abs_proposed": "0.01",
+    "margin_zero_abs_proposed": "0.01",
+    "required_pass_probability_proposed": "0.95",
+    "joint_confidence_proposed": "0.95",
+    "owner_margin_approval": null
+  },
+  "design": {
+    "status": "proposed_not_authorised",
+    "strata_count": 50,
+    "stratification": "existing v1 equal normal-coordinate widths, unequal exact probability masses; reverse to ascending p and persist canonical edges/weights",
+    "stratum_edges_and_weights": null,
+    "root_manifest": null,
+    "reference_manifest_sha256": null,
+    "confirmation_manifest_sha256": null,
+    "root_rule": "independent uniform uint64 roots with replacement preassigned to all planned cohorts; any duplicate/identity overlap abort unresolved, do not condition inference on collision-free selection or redraw; HMAC purpose/domain separation plus computational independence assumption",
+    "phase_order": [
+      "source and scope review",
+      "independent coverage/implementation review; separately authorised synthetic qualification",
+      "pre-screen freeze and separately authorised intake/screen",
+      "freeze derived scales/grid and verify precision feasibility",
+      "separate authorisation of fixed reference/confirmation"
+    ],
+    "stages": [
+      {
+        "id": "intake_future_only",
+        "events_per_cohort": 250,
+        "cohorts": 1,
+        "draws_per_stratum": 5,
+        "max_events": 250,
+        "cohort_timeout_including_cleanup_seconds": 60,
+        "max_stage_elapsed_seconds": 120
+      },
+      {
+        "id": "screen",
+        "events_per_cohort": 1000,
+        "cohorts": 30,
+        "draws_per_stratum": 20,
+        "max_events": 30000,
+        "cohort_timeout_including_cleanup_seconds": 300,
+        "max_stage_elapsed_seconds": 10800
+      },
+      {
+        "id": "reference",
+        "events_per_cohort": 50000,
+        "cohorts": 10,
+        "draws_per_stratum": 1000,
+        "max_events": 500000,
+        "cohort_timeout_including_cleanup_seconds": 3600,
+        "max_stage_elapsed_seconds": 43200
+      },
+      {
+        "id": "confirmation",
+        "events_per_cohort": 1000,
+        "cohorts": 300,
+        "draws_per_stratum": 20,
+        "max_events": 300000,
+        "cohort_timeout_including_cleanup_seconds": 300,
+        "max_stage_elapsed_seconds": 93600
+      }
+    ],
+    "max_attempted_events": 830250,
+    "max_elapsed_seconds": 151200,
+    "max_memory_mib_per_process": 4096,
+    "max_storage_mib_total": 8192,
+    "max_concurrent_cohorts": 1,
+    "max_retries": 0,
+    "larger_screens": "5k/10k screens, alternative budget confirmation, extra duration and native/replay excluded; separately approved new protocol only",
+    "stop": "pre-launch worst-case cohort incl cleanup fits remaining caps, actual complete planned allocations and identity verified; stop on budget, law/identity or unsupported state; keep all preassigned unstarted/aborted slots unknown; no outcome-dependent replacement or optional CI stopping"
+  },
+  "inference": {
+    "status": "proposed_independent_scientific_review_required",
+    "alpha_total": "0.05",
+    "alpha_reference": "0.02",
+    "alpha_reliability_lower": "0.015",
+    "alpha_reliability_upper": "0.015",
+    "reference_grid": "per site 0 + pooled complete independent 30-screen conditional step quantiles at 0.01..1.00 nonexceedance + max(0,m_j+k*Delta_j) for k=-2,-1,-0.5,-0.25,0,0.25,0.5,1,2 for three target medians; dedup; max 128/site, K<=256 latent CDF points",
+    "reference_rule": "latent independent complete planned indicators I(Q<=x); weighted range v_h/n_h, v_h=w_h/0.49; Hoeffding epsilon=sqrt(sum(v_h^2/n_h)*log(2*K/alpha_reference)/2); enclose latent weighted empirical CDF by pointwise observed interval sums, unknown [0,+inf]; do not require independent observed censoring; monotone tighten, conservatively invert with U(x)<t for lower and L(x)>=t for upper; no extrapolation",
+    "latent_law_requirement": "total defined nonnegative Q per site and preassigned independent draws under frozen implemented midpoint law; genuine undefined response or unverifiable law -> unresolved, not imputed",
+    "single_run": "latent empirical complete output vector; definite pass if all admissible vector/reference pairs meet every margin; definite fail if no admissible pair meets them; otherwise unknown; include unstarted/aborted cohorts",
+    "reliability_rule": "on simultaneous reference coverage, D <= latent iid successful cohort count <= P; CP monotone lower(D,n) upper(P,n), n=300 planned; adequacy lower>=.95, inadequacy upper<.95, else unresolved; do not apply iid CP directly to observed classifications; condition on independent frozen screen, not cap or selection",
+    "no_scope_expansion": "no native equivalence or annual flood inference; no extra inferential sensitivity claims",
+    "reference_design_illustration": {
+      "equal_z_50_approx_conditional_weight_min": 0.0026717469,
+      "conditional_weight_max": 0.0378670935,
+      "reference_n_h": 10000,
+      "S_approx": 0.00000273025654,
+      "effective_n_approx": 366265.95,
+      "K_max": 256,
+      "epsilon_approx": 0.00372244,
+      "equal_weight_epsilon_approx": 0.00318596,
+      "actual_plan_check_required": true
+    },
+    "ideal_binomial_planning": {
+      "n": 300,
+      "definite_pass_min": 294,
+      "possible_pass_max": 275,
+      "power_if_latent_p_0_98": 0.60630825,
+      "power_if_latent_p_0_99": 0.96724905,
+      "power_for_inadequacy_if_latent_p_0_90": 0.85608398,
+      "power_objectives_proposed": {
+        "adequacy_at_0_99": 0.9,
+        "inadequacy_at_0_90": 0.8
+      },
+      "not_achieved_physical_power": true
+    }
+  },
+  "synthetic_qualification": {
+    "status": "future_separately_authorised_not_executed",
+    "control_count": 8,
+    "studies_per_control": 1000,
+    "planned_studies": 8000,
+    "engines": 1,
+    "strata": 50,
+    "cohorts_per_study": 340,
+    "max_joint_count_vectors": 136000000,
+    "max_exact_two_state_oracle_count_evaluations": 8008000,
+    "max_elapsed_seconds": 14400,
+    "max_memory_mib": 2048,
+    "max_storage_mib": 1024,
+    "max_concurrent_processes": 1,
+    "max_retries": 0,
+    "coverage_metrics": "up to six predeclared metrics/control; two one-sided exact intervals allocated .05/(2*8*6); deterministic enclosure invariants must hold; uncertainty on empirical coverage, false decisions and power, no proof of nominal coverage",
+    "requires_independent_truth_oracle": true,
+    "acceptance_power_thresholds_pending_owner": true
+  },
+  "gates": {
+    "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
+    "policy": "source-supported loss values and factor table, TP weights, dependence, baseline/ARF/preburst/area/clock; no fabricated source",
+    "analytic": "independent amended latent-law/design review and separately approved coverage/power qualification",
+    "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
+    "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
+    "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"
+  },
+  "execution": {
+    "native_launches": 0,
+    "physical_events": 0,
+    "synthetic_events": 0,
+    "timing_pilots": 0,
+    "new_preflight_runs": 0
+  }
+}

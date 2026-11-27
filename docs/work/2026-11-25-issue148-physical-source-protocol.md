@@ -2,6 +2,8 @@
 
 **Disposition: candidate identified; admission blocked; protocol proposed, not frozen; independent scientific review pending; `simulation_authorised=false`.** No physical or native MC execution, timing pilot, new numerical method, or engineering acceptance. This is a preparation packet under [#148](https://github.com/Chain-Frost/pyrorb/issues/148), not a closure of #148 or #9.
 
+**28 November continuation:** [Python-only restricted-domain preparation](2026-11-28-issue148-python-only-conditional-study.md) records the later archived-source findings, narrowed proposed budget and corrected latent-ledger inference. This original two-implementation packet and its JSON are historical proposals; neither is an executable or adopted scientific protocol. Retain all five checker lanes and the native stop.
+
 ## 1. Scope and current evidence
 
 Inspected public main `b6788a83fbe5eb9ccd68232fe8d92dfb596e0f6b` (tree `5f3d6cd02e0d486df03379d5e91eb1786b418ff6`); no open PR or existing #148 branch was found in the live pull/branch checks at preparation. #148 is open and unassigned; do not displace other owners. [#225](https://github.com/Chain-Frost/pyrorb/pull/225) is merged (merge `0526aa2b8e91cce4665aaa6d686d272911065808`), as are the synthetic research and provisional B/E/C software. Read [AGENTS](../../AGENTS.md), [development](../DEVELOPMENT.md), [compatibility](../COMPATIBILITY.md), [method](../MONTE_CARLO.md), [frequency](../MONTE_CARLO_FREQUENCY.md), [preflight receipt](2026-11-24-issue148-physical-study-preflight.md) and [synthetic research](../research/MONTE_CARLO_CONVERGENCE.md). Preserve their defaults and identities. Private research workspace inventory inspected read-only; it is not a product dependency and no private file or hash is copied here.
