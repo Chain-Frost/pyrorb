@@ -294,6 +294,97 @@ and original AEP/duration/time step via manifest and source CSV. Compare
 the recorded prepared increments and original written-depth reconstruction
 as decimals; preserve all mismatches and unavailable fields.
 
+## 28 November scientific re-audit
+
+The research author repeated the calculation and directly re-read all 60 retained
+primary native rainfall reports, rather than relying on a generic code review.
+This is additional scientific work, not a claim that a second person or agent
+signed off the author's own research.
+
+- Reconfirmed equations 2.4.1–2.4.4, Table 2.4.1 and both relevant regional
+  coefficient rows in the primary Book 2 v4.1 indexed page text (pp. 62–65).
+  The displayed equation definitions resolve the swapped interpolation equation
+  references in the middle-duration small-area table cell: interpolate duration
+  with 2.4.3, then area with 2.4.4. The large source PDF still could not be
+  retrieved in full for page-image inspection. The Ladson reference remains
+  secondary; the authentic retained Data Hub TXT is bound to its own origin.
+- Recalculated all 25 cases with mpmath 1.3.0 at 80 decimal digits under Linux
+  CPython 3.13.5, separately from the product and original Decimal expression.
+  The 21 published-factor expectations all lie within their unchanged
+  5e-13 representation interval; maximum absolute difference 4.5130997412e-13.
+  The six primary depth residuals, three historical coefficient cases and
+  East Coast North example reproduce the report values at its stated precision.
+- At the same pinned investigations revision, directly re-read the 60 original
+  OUT rainfall tables, source areal CSV, manifest event mapping and #175
+  per-event receipt. Bind each original source EventID, ordinal, duration,
+  AEP, source timestep, bin 200 and zero-based rainfall row index. All 60
+  bindings and all source weight sums (100%) passed. The prior authenticated
+  STM depths and source-vector/byte custody remain the basis for the written
+  input; this re-audit is not a new 224-file byte rehash or product replay.
+
+For exact written rainfall comparisons, convert the two-decimal STM depth
+to integer hundredths of mm (Z), the source percent to integer hundredths
+of percent (W), and each original 0.1-mm OUT rainfall token to tenths of mm
+(R). The signed native-minus-reconstructed residual in millionths of a
+millimetre is 100000 R − Z W. Compare its magnitude to 50000, the original
+0.05-mm half-unit budget. This avoids binary rounding at the print boundary.
+For the separate full-source diagnostic, multiply the newly computed full
+areal depth by W/10000 and subtract from the printed rainfall depth.
+The two adverse rows were additionally calculated at 80 digits.
+
+| AEP | Duration h | Native rainfall rows re-read | Max abs written vs print (mm) | Written print failures | Full-source print failures |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 5% | 12 | 240 | 0.049872 | 0 | 0 |
+| 5% | 18 | 180 | 0.049544 | 0 | 0 |
+| 5% | 24 | 240 | 0.049846 | 0 | 0 |
+| 2% | 12 | 240 | 0.049933 | 0 | 0 |
+| 2% | 18 | 180 | 0.049852 | 0 | 1 |
+| 2% | 24 | 240 | 0.049770 | 0 | 1 |
+
+Direct raw-table replay reproduces both adverse observations:
+2%/18 h EventID 9012 step 6 (+0.0500200151852 mm full-source,
++0.049852 mm written) and 2%/24 h EventID 9110 step 18
+(−0.0500990711277 mm full-source, −0.049770 mm written).
+Thus 1,320/1,320 written-source print comparisons and 1,318/1,320
+full-source print comparisons reproduce without changing the bounds.
+All 1,320 recorded #175 prepared-minus-written increments were also
+confirmed zero in the retained receipt.
+
+### Quantified coefficient identifiability
+
+A further analytical control asks whether the native scalar precision could
+distinguish the two coefficient sources, even if every other parameter
+and the published equation were assumed known. For exact gross G, printed
+ARF F and written depth Z, the compatible multiplier interval is the
+intersection of [F − 0.005, F + 0.005] and
+[(Z − 0.005)/G, (Z + 0.005)/G]. The latter interval is narrower for
+all six cells. At the two duration endpoints, the short equation is
+independent of e, while the long equation is affine in e with slope
+A^f D^g (0.3 + log10(p)); the 18 h slope is half the 24 h slope.
+The cap at unity is inactive over the resulting interval. Inverting the
+four e-sensitive cell intervals and intersecting them gives a conditional
+compatible e interval of approximately [3.84157578349E-06, 3.86371976726E-06].
+This is a resolution/identifiability calculation, **not a fitted or adopted
+coefficient, statistical confidence interval or new acceptance tolerance**.
+It assumes exact archived gross depths, the published arithmetic, all
+other coefficients held fixed and nearest-rounded tokens. If these
+assumptions do not hold, the interval cannot identify a native coefficient.
+
+Replacing only e with 3.845E-06 changes the four sensitive areal depths
+by +0.0000996224, +0.0002164473, +0.0001628100 and +0.0003530085 mm
+(5%/18 h, 5%/24 h, 2%/18 h and 2%/24 h respectively). Both coefficients
+meet all six unchanged scalar display intervals. Therefore source
+provenance, not the matching native print tokens, selects the published
+3.85E-06 for this capture; the more precise internal native arithmetic
+cannot be inferred. No production change is supported.
+
+Author scientific disposition: the bounded archived-evidence research is
+complete at the observed precision; retain the historical strict failures
+and internal precision as not_assessed. A new native run is neither
+required nor authorised. Separate independent scientific review, where
+required by issue #192, is not supplied by this author re-audit or by a
+generic Codex code-review receipt.
+
 ## Applicability and disposition
 
 | Claim | Verdict / boundary |
