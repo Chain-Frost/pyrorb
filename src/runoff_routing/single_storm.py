@@ -35,6 +35,7 @@ class Storm:
     percentages: tuple[float, ...]
     depths_mm: tuple[float, ...]
     pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
+    preburst_bins: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -247,6 +248,36 @@ def calculate_storm(catchment: Catchment, storm: Storm, *, losses: Losses, kc: f
     return calculate_prepared_storm(prepare_catchment(catchment, kc=kc, m=m), storm, losses=losses)
 
 
+def _validate_temporal_basis(storm: Storm, total_percent: float) -> None:
+    """Preserve the combined-storm split even when ratios use a shared denominator."""
+    if type(storm.preburst_bins) is not int:
+        message = "Pre-burst split must be an integer."
+        raise RoutingDomainError(message)
+    if storm.pattern_basis == "combined_preburst_percent":
+        split = storm.preburst_bins
+        if not 0 < split < len(storm.percentages):
+            message = "Combined pre-burst requires a positive prefix and a separate burst."
+            raise RoutingDomainError(message)
+        prefix = math.fsum(storm.percentages[:split])
+        burst = math.fsum(storm.percentages[split:])
+        # Match the typed combined-storm source precision, not the stricter
+        # ordinary 100%-of-depth numerical basis.
+        if prefix <= 0 or not 99.95 <= burst <= 100.05:
+            message = "Combined pre-burst requires positive weights and a full 100% burst segment."
+            raise RoutingDomainError(message)
+        return
+    if storm.preburst_bins != 0:
+        message = "Only a combined pre-burst basis may carry a pre-burst split."
+        raise RoutingDomainError(message)
+    if storm.pattern_basis == "percent_of_depth":
+        if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
+            message = "Temporal pattern percentages must total 100 within printed precision."
+            raise RoutingDomainError(message)
+    elif storm.pattern_basis != "relative_weights":
+        message = "Unsupported temporal basis."
+        raise RoutingDomainError(message)
+
+
 def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     prepared: PreparedCatchment, storm: Storm, *, losses: Losses
 ) -> StormResult:
@@ -285,18 +316,13 @@ def calculate_prepared_storm(  # noqa: C901 -- ordered source/control stack
     if not math.isfinite(total_percent) or total_percent <= 0:
         message = "Temporal weights must have a finite positive denominator."
         raise RoutingDomainError(message)
-    if storm.pattern_basis == "percent_of_depth":
-        if not math.isclose(total_percent, 100, rel_tol=0, abs_tol=0.01):
-            message = "Temporal pattern percentages must total 100 within printed precision."
-            raise RoutingDomainError(message)
-    elif storm.pattern_basis != "relative_weights":
-        message = "Unsupported temporal basis: only explicit percentages or distinct relative weights are admitted."
-        raise RoutingDomainError(message)
-    # Percent-of-depth storms keep their original arithmetic. Relative weights
-    # use a dimensionless scaled ratio before multiplying by source depth, so
-    # subnormal but equal nonzero weights cannot silently lose all rainfall.
+    _validate_temporal_basis(storm, total_percent)
+    # Ordinary percent-of-depth storms keep their original arithmetic. Relative
+    # weights and combined pre-burst weights use the same scaled-ratio calculation.
+    # For a combined storm, depth is the total event depth; carry losses through
+    # the preceding bins into the full burst, without changing source tokens.
     relative_shares: tuple[float, ...] = ()
-    if storm.pattern_basis == "relative_weights":
+    if storm.pattern_basis in ("relative_weights", "combined_preburst_percent"):
         maximum = max(storm.percentages)
         scaled = tuple(value / maximum for value in storm.percentages)
         scaled_total = math.fsum(scaled)

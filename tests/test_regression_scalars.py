@@ -1,22 +1,30 @@
-"""Synthetic end-to-end scalar adapter and custody/provenance rejection controls."""
+"""Scalar custody controls and bounded original-profile reporting diagnostics."""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import math
+import os
+import runpy
 from dataclasses import asdict
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from test_regression_dataset import dataset_fixture
 
 from runoff_routing import regression_dataset as rd
 from runoff_routing import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
+from runoff_routing.cmd_deviation import assess_cmd_deviation
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineOutcome, EngineSelection
+from runoff_routing.project_json import LegacyRunFiles, Project, SourceFile, load_project, project_to_json, write_project
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.regression_scalar_adapter import stored_cmd_reporting_clock, stored_float
 from runoff_routing.rorb_documents import RorbSource
+from runoff_routing.rorb_model import RunModel, to_json
 from runoff_routing.rorb_out import inspect_output
 
 REVISION = "a" * 40
@@ -495,3 +503,147 @@ def test_missing_or_invalid_scalar_evidence_cannot_mask_ordinate_failure(
     assert case["scalar_evidence"]["classification"] == expected
     assert case["mismatches"][0]["site"] == "Hyd001"
     assert result["counts"] == {"fail": 1}
+
+
+def _stage_combined_original(
+    case: dict[str, Any], namespace: dict[str, Any], directory: Path
+) -> tuple[LegacyRunFiles, RunModel]:
+    """Use the maintained probe's verified byte loader and typed decoder."""
+    source_files: dict[str, SourceFile] = {}
+    for suffix in (".par", ".catg", ".stm"):
+        raw: bytes = namespace["_original_source"](case, suffix)
+        name = f"original{suffix}"
+        (directory / name).write_bytes(raw)
+        source_files[suffix] = SourceFile(name, hashlib.sha256(raw).hexdigest())
+    model: RunModel = namespace["_typed_model"](case)
+    assert model.storm.pattern_basis == "combined_preburst_percent"
+    assert model.storm.preburst_bins == 48
+    assert sum(model.storm.percentages, Decimal(0)) == Decimal("102.10")
+    assert model.storm.depths_mm == (Decimal("69.02"),) * 5
+    return LegacyRunFiles(source_files[".par"], source_files[".catg"], source_files[".stm"]), model
+
+
+def _execute_combined_original(
+    case_id: str,
+    sources: LegacyRunFiles,
+    model: RunModel,
+    directory: Path,
+    selection: EngineSelection,
+    wheel: Path | None,
+) -> tuple[EngineOutcome, Project]:
+    project = Project(case_id, "legacy-rorb", sources, engine=selection)
+    path = directory / f"{selection.engine}.json"
+    write_project(path, project)
+    assert load_project(path).run == model
+    outcome = run_engine_project(path, wheel_artifact=wheel)
+    assert outcome.status == "computed_unvalidated", outcome.diagnostics
+    assert outcome.stored_selection == outcome.effective_selection == selection
+    assert outcome.native_parity_status == "not_assessed"
+    assert outcome.model_sha256 == hashlib.sha256(to_json(model).encode("utf-8")).hexdigest()
+    assert outcome.source_file_hashes == tuple(
+        (item.path, item.sha256) for item in (sources.parameters, sources.catchment, sources.storm)
+    )
+    assert outcome.requested_print_ids == ("print_1",)
+    assert outcome.control_order[-1] == 7
+    assert outcome.control_order.count(7) == 1
+    assert len(outcome.hydrographs) == 1
+    assert outcome.hydrographs[0].print_id == "print_1"
+    assert len(outcome.hydrographs[0].discharge_m3_s) == 301
+    assert not outcome.native_raw_time_tokens
+    assert outcome.physical_time_hours == tuple(str(index * model.storm.timestep_hours) for index in range(301))
+    if wheel is not None:
+        assert outcome.verified_wheel_sha256 == hashlib.sha256(wheel.read_bytes()).hexdigest()
+    return outcome, project
+
+
+@pytest.mark.parametrize(
+    ("case_id", "excess_mm"),
+    [
+        ("fig67-ilroc", 24.51),
+        ("fig67-kc5-m1", 33.02),
+        ("failure-m-above-one", 33.02),
+        ("failure-m-below-one", 33.02),
+    ],
+)
+def test_original_combined_preburst_engineering_and_report_local_scalar_diagnostics(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], case_id: str, excess_mm: float
+) -> None:
+    root = REPO / "tests" / "fixtures" / "regression-v1"
+    register = json.loads((root / "register.json").read_bytes())
+    case = next(item for item in register["cases"] if item["case_id"] == case_id)
+    assert case["coverage"] == "gap"
+    assert "scalar_binding" not in case
+    namespace = runpy.run_path(str(REPO / "repo-scripts" / "cmd_public_probe.py"))
+    sources, model = _stage_combined_original(case, namespace, tmp_path)
+    wheel_env = os.environ.get("RUNOFF_ENGINE_WHEEL")
+    wheel = Path(wheel_env) if wheel_env else None
+    compatible, cmd_project = _execute_combined_original(
+        case_id, sources, model, tmp_path, EngineSelection.for_engine("python-cmd"), wheel
+    )
+    assert namespace["_binding_error"](case, model, compatible, project_to_json(cmd_project)) is None
+    compared = rd.compare_fresh_cmd_case(root, case, compatible)
+    assert compared["classification"] == "pass"
+    assert compared["fresh_reporting"]["classification"] == "incomplete"
+
+    # Report-local binding only: no register edit or independently named physical site.
+    selectors = {
+        "native_column": "Hyd001",
+        "scalar_selectors": {
+            "peak": {"line": 391, "character": 26, "ordinal": 1, "unit": "m3/s"},
+            "peak_time": {"line": 392, "character": 27, "ordinal": 1, "unit": "h"},
+            "volume": {"line": 393, "character": 23, "ordinal": 1, "unit": "m3"},
+        },
+    }
+    site = regression_scalar_adapter.bind_scalars(RorbSource.read(root / case["reference"]["path"]), selectors)
+    assert site.physical_name is None
+    assert site.volume is not None
+    h, dt = stored_cmd_reporting_clock(model.storm.timestep_hours)
+    assert (h, dt) == (0.5, 1800.0)
+    cmd_series = {
+        "q_hex": [value.hex() for value in compatible.hydrographs[0].discharge_m3_s],
+        "h_hex": h.hex(),
+        "dt_hex": dt.hex(),
+    }
+    scalars = regression_scalar_adapter.compare_scalars(cmd_series, site)
+    assert {field["verdict"] for field in scalars.values()} == {"pass"}
+
+    engineering, _project = _execute_combined_original(
+        case_id, sources, model, tmp_path, EngineSelection.for_engine("python"), wheel
+    )
+    assert engineering.python_diagnostics is not None
+    excess = cast("tuple[tuple[float, ...], ...]", engineering.python_diagnostics["rainfall_excess_mm"])
+    assert tuple(math.fsum(source) for source in excess) == pytest.approx((excess_mm,) * 5)
+    # The same unique terminal control and report column are bound above.
+    # This is a computational-outlet diagnostic, not independent physical-node acceptance.
+    columns, rows = rd._reference(root, case)  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001
+    assert columns == ["Inc", "Time", "Hyd001"]
+    native_q = tuple(float(row[2]) for row in rows)
+    computed_q = engineering.hydrographs[0].discharge_m3_s
+    deviation = assess_cmd_deviation(computed_q, native_q, timestep_hours=h)
+    receipt = {
+        "case_id": case_id,
+        "comparison_scope": "source_derived_terminal_code7_not_independent_physical_name",
+        "native_reference_sha256": case["reference"]["sha256"],
+        "source_sha256": dict(engineering.source_file_hashes),
+        "model_sha256": engineering.model_sha256,
+        "engineering_project_sha256": engineering.project_sha256,
+        "cmd_project_sha256": compatible.project_sha256,
+        "implementation_revision": engineering.implementation_revision,
+        "verified_wheel_sha256": engineering.verified_wheel_sha256,
+        "engineering_profile": engineering.effective_selection.numerical_profile,
+        "engineering_q_hex": [value.hex() for value in computed_q],
+        "cmd_series": cmd_series,
+        "original_raw_peak_time_hours": rows[deviation.cmd_peak_index][1],
+        "original_elapsed_peak_time_hours": deviation.cmd_peak_index * h,
+        "engineering_elapsed_peak_time_hours": deviation.python_peak_index * h,
+        "native_inclusive_reported_volume_token_m3": site.volume.token,
+        "report_local_scalar_diagnostics": scalars,
+        "deviations": asdict(deviation),
+        "peak_difference_absolute_m3_s": abs(deviation.peak_difference_m3_s),
+        "volume_difference_absolute_m3": abs(deviation.volume_difference_m3),
+        "registered_reporting": "incomplete",
+        "native_physical_name": site.physical_name,
+        "numerical_acceptance": "unassessed",
+    }
+    with capsys.disabled():
+        print("combined-preburst-diagnostic: " + json.dumps(receipt, sort_keys=True, allow_nan=False))
