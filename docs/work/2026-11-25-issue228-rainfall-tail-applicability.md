@@ -327,10 +327,16 @@ example, an assumed frequent-tail mean exceedance upper limit u would imply
 an omitted contribution at most 0.50*u; a 0.001 absolute tolerance would need
 u <= 0.002 before other sources of error. This is an illustrative sensitivity
 relation, not a new engineering tolerance or evidence that the bound holds.
-The selected candidate in sibling [#239](https://github.com/Chain-Frost/pyrorb/pull/239)
-remains unadmitted (matched originals/sites/IFD/TP/loss chain missing). Its
-five preflight lanes remain blocked; do not infer annual flood qualification
-from synthetic convergence or use the draft declaration as authentication.
+The selected candidate in [#239](https://github.com/Chain-Frost/pyrorb/pull/239)
+remains unadmitted (matched originals/sites/IFD/TP/loss chain missing). The
+preparation-only PR has since merged at main `9a9b45c02204b75f95c87ef250014f6479a73187`.
+Its [physical-source protocol and local handoffs](2026-11-25-issue148-physical-source-protocol.md#7-local-agent-handoffs-nonexecuting-only)
+retain five blocked preflight lanes and `simulation_authorised=false`. The
+[28 November #148 receipt](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7223978756)
+records the failed remote attempt to recover original model/site identities;
+source custodian A and source agent B remain the next evidence owners. Do not
+infer annual flood qualification from synthetic convergence or use the draft
+declaration as authentication.
 The sibling [#238](https://github.com/Chain-Frost/pyrorb/pull/238) owns ARF
 arithmetic/retained-input precision; no duplicated qualification or policy change.
 
@@ -385,6 +391,13 @@ Relative links and source claims checked at author stage (see PR verification).
 Two earlier automated code-review receipts at 7ef88f789233 found no findings;
 no detailed independent literature review or primary-source retrieval evidence was
 returned. The prior Windows quality run 45614929765 passed that old head only.
-This source follow-up requires review of the new head. No unrelated scientific
-gates closed. Keep #228 open for physical evidence, remaining source-image/hash
-verification and independent scientific disposition; #9/#150/#148/#190 remain separate.
+The 28 November author follow-up at `dd415e7122cce2e117e009abccbe32475cb9580b`
+received [automated technical review without findings](https://github.com/Chain-Frost/pyrorb/pull/236#issuecomment-7223982702).
+It did not establish independent hydrological acceptance or source-byte custody.
+The [quality run for that head](https://github.com/Chain-Frost/pyrorb/actions/runs/46038537826)
+was still in progress when reconciliation began. Current-main reconciliation
+preserves the reviewed research findings and adds the merged #148 protocol
+reference; review and validation receipts must identify the resulting head.
+No unrelated scientific gates closed. Keep #228 open for physical evidence,
+remaining source-image/hash verification and independent scientific disposition;
+#9/#150/#148/#190 remain separate.
