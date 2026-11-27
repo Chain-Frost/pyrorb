@@ -132,7 +132,10 @@ class EngineHydrograph:
 
 
 DiagnosticFlowKind = Literal[
-    "subarea_upstream_flow", "rainfall_excess_flow", "reach_downstream_flow", "reach_upstream_flow"
+    "subarea_upstream_flow",
+    "rainfall_excess_flow",
+    "reach_downstream_flow",
+    "reach_upstream_flow",
 ]
 
 

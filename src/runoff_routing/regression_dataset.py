@@ -772,9 +772,7 @@ def _code11_candidate_series(
     return series
 
 
-def _code11_scalar_sites(
-    document: RorbDocument, columns: tuple[CmdDiagnosticColumn, ...]
-) -> tuple[SiteMetrics, ...]:
+def _code11_scalar_sites(document: RorbDocument, columns: tuple[CmdDiagnosticColumn, ...]) -> tuple[SiteMetrics, ...]:
     """Select exact canonical scalar records for the retained report's three groups."""
     section = document.section("reported_scalars")
     rows = {
