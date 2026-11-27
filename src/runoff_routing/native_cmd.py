@@ -156,6 +156,9 @@ class NativeObservation:
 def _guard_native_effective_sources(loaded: LoadedProject) -> None:
     """Reject native capture runs that would misattribute edited source assets."""
     model = loaded.run
+    if any(step.code == 11 for step in model.catchment.controls):
+        message = "Native code-11 diagnostic capture is not yet supported by the selected adapter"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_code11_output")
     # The S0 native capture regenerates only the effective parameter scalars;
     # it reads original immutable CATG/STM byte streams directly. A persisted
     # edit or selected event must never be attributed to stale original inputs.

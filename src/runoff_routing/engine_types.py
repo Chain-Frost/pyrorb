@@ -131,6 +131,24 @@ class EngineHydrograph:
     units: Literal["m3/s"] = "m3/s"
 
 
+DiagnosticFlowKind = Literal[
+    "subarea_upstream_flow", "rainfall_excess_flow", "reach_downstream_flow", "reach_upstream_flow"
+]
+
+
+@dataclass(frozen=True, slots=True)
+class EngineDiagnosticFlow:
+    """Computed diagnostic tap, not an ordinary print site or a native column claim."""
+
+    series_id: str
+    quantity_kind: DiagnosticFlowKind
+    control_index_one_based: int
+    subarea_id: str | None
+    reach_id: str | None
+    flow_m3_s: tuple[float, ...]
+    units: Literal["m3/s"] = "m3/s"
+
+
 @dataclass(frozen=True, slots=True)
 class EngineOutcome:
     """Common output for success or explicit failure, with all engine choices visible."""
@@ -165,6 +183,7 @@ class EngineOutcome:
     verified_wheel_sha256: str | None = None
     numerical_acceptance: Literal["unassessed"] = "unassessed"
     native_parity_status: Literal["not_assessed"] = "not_assessed"
+    diagnostic_flows: tuple[EngineDiagnosticFlow, ...] = ()
 
     def __post_init__(self) -> None:
         try:

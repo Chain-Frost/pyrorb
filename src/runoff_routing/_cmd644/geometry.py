@@ -31,6 +31,7 @@ class Geometry:
 
 def _source_distances(event: Event) -> tuple[list[float], list[float]]:
     """Compute C11-C13 geometry without changing the control evaluation order."""
+    event.validate_code11_layout()
     distances = [0.0] * event.source_count
     active: set[int] | None = None
     branches: list[set[int]] = []
@@ -41,7 +42,7 @@ def _source_distances(event: Event) -> tuple[list[float], list[float]]:
         if code == 2 and active is None:
             message = "code-2 source needs an existing running hydrograph"
             raise UnsupportedNumericPath(message)
-        if code in (1, 2):
+        if code in (1, 2, 11):
             if active is None:
                 active = set()
             active.add(source)
@@ -53,7 +54,7 @@ def _source_distances(event: Event) -> tuple[list[float], list[float]]:
         elif code == 4:
             active = _active_sources(active)
             active.update(branches.pop())
-        if code in (1, 2, 5):
+        if code in (1, 2, 5, 11):
             active = _active_sources(active)
             length = control.length.stored
             reach_lengths.append(length)
