@@ -311,7 +311,6 @@ def test_eight_original_capture_dispositions_remain_explicit_gaps(case_id: str) 
     assert "cmd-eligible" not in case["sets"]
 
 
-
 @pytest.fixture(scope="module")
 def code11_execution(tmp_path_factory: pytest.TempPathFactory) -> tuple[dict[str, Any], RunModel, EngineOutcome, Path]:
     """Execute the exact retained triplet through the public selected engine."""

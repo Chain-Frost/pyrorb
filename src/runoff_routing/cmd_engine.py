@@ -200,7 +200,9 @@ def _code11_flows(loaded: LoadedProject, result: CandidateResult) -> tuple[Engin
         or len(result.preparation.hydrographs) != result.event.source_count
         or not result.network.reaches
     ):
-        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_code11_identity", "Missing first-control diagnostic source/reach")
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_code11_identity", "Missing first-control diagnostic source/reach"
+        )
     source = result.preparation.hydrographs[0]
     reach = result.network.reaches[0]
     if reach.reach_id != 1 or reach.membership != (1,) or reach.incoming != source:
@@ -217,8 +219,12 @@ def _code11_flows(loaded: LoadedProject, result: CandidateResult) -> tuple[Engin
         EngineDiagnosticFlow(
             "code11:1:subarea_upstream_flow", "subarea_upstream_flow", 1, first.subarea_id, None, upstream
         ),
-        EngineDiagnosticFlow("code11:1:rainfall_excess_flow", "rainfall_excess_flow", 1, first.subarea_id, None, source),
-        EngineDiagnosticFlow("code11:1:reach_downstream_flow", "reach_downstream_flow", 1, None, first.reach_id, reach.q),
+        EngineDiagnosticFlow(
+            "code11:1:rainfall_excess_flow", "rainfall_excess_flow", 1, first.subarea_id, None, source
+        ),
+        EngineDiagnosticFlow(
+            "code11:1:reach_downstream_flow", "reach_downstream_flow", 1, None, first.reach_id, reach.q
+        ),
         EngineDiagnosticFlow(
             "code11:1:reach_upstream_flow", "reach_upstream_flow", 1, None, first.reach_id, reach.incoming
         ),

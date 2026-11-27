@@ -775,10 +775,7 @@ def _code11_candidate_series(
 def _code11_scalar_sites(document: RorbDocument, columns: tuple[CmdDiagnosticColumn, ...]) -> tuple[SiteMetrics, ...]:
     """Select exact canonical scalar records for the retained report's three groups."""
     section = document.section("reported_scalars")
-    rows = {
-        (int(str(row["line"])), int(str(row["character"])), int(str(row["ordinal"]))): row
-        for row in section.rows
-    }
+    rows = {(int(str(row["line"])), int(str(row["character"])), int(str(row["ordinal"]))): row for row in section.rows}
     if not section.valid or len(rows) != 15 or len(section.rows) != 15:
         message = "Incomplete or ambiguous code-11 scalar groups"
         raise IncompleteEvidenceError(message)
@@ -819,7 +816,9 @@ def _code11_reporting(
         printed = tuple(Fraction(_scalar(row[position])) for row in rows)
         per_column[site.column] = {
             "metrics": metrics,
-            "model_elapsed_trapezoidal_flow_integral_m3": _flow_trapezoid(tuple(map(Fraction, values)), physical_seconds),
+            "model_elapsed_trapezoidal_flow_integral_m3": _flow_trapezoid(
+                tuple(map(Fraction, values)), physical_seconds
+            ),
             "native_printed_trapezoidal_flow_integral_m3": _flow_trapezoid(printed, physical_seconds),
         }
     return {

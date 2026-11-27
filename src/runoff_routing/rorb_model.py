@@ -316,7 +316,9 @@ def _validate_code11_layout(model: CatchmentModel) -> None:
         or codes.count(7) != 1
         or codes[-1] != 7
     ):
-        message = "Code 11 requires one first-source diagnostic control and one terminal code-7 in implicit natural mode"
+        message = (
+            "Code 11 requires one first-source diagnostic control and one terminal code-7 in implicit natural mode"
+        )
         raise ValueError(message)
 
 
