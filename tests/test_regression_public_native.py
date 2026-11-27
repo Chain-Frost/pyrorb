@@ -447,7 +447,8 @@ def test_code11_unsupported_variants_and_other_engines_do_not_fallback(
     engineering = run_engine_project(path, selection=EngineSelection.for_engine("python"))
     assert engineering.status == "unsupported_feature"
     assert engineering.effective_selection.engine == "python"
-    assert not engineering.hydrographs and not engineering.diagnostic_flows
+    assert not engineering.hydrographs
+    assert not engineering.diagnostic_flows
     native_config = NativeConfiguration(
         executable=tmp_path / "not-installed.exe",
         executable_sha256="0" * 64,
@@ -460,15 +461,17 @@ def test_code11_unsupported_variants_and_other_engines_do_not_fallback(
     native = run_engine_project(path, selection=EngineSelection.for_engine("rorb-cmd"), native_config=native_config)
     assert native.status == "unsupported_feature"
     assert native.diagnostics[0].code == "native_code11_output"
-    assert not native.hydrographs and not native.diagnostic_flows
+    assert not native.hydrographs
+    assert not native.diagnostic_flows
     assert not native_config.output_root.exists()
-    params = replace(model.parameters, routing=(replace(model.parameters.routing[0], m=Decimal("1")),))
+    params = replace(model.parameters, routing=(replace(model.parameters.routing[0], m=Decimal(1)),))
     unsupported = tmp_path / "other-profile.json"
     write_project(unsupported, Project("other_profile", "explicit", EmbeddedRun(replace(model, parameters=params))))
     variant = run_engine_project(unsupported)
     assert variant.status == "unsupported_feature"
     assert variant.diagnostics[0].code == "cmd_code11_profile"
-    assert not variant.hydrographs and not variant.diagnostic_flows
+    assert not variant.hydrographs
+    assert not variant.diagnostic_flows
     with pytest.raises(CatgWriterLossError, match="code-11"):
         serialize_catg(model.catchment)
     original = (path.parent / "input.catg").read_bytes()

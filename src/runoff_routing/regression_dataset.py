@@ -828,6 +828,7 @@ def _code11_reporting(
         "stored_h_hex": hours.hex(),
         "stored_dt_hex": seconds.hex(),
         "per_column": per_column,
+        "policy_application": "diagnostic_only_outside_frozen_terminal_population",
         "scope": "source-bound diagnostic scalar observations, not verified physical site or volume conservation",
     }
 

@@ -126,3 +126,7 @@ Production Python tests, updated-head wheel verification and independent code/do
 must pass before promoting even this bounded software result. The separate research
 calculation is not a substitute for these gates. #91 and #5 remain open; no new native
 process, default change, reference/tolerance change, merge or release.
+
+The frozen `cmd644-report-scalars-v1` gate selects the 50 original terminal prints. This new
+case uses the unchanged arithmetic and intervals only as a diagnostic study outside that population;
+no policy scope extension or independent admission is claimed.
