@@ -243,13 +243,24 @@ def reference(area: str, minutes: int, aep: int, coeffs: tuple[Decimal, ...]) ->
             return (base.ln() * D(exponent)).exp()
 
         def short(u: Decimal) -> Decimal:
-            return min(D(1), 1 - D("0.287") * (power(x, ".265") - D(".439") * u.log10())
-                       * power(u, "-.36") + q * (D(".00226") * power(x, ".226") * power(u, ".125")
-                       + D(".0141") * power(x, ".213") * power(D(10), -D(".021") * (u - 180)**2 / 1440)))
+            return min(
+                D(1),
+                1
+                - D("0.287") * (power(x, ".265") - D(".439") * u.log10()) * power(u, "-.36")
+                + q
+                * (
+                    D(".00226") * power(x, ".226") * power(u, ".125")
+                    + D(".0141") * power(x, ".213") * power(D(10), -D(".021") * (u - 180) ** 2 / 1440)
+                ),
+            )
 
         def long(u: Decimal) -> Decimal:
-            return min(D(1), 1 - a * (power(x, b) - c * u.log10()) * power(u, -d)
-                       + q * (e * power(x, f) * power(u, g) + h * power(D(10), i * x * u / 1440)))
+            return min(
+                D(1),
+                1
+                - a * (power(x, b) - c * u.log10()) * power(u, -d)
+                + q * (e * power(x, f) * power(u, g) + h * power(D(10), i * x * u / 1440)),
+            )
 
         if t <= 720:
             v = short(t)
