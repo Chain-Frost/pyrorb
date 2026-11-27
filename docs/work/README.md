@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Synthetic statistical qualification and latent-ledger amendment (#148)](2026-11-28-issue148-synthetic-qualification.md) — fixed finite-law experiment, conservative confidence/decision limitations and independent review pending; no physical/native admission.
+
 - [Physical-source candidate and draft study protocol (#148)](2026-11-25-issue148-physical-source-protocol.md) — candidate-only admission, five separate blockers, proposed inference/cost design and no-simulation preflight; documentation review complete and #239 merged; independent source/scientific admission remains pending.
 
 - [Canonical reader ownership transfer (#231)](2026-11-24-canonical-reader-transfer.md) — source provenance, test transfer and staged dependency reversal (historical preparation; #231 closed following downstream #344 acceptance); no new native/scientific acceptance claim.
