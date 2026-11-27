@@ -12,21 +12,27 @@ import gzip
 import hashlib
 import importlib.util
 import json
+import math
 import platform
 import re
 import sys
 import zlib
 from collections import Counter
 from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 from . import regression_metrics, regression_scalar_adapter, rorb_documents, rorb_out
 from .engine_types import EngineOutcome
-from .regression_metrics import SiteMetrics
+from .integration import parse_run_bytes
+from .regression_metrics import ScalarField, SiteMetrics
 from .regression_scalar_adapter import POLICY, bind_scalars, compare_scalars, stored_cmd_reporting_clock, stored_float
 from .rorb_documents import RorbSource
-from .rorb_out import inspect_output
+from .rorb_model import RunModel, to_json
+from .rorb_out import checked_canonical_report, inspect_output
+from .rorb_readers.output_reader import CmdDiagnosticColumn, bind_cmd_diagnostic_columns
+from .rorb_readers.reader_types import RorbDocument
 
 FORMAT = "runoff-regression-register"
 RESULT_FORMAT = "runoff-regression-results"
@@ -488,6 +494,7 @@ def _compare(
     engine: str,
     *,
     authenticated_snapshot: bool = False,
+    candidate_site_ids: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     expected = {(case["case_id"], point["native_column_id"], i) for point in case["sites"] for i in range(len(rows))}
     observed = {key for key in supplied if key[0] == case["case_id"]}
@@ -513,11 +520,12 @@ def _compare(
     for point in case["sites"]:
         column = point["native_column_id"]
         position = columns.index(column)
+        candidate_site = point["model_print_id"] if candidate_site_ids is None else candidate_site_ids[column]
         for i, row in enumerate(rows):
             actual = supplied[(case["case_id"], column, i)]
             tokens = (row[0], row[1], row[position])
             retained = (actual["raw_native_increment"], actual["raw_native_time"], actual["native_discharge_token"])
-            if retained != tokens or actual["model_print_id"] != point["model_print_id"]:
+            if retained != tokens or actual["model_print_id"] != candidate_site:
                 return {
                     "classification": "invalid",
                     "reason": f"original clock/value/site identity changed: {column}[{i}]",
@@ -656,6 +664,237 @@ def _fresh_cmd_reporting_metrics(root: Path, case: dict[str, Any], outcome: Engi
     }
 
 
+# Retained Figure 6.7 diagnostic case only. These are the published
+# path-sanitised identities, not replacements for the original custody hashes.
+_CODE11_INPUT_HASHES = {
+    ".par": "06faeb01f8b6874ba86dbc6931f5a53a7b542f54df8b0d45019ab0c8642e54a9",
+    ".catg": "07ebaf604e30b26833914293bf205b668480c7ba7596db1cb8ea7f936132f71f",
+    ".stm": "4371d9e952d3ba6ea9cd7b226c2f2b19a9998bce4186aab83cf61de91a9ccc3b",
+}
+_CODE11_REPORT_SHA = "abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13"
+_CODE11_KINDS = (
+    "subarea_upstream_flow",
+    "rainfall_excess_flow",
+    "reach_downstream_flow",
+    "reach_upstream_flow",
+    "calculated_flow",
+)
+# Peak, elapsed peak time, inclusive reported volume. Each selector retains
+# its actual line, character and within-group ordinal; no global flattening.
+_CODE11_SCALAR_SELECTORS = (
+    ((391, 27, 1), (392, 27, 1), (393, 23, 1)),
+    ((391, 35, 2), (392, 36, 2), (393, 32, 2)),
+    ((404, 26, 1), (405, 27, 1), (406, 23, 1)),
+    ((404, 35, 2), (405, 36, 2), (406, 32, 2)),
+    ((417, 26, 1), (418, 27, 1), (419, 23, 1)),
+)
+_CODE11_SCALAR_FAMILIES = (("Peak discharge", "m³/s", "m3/s"), ("Time to peak", "h", "h"), ("Volume", "m³", "m3"))
+
+
+def _code11_source_model(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> RunModel:
+    """Authenticate the exact retained input triplet, not merely a case name or peak."""
+    inputs = {Path(item["path"]).suffix: item for item in case["inputs"]}
+    if (
+        len(case["inputs"]) != len(_CODE11_INPUT_HASHES)
+        or {suffix: item["sha256"] for suffix, item in inputs.items()} != _CODE11_INPUT_HASHES
+        or case["reference"]["sha256"] != _CODE11_REPORT_SHA
+    ):
+        message = "Unqualified code-11 input or report identity"
+        raise RegressionError(message)
+    if (
+        len(outcome.source_file_hashes) != len(_CODE11_INPUT_HASHES)
+        or {Path(name).suffix: digest for name, digest in outcome.source_file_hashes} != _CODE11_INPUT_HASHES
+    ):
+        message = "Computed code-11 original source identities differ"
+        raise RegressionError(message)
+    model = parse_run_bytes(
+        _verify(root, inputs[".par"]).read_bytes(),
+        _verify(root, inputs[".catg"]).read_bytes(),
+        _verify(root, inputs[".stm"]).read_bytes(),
+    ).model
+    if (
+        outcome.model_sha256 != hashlib.sha256(to_json(model).encode("utf-8")).hexdigest()
+        or outcome.control_order != tuple(step.code for step in model.catchment.controls)
+        or not outcome.implementation_revision
+    ):
+        message = "Computed code-11 effective model, control order or implementation identity differs"
+        raise RegressionError(message)
+    return model
+
+
+def _code11_candidate_series(
+    model: RunModel, outcome: EngineOutcome, row_count: int
+) -> dict[str, tuple[str, tuple[float, ...]]]:
+    """Keep the four diagnostic roles separate from the sole ordinary code-7 print."""
+    if len(outcome.diagnostic_flows) < 4 or not outcome.hydrographs:
+        message = "Missing code-11 diagnostic or ordinary outlet series"
+        raise IncompleteEvidenceError(message)
+    first = model.catchment.controls[0]
+    expected = (
+        ("subarea_upstream_flow", first.subarea_id, None),
+        ("rainfall_excess_flow", first.subarea_id, None),
+        ("reach_downstream_flow", None, first.reach_id),
+        ("reach_upstream_flow", None, first.reach_id),
+    )
+    actual = tuple((item.quantity_kind, item.subarea_id, item.reach_id) for item in outcome.diagnostic_flows)
+    if (
+        actual != expected
+        or any(
+            item.control_index_one_based != 1
+            or item.series_id != f"code11:1:{item.quantity_kind}"
+            or item.units != "m3/s"
+            for item in outcome.diagnostic_flows
+        )
+        or len(outcome.hydrographs) != 1
+    ):
+        message = "Computed code-11 diagnostic role, source/reach identity or units differ"
+        raise RegressionError(message)
+    outlet = outcome.hydrographs[0]
+    if (
+        outlet.print_id != model.catchment.print_locations[0].identifier
+        or outlet.native_column_id is not None
+        or outlet.native_discharge_tokens is not None
+        or outlet.units != "m3/s"
+    ):
+        message = "Computed outlet identity or native token claims differ"
+        raise RegressionError(message)
+    series = {
+        f"Hyd{ordinal:03d}": (item.series_id, item.flow_m3_s)
+        for ordinal, item in enumerate(outcome.diagnostic_flows, start=1)
+    }
+    series["Hyd005"] = (outlet.print_id, outlet.discharge_m3_s)
+    if any(len(values) != row_count for _, values in series.values()):
+        message = "Full code-11 diagnostic horizon not computed"
+        raise IncompleteEvidenceError(message)
+    if any(not math.isfinite(value) or value < 0 for _, values in series.values() for value in values):
+        message = "Computed code-11 flow contains nonfinite or negative values"
+        raise RegressionError(message)
+    return series
+
+
+def _code11_scalar_sites(
+    document: RorbDocument, columns: tuple[CmdDiagnosticColumn, ...]
+) -> tuple[SiteMetrics, ...]:
+    """Select exact canonical scalar records for the retained report's three groups."""
+    section = document.section("reported_scalars")
+    rows = {
+        (int(str(row["line"])), int(str(row["character"])), int(str(row["ordinal"]))): row
+        for row in section.rows
+    }
+    if not section.valid or len(rows) != 15 or len(section.rows) != 15:
+        message = "Incomplete or ambiguous code-11 scalar groups"
+        raise IncompleteEvidenceError(message)
+    sites: list[SiteMetrics] = []
+    for column, selectors in zip(columns, _CODE11_SCALAR_SELECTORS, strict=True):
+        fields: list[ScalarField] = []
+        for selector, family in zip(selectors, _CODE11_SCALAR_FAMILIES, strict=True):
+            row = rows.get(selector)
+            if row is None or row["family"] != family[0] or row["unit"] != family[1]:
+                message = "Code-11 scalar selector, family or unit differs"
+                raise RegressionError(message)
+            fields.append(ScalarField(str(row["token"]), *selector, family[2]))
+        sites.append(SiteMetrics(column.column, column.description, fields[0], fields[1], fields[2]))
+    return tuple(sites)
+
+
+def _flow_trapezoid(values: tuple[Fraction, ...], seconds: Fraction) -> str:
+    """A separately derived flow integral, never an assertion of physical conservation."""
+    return str(seconds * (sum(values, start=Fraction()) - (values[0] + values[-1]) / 2))
+
+
+def _code11_reporting(
+    case: dict[str, Any],
+    sites: tuple[SiteMetrics, ...],
+    rows: list[list[str]],
+    series: dict[str, tuple[str, tuple[float, ...]]],
+) -> dict[str, Any]:
+    source_hours = _scalar(case["clock"]["timestep_hours"])
+    hours, seconds = stored_cmd_reporting_clock(source_hours)
+    physical_seconds = Fraction(source_hours) * 3600
+    per_column: dict[str, Any] = {}
+    verdicts: set[str] = set()
+    for position, site in enumerate(sites, start=2):
+        _, values = series[site.column]
+        generated = {"q_hex": [value.hex() for value in values], "h_hex": hours.hex(), "dt_hex": seconds.hex()}
+        metrics = compare_scalars(generated, site)
+        verdicts.update(field["verdict"] for field in metrics.values())
+        printed = tuple(Fraction(_scalar(row[position])) for row in rows)
+        per_column[site.column] = {
+            "metrics": metrics,
+            "model_elapsed_trapezoidal_flow_integral_m3": _flow_trapezoid(tuple(map(Fraction, values)), physical_seconds),
+            "native_printed_trapezoidal_flow_integral_m3": _flow_trapezoid(printed, physical_seconds),
+        }
+    return {
+        "classification": "fail" if "fail" in verdicts else "incomplete" if "incomplete" in verdicts else "pass",
+        "policy_id": POLICY,
+        "stored_h_hex": hours.hex(),
+        "stored_dt_hex": seconds.hex(),
+        "per_column": per_column,
+        "scope": "source-bound diagnostic scalar observations, not verified physical site or volume conservation",
+    }
+
+
+def _compare_fresh_code11_case(
+    root: Path, case: dict[str, Any], outcome: EngineOutcome, columns: list[str], rows: list[list[str]]
+) -> dict[str, Any]:
+    """Apply the existing printed-interval comparator to the exact retained diagnostic case."""
+    try:
+        model = _code11_source_model(root, case, outcome)
+        point = {"model_print_id": model.catchment.print_locations[0].identifier}
+        problem = _fresh_cmd_identity_problem(case, outcome, point) or _fresh_cmd_elapsed_problem(
+            case, outcome, len(rows)
+        )
+        if problem is not None:
+            return problem
+        series = _code11_candidate_series(model, outcome, len(rows))
+        document = checked_canonical_report(RorbSource.read(_verify(root, case["reference"])))
+        bindings = bind_cmd_diagnostic_columns(document)
+        if (
+            tuple(item.column for item in bindings) != tuple(series)
+            or tuple(item.quantity_kind for item in bindings) != _CODE11_KINDS
+            or tuple(item.description for item in bindings) != tuple(site["source_label"] for site in case["sites"])
+            or any(site["model_print_id"] is not None for site in case["sites"])
+        ):
+            message = "Retained code-11 report or register diagnostic binding differs"
+            raise RegressionError(message)
+        sites = _code11_scalar_sites(document, bindings)
+    except IncompleteEvidenceError as exc:
+        return {"classification": "incomplete", "reason": str(exc)}
+    except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+        return {"classification": "invalid", "reason": str(exc)}
+    supplied = {
+        (case["case_id"], column, index): {
+            "case_id": case["case_id"],
+            "classification": "computed/pass",
+            "model_print_id": identifier,
+            "native_column_id": column,
+            "sample_index": str(index),
+            "raw_native_increment": row[0],
+            "raw_native_time": row[1],
+            "native_discharge_token": row[position],
+            "python_discharge_m3_s": repr(value),
+        }
+        for position, (column, (identifier, values)) in enumerate(series.items(), start=2)
+        for index, (row, value) in enumerate(zip(rows, values, strict=True))
+    }
+    # The historical model_print_id CSV field is an internal comparator
+    # identity slot here; the register's unverified physical IDs stay unchanged.
+    result = _compare(
+        case,
+        columns,
+        rows,
+        supplied,
+        "python-cmd",
+        candidate_site_ids={column: item[0] for column, item in series.items()},
+    )
+    result["fresh_reporting"] = _code11_reporting(case, sites, rows, series)
+    result["candidate_site_ids"] = {column: item[0] for column, item in series.items()}
+    result["generated_time_axis"] = "verified_model_elapsed_i_times_original_timestep"
+    result["native_physical_site_identity"] = case["observations"]["physical_site_identity"]
+    result["comparison_scope"] = "retained_code11_report_local_roles_not_verified_physical_sites"
+    return result
+
+
 def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutcome) -> dict[str, Any]:
     """Compare a freshly executed public CMD event with immutable printed evidence.
 
@@ -669,6 +908,8 @@ def compare_fresh_cmd_case(root: Path, case: dict[str, Any], outcome: EngineOutc
     for source in case["files"]:
         _verify(root, source)
     columns, rows = _reference(root, case)
+    if case["case_id"] == "fig67-code11":
+        return _compare_fresh_code11_case(root, case, outcome, columns, rows)
     if len(case["sites"]) != 1 or len(outcome.hydrographs) != 1 or len(columns) != 3:
         return {"classification": "incomplete", "reason": "One physical outlet print is required"}
     point = case["sites"][0]
