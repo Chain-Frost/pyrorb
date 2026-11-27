@@ -1,6 +1,6 @@
 # #228: rainfall-tail and annual flood-frequency applicability
 
-**25 November 2026 — research decision proposed; independent scientific review pending.**
+**25 November 2026; author source follow-up 28 November 2026 — proposed scientific decision; independent scientific review pending.**
 Owner: #228 (this scoped contribution; no permanent issue assignment changed). Baseline:
 [main b6788a83fbe5](https://github.com/Chain-Frost/pyrorb/commit/b6788a83fbe5eb9ccd68232fe8d92dfb596e0f6b).
 [Parent #9](https://github.com/Chain-Frost/pyrorb/issues/9) remains open.
@@ -228,7 +228,7 @@ Australia (Geoscience Australia) 2019, version 4.2, CC BY 4.0; D2 © Commonwealt
 of Australia (Geoscience Australia) 2013, CC BY 4.0. The v4.2 PDF changelog identifies
 the climate change update. This is a version-pinned assessment, not an assertion
 about the applicability of any later edition (#193). Printed pages below are not PDF indexes.
-Direct public sources accessed 25 November 2026; image checks where noted.
+Direct public sources accessed 25 and 28 November 2026; image checks where noted. The 28 November author review recovered the complete searchable publisher-indexed text for Books 2 and 5, but the PDF page-image endpoints still rejected both files (14,932,303 and 14,287,332 bytes respectively); direct download from this runtime also failed. No local PDF-byte hash or visual verification of those two books is claimed. Primary Project 3 and 6 report page images were accessible and checked as specified below.
 
 | ID | Source / exact locator | Verified observation and limitation |
 | --- | --- | --- |
@@ -236,10 +236,103 @@ Direct public sources accessed 25 November 2026; image checks where noted.
 | S2 | [ARR Book 4 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book4_V4.2.pdf), §3.2.4 p.24 (index 38), §4.2.2.2 p.44 Eq. (4.4.2) (58), §4.3.3.3 p.64 Eq. (4.4.7) (78), §4.4 Table 4.4.3 p.69 (83) | Text and page images checked. The general theorem needs a complete partition; the specific example uses a restricted mainstream-flow conditioning variable and finite sampled bins. Reuse #224's 0.158625 printed mass and 0.0149121 arithmetic, not a rainfall-tail validation. Both the geometric rule and possible duration-envelope bias are present in this edition. |
 | S3 | [Nathan & Weinmann, ARR D2, final 6 May 2013](https://www.arr-software.org/pdfs/ARR_DiscussionPaper_MonteCarlo.pdf), §4.3 Eq. 4 pp.21–22 (29–30), §4.4 p.22, §7.4/Table 3 pp.37–38 (45–46) | Equation, discussion, and worked-text page checked visually; #224 retains Table 3 arithmetic. Historical guidance, uses reciprocal terminology; do not reinterpret old ARI labels as current EY. The source's outer-bin discussion is an approximate method, not native algorithm documentation. |
 | S4 | BoM [2016 design rainfall probability terminology](https://www.bom.gov.au/water/designRainfalls/) and [2016 estimation methods](https://www.bom.gov.au/water/designRainfalls/ifd/ifd-estimation.shtml), HTML, unpaginated | Direct text read: distinct AMS and PDS, regionalisation, rare depth extrapolation, 1-in-2000 limit. No equation for annual flood probabilities supplied; no source data for a selected catchment checked. |
-| S5 | [ARR Book 2 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book2_V4.2.pdf), §§4.3.1–4.3.2, Eqs. (2.4.1)–(2.4.4), Table 2.4.1; §5.9.3–5.9.4 p.94; compare [v4.1](https://www.arr-software.org/pdfs/ARR_190514_Book2_V4.1.pdf), Table 2.4.1 notes p.63, and [pinned ARF implementation](../../src/runoff_routing/arr_arf.py) | Direct publisher indexed excerpts checked, but complete v4.2 PDF exceeded browser size limit; v4.2 ARF printed page/equations and full TP table not independently page-verified. v4.1 notes distinguish derivation (50%–1%) and recommended extension to 0.05%; v4.2 indexed text gives rare limit and cautions on TP upscaling/nonmonotone response. Do not transfer coefficients, thresholds or detailed rules without full source check (#192/#193). |
+| S5 | [ARR Book 2 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book2_V4.2.pdf), §§4.3.1–4.3.3, Table 2.4.1 pp.62–63, Eqs. (2.4.1)–(2.4.4) p.64, Table 2.4.2 pp.65–66; §§5.3.2, 5.5, 5.6, 5.7.3, 5.9.1–5.9.9, 6.3.2; [pinned ARF implementation](../../src/runoff_routing/arr_arf.py) | Direct publisher-indexed text/printed page labels and tables inspected on 28 November; page images unavailable. Derivation and recommended domains differ; conditional TP and spatial source changes matter. See §5.1. Numeric ARF qualification stays with #192/#193. |
 | S6 | [ARR Book 8 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book8_V4.2.pdf), §1.3.3/Table 8.1.1 p.4 (18), §3.5.1 p.22 (36), §3.5.2 Eqs. (8.3.1)–(8.3.6), pp.24–25 (38–39) | Text and page images checked; regional rainfall extrapolation limit and uncertainty, rare-to-PMP procedure and applicability checks. No exact tail support or validated site-specific rainfall/runoff curve. |
 | S7 | [HARC RORB MC summary discussion](https://harc.com.au/forums/topic/monte-carlo-simulation-summary-results/), HTML, thread concerning v6.32 and subsequent warning discussion; [v6.32 announcement and correction](https://harc.com.au/forums/topic/rorbwin-version-6-32/) | Direct publisher statements checked: input bracketing and reported boundary issues; correction to loss-table equivalence claim. No precise current native F6 warning algorithm or hydrological validity. |
-| S8 | [ARR Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf), §3.6 / Figure 5.3.25 p.68 and Table 5.3.13 p.70; [retained #150 receipt](2026-11-16-issue150-windows-native-receipt.md), [source register](../SOURCES.md) R1/R3 | Publisher indexed text (full PDF too large) shows decreasing factors versus printed percentile; graph uses exceedance orientation. No table values adopted, reconcile correction and dependence before any use. #150 retains historical manual/release identities, not a confirmed current default. Retained 25-event report contradicts an attained-peak-only explanation (16/16 summary values disjoint within printed resolution), not proof of a particular alternative inverse or tail rule. Private originals not independently accessed here. |
+| S8 | [ARR Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf), Fig. 5.3.5 p.28, §3.6.1 pp.67–70, Fig. 5.3.26 p.69, Table 5.3.13 p.70, §§3.6.3/3.7.1 pp.70–71, §§3.7.4–3.7.5 pp.76–79; [Ladson correction](https://tonyladson.wordpress.com/arr2016/standardised-loss-factors/); [retained #150 receipt](2026-11-16-issue150-windows-native-receipt.md), [source register](../SOURCES.md) R1/R3 | Publisher-indexed text inspected on 28 November. Exceedance direction and complete 11-row table reconciled with the historical correction; not a selected-build default or a validated unconditional tail loss law. Page images unavailable. Retained 25-event report contradicts an attained-peak-only explanation (16/16 disjoint summary values at printed resolution); private originals not independently accessed here. |
+| S9 | [ARR Project 3, Stage 3, P3/S3/013, 3 December 2015](https://arr.ga.gov.au/arr-guideline/revision-projects/revision-project-reports/project-3-temporal-patterns-of-rainfall/ARR_Project_3_Stage3_Temporal_Patterns_Report.pdf), Part 3 §7.3 pp.43–44 (PDF indices 94–95) | Direct page-image and text verification. Report is explicitly preliminary testing, not a native probability law. Empirical counterexample to unconditional monotonicity. |
+| S10 | [ARR Project 6, Stage 3 Phase 4, P6/S3/016B, 23 October 2014](https://arr.ga.gov.au/arr-guideline/revision-projects/project-list/projects/project-6/downloads/ARR_Project6_Phase-4_Report.pdf), §§4.2.1 p.16, 5.3 p.27, 6.7 p.42, 6.9 pp.47–48/Fig. 6-22 (PDF indices 26, 37, 52, 57–58) | Printed pp.16, 27, 42 and 48 page images checked directly; p.47 discussion checked in indexed text. Study sampling and calibration exclusions constrain the target population; §6.7 states median normalisation although figure captions refer to mean. No primary figure/table bytes copied or parameters adopted. |
+
+### 5.1. Author primary-source follow-up — 28 November 2026
+
+**ARF and spatial support [S5].** Table 2.4.1 notes distinguish the 0.01–0.50
+empirical fitting interval from the recommended extension to 0.0005. Equations
+(2.4.1)/(2.4.2) define the fractional AEP range; (2.4.3) joins durations 12–24 h
+and (2.4.4) interpolates area 1–10 km². The small-area note appears to cite the
+wrong interpolation equation; the formula and its heading distinguish the two.
+The upper area/duration limits are 30,000 km²/168 h, with additional short-duration
+area restrictions. The total upstream area at the design site governs ARF;
+regional coefficients are not subarea multipliers. §4.3.2 directs more extreme
+rainfall to Book 8 using the 0.05% areal-depth anchor. §6.3.2 p.109 changes
+spatial-pattern guidance below 1% AEP and recommends nonuniform rainfall for
+catchments over 20 km². These are separate conditions, not permission to extend
+v1's uniform rainfall model and ordinary ARF guard. The equation cross-reference
+and endpoint qualifications belong in #192; no arithmetic requalification here.
+
+**Temporal-pattern support [S5/S9].** Book 2 §5.3.2 p.79 selects rainfall bursts
+above the 1-EY depth. Table 2.5.4 p.86 uses 14.4% and 3.2% group boundaries;
+§5.9.7 p.96 defines the very-rare *point* set by the ten rarest regional patterns,
+not a fourth universal numeric threshold. §5.6 pp.88–90 and Table 2.5.7
+specify area/duration ensembles, with regional borrowing when data are sparse.
+§5.7.3 p.92 favours continuous simulation for very frequent events and suggests
+local or continuous-sequence patterns if event modelling is warranted. §5.9.4
+p.94 acknowledges irregular transitions and offers ensemble adjustments.
+These recommendations do not prove conditional membership/weights for all p,
+exact edge ownership, or a universal native rule. The preliminary Project 3
+sensitivity study, §7.3 pp.43–44, specifically found reversals between 20% and
+10% design flows; choosing the rarer members of the frequent pool improved
+smoothness in its tests. This is evidence against treating rainfall-depth
+monotonicity as stochastic ordering of discharge across changing TP pools.
+A smoothing remedy is a separate physical choice, not evidence for a bound.
+
+**Loss table and scope [S8/S10].** Book 5 Figure 5.3.26 and Table 5.3.13 provide
+exceedance-oriented median-scaled storm IL/CL. The current indexed v4.2 table has
+11 rows (0–100 by tens); all 22 printed numeric cells agree with Ladson's
+historical corrected table. The v4.1 indexed table also agrees. Thus the
+previous historical missing-value concern does not imply a missing cell in the
+v4.2 indexed table. This verifies the published tabulation, not the native
+6.52 table, interpolation or endpoint semantics. Project 6 §6.7 p.42 describes
+median scaling and regional averaging of quantiles, despite mean-scaling
+wording in figure captions. The 0/100 rows are finite empirical endpoints;
+treating them as physically hard population limits is an extra assumption.
+Book 5 §§3.6.3 and 3.7.1 support fixed CL and no systematic AEP adjustment as
+reasonable design choices absent contrary evidence, while documenting limits
+to dependence research. Project 6 §6.9 notes sparse severe rainfall and a
+burst-versus-storm severity mismatch. Lack of a systematic trend is not proof
+of conditional independence throughout the tails. §3.7.4/3.7.5 identifies
+wetness/seasonality as further population considerations.
+
+**Crucial original-study selection issue [S10].** Project 6 §4.2.1 p.16
+selected a partial series of approximately one rainfall event per record year,
+with emphasis on floods rarer than 50%; loss fitting used 3 h and 24 h bursts.
+Section 5.3 p.27 excluded no-surface-runoff events (IL only known to exceed a
+rainfall-depth bound) and some low-runoff/uncertain fits. Thus the regional
+quantile curve is based on a screened sample, not the unconditional joint law
+of losses over the entire rainfall population. A loss table can still be a
+reasonable design approximation when calibrated/validated for the intended
+range, but it cannot identify the frequency of zero runoff, particularly in
+the very-frequent tail. Preserve the historical exclusion as informative
+missingness/censoring, not a project execution failure or proof of a zero atom.
+For a future physical study, retain all rainfall-selected events, identify
+actual no-runoff outcomes using the gauged/baseflow convention, preserve
+censored loss information and estimate or bound the conditional response with
+its selection and dependence uncertainty. More random draws from a fitted
+loss table do not cure the original selection limitation.
+
+**Pre-burst and unavailable runs [S5/S8].** Book 5 Fig. 5.3.5 p.28 differentiates
+storm and burst initial loss. Book 2 §5.9.9 p.97 allows ignoring immaterial
+pre-burst; for PB below storm IL it subtracts PB, whereas PB beyond storm IL
+calls for pre-burst timing, sensitivity analysis or full-storm treatment.
+The v1 rejection of PB > IL is a project restriction, not evidence of no flow.
+It can be outcome-informative: the wettest admissible states may disproportionately
+fail this restriction. Keep their planned weight unresolved and do not interpret
+a success-only curve as unbiased. No clamp or new storm method adopted.
+
+**Physical applicability consequence.** The retained sources support a candidate
+restricted-event method, not a complete tail law. Any proposed frequent extension
+must address the rainfall selection and censored loss issue above, and any rare
+extension must address the separate spatial/TP changes; neither is solved by
+new IFD ordinates alone. No catchment-specific tail bound is established. For
+example, an assumed frequent-tail mean exceedance upper limit u would imply
+an omitted contribution at most 0.50*u; a 0.001 absolute tolerance would need
+u <= 0.002 before other sources of error. This is an illustrative sensitivity
+relation, not a new engineering tolerance or evidence that the bound holds.
+The selected candidate in sibling [#239](https://github.com/Chain-Frost/pyrorb/pull/239)
+remains unadmitted (matched originals/sites/IFD/TP/loss chain missing). Its
+five preflight lanes remain blocked; do not infer annual flood qualification
+from synthetic convergence or use the draft declaration as authentication.
+The sibling [#238](https://github.com/Chain-Frost/pyrorb/pull/238) owns ARF
+arithmetic/retained-input precision; no duplicated qualification or policy change.
 
 ## 6. Future software and review gates
 
@@ -255,13 +348,16 @@ Any new reporting schema/method requires its own reviewed #190 scope; native
 reproduction and hydrological applicability have independent statuses.
 
 **Remaining evidence and local-agent handoff (read-only):** On a local checkout of
-Chain-Frost/pyrorb, read AGENTS.md and this record, then independently inspect the
-publisher's exact Book 2 and Book 5 v4.2 PDFs (links S5/S8). Record SHA-256,
-edition, printed pages, equation/table/figure references and short paraphrases
-for ARF derivation versus recommendation, very frequent/rare TP support and
-selection edge assumptions, storm versus burst IL/preburst, loss exceedance
-direction, endpoints, dependence and the HARC v6.32 correction (verify its
-underlying erratum if accessible). Check local ARR/BOM source identities for
+Chain-Frost/pyrorb, read AGENTS.md and this record. The relevant Book 2/5 v4.2
+text, equations, tables and selection/dependence evidence have been personally
+reviewed in §5.1; do not restart that literature review. Remaining source custody
+work is to obtain the exact publisher PDF bytes, record SHA-256/edition and compare
+the relevant rendered pages/tables/figures with the indexed text and the original
+reports; reconcile the median/mean caption and cross-reference anomalies, and
+any official correction or later applicable edition (owners #192/#193). If the
+complete files cannot be fetched, the public indexed-text and original-report
+image evidence still supports the bounded negative findings; report the precise
+visual/hash limitation. Check local ARR/BOM source identities for
 one proposed catchment/site/duration only if already retained and approved for
 read-only use; state whether appropriate tail source coverage and independently
 observed annual flood evidence exist, without deriving new storms or running
@@ -286,5 +382,9 @@ on the exact PR head and record a separate qualified hydrology review or retain
 evidence-blocked status. Author's direct source review is not independent review.
 No production/test/fixture/workflow/plan/default changes and no new native/MC runs.
 Relative links and source claims checked at author stage (see PR verification).
-No unrelated scientific gates closed. Keep #228 open for full-source/physical
-evidence and independent scientific disposition; #9/#150/#148/#190 remain separate.
+Two earlier automated code-review receipts at 7ef88f789233 found no findings;
+no detailed independent literature review or primary-source retrieval evidence was
+returned. The prior Windows quality run 45614929765 passed that old head only.
+This source follow-up requires review of the new head. No unrelated scientific
+gates closed. Keep #228 open for physical evidence, remaining source-image/hash
+verification and independent scientific disposition; #9/#150/#148/#190 remain separate.
