@@ -401,3 +401,36 @@ reference; review and validation receipts must identify the resulting head.
 No unrelated scientific gates closed. Keep #228 open for physical evidence,
 remaining source-image/hash verification and independent scientific disposition;
 #9/#150/#148/#190 remain separate.
+
+## 7. Subsequent evidence and integration boundary — 28 November 2026
+
+The [#148 Prompt B custody receipt](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7224109980)
+supersedes the earlier archive-access blocker, not the scientific admission gate.
+Nine distinct archived objects were rehashed by that review. The archived IFD
+and areal temporal patterns support a 24 h candidate in principle; the 18 h
+archived duration is a cross-check, not an admitted duration envelope. Actual
+storm median IL, fixed CL and calibration remain unestablished (the Data Hub
+loss entries are NaN); physical site/area and approved transform and joint-law
+binding remain outstanding. No replacement of missing losses with the saved
+deterministic pair is justified. This record relies on the linked redacted
+receipt for custody findings, not a second author rehash.
+
+The [#228 Prompt D candidate-specific desk review](https://github.com/Chain-Frost/pyrorb/issues/228#issuecomment-7224138099)
+and [#148 Prompt E design review](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7224179801)
+retain the preceding scientific stop. For a completely known restricted-domain
+ledger with nominal width 0.49, conditional survival targets 1%, 2% and 5%
+correspond to target interior contributions 0.0049, 0.0098 and 0.0245,
+respectively. The attained strict survival can be smaller because of atoms
+and ties. These are conditional research targets, not annual flood AEPs.
+No tail law, catchment admission, protocol freeze or simulation authority follows.
+
+The previous reconciled head `7f1d59f58aba6686dfc4b2644b50960e884d16c1`
+passed [technical review](https://github.com/Chain-Frost/pyrorb/pull/236#issuecomment-7224136054)
+and [Windows quality](https://github.com/Chain-Frost/pyrorb/actions/runs/46039693704).
+Main then advanced to `ec395112a8d7fea026ed22585beecaec536ef7cd` through the documentation-only #235 integration.
+Reconciliation retains all concurrent main changes, including #232 reader
+ownership and updated programme status. Review/CI for the new head must be
+verified separately. Integrating this bounded research record does not admit
+full annual flood frequency, close #228/#148/#9, change production, or permit
+native or Monte Carlo execution. Exact Book 2/5 publisher PDF visual/byte
+verification and independent hydrological acceptance remain outstanding.
