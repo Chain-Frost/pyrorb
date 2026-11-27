@@ -141,13 +141,13 @@ def test_duplicate_missing_and_mismatched_site_identities_fail_closed() -> None:
         )
 
 
-def test_unproven_code_eleven_is_explicitly_rejected_not_inferred_from_code_seven() -> None:
+def test_unproven_nonfirst_code_eleven_is_explicitly_rejected() -> None:
     model = _multiple_prints()
     catchment = model.catchment
-    with pytest.raises(ValueError, match="Unsupported control code 11"):
+    with pytest.raises(ValueError, match="Code 11 requires"):
         replace(
             catchment,
-            controls=(*catchment.controls[:-1], ControlStep(11), catchment.controls[-1]),  # type: ignore[arg-type]
+            controls=(*catchment.controls[:-1], ControlStep(11), catchment.controls[-1]),
         )
 
 
