@@ -6,7 +6,7 @@ These commands apply to the public repository and need no private workspace. Pyt
 
 ## 1. Installation and quality
 
-Run these commands from a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb). The distribution is named `pyrorb`; imports and module commands continue to use `runoff_routing`. PyPI publication is deferred; these are checkout-installation instructions. See the [naming policy](NAMING.md).
+Run these commands from a checkout of [Chain-Frost/pyrorb](https://github.com/Chain-Frost/pyrorb). The distribution is named `pyrorb`; imports and module commands continue to use `runoff_routing`. [preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published; these remain checkout-installation instructions. The preliminary distribution is not final MVP or scientific acceptance. See the [naming policy](NAMING.md).
 
 ```sh
 python -m pip install -r requirements-catg.txt -e ".[dev]"

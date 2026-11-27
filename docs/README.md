@@ -30,13 +30,13 @@
 ## Provisional Monte Carlo software (on main; scientific gates open)
 
 - [Adopted method and scientific limitations](MONTE_CARLO.md), [effective-event and replay execution](MONTE_CARLO_EXECUTION.md) and [weighted-frequency result contract](MONTE_CARLO_FREQUENCY.md) — B/E/C CLI/API/text software provisionally admitted through PR #151; RORBwin statistical equivalence and engineering flood-AEP accuracy are not accepted.
-- [Monte Carlo software vs scientific qualification ownership](work/2026-11-24-mc-science-software-ownership.md) — separate source-qualified implementations (#189/#190/#191, upstream reader #334) from native method/tails/real-catchment scientific acceptance (#150/#228/#148; parent #9).
+- [Monte Carlo software vs scientific qualification ownership](work/2026-11-24-mc-science-software-ownership.md) — separate source-qualified implementations (#189/#190/#191, canonical PyRORB reader #232) from native method/tails/real-catchment scientific acceptance (#150/#228/#148; parent #9).
 - [Synthetic convergence research](research/MONTE_CARLO_CONVERGENCE.md) — analytical evidence only; physical-catchment stability and native agreement remain open.
 
 ## Planning and historical evidence
 
 - [Implementation sequence](IMPLEMENTATION_PLAN.md), [work-record index](work/README.md), [reviewable PR template](../.github/pull_request_template.md).
-- [Deferred publication preparation](PUBLISHING.md) — offline package gates, inactive workflow template and owner-controlled activation after the MVP is finalised; no current PyPI release.
+- [Publication status and final-MVP gates](PUBLISHING.md) — preliminary v26.11.24.1 published; one-shot publisher disabled; future release requires separate qualification and approval.
 - Dated work records are **revision-specific history**, not current handoff instructions. Superseded handoffs and old status snapshots live in ordinary Git history instead of this navigation index. Original source hashes, clocks, accounting policies, analytical oracles and curated regression data are preserved separately from prose.
 
 - [Python 3.11 compatibility migration](work/2026-11-24-python311-compatibility.md).
