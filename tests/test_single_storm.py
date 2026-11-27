@@ -128,3 +128,26 @@ def test_combined_preburst_does_not_admit_ambiguous_patterns(
     storm = Storm(0.5, 5, weights, (120.0,), basis, split)
     with pytest.raises(RoutingDomainError, match=r"pre-burst|Pre-burst|percentages must total"):
         calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)
+
+
+@pytest.mark.parametrize("weights", [(2.1, 0.07, 99.88), (2.1, 0.01, 100.04)])
+def test_combined_preburst_accepts_float_rounding_at_inclusive_burst_endpoints(weights: tuple[float, ...]) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, weights, (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
+    result = calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)
+    expected = tuple(120.0 * weight / math.fsum(weights) for weight in weights)
+    assert result.rainfall_excess_mm[0] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "burst",
+    [
+        math.nextafter(math.nextafter(99.95, -math.inf), -math.inf),
+        math.nextafter(math.nextafter(100.05, math.inf), math.inf),
+    ],
+)
+def test_combined_preburst_rejects_beyond_float_roundoff_allowance(burst: float) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, (2.1, burst), (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
+    with pytest.raises(RoutingDomainError, match="full 100% burst"):
+        calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)

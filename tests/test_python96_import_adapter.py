@@ -286,3 +286,30 @@ def test_combined_preburst_preserves_typed_basis_and_runs_independent_engine(tmp
     direct = run_model(combined)
     assert result.hydrographs[0].discharge_m3_s == direct.prints[0].discharge_m3_s
     assert direct == run_model(combined, prepared=prepare_run_model(combined))
+
+
+@pytest.mark.parametrize(("first", "second"), [("0.07", "99.88"), ("0.01", "100.04")])
+def test_combined_preburst_inclusive_decimal_burst_endpoints_run(first: str, second: str) -> None:
+    model = _imported_model()
+    storm = replace(
+        model.storm,
+        pattern_basis="combined_preburst_percent",
+        percentages=(Decimal("2.10"), Decimal(first), Decimal(second)),
+        preburst_bins=1,
+    )
+    combined = replace(model, storm=storm)
+    direct = run_model(combined)
+    assert direct == run_model(combined, prepared=prepare_run_model(combined))
+    assert len(direct.prints[0].discharge_m3_s) == storm.calculation_increments + 1
+
+
+@pytest.mark.parametrize(("first", "second"), [("0.07", "99.879999999999"), ("0.01", "100.040000000001")])
+def test_combined_preburst_decimal_burst_outside_endpoints_still_rejected(first: str, second: str) -> None:
+    model = _imported_model()
+    with pytest.raises(ValueError, match="full 100% burst segment"):
+        replace(
+            model.storm,
+            pattern_basis="combined_preburst_percent",
+            percentages=(Decimal("2.10"), Decimal(first), Decimal(second)),
+            preburst_bins=1,
+        )

@@ -136,3 +136,61 @@ without numerical changes. Main advanced through the consolidated
 documentation PR #235 only; the integration retains those docs and
 unchanged source/fixtures. The new exact-head CI is required for the
 full adapter/installed-wheel receipts.
+
+## Independent boundary review and uncertainty assessment
+
+[Review finding](https://github.com/Chain-Frost/pyrorb/pull/242#discussion_r4722145334)
+at `6076ca760647ccf064036fe39cd2c08a7f39210b`: valid inclusive Decimal burst totals of 99.95
+(0.07 + 99.88) and 100.05 (0.01 + 100.04) can round to the adjacent
+binary64 values 99.94999999999999 and 100.05000000000001. Personally
+reproduced both with Linux/Python 3.13.5 and math.fsum. A strict comparison
+against the binary64 endpoint constants rejects them. The proposed fix
+uses math.nextafter toward the outside once per endpoint; the original
+Decimal S1 tolerance is unchanged. Independently verified both example
+endpoints and rejection of 99.949999999999 / 100.050000000001. The kernel
+test also checks rejection two binary64 steps outside the original
+bounds. New typed-path and direct-kernel controls require exact-head
+CI. This changes validation only, not the storm shares, routing,
+losses or comparator; the retained 100.00 burst is interior to the
+bounds. On the preceding head the Windows/Python 3.11 strict local
+quality step (repository checks, Ruff, strict Pyright and non-native
+pytest) passed in [46041301565](https://github.com/Chain-Frost/pyrorb/actions/runs/46041301565).
+Do not transfer that receipt to the new head or claim the new wheel
+until it completes.
+
+### Reference-printing uncertainty versus engineering deviations
+
+Using the executed kernel receipt above and the exact native Q intervals
+in [the four-profile record](2026-11-15-four-profile-admission-review.md),
+propagate original display uncertainty, not a new engineering threshold.
+Peak bounds below are engineering peak minus the native peak interval
+endpoints. Max-error lower bound is max(0, observed max error minus one
+native half-last-place unit), using the uniform native Q precision
+(0.001 m³/s for the first two profiles, 0.0001 m³/s for the last two).
+The signed trapezoid difference range subtracts the native upper/lower
+trapezoid bounds from the engineering trapezoid. Values below are
+rounded from the recorded kernel results.
+
+| Case | Peak difference range (m³/s) | Minimum possible max-Q difference (m³/s) | Signed trapezoid difference range (m³) |
+| --- | --- | ---: | --- |
+| fig67-ilroc | -0.045617 to -0.044617 | 0.068245 | -7,162.093 to -6,672.943 |
+| fig67-kc5-m1 | -0.000420 to +0.000580 | 0 | -267.800 to +83.200 |
+| failure-m-above-one | +0.031296 to +0.031396 | 0.033410 | +2,431.655 to +2,475.485 |
+| failure-m-below-one | -0.031266 to -0.031166 | 0.033441 | -2,470.827 to -2,426.907 |
+
+For the linear m=1 calculation, the reported max Q difference
+(0.000497562 m³/s) is below 0.0005 m³/s, so every computed ordinate is
+consistent with original native printed precision, and peak and volume
+differences are not distinguishable from original print rounding.
+For the three nonlinear cases the observed differences cannot be
+explained by original printed-Q rounding alone. This does not identify
+a particular native defect or justify accepting a different numerical
+method; the native hidden storage/source states and independent physical
+site remain unqualified. Do not assign an acceptance budget after seeing
+these differences. The four registered gap dispositions stay unchanged.
+No native run occurred.
+
+The single matrix now records the bounded #242 **candidate** execution
+for the eight same-storm imports and four original diagnostic profiles.
+The full exact-head source/wheel and independent review receipts remain
+required before merge; no Q promotion or broader engine qualification.

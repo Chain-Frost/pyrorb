@@ -260,9 +260,12 @@ def _validate_temporal_basis(storm: Storm, total_percent: float) -> None:
             raise RoutingDomainError(message)
         prefix = math.fsum(storm.percentages[:split])
         burst = math.fsum(storm.percentages[split:])
-        # Match the typed combined-storm source precision, not the stricter
-        # ordinary 100%-of-depth numerical basis.
-        if prefix <= 0 or not 99.95 <= burst <= 100.05:
+        # S1 checks the inclusive Decimal bounds exactly. Permit one adjacent
+        # binary64 value at each bound for conversion and fsum roundoff only.
+        # This is not an expansion of the source model's tolerance.
+        lower = math.nextafter(99.95, -math.inf)
+        upper = math.nextafter(100.05, math.inf)
+        if prefix <= 0 or not lower <= burst <= upper:
             message = "Combined pre-burst requires positive weights and a full 100% burst segment."
             raise RoutingDomainError(message)
         return
