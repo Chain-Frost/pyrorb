@@ -57,11 +57,12 @@
       "receipt": "B148-SOURCE-SCENARIO-20261128",
       "simulation_authorised": false,
       "source_admission": "blocked",
-      "document_status": "Model-directory validation/change-log locators identified; bytes unavailable after bounded exact-name lookup; no replacement root supplied.",
+      "document_status": "Owner confirms records are not on this PC and will action other-PC issue #245; exact inventory locators identified, bytes unavailable here. Stop local searches.",
       "calibration_basis": "unestablished",
       "historical_loss_climate_application": "unestablished; source multipliers do not recover unknown losses",
       "independent_review": "Separate-agent actual-source scientific desk review completed; conceptual parameter-unassigned scenario acceptable for owner discussion only; not professional certification or source-owner signoff.",
-      "private_review_bindings": "Exact actual source/PDF/page/proposal/evidence bindings retained privately; original loss/site/rainfall admission unchanged."
+      "private_review_bindings": "Exact actual source/PDF/page/proposal/evidence bindings retained privately; original loss/site/rainfall admission unchanged.",
+      "other_pc_custody_issue": "https://github.com/Chain-Frost/pyrorb/issues/245"
     }
   },
   "probability": {
