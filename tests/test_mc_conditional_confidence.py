@@ -122,3 +122,20 @@ def test_monotone_tightening_and_inconsistent_grid() -> None:
     assert mc.reference_quantile(grid, Fraction(1, 2)) == (0, 0)
     with pytest.raises(ValueError, match="Inconsistent"):
         mc.reference_quantile((grid[0], (Fraction(1), Fraction(1, 4), Fraction(2, 5))), Fraction(1, 2))
+
+
+def test_exact_reference_quantile_query_and_grid_required() -> None:
+    mc = _research()
+    near = Fraction(99, 100) - Fraction(1, 10**20)
+    grid = ((Fraction(0), near, near), (Fraction(1), Fraction(1), Fraction(1)))
+    assert mc.reference_quantile(grid, Fraction(1, 100)) == (0, 1)
+    # A binary64 target can make an exact CDF below 0.99 appear to cross.
+    with pytest.raises(ValueError, match="exact fraction"):
+        mc.reference_quantile(grid, 0.01)
+    for invalid in (
+        ((0.0, near, near),),
+        ((Fraction(0), float(near), near),),
+        ((Fraction(0), near, float(near)),),
+    ):
+        with pytest.raises(ValueError, match="exact fractions"):
+            mc.reference_quantile(invalid, Fraction(1, 100))

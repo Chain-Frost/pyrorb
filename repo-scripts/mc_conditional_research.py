@@ -41,6 +41,7 @@ class ConditionalCurve(NamedTuple):
 
     def cdf(self, threshold: Fraction) -> tuple[Fraction, Fraction]:
         """Conditional CDF bounds at a finite nonnegative flow threshold."""
+        threshold = _require_fraction(threshold, "CDF threshold must be an exact fraction")
         if threshold < 0:
             _fail("Expected a nonnegative threshold")
         index = bisect_right(self.known, (threshold, DOMAIN))
@@ -54,6 +55,7 @@ class ConditionalCurve(NamedTuple):
 
     def quantile(self, exceedance: Fraction) -> tuple[Fraction, Fraction | None]:
         """Attained inverse bounds; None means no finite upper bound."""
+        exceedance = _require_fraction(exceedance, "Conditional exceedance must be an exact fraction")
         if not 0 < exceedance < 1:
             _fail("Conditional response exceedance must be inside (0,1)")
         target = DOMAIN * (1 - exceedance)
@@ -69,6 +71,12 @@ class ConditionalCurve(NamedTuple):
 
 def _fail(message: str) -> Never:
     raise ValueError(message)
+
+
+def _require_fraction(value: object, message: str) -> Fraction:
+    if not isinstance(value, Fraction):
+        _fail(message)
+    return value
 
 
 def _allocations(allocations: Mapping[str, tuple[Decimal, int]]) -> dict[str, tuple[Fraction, int]]:

@@ -141,3 +141,19 @@ def test_reader_exhausted_before_result_return() -> None:
 
     with pytest.raises(ValueError, match="final digest mismatch"):
         mc.conditional_curve(_plan(), invalid_at_end(), scenario="study", duration=1440, site_id="P01")
+
+
+def test_exact_conditional_queries_reject_float() -> None:
+    mc = _research()
+    plan = {"a": (Decimal("0.48509999999999999999"), 1), "b": (Decimal("0.00490000000000000001"), 1)}
+    curve = mc.conditional_curve(
+        plan, [_row("a1", "a", 0), _row("b1", "b", 1)], scenario="study", duration=1440, site_id="P01"
+    )
+    assert curve.quantile(Fraction(1, 100)) == (1, 1)
+    with pytest.raises(ValueError, match="exact fraction"):
+        curve.quantile(0.01)
+    for threshold in (0.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="exact fraction"):
+            curve.cdf(threshold)
+        with pytest.raises(ValueError, match="exact fraction"):
+            curve.survival(threshold)

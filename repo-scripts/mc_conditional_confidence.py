@@ -157,12 +157,16 @@ def reference_quantile(
     Each row is (flow, lower CDF, upper CDF). Apply monotone tightening;
     a finite grid cannot establish an upper inverse without a crossing.
     """
+    exceedance = _require_fraction(exceedance, "Conditional exceedance must be an exact fraction")
     if not grid or not 0 < exceedance < 1:
         _fail("Expected nonempty grid and interior conditional exceedance")
     previous = Fraction(-1)
     lower = Fraction(0)
     lowers: list[Fraction] = []
     for flow, lo, hi in grid:
+        _require_fraction(flow, "Reference grid values must be exact fractions")
+        _require_fraction(lo, "Reference grid values must be exact fractions")
+        _require_fraction(hi, "Reference grid values must be exact fractions")
         if flow < 0 or flow <= previous or not 0 <= lo <= hi <= 1:
             _fail("Invalid ordered reference grid")
         previous = flow
