@@ -2,7 +2,7 @@
   "format": "pyrorb-mc148-python-only-study-design-draft/1",
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
-  "owner_direction": "Desk review of private source custody, literature and explicit uncalibrated numerical scope. The specific dimensional pair is accepted for preparation. Protocol freeze and execution remain pending.",
+  "owner_direction": "Proceed with private-only uncalibrated numerical-reliability preparation and independent review. The constructed dimensional pair was previously accepted for preparation; do not repeat source recovery or parameter choice. Scoped lawful use and derivative/retention authority, the complete law, scientific eligibility and formal stage activation remain separate.",
   "repository_base": "ef5c985a607545aee9f58d2a0f4f5712c410e46d",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
@@ -91,6 +91,16 @@
       "issue": "https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7233144404",
       "verified": "Raw and historical adjusted objects matched recorded size, CRC, SHA-256 and Git blob; six 24-hour anchors matched exact uplift; archived PAR selects adjusted dependency. Raw bytes are retained locally.",
       "source_admitted": false
+    },
+    "private_only_direction": {
+      "status": "owner_selected_private_only_preparation_source_authority_pending",
+      "private_receipt": "B148-PRIVATE-ONLY-DIRECTION-20261128",
+      "use": "Private internal numerical research only, subject to source-owner/custodian confirmation for retained sources, parameter-only derivative, outputs and audit retention.",
+      "disclosure": "No public/external disclosure of private inputs, identifiers, actual outputs or source-derived results. Source-neutral public code, authored controls and redacted readiness metadata remain distinct.",
+      "no_wider_transfer": true,
+      "source_owner_authority_confirmed": false,
+      "public_results_disclosure": false,
+      "execution_permission": false
     }
   },
   "probability": {
@@ -516,7 +526,7 @@
       "effective_count_approx": 366265.9486388616,
       "hoeffding_radius_K256_alpha002_approx": 0.0037224355572404388,
       "split_hoeffding_radius_approx": 0.0038474356768761317,
-      "split_KL_limit_approx": 4.106116317108456e-05,
+      "split_KL_limit_approx": 0.00004106116317108456,
       "roots_planned": 341,
       "root_collision_union_upper_approx": 3.1425599969492346e-15,
       "roots_generated": 0,
@@ -552,7 +562,7 @@
       "equal_z_50_approx_conditional_weight_min": 0.0026717469,
       "conditional_weight_max": 0.0378670935,
       "reference_n_h": 10000,
-      "S_approx": 2.73025654e-06,
+      "S_approx": 0.00000273025654,
       "effective_n_approx": 366265.95,
       "K_max": 256,
       "epsilon_approx": 0.00372244,
@@ -619,7 +629,7 @@
       "execution": "deterministic desk arithmetic only; no routed, sampled or synthetic MC events; no scientific sign-off"
     },
     "conditional_ledger_contract": {
-      "status": "implemented_in_research_PR246_final_head_checks_and_integration_pending",
+      "status": "research_implementation_paired_pool_and_fixed_decision_added_final_review_pending",
       "source_revision": "e80e56dbd1089874b527b98f9d1606532474c733",
       "verified_reader": "runoff_routing.monte_carlo_execution.iter_verified_mc_results; exhaust iterator on pinned immutable inputs; do not invoke run/replay",
       "allocation": "original MCAllocation Decimal masses and positive planned integer counts; derive exact rational mass per slot; keep original .49 denominator and .01/.50 tails; unknown/unstarted slots remain in preassigned plan",
@@ -742,10 +752,10 @@
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "Raw-parent custody independently verified. Require source-use/derivative/disclosure rights, acceptance of the complete law, parameter-only derivative and supported features, paired prints, clock/horizon and numerical margins/caps.",
+    "policy": "Private-only direction recorded; verify actual source-owner scoped use, derivative/output and retention authority. Owner and independent reviewer must decide the complete proposed law, CL derivative, supported features, exact paired identities, finite window, numerical criteria, fixed reference method and cost/stop rules. Do not repeat source recovery or dimensional choice.",
     "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
     "manifests": "Before freeze, independently audit actual source, weight, root, reference, confirmation, confidence allocation and synthetic qualification manifests against the approved protocol.",
-    "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
+    "owner": "Review the specific candidate protocol (1 m3/s absolute floor at each print, 2% relative, .01 CDF/zero margins, finite window, confidence method, power and 300 confirmations/caps). Freeze only after local seven-manifest audit and independent scientific admission; separately authorise each execution stage.",
     "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"
   },
   "execution": {
@@ -809,6 +819,91 @@
       "simulation_authorised": false,
       "source_weight_manifest_receipt": "B245-DESK-MANIFESTS-20261128",
       "owner_clarification": "https://github.com/Chain-Frost/pyrorb/pull/244#issuecomment-7233198601"
+    },
+    "protocol_freeze_candidate": {
+      "status": "recommended_not_frozen_or_admitted",
+      "source_review": "Reuse B245-RAW-PARENT-INDEPENDENT-20261128, B245-LITERATURE-INDEPENDENT-20261128, E245-CONDITIONAL-LAW-DESK-20261128 and B245-DESK-MANIFESTS-20261128. Do not repeat custody or dimensional choice.",
+      "private_direction_receipt": "B148-PRIVATE-ONLY-DIRECTION-20261128",
+      "scope": "One fixed constructed conditional response law, one archived computational graph, two paired print identities and one 24 h duration; no observed-calibration, physical design, native equivalence or annual flood claim.",
+      "law": {
+        "raw_parent": "Verified raw unadjusted point-depth parent, no additional uplift; bind six source knots and exact existing z-linear depth method.",
+        "domain": [
+          "0.01",
+          "0.50"
+        ],
+        "spatial": "Uniform forcing; one applicable common-area ARR2019 reduction; bind actual area and coefficient/region evidence.",
+        "sampling": "Use the existing deterministic 50-stratum geometry, exact .49 mass, original counts; 53-bit midpoint coordinates under stipulated idealised independence and explicit HMAC computational model. Ten source-bound eligible areal members at nominal equal .1 weights; independent rainfall/loss/TP draws by construction, not empirical hydrological independence.",
+        "loss": "Reuse privately recorded approved constructed dimensional pair and reviewed inverse factor table. PB=0 is a proposed explicit boundary; whole-storm IL becomes effective burst IL only under that boundary. Fixed CL-only parameter derivative, preserve graph/control order and routing settings. Review actual finite law and sampled IL override."
+      },
+      "output": {
+        "engine": "python-cmd/cmd-6.44 exact source and installed wheel to bind",
+        "peak_window_hours": [
+          "0",
+          "200"
+        ],
+        "samples": 201,
+        "timestep_hours": "1",
+        "rain_hours": 24,
+        "dry_hours": 176,
+        "definition": "Maximum of the 201 inclusive hourly ordinates, not a complete-recession peak claim. Verify exact full window, paired print IDs, units, initial state, source features and status semantics. Existing peak-ledger row alone does not independently prove full window completeness."
+      },
+      "numerical": {
+        "proposed_absolute_floor_m3s_by_site": {
+          "P01": "1",
+          "P02": "1"
+        },
+        "relative_peak": "0.02",
+        "peak_margin": "max(site floor, .02 * exact median of 30 complete independently screened cohort quantiles). For 30, average the two central values. Floors are explicit proposed numerical research choices: 2% of 50 m3/s; not engineering acceptance or derived from observed flows. No outcome-based tuning.",
+        "cdf_absolute": "0.01",
+        "zero_mass_absolute": "0.01",
+        "relative_sensitivities_descriptive": [
+          "0.01",
+          "0.02",
+          "0.05"
+        ],
+        "targets": [
+          "0.01",
+          "0.02",
+          "0.05"
+        ],
+        "confidence_method": "Recommend one pre-frozen weighted Hoeffding/KL split-alpha reference construction from #243/#246, alpha_ref .02 split internally; no post-outcome method selection. Independent adoption pending.",
+        "reliability_target": "0.95",
+        "joint_alpha": "0.05",
+        "cp_tail_alpha": "0.015",
+        "confirmations": 300,
+        "adequate_definite_min": 294,
+        "inadequate_possible_max": 275,
+        "screen": "Require all 30 complete paired screening cohorts; stop unresolved for incomplete scale/grid; freeze existing grid recipe before reference.",
+        "reference": "Use all 10 planned equal-allocation cohorts; full mass retained, no conditioning on surviving cohorts. Monotone-tighten and apply feasibility guard before separately authorised confirmation.",
+        "component_count_max": 14
+      },
+      "resources": {
+        "attempts": 830250,
+        "wall_seconds": 151200,
+        "memory_mib_per_process": 4096,
+        "storage_mib": 8192,
+        "concurrency": 1,
+        "retries": 0,
+        "stage_caps": "Unchanged from design; owner confirmation and actual bounded cost/termination/storage review required. Intake is future separately authorised after freeze."
+      },
+      "research_implementation": {
+        "pr": "https://github.com/Chain-Frost/pyrorb/pull/246",
+        "head": "1a2f02a37e3638a646bc3ff5fbe07a5ab2c76e58",
+        "paired_pool": "Existing verified reader used for both sites on identical externally pinned project/request/ledger/wheel; exact pooled allocation and all planned absences; reject duplicate/unplanned/scope mismatches. Plan membership/law/roots require separate manifest audit.",
+        "classifier": "Exact Fraction component rectangles, inclusive margins, full frozen component family and fixed 300-cohort denominator. Independent exact CP count thresholds corroborated.",
+        "offline_tests": 24,
+        "new_tests": 9,
+        "exhaustive_rectangle_controls": 900,
+        "limitations": "Authored doubles for paired adapter wiring; real installed-wheel paired-path integration, full Ruff/Pyright/CI and independent review pending. No study execution or automatic adoption."
+      },
+      "remaining": [
+        "Source-owner/custodian authority for private use, derivative, output and retention scope; no external disclosure.",
+        "Owner and independent scientific decision on full constructed law, finite-window estimand, margins, fixed confidence method and caps.",
+        "Hash/diff actual CL-only derivative and pin installed wheel, model features, paired prints and clock/window; verify exact finite law and actual plan/source manifests.",
+        "Audit all seven actual manifests and freeze protocol before any separately authorised stage. Do not generate roots, run preflight or route now."
+      ],
+      "simulation_authorised": false,
+      "physical_population_admitted": false
     }
   }
 }

@@ -443,3 +443,89 @@ until accepted. Agree stage-specific stop rules and preserve unknown mass for
 failed or unstarted events. The owner has already accepted the dimensional pair
 for preparation. Formal freeze and any subsequent stage launch require separate
 decisions. `simulation_authorised=false`. #148, #228 and #9 remain open.
+
+## 14. Private-only preparation and concrete freeze candidate — 28 November 2026
+
+The owner directed proceeding after the private-only recommendation.
+Record **private internal numerical research preparation only**, as
+private receipt B148-PRIVATE-ONLY-DIRECTION-20261128. There is no
+permission for public or external disclosure of private inputs,
+source-derived artifacts, identities or actual study results. This
+direction does not establish source-owner or third-party use rights.
+The authorised custodian must record scoped permission for the retained
+graph, rainfall, temporal patterns and metadata; creation and retention
+of a CL-only derivative, private outputs and audit evidence; participants,
+storage/access and retention restrictions. Do not expand raw transfers.
+Reuse completed document/raw-parent/primary-literature/continuous-law
+review and the already accepted constructed dimensional pair. Do not
+repeat recovery, rainfall verification or parameter selection.
+
+### Recommended decisions, not yet frozen
+
+| Decision | Recommended fixed numerical protocol |
+| --- | --- |
+| Population | One immutable archived computational graph, paired P01/P02, 24 h raw unadjusted rainfall, exact .01.. .50 interval and .49 mass; no climate uplift. Uniform forcing and one common-area ARR2019 reduction. Keep .51 excluded tails explicit. |
+| Joint law | Existing exact 50-stratum geometry and counts; idealised uniform 53-bit midpoint coordinates, ten source-bound eligible areal members at nominal equal weights, stipulated mutual independence of rainfall, IL factor and TP. HMAC computational model is an assumption requiring review, not a proof of independence or empirical hydrology. |
+| Loss boundary | Previously accepted constructed dimensional pair, reviewed ARR factor inverse once, constant CL, PB=0 as a new explicit numerical condition. Hash/diff only the CL parameter derivative; preserve original graph/control order, fixed routing tokens and sampled IL override. No calibrated loss or historical preburst claim. |
+| Paired output | Recommend finite-window peak over [0,200] hours: 24 rain + 176 dry hourly increments, exactly 201 inclusive samples. Bind both print IDs, units, initial state, engine/profile, pinned installed artifact, and full time window. Archived terminal flows do not establish complete recession. |
+| Peak margins | Proposed positive absolute floors **1 m³/s at each print**, relative .02; each component Delta=max(site floor,.02*m), where m is the exact median of 30 complete pilot cohort quantiles (mean of the central two). One m³/s equals 2% of 50 m³/s; this is an explicit proposed numerical research tolerance, not a calibration, reporting precision or engineering tolerance. |
+| Probability margins | Conditional CDF and zero mass .01 absolute; conditional exceedance targets .01/.02/.05 at both prints. Other relative-margin sensitivity results descriptive only. |
+| Confidence | Recommend the candidate split-alpha weighted Hoeffding/KL reference construction from #243/#246 as one pre-frozen method. Reference alpha .02 split internally, CP tails .015 each, joint confidence .95. Do not select an alternative method based on realised outcomes. Scientific adoption remains pending. |
+| Reliability | Fixed 300 confirmations, target .95; adequate only at least 294 definite passes; inadequate only at most 275 possible passes; otherwise unresolved. All planned slots retained. No partial stopping verdict. |
+| Resource limits | Retain proposed 830,250 attempts, 42 h, 4 GiB/process, 8 GiB total storage, one concurrent cohort, no retries, existing stage/timeout ceilings. These are proposed caps, not measured performance. |
+
+The proposed numerical absolute floors and method are decisions for
+owner and independent scientific acceptance. The existing actual
+admission fields, owner-law/margin approvals, plan IDs and root manifest
+remain null. A finite-window peak answers a narrower reproducible
+question than complete-event peak. The compact ledger stores its peak
+and time, not all ordinates; existing row validity alone is not proof
+of the prescribed window. Verify complete clock/support and actual
+installed-wheel behavior on authorised authored controls before any
+study. Require all 30 complete paired screens, freeze exact grid/scale
+per section 4, then use all ten planned reference cohorts with full
+mass and the final tightened feasibility check. No adaptive changes.
+
+### Source-independent implementation continuation
+
+PR [#246](https://github.com/Chain-Frost/pyrorb/pull/246), exact
+implementation head `1a2f02a37e3638a646bc3ff5fbe07a5ab2c76e58`,
+adds a read-only paired wrapper around the existing verified reader,
+using the same independently pinned project, request, ledger and
+installed wheel for both sites. Equal-allocation pooling retains all
+planned cohorts, including absent/aborted slots, rejects duplicate
+plan/request/ledger identities and mismatched exact scopes, and keeps
+the original paired marginals. Hash membership does not prove the
+source law or independent roots; the actual stage manifest must bind
+those separately. Exact Fraction rectangle classification requires
+the full frozen component family and retains inclusive margins,
+strict failure and unbounded/unknown states. The 300-cohort classifier
+implements the already reviewed exact critical counts.
+
+Local Python 3.13.5: **24 tests passed** (15 existing research tests
+and nine new tests, including 900 exhaustive integer rectangle
+controls). Exact binomial integer arithmetic independently confirms
+the four .95 boundary tails at 293/294 and 275/276. Both changed file
+blobs match the tested bytes. The adapter wiring test uses authored
+reader/header doubles; actual installed-wheel paired-cohort integration
+and full Ruff/Pyright/hosted CI and independent review are pending.
+No root generation, sampler, new experiment, routing or native
+execution, actual manifest alteration, protocol freeze, release or merge.
+
+### Local closeout and separate stage authority
+
+Reuse the existing private source/weight amendment and all seven
+actual manifest files (sources, weights, roots, reference, confirmation,
+confidence allocation, synthetic qualification). The custodian checks
+the private-use authority, then prepares and pins the exact derivative,
+wheel, scenario, source law/weights, finite window and prints against
+the accepted protocol without editing originals. Preserve pre- and
+post-review bytes and hashes. Do not regenerate the candidate geometry
+or invent plan identities; keep root/plan fields pending until the
+separately authorised generation step. Independently review the actual
+manifest set and stage-cost/stop plan; any unresolved source, law,
+identity, feature, confidence or permission gate remains blocked.
+Formal freeze and each stage launch require separate authority.
+Original physical declaration/checker and all adopted physical source
+fields remain unchanged. `simulation_authorised=false`; #148, #228
+and #9 remain open.
