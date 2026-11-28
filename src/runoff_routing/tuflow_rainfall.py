@@ -201,8 +201,7 @@ def _boundary_rows(
     zeros = (_ZERO,) * len(selected)
     rows = [RainfallRow(step * start, zeros)]
     rows.extend(
-        RainfallRow(step * end, tuple(depths))
-        for end, depths in enumerate(zip(*selected, strict=True), start + 1)
+        RainfallRow(step * end, tuple(depths)) for end, depths in enumerate(zip(*selected, strict=True), start + 1)
     )
     trailing = any(rows[-1].depths_mm)
     if trailing:

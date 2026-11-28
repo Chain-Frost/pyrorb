@@ -103,8 +103,7 @@ def test_repeated_section_requires_explicit_selection() -> None:
 
 def test_nonzero_declared_start_preserved_without_clock_reset() -> None:
     report = (
-        _PREFIX.replace("0 3", "2 4")
-        + f"{_GROSS}\n{_HEADER}A\n\n2 3 2.5\n3 4 3.5\n\nTot. 7 6.0\nRouting results:\n"
+        _PREFIX.replace("0 3", "2 4") + f"{_GROSS}\n{_HEADER}A\n\n2 3 2.5\n3 4 3.5\n\nTot. 7 6.0\nRouting results:\n"
     )
     boundary = build_tuflow_rainfall(read_rorb_bytes(report.encode()), kind="gross", columns=("Subarea_A_mm",))
     assert boundary.to_csv() == "Time_hours,Subarea_A_mm\n0.250,0\n0.375,2.5\n0.500,3.5\n0.625,0\n"
