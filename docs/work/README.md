@@ -2,6 +2,8 @@
 
 - [Synthetic statistical qualification and latent-ledger amendment (#148)](2026-11-28-issue148-synthetic-qualification.md) — fixed finite-law experiment, conservative confidence/decision limitations and bounded analytical review recorded; no physical/native admission.
 
+- [Canonical printed MC adapter and comparison I/O (#191 Phase 2)](2026-11-28-issue191-canonical-adapter.md) — dependent on #247, source-bound raw observations, caller-scoped identities and unchanged scientific unavailable/readiness gates.
+
 - [Bounded canonical native MC printed-report reader (#232)](2026-11-28-issue232-native-mc-reader.md) — owner-approved four-file artificial/redacted packet, independent source/map scope, canonical parsing and explicit scientific unavailable fields; #191 Phase 2 follows reader review.
 
 - [Physical-source candidate and draft study protocol (#148)](2026-11-25-issue148-physical-source-protocol.md) — candidate-only admission, five separate blockers, proposed inference/cost design and no-simulation preflight; documentation review complete and #239 merged; independent source/scientific admission remains pending.
