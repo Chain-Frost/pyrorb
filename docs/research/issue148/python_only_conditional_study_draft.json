@@ -3,7 +3,7 @@
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
   "owner_direction": "Current Prompt B: read-only source/loss/scenario qualification and proposal for owner decision; no native, routing, sampling, MC or timing. Section8 replay is historical; section9 preserves simulation_authorised=false.",
-  "repository_base": "e80e56dbd1089874b527b98f9d1606532474c733",
+  "repository_base": "282a49201991da60efd16cb59a616dc2b9309421",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
   "historical_protocol": "physical_study_protocol_draft.json",
@@ -43,7 +43,7 @@
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
-    "loss_basis": "actual adopted storm median IL/CL/calibration record on inaccessible other PC; NaN Data Hub values and historical deterministic/adjusted factors not substitutes; source-backed regional/transfer or separate expressly approved numerical scenario only",
+    "loss_basis": "Both exact model-directory documents recovered and separately reviewed in #245; structural/programmatic validation only, no adopted storm median IL/CL or observed calibration established. Data Hub NaNs and historical deterministic/adjusted settings are not substitutes. Applicable transfer or expressly approved numerical scenario required.",
     "loss_factor_table": "Independent primary-source desk review supports already-corrected ARR Book5 v4.2 Table5.3.13/Figure5.3.26 interpretation, reversed to nonexceedance; model applicability and dimensional scale unadmitted.",
     "dependence": "explicitly proposed independent empirical loss conditional on rainfall and eligible TP; not approved",
     "preburst_proposal": "none/PB=0 under supported bridge as conditional numerical assumption only, not adopted hydrology; D full-domain guard conditional, not actual compatibility certificate; no subtraction/clamp or climate assumption without decision",
@@ -57,12 +57,24 @@
       "receipt": "B148-SOURCE-SCENARIO-20261128",
       "simulation_authorised": false,
       "source_admission": "blocked",
-      "document_status": "Owner confirms records are not on this PC and will action other-PC issue #245; exact inventory locators identified, bytes unavailable here. Stop local searches.",
+      "document_status": "Historical unavailable-on-E-PC disposition retained in dated work record; superseded for the two exact recovered documents by recovered_document_review. No further search for those documents required.",
       "calibration_basis": "unestablished",
       "historical_loss_climate_application": "unestablished; source multipliers do not recover unknown losses",
       "independent_review": "Separate-agent actual-source scientific desk review completed; conceptual parameter-unassigned scenario acceptable for owner discussion only; not professional certification or source-owner signoff.",
       "private_review_bindings": "Exact actual source/PDF/page/proposal/evidence bindings retained privately; original loss/site/rainfall admission unchanged.",
       "other_pc_custody_issue": "https://github.com/Chain-Frost/pyrorb/issues/245"
+    },
+    "recovered_document_review": {
+      "receipt": "https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232555597",
+      "status": "completed_bounded_desk_review_negative_loss_and_calibration_disposition",
+      "verified_hashes": 10,
+      "original_model_identity": "matched",
+      "reporting_aliases": "matched",
+      "document_date_version_applicability": "unestablished",
+      "hydrological_admission": false,
+      "loss_values_adopted": false,
+      "permissions_adopted": false,
+      "limitation": "No applicable calibration/IL/CL basis or site/region/rights evidence from these two documents; no conclusion about records elsewhere."
     }
   },
   "probability": {
@@ -321,7 +333,7 @@
     }
   },
   "synthetic_qualification": {
-    "status": "two_engine_prior_executed; remaining_one_engine_specific_design_proposed_unapproved",
+    "status": "two_engine_prior_replayed; bounded_one_engine_candidate_development_executed; scientific_acceptance_pending",
     "control_count": 8,
     "studies_per_control": 1000,
     "planned_studies": 8000,
@@ -349,12 +361,33 @@
       "limitations": "Different two-engine error family/controls; unchanged exact-source replay completed, independent exact-oracle/scientific acceptance and remaining one-engine qualification pending.",
       "local_replay_receipt": "local_replay_receipt.json"
     },
-    "reuse_rule": "Unchanged archived replay completed under explicit owner permission; do not duplicate again without a concrete unresolved question. Select remaining one-engine-specific controls or changed methods under a fixed design/cap/error family. No automatic scientific acceptance."
+    "reuse_rule": "Reuse the original two-engine results/replay and #246's completed fixed smaller one-engine development study; no unchanged repetition. Any additional qualification needs a specific gap, independently agreed fixed design and cap. No automatic scientific acceptance.",
+    "one_engine_development_evidence": {
+      "pr": "https://github.com/Chain-Frost/pyrorb/pull/246",
+      "receipt": "https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7232469660",
+      "executed_kernel_commit": "af5028181c5784116ea3df938f6c87bace0dc798",
+      "evidence_commit": "d721da39e80479fd836a2eb561113f5a6dbbb731",
+      "studies_per_control": 200,
+      "studies": 1600,
+      "reference_coverage_count": 1600,
+      "inverse_atom_coverage_count": 1600,
+      "exact_oracle_joint_reliability_coverage_count": 1200,
+      "exact_oracle_studies": 1200,
+      "adequate": 600,
+      "inadequate": 798,
+      "unresolved": 202,
+      "observed_false_verdicts": 0,
+      "observed_enclosure_violations": 0,
+      "empirical_simultaneous_lower_200_of_200": "0.9629051153",
+      "empirical_simultaneous_upper_zero_of_200": "0.0370948847",
+      "candidate_adopted": false,
+      "limitation": "Separate fixed smaller author-run study; historical exact kernel and upper-bound-only cases 3/4 retained. Not full scientific acceptance or replacement of any larger reviewer-required campaign."
+    }
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "source-supported loss values and factor table, TP weights, dependence, baseline/ARF/preburst/area/clock; no fabricated source",
-    "analytic": "independent amended latent-law/design review; reuse #243 prior evidence and complete only remaining separately approved one-engine-specific coverage/power qualification",
+    "policy": "Adopt an independently defensible dimensional loss basis, factor table and approved constructed joint law or actual applicable source law, physical site/rights/region and baseline/ARF/preburst/clock. Recovered structural documents do not supply losses or calibration.",
+    "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
     "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
     "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
     "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"

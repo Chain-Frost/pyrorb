@@ -103,6 +103,16 @@ _CSV_HEADER = (
     "clock_convention",
 )
 
+_DIAGNOSTIC_CSV_HEADER = (
+    "diagnostic_series_id",
+    "diagnostic_quantity_kind",
+    "diagnostic_control_index",
+    "diagnostic_subarea_id",
+    "diagnostic_reach_id",
+    "diagnostic_flow_m3_s",
+    "diagnostic_units",
+)
+
 
 class BatchConfigError(ValueError):
     """Malformed whole-batch request or unsafe output configuration."""
@@ -491,6 +501,34 @@ def _trapezoidal_volume(outcome: EngineOutcome, values: tuple[float, ...]) -> fl
     )
 
 
+def _diagnostic_csv_rows(outcome: EngineOutcome) -> Iterator[tuple[object, ...]]:
+    """Diagnostic rows never occupy ordinary print or native reported volume fields."""
+    for series in outcome.diagnostic_flows:
+        for index, value in enumerate(series.flow_m3_s):
+            yield (
+                "",
+                "",
+                "",
+                index,
+                outcome.physical_time_hours[index],
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "model_elapsed_from_zero",
+                series.series_id,
+                series.quantity_kind,
+                series.control_index_one_based,
+                series.subarea_id or "",
+                series.reach_id or "",
+                value,
+                series.units,
+            )
+
+
 @dataclass(frozen=True, slots=True)
 class ProjectBatchReport:
     """Collected full outcomes; streaming API avoids retaining them if unnecessary."""
@@ -525,7 +563,9 @@ class ProjectBatchReport:
     def to_csv(self) -> str:
         buffer = io.StringIO(newline="")
         writer = csv.writer(buffer, lineterminator="\n")
-        writer.writerow(_CSV_HEADER)
+        extra_header = _DIAGNOSTIC_CSV_HEADER if any(item.diagnostic_flows for item in self.outcomes) else ()
+        blank_extra = ("",) * len(extra_header)
+        writer.writerow((*_CSV_HEADER, *extra_header))
         for ordinal, outcome in enumerate(self.outcomes, start=1):
             error_code = outcome.diagnostics[0].code if outcome.diagnostics else ""
             error_message = outcome.diagnostics[0].message if outcome.diagnostics else ""
@@ -548,7 +588,7 @@ class ProjectBatchReport:
                 outcome.effective_inputs["calculation_increments"],
             )
             if not outcome.hydrographs:
-                writer.writerow((*common, *("" for _ in range(len(_CSV_HEADER) - len(common)))))
+                writer.writerow((*common, *("" for _ in range(len(_CSV_HEADER) - len(common))), *blank_extra))
                 continue
             for graph in outcome.hydrographs:
                 volume = _trapezoidal_volume(outcome, graph.discharge_m3_s)
@@ -578,8 +618,10 @@ class ProjectBatchReport:
                             graph.units,
                             "m3",
                             outcome.native_clock_convention or "model_elapsed_from_zero",
+                            *blank_extra,
                         )
                     )
+            writer.writerows((*common, *row) for row in _diagnostic_csv_rows(outcome))
         return buffer.getvalue()
 
     def to_text(self) -> str:
@@ -603,6 +645,9 @@ class ProjectBatchReport:
                 continue
             reason = f" [{outcome.diagnostics[0].code}]" if outcome.diagnostics else ""
             header.append(f"{index}. {outcome.event_id}: {outcome.status}{reason}")
+            header.extend(
+                f"   Diagnostic flow {series.series_id} ({series.units})" for series in outcome.diagnostic_flows
+            )
         header.append("Numerical/native parity: not assessed; physical trapezoidal volume is not CMD reported volume.")
         return "\n".join(header) + "\n"
 

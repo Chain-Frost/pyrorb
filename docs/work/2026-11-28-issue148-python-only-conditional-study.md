@@ -193,3 +193,76 @@ ARR [Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf) �
 Only the existing private source/weight manifests receive evidence/proposal/review pointers and supported claim statuses. All actual model/site/loss/rainfall admission, M/CL, loss-source hash, owner scenario approval, weights/plans and physical declarations remain unpopulated. Before/after manifest hashes and prior reviewed bytes are preserved privately. Conceptual acceptance for owner presentation does not clear the original physical gate; any lawful narrower numerical eligibility criterion requires an explicit owner and independent decision, not checker weakening.
 
 Owner decisions requested on this concrete proposal: limited uncalibrated numerical scope, distinct raw-parent/no-uplift baseline, defensible dimensional loss values and rationale, published factor shape/fixed-CL simplification, equal-member independent constructed law and uniform/ARF-once/PB0 boundary. Source rights, supported feature/profile and final margins/caps remain separate. The proposal cannot become executable until actual values and evidence are supplied. Next: owner actions the bounded read-only [other-PC custody handoff #245](https://github.com/Chain-Frost/pyrorb/issues/245), then returns recovered evidence or an explicit negative disposition for independent review and the limited-case decision. The handoff supplies private case-map routing, document/loss/climate evidence requirements, redacted return format and completion limits; it authorises no execution. #148/#9 remain open; coordinate through this existing #244 record. No execution, merge, release or numerical acceptance.
+
+## 10. Recovered-document review and candidate implementation handoff — 28 November 2026
+
+This dated continuation supersedes the **access status** in sections 8–9 and the
+unexecuted one-engine-development status in section 5 only. Historical receipts
+remain unchanged. No physical study scope, margin, budget, source field or
+execution gate is adopted or relaxed here. Reconciled main
+`282a49201991da60efd16cb59a616dc2b9309421`, preserving all concurrent main changes.
+
+### Actual recovered source documents
+
+[Other-PC recovery receipt](https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232444827)
+and the [separate actual-document review](https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232555597)
+establish the following bounded disposition. Both exact model-directory documents
+are recovered and preserved in the private evidence packets; ten independently
+recalculated SHA-256 hashes and sizes match, including the original model and
+cross-packet evidence bindings. The original model bytes match the retained
+archive; both reporting aliases agree with the node bindings. The retained
+graph ledger has 18 nodes, 17 reaches, one terminal, and a path to the terminal
+from each node without cycles. This is evidence consistency and a structural
+desk review, not another execution test or proof of physical accuracy.
+
+Both documents were read in full. They support structural/programmatic
+validation and reporting-location corrections only; the report expressly says
+executable validation was not performed at authorship. Neither establishes
+observed-flood calibration, an adopted complete-storm median IL or fixed CL,
+loss/climate/preburst application, an observed frequency population, physical
+site/region applicability, or rights. The document date/version applicability
+remains unestablished; the model match does not prove contemporaneity. This is a
+negative finding for these two documents, not all records elsewhere.
+
+The document-recovery/actual-byte-review part of #245 is complete. Do not
+repeat retrieval or promote structural checks to calibrated hydrology. The
+remaining owner/source decision is section 9's explicitly uncalibrated
+constructed numerical-response proposal (or independently applicable loss
+evidence if available). Median IL, CL, loss hash, physical source admission,
+scenario/weights, permissions and other unapproved choices remain null/blocked.
+No deterministic burst-loss substitution, silent parameter transfer, double
+uplift, new native execution, or annual flood interpretation.
+
+### Source-independent implementation and bounded qualification
+
+[PR #246](https://github.com/Chain-Frost/pyrorb/pull/246) implements the proposed
+read-only exact conditional aggregation in section 4.2 using the existing verified
+ledger reader. It also implements the candidate split-alpha weighted
+Hoeffding/KL reference bounds with outward numerical enclosure. This is research
+software, not adoption of a new production frequency method.
+
+[The fixed smaller one-engine development qualification](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7232469660)
+completed 1,600 studies (200 per eight controls) using the original candidate
+kernel. The exact executed source/result are retained in #246 at
+`d721da39e80479fd836a2eb561113f5a6dbbb731`; the executed kernel is
+`af5028181c5784116ea3df938f6c87bace0dc798`, before the behavior-preserving
+type-guard corrections. Observed reference and inverse/atom coverage are each
+1,600/1,600. No observed false verdict or enclosure violation; 600 adequate,
+798 inadequate and 202 unresolved. All 200 censored studies are unresolved.
+Full joint reliability coverage is 1,200/1,200 for six exact-oracle controls
+only; cases 3/4 use independently certified upper bounds. The simultaneous
+empirical 200/200 lower limit .9629051153 is below nominal .98 reference
+coverage, and the zero-false upper limit .0370948847 is not a guarantee of
+arbitrarily low error. Reuse this bounded evidence; no automatic scientific
+acceptance or unchanged repeated simulation. Any larger qualification must
+address a specific independently agreed scientific gap.
+
+Retain the earlier proposed physical study and separate activation gates
+unchanged. Review the exact #246 implementation head and independent scientific
+disposition before considering adoption of the candidate; earlier technical
+CI/review results do not qualify changed heads or physical inputs. The seven
+private preparation manifests and original declaration/checker/stdout are
+unchanged in this public continuation; their custodian must reconcile admitted
+source/policy decisions before an authorised physical stage. No physical,
+native, or new synthetic execution in this amendment, no preflight rerun,
+merge or release. `simulation_authorised=false`; #148/#9 stay open.
