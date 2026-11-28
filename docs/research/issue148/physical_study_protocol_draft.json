@@ -1,0 +1,227 @@
+{
+  "format": "pyrorb-mc148-study-design-draft/1",
+  "status": "proposed_unfrozen",
+  "simulation_authorised": false,
+  "scientific_review": "pending_independent_source_and_design_review",
+  "repository_base": "b6788a83fbe5eb9ccd68232fe8d92dfb596e0f6b",
+  "source_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
+  "preflight_declaration": "physical_study_draft_declaration.json",
+  "preflight_result": "physical_study_draft_preflight_result.json",
+  "candidate": {
+    "public_alias": "M04",
+    "set": "A",
+    "public_site_aliases": [
+      "P01",
+      "P02"
+    ],
+    "admission": "candidate_only",
+    "source_receipt": "../../work/2026-11-19-anonymised-site-cases.md",
+    "source_model_version": null,
+    "physical_site_ids": null,
+    "model_and_source_private_manifest_sha256": null,
+    "engine_profile": "python-cmd/cmd-6.44",
+    "sampling_policy": "monte-carlo-statistics/1",
+    "frequency_profile": "monte-carlo-statistics/1:weighted-step-inverse-v1",
+    "native_profile": null,
+    "scenario_id": null,
+    "durations_minutes_proposed": [
+      1440
+    ],
+    "durations_minutes_admitted": [],
+    "expansion_requires_new_protocol": true
+  },
+  "probability": {
+    "rainfall_aep_bounds": [
+      "0.01",
+      "0.50"
+    ],
+    "domain_mass": "0.49",
+    "outside_rare": "0.01",
+    "outside_frequent": "0.50",
+    "conditional_response_exceedance_targets": [
+      "0.01",
+      "0.02",
+      "0.05"
+    ],
+    "annual_flood_point_estimates": "unqualified",
+    "denominator": "fixed_modelled_domain_mass_not_successful_mass",
+    "no_extrapolation": true,
+    "no_production_renormalisation": true
+  },
+  "outputs": {
+    "primary_whole_run": [
+      "conditional_peak_quantile_by_site_duration_target_m3s",
+      "conditional_exact_zero_probability_by_site_duration",
+      "conditional_cdf_at_frozen_pilot_thresholds_by_site_duration"
+    ],
+    "pilot_threshold_rule": "per site/duration the three median pilot Python 1000-event conditional quantiles; deduplicate exactly; freeze before reference and confirmation; if invalid stop",
+    "primary_population_comparison": [
+      "conditional_peak_quantile_by_site_duration_target_m3s",
+      "conditional_cdf_at_frozen_pilot_thresholds_by_site_duration",
+      "conditional_exact_zero_probability"
+    ],
+    "initial_peak_vector_size_proposed": 6,
+    "initial_whole_run_vector_size_max_proposed": 14,
+    "expanded_durations": [
+      "duration_specific_quantiles",
+      "maximum_of_duration_quantiles",
+      "critical_duration_near_tie_selection_frequency"
+    ],
+    "near_tie_tolerance_m3s": null,
+    "diagnostic_only": [
+      "stratum_draw_laws",
+      "ifd_depth_residual",
+      "loss_factor_and_tp_conditional_joint_laws",
+      "boundary_contributions",
+      "attempted_valid_failed_missing_unsupported_counts_and_mass",
+      "representative_event_provenance",
+      "native_printed_summary",
+      "full_Q_selected_attribution",
+      "between_run_SD_CV_and_quantile_spread",
+      "elapsed_time_and_storage",
+      "whole_conditional_cdf_monotonic_grid_envelope_not_equivalence"
+    ]
+  },
+  "margins": {
+    "status": "proposed_not_engineering_acceptance",
+    "primary_relative_peak": "0.02",
+    "sensitivity_relative_peak": [
+      "0.01",
+      "0.02",
+      "0.05"
+    ],
+    "absolute_peak_floor_m3s_by_site": null,
+    "preflight_common_absolute_floor_m3s": null,
+    "scale": "absolute median of 30 independent 1000-event screening quantiles per site/duration/target, from Python only, frozen before reference/confirmation",
+    "peak_margin_formula": "max(site_absolute_floor_m3s, relative_peak * frozen_scale_m3s)",
+    "conditional_cdf_abs_margin": "0.01",
+    "conditional_zero_mass_abs_margin": "0.01",
+    "required_whole_run_probability": "0.95",
+    "joint_confidence": "0.95",
+    "engineering_owner_approval": null
+  },
+  "design": {
+    "status": "proposed_cost_ceiling_not_execution_authority",
+    "scenario_count": 1,
+    "duration_count": 1,
+    "engine_count_max": 2,
+    "site_count_candidate": 2,
+    "strata_proposed": 50,
+    "stratum_edges_and_weights": null,
+    "streams_python": "independently generated uniform 64-bit roots with replacement; abort unresolved on duplicate root or overlapping identities; existing HMAC domain separation; within-cohort independent pseudorandom draws an explicit computational assumption",
+    "streams_native": "unverified; require source-backed independence and effective allocation before inference",
+    "seed_manifests": null,
+    "reference_plan_sha256": null,
+    "confirmation_plan_sha256": null,
+    "selection": "screening descriptive; freeze margins, estimands, reference and confirmation plans before reference/confirmation; confirmation fixed at 1000; alternative budgets need new protocol",
+    "stages": [
+      {
+        "stage": "intake_future_only",
+        "events_per_cohort": 250,
+        "cohorts_per_engine": 1,
+        "max_events_both": 500,
+        "max_elapsed_seconds_both": 120,
+        "per_cohort_timeout_seconds": 60
+      },
+      {
+        "stage": "screen",
+        "events_per_cohort": 1000,
+        "cohorts_per_engine": 30,
+        "max_events_both": 60000,
+        "max_elapsed_seconds_both": 21600,
+        "per_cohort_timeout_seconds": 600
+      },
+      {
+        "stage": "screen",
+        "events_per_cohort": 5000,
+        "cohorts_per_engine": 30,
+        "max_events_both": 300000,
+        "max_elapsed_seconds_both": 28800,
+        "per_cohort_timeout_seconds": 1200
+      },
+      {
+        "stage": "screen",
+        "events_per_cohort": 10000,
+        "cohorts_per_engine": 30,
+        "max_events_both": 600000,
+        "max_elapsed_seconds_both": 36000,
+        "per_cohort_timeout_seconds": 1800
+      },
+      {
+        "stage": "reference",
+        "events_per_cohort": 50000,
+        "cohorts_per_engine": 10,
+        "max_events_both": 1000000,
+        "max_elapsed_seconds_both": 129600,
+        "per_cohort_timeout_seconds": 7200
+      },
+      {
+        "stage": "confirmation",
+        "events_per_cohort": 1000,
+        "cohorts_per_engine": 100,
+        "max_events_both": 200000,
+        "max_elapsed_seconds_both": 43200,
+        "per_cohort_timeout_seconds": 600
+      }
+    ],
+    "max_attempted_events_all_stages_both": 2160500,
+    "max_elapsed_seconds_all_stages": 259200,
+    "max_memory_mib_per_process": 4096,
+    "max_storage_mib_all_stages": 8192,
+    "max_concurrent_cohorts": 1,
+    "max_extra_retries": 0,
+    "stop": "stop before launching any cohort that could breach cap; stop on cap/invalid counts/identity/missing inference prerequisites; no opportunistic CI stopping; report unresolved; native must first demonstrate a defensible pre-launch effective count bound; replay and expansion have no budget"
+  },
+  "inference": {
+    "status": "proposed_subject_to_independent_coverage_review",
+    "alpha_total": "0.05",
+    "reference_alpha_python": "0.01",
+    "reference_alpha_native": "0.01",
+    "whole_run_lower_alpha_each_engine": "0.0075",
+    "whole_run_upper_alpha_each_engine": "0.0075",
+    "reference_method": "weighted Hoeffding on pilot-frozen finite thresholds, using independent reference draws across and within strata, lower/upper observable endpoint indicators, known conditional stratum weights; union allocation and conservative grid inversion",
+    "reference_family_size_per_engine": "K = 2 * sum(site,duration) unique frozen threshold count; max 512 initially",
+    "native_print_precision": "known convention interval per token or unavailable; propagate interval endpoints; never substitute exact zero",
+    "reference_pooling": "combine conditional CDF contributions using complete planned draw counts and frozen stratum weights, never average batch quantiles",
+    "equivalence": "simultaneous reference-region differences wholly within prespecified margins for quantiles, fixed CDF thresholds and zero mass; no whole-CDF claim; no separate alpha consumed for transformations of same joint regions",
+    "single_run": "definite pass if every output within margin for all reference/observation values; definite fail if no admissible reference/observation vector meets all margins; otherwise indeterminate; conservative rectangle check may return indeterminate",
+    "reliability": "one-sided exact CP lower on definite passes and upper on possible passes (including indeterminate); adequacy if lower >= target; inadequacy if upper < target; otherwise unresolved",
+    "coverage_power_validation": "required separately authorised synthetic validation, finite manifest and MC uncertainty on coverage/power, not performed here",
+    "full_annual": "not inferred",
+    "reference_grid": {
+      "status": "proposed_freeze_before_reference_and_confirmation",
+      "thresholds": "0, pooled weighted Python screening conditional attained quantiles at nonexceedance 0.01..1.00 by 0.01 (1.00=max), and max(0,m_j+k*Delta_j) for each of three pilot median peak quantiles and k in [-2,-1,-0.5,-0.25,0,0.25,0.5,1,2]; sort/deduplicate",
+      "max_thresholds_per_site_duration": 128,
+      "same_grid_both_implementations": true,
+      "adaptive_refinement": false
+    },
+    "reference_half_width": "sqrt(0.5 * sum_h(v_h^2/n_h) * log(2*K/alpha_ref)), v_h = w_h/0.49; n_h planned pooled independent reference count",
+    "reference_feasibility": {
+      "rejected_uniform_dkw": {
+        "reason": "50 strata x 10000 reference draws, 2 sites, 1 duration, alpha_h=0.00005; epsilon ~0.023 precludes finite 0.98/0.99 lower-CDF inverse and 0.01 joint difference margin",
+        "disposition": "diagnostic_only"
+      },
+      "ideal_equal_weight_hoeffding_half_width_approx": "0.0034",
+      "actual_weight_check_required": true,
+      "adequacy_not_established": true
+    },
+    "quantile_bounds": "max(0, greatest grid x with U(x)<1-a); least grid x with L(x)>=1-a or unbounded; monotonic tightening; no interpolation"
+  },
+  "decisions_pending": [
+    "private_source_authentication_and_permissions",
+    "model_feature_and_physical_site_binding",
+    "IFD_TP_loss_dependence_and_ARF_preburst_policy",
+    "actual_duration_scenario_and_strata",
+    "site_specific_absolute_peak_margins_and_primary_margins",
+    "reference_band_coverage_and_precision_power",
+    "native_method_reader_weights_and_streams",
+    "owner_approval_of_caps_and_frozen_study",
+    "probability_tail_annual_interpretation"
+  ],
+  "execution": {
+    "physical_events": 0,
+    "native_launches": 0,
+    "timing_pilots": 0,
+    "only_preflight": true
+  }
+}

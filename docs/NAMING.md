@@ -10,7 +10,7 @@
 | Python import package | `runoff_routing` |
 | Bootstrap development version | `0.0.0.dev0` |
 
-Install from a source checkout as described in the [quickstart](QUICKSTART.md). PyPI publication is deferred. Changing the local distribution metadata does not publish a package or establish ownership of a PyPI project name. Existing `python -m runoff_routing.<module>` entry points remain available; this identity change does not introduce or rename CLI commands.
+Install from a source checkout as described in the [quickstart](QUICKSTART.md). [Preliminary v26.11.24.1](https://github.com/Chain-Frost/pyrorb/releases/tag/v26.11.24.1) is published. Final MVP publication and scientific qualification remain separately gated; changing local metadata does not publish another package. Existing `python -m runoff_routing.<module>` entry points remain available; this identity change does not introduce or rename CLI commands.
 
 PyRORB implements selected RORB rainfall–runoff procedures. It is an independent project and is not endorsed by RORB's authors or custodians. The name does not expand its documented engine capabilities or scientific acceptance.
 
