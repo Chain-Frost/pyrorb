@@ -1,6 +1,10 @@
 # #148 — Python-only restricted-domain study preparation (28 November 2026)
 
-**Current disposition.** The owner accepted a dimensional loss pair for preparation of an explicitly uncalibrated numerical study. The recovered raw rainfall, external loss reference and conditional law are assessed in sections 11–13. The protocol remains unfrozen. Physical admission and execution remain blocked (`simulation_authorised=false`). Sections 1–10 retain the dated evidence and decisions that preceded this review.
+**Current disposition.** The owner adopted the restricted study settings for
+preparation. Section 15 records the seven-manifest audit, engine artifacts,
+site floors, source-owner declaration and decisions before freeze and execution.
+Sections 1–14 preserve the preceding proposals and evidence. The protocol
+remains unfrozen and `simulation_authorised=false`.
 
 ## 1. Reconciliation and decision boundary
 
@@ -529,3 +533,135 @@ Formal freeze and each stage launch require separate authority.
 Original physical declaration/checker and all adopted physical source
 fields remain unchanged. `simulation_authorised=false`; #148, #228
 and #9 remain open.
+
+## 15. Independent technical preparation for protocol freeze
+
+### Population and measured result
+
+For preparation the owner selected one archived computational graph, one
+24-hour unadjusted BoM point-rainfall population, uniform forcing, one
+common-area ARR2019 ARF and zero climate uplift. Use the previously accepted
+constructed median IL and fixed hourly CL, the eleven corrected ARR factor
+knots with linear inverse interpolation, zero preburst, and ten equal-weight
+areal temporal patterns. Rainfall, IL and TP have separate random draws.
+The installed reader accepts the authenticated raw file directly. It preserves
+the original percentage columns and the six in-domain anchors.
+
+At each of the two print IDs, retain the maximum finite nonnegative ordinate
+from hour 0 through hour 200, inclusive, in m³/s. There are 24 hourly rainfall
+increments and 176 dry increments, giving 201 ordinates. Both peaks belong to
+the same event. The conditional population has mass 0.49; the unmodelled rare
+and frequent masses are 0.01 and 0.50. The question concerns the reliability
+of one 1,000-event sample for this finite window. It carries no calibrated
+catchment, complete-recession, annual-frequency or native-equivalence claim.
+
+### Near-zero decision and reference uncertainty
+
+The private floor receipt sets a positive reporting-resolution floor for each
+named print, independently checked in two archived reports. The alternative
+1 m³/s in section 14 is a pragmatic study tolerance. They answer different
+questions near zero. We recommend the private resolution-based floors in
+`max(floor_site, 0.02 × |screen median|)`. Compare unrounded peaks, accept
+equality, and keep zero mass exact. The two floor values, source tokens and
+crossovers remain private. Confirm the desired research resolution at freeze.
+
+The reference family receives 0.02 and the two Clopper–Pearson tails receive
+0.015 each. Section 14 recommends splitting the reference 0.02 between
+weighted Hoeffding and KL. The recommended private packet binds that split candidate
+separately from the earlier full-0.02 Hoeffding-only analysis, for which all 256 grid
+radii have independent outward certificates. Bind one choice before freeze
+and before any screen observations. The CDF and zero-mass absolute margins are 0.01, required
+whole-run reliability 0.95 and joint confidence 0.95. Keep all 300 planned
+confirmations. At least 294 definite passes support adequacy; at most 275
+possible passes support inadequacy. Other totals are unresolved. Missing
+observations retain their planned mass. An undefined latent response gives
+an unresolved verdict. Power calculations under ideal binomial assumptions
+are planning quantities. With an exact reference and no censoring, the ideal
+probabilities of a decisive verdict are 0.96725 for adequacy at latent
+reliability 0.99 and 0.85608 for inadequacy at 0.90. At 0.98 the former
+falls to 0.60631. The owner should accept or reject the proposed planning
+objectives (0.90 and 0.80 respectively at 0.99 and 0.90) and the risk of
+an unresolved result when signing. Reuse the archived #243/#246 evidence.
+
+### Computational identity and seven-manifest audit
+
+The paired embedded source and study projects round-trip through the installed
+reader. The complete JSON comparison found one difference, the continuing-loss
+field. The 18 nodes, 17 reaches, 29 ordered operations, 11 fully pervious
+subareas, fixed routing parameters, two print bindings and historical storm
+template are preserved. The original graphical file includes unsupported
+direct-import constructs. The selected route uses the reviewed computational
+projection. The historical storm in the project is a structural template;
+each authorised future effective request must bind its own raw rainfall and
+sampled IL. The installed engine adapter accepted the typed profile during
+static preparation.
+
+| Private manifest | Desk verification |
+| --- | --- |
+| Source | Verified the CL-only difference, project/engine identity, raw forcing inputs, region coefficients, exact 24 h TP IDs/order and source-file containment. Four rootless stage templates agree with the installed bridge and the common area. The source-permission declaration is unsigned. |
+| Weights | Verified 50 contiguous unequal stratum masses summing to 0.49, ten declared equal TP weights, finite midpoint category counts and paired-site weighting. |
+| Roots | Reserved 341 disjoint cohort slots. The algorithm, domain separation, collision/overlap stop and no-redraw rule are bound. Root entropy and realised plan IDs await separate authority. |
+| Reference | Verified ten 50,000-event cohort allocations, pooled 10,000 per stratum, exact weight sums, fixed-alpha radius certificates and the rule for the independent screen grid. Numeric grid and scales require the complete future screen. |
+| Confirmation | Verified 300 fresh cohorts of 1,000, site floors, all missing-slot accounting and fixed terminal decision boundaries. |
+| Confidence allocation | Verified the simultaneous reference and latent-count allocations, inclusive rectangle rules, exact CP cutpoints and the distinct operational-failure interpretation. |
+| Synthetic qualification | Bound the existing reports and executed revisions for 8,000 and 1,600 prior studies and their limits. No campaign was repeated. |
+
+The selected executable is pure Python `python-cmd/cmd-6.44`, built from
+`08c1681a63f2ce2b6632777c38762a129e66e811` and checked from an isolated
+installation on Windows 10 x64 with CPython 3.14.6. All 84 package files
+match the pinned Git source, wheel and installation. Wheel SHA-256
+`33a5862e88a60a4ad722be6e9856f72e2b891be8ccae8a97b995856d63c3415e`;
+package-code-v1 SHA-256
+`2e65e27036199ba4482d37afa65d0f7e6115fa586472ceecdaee8f61e1fa94c3`.
+The private receipt also binds the interpreter/runtime inventory, dependency
+wheel and read-only cohort adapter from #246 at
+`23344c84a04ee5767d923a21172f8cecd68ac062`. Static eligibility and
+artifact identity do not establish physical or full-law numerical accuracy.
+
+The preferred packet binds the paired reader, pooling and terminal classifier
+at [#246 revision 1a2f02a](https://github.com/Chain-Frost/pyrorb/commit/1a2f02a37e3638a646bc3ff5fbe07a5ab2c76e58).
+Its reference supplement splits the reference alpha equally. The three
+amended reference, confidence and confirmation manifests take precedence for
+this candidate. The full-alpha alternate retains separate manifests and
+analysis. Deterministic desk controls checked missing mass, paired IDs,
+inclusive decisions and fixed denominators. No campaign was repeated.
+
+An authored nonphysical request and sealed ledger exercised the paired reader
+against the real installed wheel. Both print IDs, the endpoint peak and the
+first tied peak were recovered. Corrupt checksums, a changed external digest
+and an absent print were rejected. For actual events, the source of the clock
+guarantee is the pinned producer chain: materialisation sets the full number
+of increments, the engine fails on a truncated outlet or print series and
+constructs physical time from zero through that count. Compact peak records
+alone cannot certify the window. Before inference, verify each effective
+request, plan and ledger identity and exhaust the verified iterator. See the
+[event materialiser](../../src/runoff_routing/monte_carlo_effective.py),
+[CMD engine](../../src/runoff_routing/cmd_engine.py) and
+[ledger writer](../../src/runoff_routing/monte_carlo_execution.py).
+
+### Decisions and stage authority
+
+1. **Source rights.** The authorised rights holder must sign a separate dated
+   copy of the private declaration for the exact source manifest and packet
+   audit. Name the operators and reviewers, authorising holder or licence for
+   each input, storage location, retention term, derivative and output rights,
+   and any conditions or third-party consents. Record the permitted internal roles and redactions. The owner selected
+   private-only use. External disclosure would require a new scope decision. Prior
+   custody approval stands; study permission is outstanding.
+2. **Protocol freeze.** The protocol owner must explicitly accept the exact
+   packet, including the derived site floors, inference and censoring rules,
+   limitations of existing power evidence and the unresolved outcome where
+   reference precision or a total latent law cannot be justified. Any
+   change to reviewed bytes requires a recorded replacement and review.
+3. **Execution.** Obtain separate stage authority before collecting entropy,
+   realising the plan or launching any cohort. Preserve the full 341-slot
+   design. Feasibility and resource enforcement remain launch checks. Verify
+   a working wall-time/cleanup limit, 4 GiB per process, 8 GiB across all
+   retained and scratch artifacts, single-cohort concurrency and zero
+   retries. The 830,250 attempts and 42 h are hard ceilings. Stop unresolved
+   when a complete cohort cannot fit. Preserve independent screen/grid and
+   reference/confirmation sequencing. No pilot, measured cost, realised
+   power, 1,000-event adequacy verdict or permission follows from this audit.
+
+`protocol_frozen=false`. `simulation_authorised=false`. #148, #228 and #9
+remain open.

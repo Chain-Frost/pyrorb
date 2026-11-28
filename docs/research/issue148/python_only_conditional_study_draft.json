@@ -1,8 +1,8 @@
 {
   "format": "pyrorb-mc148-python-only-study-design-draft/1",
-  "status": "proposed_unfrozen",
+  "status": "technically_prepared_awaiting_rights_and_explicit_freeze",
   "simulation_authorised": false,
-  "owner_direction": "Proceed with private-only uncalibrated numerical-reliability preparation and independent review. The constructed dimensional pair was previously accepted for preparation; do not repeat source recovery or parameter choice. Scoped lawful use and derivative/retention authority, the complete law, scientific eligibility and formal stage activation remain separate.",
+  "owner_direction": "Adopt the specified one-population numerical law, finite peak window, reliability settings and costs for preparation. Separate explicit authority is required for freeze and execution.",
   "repository_base": "ef5c985a607545aee9f58d2a0f4f5712c410e46d",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
@@ -21,7 +21,7 @@
     "actual_site_ids": null,
     "source_manifest_sha256": null,
     "physical_calibration": "Specific observed-flood calibration records unavailable. Historical models have adopted whole-storm loss inputs. Applicability and statistical interpretation for the proposed study remain unestablished.",
-    "uncalibrated_case_route": "requires independent applicability decision; no engineering or physical calibration claim",
+    "uncalibrated_case_route": "Chosen for preparation; restricted research on the preserved computational projection. Physical source admission remains separate.",
     "engine_profile": "python-cmd/cmd-6.44",
     "sampling_policy": "monte-carlo-statistics/1",
     "frequency_profile": "monte-carlo-statistics/1:weighted-step-inverse-v1",
@@ -39,19 +39,19 @@
   "sources": {
     "archived_ifd": "authenticated raw BoM parent and climate-adjusted IFD derivative; anchor PAR binds derivative, 174/174 anchor products verified in B continuation, not raw parent; 24h six anchors",
     "archived_tp": "authenticated areal file, recovered AllStats metadata per D; 10 distinct structurally complete members at 24h, common contributing area/category per A, geographical borrowing/applicability and weights/joint law pending",
-    "areal_tp_weights_proposed": "one explicit full-domain conditional pool of ten eligible members at 0.1 each; independent approval required",
+    "areal_tp_weights_proposed": "Ten source-bound areal members, equal declared weights throughout the approved preparation domain.",
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
     "loss_basis": "The owner confirms adopted historical model storm losses, with whole-storm IL effective from storm onset including preburst. The two reviewed documents establish neither a statistical median nor historical preburst/climate implementation. The accepted external dimensional pair is a separate constructed choice. Study admission values remain null.",
     "loss_factor_table": "Reviewed ARR Book 5 v4.2 Table 5.3.13: eleven reversed IL factors with median one. The source also describes a CL distribution; constant CL is a stipulated simplification.",
-    "dependence": "Proposed mutual independence of rainfall coordinate, IL-factor and TP category, with fixed CL.",
-    "preburst_proposal": "PB=0 proposed for the constructed law. Whole-storm IL includes preburst; with PB=0 the full sampled IL is available at burst onset. A nonzero policy must account for preburst once, carry forward remaining IL and qualify the full-domain rejection/subtraction rule.",
+    "dependence": "Independent rainfall, IL and TP coordinates for the constructed law.",
+    "preburst_proposal": "Explicit PB=0 at the adopted one-hour timestep. Complete-storm IL is available at burst onset.",
     "arf": "applicable pinned ARR2019 region/area formula once on gross point depth, no extensions; #238 qualified bounded method, not candidate physical/source admission",
     "permissions": null,
     "calibration_or_limited_scope_decision": null,
-    "feature_site_review": null,
-    "baseline_ifd_proposal": "Independently verified unadjusted parent in local private custody. Proposed uniform raw point rainfall, no uplift, one common-area ARF, limited interval. Source-use permission and policy freeze pending.",
+    "feature_site_review": "Static checks passed for the private typed projection and two ordered print outputs; direct import of the complete original graphical model remains unsupported.",
+    "baseline_ifd_proposal": "Authenticated 24 h raw parent, six in-domain anchors; uniform forcing, common-area ARF once, no uplift.",
     "baseline_ifd_selection": null,
     "source_qualification_continuation": {
       "receipt": "B148-SOURCE-SCENARIO-20261128",
@@ -79,7 +79,7 @@
     "constructed_dimensional_candidate": {
       "status": "owner_approved_for_preparation_not_admitted",
       "basis": "External published RORB Monte Carlo/flood-frequency reconciliation study; dimensional anchor for a constructed law only, not a catchment-specific calibrated transfer.",
-      "owner_direction": "Owner accepted the recommended dimensional pair for numerical research only, subject to independent source verification and scientific review. Private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128 records exact values and basis. Do not request the same pair again; other source/policy and activation gates remain.",
+      "owner_direction": "Accepted constructed pair for preparation of the specified joint law. Exact values retained privately. Source rights, freeze and execution remain separate.",
       "source_review": "Original authority-hosted report independently retrieved and rendered. Sections 5.1, 5.6.3, 6.7.1, 6.8.1 and Table 6-4 confirm a dimensioned storm IL and CL rate from another catchment with gauge frequency reconciliation, variable preburst and a local exception. The report does not identify the storm IL as an empirical event median. ARR Book 5 v4.2 factor knots and timestep/routing qualifications independently checked.",
       "private_record": "Owner decision B148-CONSTRUCTED-LOSS-OWNER-20261128 and independent original-page receipt B245-LITERATURE-INDEPENDENT-20261128; exact values and donor identity held privately.",
       "planning_screen": "Independent rational recheck on six actual raw 24 h anchors corroborates the IL moments, CL capacity, full-domain conservative ARF envelope and strictly positive lower bounds for both zero and positive rainfall excess under the proposed continuous independent law. Finite sampled and routed outcomes remain unverified.",
@@ -137,15 +137,15 @@
       "0.05"
     ],
     "margin_abs_m3s_by_site": null,
-    "margin_abs_basis_proposed": "positive site-specific numerical reporting floor based on explicitly reviewed archived reporting unit or independent numerical decision; no engineering tolerance inferred",
+    "margin_abs_basis_proposed": "Two positive site-specific numerical resolutions are evidenced in the private floor receipt. The 1 m3/s values in the earlier section 14 candidate were proposed pragmatic tolerances. Owner chooses the interpretation and exact values at freeze; do not combine the two criteria.",
     "margin_cdf_abs_proposed": "0.01",
     "margin_zero_abs_proposed": "0.01",
     "required_pass_probability_proposed": "0.95",
     "joint_confidence_proposed": "0.95",
-    "owner_margin_approval": null
+    "owner_margin_approval": "Owner selected existing relative and probability margins for preparation. Private independently evidenced absolute floors and the earlier pragmatic alternative await explicit disposition at freeze."
   },
   "design": {
-    "status": "proposed_not_frozen_physical_admission_pending",
+    "status": "owner_selected_design_private_manifests_audited_unfrozen",
     "strata_count": 50,
     "stratification": "existing v1 equal normal-coordinate widths, unequal exact probability masses; reverse to ascending p and persist canonical edges/weights",
     "stratum_edges_and_weights": null,
@@ -154,11 +154,11 @@
     "confirmation_manifest_sha256": null,
     "root_rule": "independent uniform uint64 roots with replacement preassigned to all planned cohorts; any duplicate/identity overlap abort unresolved, do not condition inference on collision-free selection or redraw; HMAC purpose/domain separation plus computational independence assumption",
     "phase_order": [
-      "source and scope review",
-      "independent coverage/implementation review; separately authorised synthetic qualification",
-      "pre-screen freeze and separately authorised intake/screen",
-      "freeze derived scales/grid and verify precision feasibility",
-      "separate authorisation of fixed reference/confirmation"
+      "source-owner permission and explicit protocol freeze",
+      "separate authority for root generation, cohort identity and bounded resource controls",
+      "separately authorised intake and complete independent screening",
+      "freeze derived scales/grid and verify reference precision feasibility",
+      "separately authorised fixed reference and confirmation per protocol"
     ],
     "stages": [
       {
@@ -526,7 +526,7 @@
       "effective_count_approx": 366265.9486388616,
       "hoeffding_radius_K256_alpha002_approx": 0.0037224355572404388,
       "split_hoeffding_radius_approx": 0.0038474356768761317,
-      "split_KL_limit_approx": 0.00004106116317108456,
+      "split_KL_limit_approx": 4.106116317108456e-05,
       "roots_planned": 341,
       "root_collision_union_upper_approx": 3.1425599969492346e-15,
       "roots_generated": 0,
@@ -547,7 +547,7 @@
     }
   },
   "inference": {
-    "status": "proposed_independent_scientific_review_required",
+    "status": "latest_split_reference_candidate_and_earlier_full_alpha_baseline_reviewed_separately_pending_final_freeze",
     "alpha_total": "0.05",
     "alpha_reference": "0.02",
     "alpha_reliability_lower": "0.015",
@@ -562,7 +562,7 @@
       "equal_z_50_approx_conditional_weight_min": 0.0026717469,
       "conditional_weight_max": 0.0378670935,
       "reference_n_h": 10000,
-      "S_approx": 0.00000273025654,
+      "S_approx": 2.73025654e-06,
       "effective_n_approx": 366265.95,
       "K_max": 256,
       "epsilon_approx": 0.00372244,
@@ -751,11 +751,11 @@
     }
   },
   "gates": {
-    "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "Private-only direction recorded; verify actual source-owner scoped use, derivative/output and retention authority. Owner and independent reviewer must decide the complete proposed law, CL derivative, supported features, exact paired identities, finite window, numerical criteria, fixed reference method and cost/stop rules. Do not repeat source recovery or dimensional choice.",
-    "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
-    "manifests": "Before freeze, independently audit actual source, weight, root, reference, confirmation, confidence allocation and synthetic qualification manifests against the approved protocol.",
-    "owner": "Review the specific candidate protocol (1 m3/s absolute floor at each print, 2% relative, .01 CDF/zero margins, finite window, confidence method, power and 300 confirmations/caps). Freeze only after local seven-manifest audit and independent scientific admission; separately authorise each execution stage.",
+    "candidate_scope": "Scoped source permission and disclosure disposition outstanding. Computational-only uncalibrated scope selected.",
+    "policy": "Private-only constructed law selected for preparation. Scoped rights/retention and explicit freeze remain unsigned. No public or external source or result disclosure.",
+    "analytic": "Latest section 14 recommends internally split Hoeffding/KL reference alpha. The original full-alpha reference was audited separately. Preselect one method before freeze and observations.",
+    "manifests": "All seven private preparation manifests audited. Reserved root slots are distinct from future realised entropy/plan identities; pilot grid requires a complete authorised screen.",
+    "owner": "Signed source-owner declaration, separate explicit owner freeze of exact reviewed packet, separate execution authority and resource verification.",
     "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"
   },
   "execution": {
@@ -779,9 +779,9 @@
   "simulation_authorised_field_scope": "Current Prompt B explicitly excludes execution; physical-source preflight remains blocked and false. Historical section8 permission/replay is not authority for this continuation.",
   "historical_owner_execution_permission": true,
   "uncalibrated_numerical_proposal": {
-    "status": "owner_approved_dimensional_candidate_preparation_pending_scientific_admission",
+    "status": "owner_selected_for_preparation_awaiting_permission_and_freeze",
     "simulation_authorised": false,
-    "model": "same immutable M04 archived graph with computational P01/P02; physical/site/support/rights eligibility pending",
+    "model": "Immutable archived graph, exact CL-only private derivative, preserved original kc/m, two ordered computational prints.",
     "duration_minutes": 1440,
     "baseline": "distinct authenticated unadjusted IFD parent, no uplift; adjusted local ifd-original.csv alias excluded as raw input",
     "median_storm_il_mm": null,
@@ -789,15 +789,15 @@
     "loss_source_sha256": null,
     "dimensional_parameter_basis": null,
     "factor_law": "Reverse the corrected standardised IL table to nonexceedance, interpolate the inverse piecewise linearly and scale once by the owner-accepted candidate median. Fixed candidate CL applies at the proposed one-hour timestep.",
-    "TP_law": "ten source-bound structurally qualified 24h areal members at proposed0.1 each; geographic/borrowing applicability pending",
-    "dependence": "mutual independence of rainfall coordinate, IL-factor and TP category is proposed constructed assumption, not hydrological finding",
+    "TP_law": "Ten source-bound members at equal declared weights in one full-domain bin.",
+    "dependence": "Three independent coordinates in the constructed computational law.",
     "transformations": "uniform forcing; applicable ARR2019 region/common-area ARF once on gross raw point depth; PB0 as constructed boundary; no climate scaling, clamp/redraw or source substitution",
     "interpretation": "conditional numerical response reliability only, fixed mass0.49 and outside0.51 unresolved; not annual/physical/design/native/calibrated accuracy",
     "owner_structural_scope_approval": "Owner directed uncalibrated numerical-study preparation only; original physical criteria not admitted.",
     "owner_dimensional_values_and_basis": "Specific dimensional pair accepted for preparation only, subject to independent scientific/source verification; exact private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128. Actual admitted loss fields remain null.",
-    "owner_law_and_boundary_approval": null,
+    "owner_law_and_boundary_approval": "Approved for preparation, including one fixed 200-hour window with two paired maxima. Study source rights and freeze are outstanding.",
     "eligibility_guard": "No original physical gate cleared. Any narrower lawful numerical criterion requires explicit owner/independent review; no checker weakening.",
-    "record": "../../work/2026-11-28-issue148-python-only-conditional-study.md#13-independent-desk-review-and-decisions-before-protocol-freeze",
+    "record": "../../work/2026-11-28-issue148-python-only-conditional-study.md#15-independent-technical-preparation-for-protocol-freeze",
     "independent_scientific_review": {
       "receipt": "E245-CONDITIONAL-LAW-DESK-20261128",
       "scope": "Conditional numerical reliability of one fixed case under the stated law; scientific desk assessment only.",
@@ -821,7 +821,7 @@
       "owner_clarification": "https://github.com/Chain-Frost/pyrorb/pull/244#issuecomment-7233198601"
     },
     "protocol_freeze_candidate": {
-      "status": "recommended_not_frozen_or_admitted",
+      "status": "section14_historical_recommendation_with_current_disposition_in_section15",
       "source_review": "Reuse B245-RAW-PARENT-INDEPENDENT-20261128, B245-LITERATURE-INDEPENDENT-20261128, E245-CONDITIONAL-LAW-DESK-20261128 and B245-DESK-MANIFESTS-20261128. Do not repeat custody or dimensional choice.",
       "private_direction_receipt": "B148-PRIVATE-ONLY-DIRECTION-20261128",
       "scope": "One fixed constructed conditional response law, one archived computational graph, two paired print identities and one 24 h duration; no observed-calibration, physical design, native equivalence or annual flood claim.",
@@ -905,5 +905,52 @@
       "simulation_authorised": false,
       "physical_population_admitted": false
     }
+  },
+  "freeze_preparation": {
+    "receipt": "F148-SEVEN-MANIFEST-AUDIT-20261128",
+    "permission_status": "unsigned",
+    "source_use_authorised": null,
+    "protocol_frozen": false,
+    "simulation_authorised": false,
+    "product_revision": "08c1681a63f2ce2b6632777c38762a129e66e811",
+    "engine": "python-cmd/cmd-6.44",
+    "interpreter": "CPython 3.14.6 Windows 10 x64",
+    "wheel_sha256": "33a5862e88a60a4ad722be6e9856f72e2b891be8ccae8a97b995856d63c3415e",
+    "package_code_v1_sha256": "2e65e27036199ba4482d37afa65d0f7e6115fa586472ceecdaee8f61e1fa94c3",
+    "research_adapter_revision": "23344c84a04ee5767d923a21172f8cecd68ac062",
+    "clock": {
+      "rain_h": 24,
+      "dry_h": 176,
+      "hourly_increments": 200,
+      "inclusive_ordinates": 201,
+      "paired_site_count": 2
+    },
+    "manifests_reviewed": [
+      "source",
+      "weights",
+      "roots",
+      "reference",
+      "confirmation",
+      "confidence_allocation",
+      "synthetic_qualification"
+    ],
+    "reserved_cohorts": 341,
+    "actual_roots_generated": 0,
+    "actual_grid_and_scales": null,
+    "margins_evidence": "F148-PEAK-FLOORS-20261128",
+    "custody": "Exact private source, model, plan and review hashes are held with the unsigned source-owner declaration and packet audit. Public physical-admission hash fields remain unpopulated.",
+    "read_only_analysis": {
+      "owner_scope": "Private exact-arithmetic postprocessing on authenticated paired curves. No stage control or sampling.",
+      "independent_review": "F148-INDEPENDENT-ANALYSIS-20261128",
+      "reference_rule": "Latest preferred split candidate and original full-alpha alternate; exact separate bindings privately, select one before freeze.",
+      "required_external_checks": [
+        "authenticate slot, paired print and full ledger identity before ingestion",
+        "verify enforceable host resource and retention controls before separately authorised stages"
+      ],
+      "preferred_receipt": "E148-SPLIT-REFERENCE-PREPARATION-20261128"
+    },
+    "latest_paired_adapter_revision": "1a2f02a37e3638a646bc3ff5fbe07a5ab2c76e58",
+    "public_floor_disposition": "Private per-site evidence and proposed settings held for owner signature. No source-derived precision or peak tokens disclosed.",
+    "paired_reader_check": "Authored nonphysical request and sealed ledger verified with real installed wheel and exact paired adapter. Per-event window guarantee depends on authenticated preparation and pinned producer completeness checks."
   }
 }
