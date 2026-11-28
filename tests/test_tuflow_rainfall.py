@@ -241,7 +241,7 @@ def _five_minute_report(header: str, *, weighted: bool, footer: str) -> str:
     )
 
 
-@pytest.mark.parametrize("header", ["Time\nCatch\nIncs ment", "Time Catch\nIncs ment"])
+@pytest.mark.parametrize("header", ["Time\nCatch\nIncs ment", "Time Catch\nIncs ment", "Time\nCatch\nincs ment"])
 def test_uniform_catchment_only_compact_total(header: str) -> None:
     report = _five_minute_report(header, weighted=False, footer="Tot.105.0")
     document = read_rorb_bytes(report.encode())

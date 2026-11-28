@@ -380,16 +380,16 @@ def _reported_scalars(doc: RorbDocument) -> None:
 def _rainfall_header_start(doc: RorbDocument, index: int) -> int | None:
     """Recognise the observed catchment/subarea and uniform catchment header forms."""
     labels = doc.lines[index].split()
-    if labels[:2] != ["Incs", "ment"]:
-        return None
-    if len(labels) == 2:
+    if labels in (["Incs", "ment"], ["incs", "ment"]):
         if index >= 1 and doc.lines[index - 1].split() == ["Time", "Catch"]:
             return index - 1
         if index >= 2 and doc.lines[index - 2].split() == ["Time"] and doc.lines[index - 1].split() == ["Catch"]:
             return index - 2
         return None
     if (
-        index >= 2
+        labels[:2] == ["Incs", "ment"]
+        and len(labels) > 2
+        and index >= 2
         and doc.lines[index - 2].split() == ["Time", "Sub-"]
         and doc.lines[index - 1].split() == ["Catch", "Area"]
     ):
@@ -399,11 +399,11 @@ def _rainfall_header_start(doc: RorbDocument, index: int) -> int | None:
 
 def _rainfall_columns(doc: RorbDocument, index: int) -> list[str] | None:
     labels = doc.lines[index].split()
+    if len(labels) == 2:
+        return ["Inc", "Catchment_mm"] if _rainfall_header_start(doc, index) is not None else None
     if labels[:2] != ["Incs", "ment"]:
         return None
     areas = labels[2:]
-    if not areas:
-        return ["Inc", "Catchment_mm"] if _rainfall_header_start(doc, index) is not None else None
     if any(re.fullmatch(r"[A-Za-z]+", a) is None for a in areas) or len(set(areas)) != len(areas):
         return None
     return ["Inc", "Catchment_mm", *[f"Subarea_{a}_mm" for a in areas]]
@@ -457,7 +457,9 @@ def _read_rainfall_pages(doc: RorbDocument, index: int, name: str) -> None:
     """Retain existing numbered first pages; add separately named continuation pages."""
     doc.metadata[f"{name}_meaning"] = doc.lines[index].strip()
     candidates = [
-        j for j in range(index + 1, min(index + 7, len(doc.lines))) if doc.lines[j].split()[:2] == ["Incs", "ment"]
+        j
+        for j in range(index + 1, min(index + 7, len(doc.lines)))
+        if doc.lines[j].split()[:2] == ["Incs", "ment"] or doc.lines[j].split() == ["incs", "ment"]
     ]
     table = _read_rainfall_table(doc, candidates[0], name) if len(candidates) == 1 else None
     if table is None:

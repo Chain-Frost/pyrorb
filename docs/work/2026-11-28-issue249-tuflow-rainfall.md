@@ -98,3 +98,75 @@ The [previous hosted run](https://github.com/Chain-Frost/pyrorb/actions/runs/461
 The [fresh RORBwin 6.52 report comparison](https://github.com/Chain-Frost/pyrorb/pull/253#issuecomment-7239193027) and [paired native receipt](https://github.com/Chain-Frost/ryan-tools/issues/349#issuecomment-7239183411) exposed two further layouts: uniform direct-depth reports have only a Time/Catch series, and both direct and weighted five-minute reports can print the catchment total directly adjacent to the Tot. marker, e.g. Tot.105.0. The canonical reader now recognises the explicit uniform catchment-only header and the compact total prefix. It does not synthesize subarea identities or assume physical mappings. New artificial cases exercise the reported grammar, both compact and separated totals, a caller-known 0.08333333333 h source step, exact printed increments and refusals. Native source files and full native captures remain in local custody; the artificial fixtures are not copies of those reports. Replay the two actual OUT files on the revised head before declaring those layouts native-qualified.
 
 Reconcile with current main `175feac7b525e96eb7be1750f16926ef6d270e50` (merged #252, direct-depth STM #250); preserve its codec/model/tests and work-index entry, as well as the existing export workflow and source bytes. #251 remains a separate open calibration-fragment change; no merge or publication performed. Fresh combined-head CI and independent review remain required. Native TUFLOW consumption remains pending and the literal delayed-start control is in [issue #249](https://github.com/Chain-Frost/pyrorb/issues/249#issuecomment-7234680895).
+
+## Native acceptance on 28 November 2026
+
+Replayed the two retained RORBwin 6.52 OUT files from the
+[paired run receipt](https://github.com/Chain-Frost/ryan-tools/issues/349#issuecomment-7239183411)
+without launching RORB. Both inputs matched the original local hash receipt before and after replay.
+The weighted report passed on `ab02ef9a190c1f4892897592d38f0064b5a5a458`. The uniform report
+exposed a lowercase `incs ment` header in both rainfall blocks. The canonical reader now accepts
+that spelling for the catchment-only layout. An artificial fixture covers the exact header form.
+
+With `--exact-step-hours 0.08333333333`, every one of the 12 gross intervals matched the original
+printed row in each report. The catchment exports were byte-identical. The first and last depths
+were 11.6 and 8.4 mm. The initial zero anchor was at 0 h, the first and last interval ends were
+0.08333333333 and 0.99999999996 h, and the final dry anchor was at 1.08333333329 h.
+Separate excess exports matched their own 12 printed rows, with the same values in this zero-loss pair.
+
+| Exported series | Sum of printed increments (mm) | Printed Tot. (mm) |
+| --- | ---: | ---: |
+| Direct and weighted catchment | 104.8 | 105.0 |
+| Weighted subarea A | 104 | 105 |
+| Weighted subarea B | 104 | 105 |
+| Weighted subarea C | 104 | 105 |
+| Weighted subarea D | 104 | 105 |
+| Weighted subarea E | 104 | 105 |
+
+Each weighted subarea was checked independently against all 12 entries and its footer.
+The direct report contains only the catchment series. An explicit subarea selection exited 2
+and created no output. Original SHA-256 values:
+
+- Direct: `460862b689104c964f04c478037182f9d027496a8f78ff2463513e18cf67dad6`
+- Weighted: `6256aa679b4cfc4a980929508121a00b22fc556ceac72aa957479bf0d0bcd4b3`
+- Identical catchment CSVs: `001629c5860282e518e90680ecf39bd61f7f44f112649698f17ed1c20868d51f`
+- Weighted catchment and A?E CSV: `d31855004e67792a843ba7d498c8689890d028867e20c74e45da5872d82b94a9`
+
+### TUFLOW two-polygon consumption
+
+The exporter reproduced the literal [#249 fixture](https://github.com/Chain-Frost/pyrorb/issues/249#issuecomment-7234680895)
+CSV byte for byte. `TUFLOW_iDP_w64.exe -b rain.tcf` used build 2026.3.0-iDP-w64, HPC CPU solver
+3.51.9 and Demo Model mode. The isolated flat EPSG:28350 domain was 80 m by 40 m with 5 m cells
+and two 40 m square RF polygons. Each used unit factors and the documented STEPPED settings.
+The run exited 0 with zero warnings. The native BC table and converted log histogram matched the
+CSV depths and exact interval rates. NetCDF map output was sampled at distinct interior locations
+(500016.25, 6500016.25) and (500056.25, 6500016.25).
+
+| Sample time (h) | Interval | RFR A/B (mm/h) | RFC A/B (mm) |
+| ---: | --- | --- | --- |
+| 0.1875 | Before event | 0 / 0 | 0 / 0 |
+| 0.3125 | First wet | 24 / 10 | 1.5 / 0.625 |
+| 0.4375 | Interior dry | 0 / 0 | 3 / 1.25 |
+| 0.5625 | Last wet | 10 / 44 | 3.625 / 4 |
+| 0.6875 | Dry tail | 0 / 0 | 4.25 / 6.75 |
+| 1.0 | Simulation end | 0 / 0 | 4.25 / 6.75 |
+
+All 17 output times agreed for both sampled series with zero difference at the stored precision.
+The TCF, TGC and TBC SHA-256 values were
+`f9d238591257d0a58703491b41dbbfeb5d3fc7b1f84feb8dcc22fe6681c20324`,
+`cdc0071658d8893a648778255f337cca41cc32f6fdd270577d25fa47374564ee`, and
+`58811f48440f5d663d1c7a1bfbe663086f8d87a531ec267bd39eec0f85b860e9`.
+The native TLF, BC check CSV and NetCDF SHA-256 values were
+`baf5fdf8d704d00fcffd168ff1a1680ff85da532a0580718ca46d59522c53fbf`,
+`9d5ce1ccfc4ea9519445416c8045525aee9518a52cb54b76068a0439ab54dfff`, and
+`2b2f5fb72b305d49d672e9ab5e6e6d0281582fe28add76c49eb9a568c3ead8b8`.
+The consumption test qualifies this controlled HPC model. Classic, project-specific mappings,
+losses and other model configurations remain outside this acceptance.
+
+[Hosted quality at the original PR head](https://github.com/Chain-Frost/pyrorb/actions/runs/46156520633)
+passed on a merge tree byte-identical to `ab02ef9`. The run recorded 1,881 source tests passed,
+three expected skips, and 241, 41 and 159 installed-wheel tests passed in its three test groups.
+[Codex review of that head](https://github.com/Chain-Frost/pyrorb/pull/253#issuecomment-7240977634)
+reported zero findings. The lowercase correction passed pinned Ruff lint and format, strict Pyright,
+and 159 focused Windows source tests with one symlink-permission skip. See the PR for final-revision
+CI, review and package parity evidence.
