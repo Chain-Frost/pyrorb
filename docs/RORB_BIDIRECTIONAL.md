@@ -49,6 +49,10 @@ write_new(output / "storm.stm", serialize_design_stm(restored.storm))
 
 Canonical output loses the original comments, whitespace, line endings and RORB_GE coordinates **by design**; those remain only in the original source document. Canonical filenames/paths are not rewritten to point to a new directory automatically. The caller must choose safe reference paths and review native compatibility before running the generated files. The serializer rejects arbitrary object IDs (RORB uses ordinal ordering) and labels containing a record delimiter rather than quietly changing them.
 
+## Uniform direct-depth DESIGN (format-only)
+
+The separate [#250 direct-depth API](work/2026-11-28-issue250-direct-depth-stm.md) handles the #118 single-pluviograph, uniform flag-0 layout: `DirectDepthStorm`, `parse_direct_design_stm` and `serialize_direct_design_stm`. It preserves millimetres per rainfall interval rather than constructing a weighted pattern. The generic weighted import, CLI inspection and numerical execution boundaries are unchanged; native acceptance remains separate.
+
 ## Initial capability matrix
 
 | Feature | Read | Typed JSON | Canonical write | Native/S2 approval |
