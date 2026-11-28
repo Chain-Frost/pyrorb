@@ -2,7 +2,7 @@
   "format": "pyrorb-mc148-python-only-study-design-draft/1",
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
-  "owner_direction": "prioritise restricted-domain Python-only preparation; no approved numerical loss values, tolerances, cap, freeze or execution",
+  "owner_direction": "Owner permits simulations and both local A/B and E follow-ups; no supplied loss values, physical/site/source admission, adopted margins or scientific acceptance. See amendment section 8.",
   "repository_base": "cadd930db3e8ce8ea75bf9278ebc85bd06314bbd",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
@@ -96,7 +96,7 @@
     "owner_margin_approval": null
   },
   "design": {
-    "status": "proposed_not_authorised",
+    "status": "proposed_not_frozen_physical_admission_pending",
     "strata_count": 50,
     "stratification": "existing v1 equal normal-coordinate widths, unequal exact probability masses; reverse to ascending p and persist canonical edges/weights",
     "stratum_edges_and_weights": null,
@@ -232,9 +232,10 @@
       "inverse_coverage_count": 8000,
       "observed_false_equivalence": 0,
       "observed_enclosure_violations": 0,
-      "limitations": "different two-engine error family/controls; missing independent exact-oracle/replay/scientific acceptance; no blanket coverage or physical qualification"
+      "limitations": "Different two-engine error family/controls; unchanged exact-source replay completed, independent exact-oracle/scientific acceptance and remaining one-engine qualification pending.",
+      "local_replay_receipt": "local_replay_receipt.json"
     },
-    "reuse_rule": "do not repeat completed two-engine experiment; select only remaining one-engine-specific controls and any changed reference method under separate predeclared approval, cap and error allocation; existing numbers are ceilings, not permission"
+    "reuse_rule": "Unchanged archived replay completed under explicit owner permission; do not duplicate again without a concrete unresolved question. Select remaining one-engine-specific controls or changed methods under a fixed design/cap/error family. No automatic scientific acceptance."
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
@@ -250,6 +251,17 @@
     "synthetic_events": 0,
     "timing_pilots": 0,
     "new_preflight_runs": 0,
-    "scope": "this preparation PR only; separate #243 synthetic experiment recorded as prior evidence, not execution here"
-  }
+    "scope": "Initial preparation had zero execution; subsequent local archived replay is separately recorded below. Zero physical/native events and preflight reruns.",
+    "local_archived_replay": {
+      "studies": 8000,
+      "source": "unchanged #243 archived experiment",
+      "complete_case_reports_equal": true,
+      "physical_events": 0,
+      "native_launches": 0,
+      "receipt": "local_replay_receipt.json"
+    }
+  },
+  "owner_execution_permission": true,
+  "physical_population_admitted": false,
+  "simulation_authorised_field_scope": "Retained physical-preflight invariant; newer owner simulation permission is separately true, while actual physical source/law/margins remain incomplete."
 }
