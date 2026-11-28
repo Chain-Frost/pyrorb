@@ -573,8 +573,7 @@ def test_conditional_research_uses_verified_ledger(tmp_path: Path) -> None:
     first = cast("list[dict[str, object]]", records[0]["sites"])[0]
     site_id = cast("str", first["print_id"])
     peaks = [
-        Fraction(cast("int | float", cast("list[dict[str, object]]", row["sites"])[0]["peak_m3_s"]))
-        for row in records
+        Fraction(cast("int | float", cast("list[dict[str, object]]", row["sites"])[0]["peak_m3_s"])) for row in records
     ]
     project_pin = module.Artifact(project, hashlib.sha256(project.read_bytes()).hexdigest())
     request_pin = module.Artifact(request, hashlib.sha256(request.read_bytes()).hexdigest())

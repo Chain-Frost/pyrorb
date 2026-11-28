@@ -44,9 +44,7 @@ def test_exact_heterogeneous_weighted_reference_coverage(probabilities: tuple[in
     total_weight = sum(weights)
     alpha = Fraction(1, 50)
     design = mc.reference_design([(Fraction(w, total_weight), 1) for w in weights], grid_points=1, alpha=alpha)
-    mean = sum(
-        (Fraction(w * p, 100 * total_weight) for w, p in zip(weights, probabilities, strict=True)), Fraction(0)
-    )
+    mean = sum((Fraction(w * p, 100 * total_weight) for w, p in zip(weights, probabilities, strict=True)), Fraction(0))
     states = _distribution(weights, probabilities)
     assert sum(states.values()) == 1
     noncoverage = Fraction(0)

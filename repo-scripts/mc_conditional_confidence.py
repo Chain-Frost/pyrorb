@@ -60,9 +60,7 @@ def _sqrt_upper(value: Fraction) -> Fraction:
     return Fraction(root, _SCALE)
 
 
-def reference_design(
-    strata: Iterable[tuple[Fraction, int]], *, grid_points: int, alpha: Fraction
-) -> ReferenceDesign:
+def reference_design(strata: Iterable[tuple[Fraction, int]], *, grid_points: int, alpha: Fraction) -> ReferenceDesign:
     """Known conditional stratum masses and full positive pooled counts.
 
     Half alpha is reserved for each simultaneous two-sided construction.
@@ -136,10 +134,14 @@ def reference_interval(
         _fail("Invalid observed CDF enclosure")
     return (
         max(
-            Fraction(0), observed_lower - design.hoeffding_radius, _kl_outer(observed_lower, design.kl_limit, upper=False)
+            Fraction(0),
+            observed_lower - design.hoeffding_radius,
+            _kl_outer(observed_lower, design.kl_limit, upper=False),
         ),
         min(
-            Fraction(1), observed_upper + design.hoeffding_radius, _kl_outer(observed_upper, design.kl_limit, upper=True)
+            Fraction(1),
+            observed_upper + design.hoeffding_radius,
+            _kl_outer(observed_upper, design.kl_limit, upper=True),
         ),
     )
 
@@ -172,8 +174,6 @@ def reference_quantile(
     if any(lo > hi for lo, hi in zip(lowers, uppers, strict=True)):
         _fail("Inconsistent simultaneous monotone reference bounds")
     target = 1 - exceedance
-    lower_flow = max(
-        (flow for (flow, _, _), hi in zip(grid, uppers, strict=True) if hi < target), default=Fraction(0)
-    )
+    lower_flow = max((flow for (flow, _, _), hi in zip(grid, uppers, strict=True) if hi < target), default=Fraction(0))
     upper_flow = next((flow for (flow, _, _), lo in zip(grid, lowers, strict=True) if lo >= target), None)
     return lower_flow, upper_flow
