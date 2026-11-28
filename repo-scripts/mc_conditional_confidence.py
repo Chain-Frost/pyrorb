@@ -80,8 +80,8 @@ def reference_design(strata: Iterable[tuple[Fraction, int]], *, grid_points: int
     squared = Fraction(0)
     largest = Fraction(0)
     draws = 0
-    for mass, count in strata:
-        mass = _require_fraction(mass, "Positive conditional masses and planned counts required")
+    for raw_mass, count in strata:
+        mass = _require_fraction(raw_mass, "Positive conditional masses and planned counts required")
         if not 0 < mass <= 1 or type(count) is not int or count <= 0:
             _fail("Positive conditional masses and planned counts required")
         total += mass
