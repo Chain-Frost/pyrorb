@@ -1,6 +1,6 @@
 # #228: rainfall-tail and annual flood-frequency applicability
 
-**25 November 2026; author source follow-up 28 November 2026 — proposed scientific decision; independent scientific review pending.**
+**25–28 November 2026 — bounded applicability research; independent source-verification receipt incorporated; physical and annual-flood acceptance remain blocked.**
 Owner: #228 (this scoped contribution; no permanent issue assignment changed). Baseline:
 [main b6788a83fbe5](https://github.com/Chain-Frost/pyrorb/commit/b6788a83fbe5eb9ccd68232fe8d92dfb596e0f6b).
 [Parent #9](https://github.com/Chain-Frost/pyrorb/issues/9) remains open.
@@ -228,7 +228,7 @@ Australia (Geoscience Australia) 2019, version 4.2, CC BY 4.0; D2 © Commonwealt
 of Australia (Geoscience Australia) 2013, CC BY 4.0. The v4.2 PDF changelog identifies
 the climate change update. This is a version-pinned assessment, not an assertion
 about the applicability of any later edition (#193). Printed pages below are not PDF indexes.
-Direct public sources accessed 25 and 28 November 2026; image checks where noted. The 28 November author review recovered the complete searchable publisher-indexed text for Books 2 and 5, but the PDF page-image endpoints still rejected both files (14,932,303 and 14,287,332 bytes respectively); direct download from this runtime also failed. No local PDF-byte hash or visual verification of those two books is claimed. Primary Project 3 and 6 report page images were accessible and checked as specified below.
+Direct public sources accessed 25 and 28 November 2026; image checks where noted. The 28 November author review recovered the complete searchable publisher-indexed text for Books 2 and 5, but the PDF page-image endpoints still rejected both files (14,932,303 and 14,287,332 bytes respectively); direct download from this runtime also failed. No author PDF-byte hash or visual verification of those two books is claimed for that earlier session. The subsequent independent original-PDF/page verification receipt in §8 supersedes the access blocker for its specified pages. Primary Project 3 and 6 report page images were accessible and checked as specified below.
 
 | ID | Source / exact locator | Verified observation and limitation |
 | --- | --- | --- |
@@ -236,10 +236,10 @@ Direct public sources accessed 25 and 28 November 2026; image checks where noted
 | S2 | [ARR Book 4 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book4_V4.2.pdf), §3.2.4 p.24 (index 38), §4.2.2.2 p.44 Eq. (4.4.2) (58), §4.3.3.3 p.64 Eq. (4.4.7) (78), §4.4 Table 4.4.3 p.69 (83) | Text and page images checked. The general theorem needs a complete partition; the specific example uses a restricted mainstream-flow conditioning variable and finite sampled bins. Reuse #224's 0.158625 printed mass and 0.0149121 arithmetic, not a rainfall-tail validation. Both the geometric rule and possible duration-envelope bias are present in this edition. |
 | S3 | [Nathan & Weinmann, ARR D2, final 6 May 2013](https://www.arr-software.org/pdfs/ARR_DiscussionPaper_MonteCarlo.pdf), §4.3 Eq. 4 pp.21–22 (29–30), §4.4 p.22, §7.4/Table 3 pp.37–38 (45–46) | Equation, discussion, and worked-text page checked visually; #224 retains Table 3 arithmetic. Historical guidance, uses reciprocal terminology; do not reinterpret old ARI labels as current EY. The source's outer-bin discussion is an approximate method, not native algorithm documentation. |
 | S4 | BoM [2016 design rainfall probability terminology](https://www.bom.gov.au/water/designRainfalls/) and [2016 estimation methods](https://www.bom.gov.au/water/designRainfalls/ifd/ifd-estimation.shtml), HTML, unpaginated | Direct text read: distinct AMS and PDS, regionalisation, rare depth extrapolation, 1-in-2000 limit. No equation for annual flood probabilities supplied; no source data for a selected catchment checked. |
-| S5 | [ARR Book 2 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book2_V4.2.pdf), §§4.3.1–4.3.3, Table 2.4.1 pp.62–63, Eqs. (2.4.1)–(2.4.4) p.64, Table 2.4.2 pp.65–66; §§5.3.2, 5.5, 5.6, 5.7.3, 5.9.1–5.9.9, 6.3.2; [pinned ARF implementation](../../src/runoff_routing/arr_arf.py) | Direct publisher-indexed text/printed page labels and tables inspected on 28 November; page images unavailable. Derivation and recommended domains differ; conditional TP and spatial source changes matter. See §5.1. Numeric ARF qualification stays with #192/#193. |
+| S5 | [ARR Book 2 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book2_V4.2.pdf), §§4.3.1–4.3.3, Table 2.4.1 pp.62–63, Eqs. (2.4.1)–(2.4.4) p.64, Table 2.4.2 pp.65–66; §§5.3.2, 5.5, 5.6, 5.7.3, 5.9.1–5.9.9, 6.3.2; [pinned ARF implementation](../../src/runoff_routing/arr_arf.py) | Author inspected publisher-indexed text/printed page labels and tables on 28 November. Subsequent original-PDF identity and rendered pp.90, 93–97 independently verified (§8); other locators retain their stated indexed-text evidence level. Derivation and recommended domains differ; conditional TP and spatial source changes matter. See §5.1. Numeric ARF qualification stays with #192/#193. |
 | S6 | [ARR Book 8 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book8_V4.2.pdf), §1.3.3/Table 8.1.1 p.4 (18), §3.5.1 p.22 (36), §3.5.2 Eqs. (8.3.1)–(8.3.6), pp.24–25 (38–39) | Text and page images checked; regional rainfall extrapolation limit and uncertainty, rare-to-PMP procedure and applicability checks. No exact tail support or validated site-specific rainfall/runoff curve. |
 | S7 | [HARC RORB MC summary discussion](https://harc.com.au/forums/topic/monte-carlo-simulation-summary-results/), HTML, thread concerning v6.32 and subsequent warning discussion; [v6.32 announcement and correction](https://harc.com.au/forums/topic/rorbwin-version-6-32/) | Direct publisher statements checked: input bracketing and reported boundary issues; correction to loss-table equivalence claim. No precise current native F6 warning algorithm or hydrological validity. |
-| S8 | [ARR Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf), Fig. 5.3.5 p.28, §3.6.1 pp.67–70, Fig. 5.3.26 p.69, Table 5.3.13 p.70, §§3.6.3/3.7.1 pp.70–71, §§3.7.4–3.7.5 pp.76–79; [Ladson correction](https://tonyladson.wordpress.com/arr2016/standardised-loss-factors/); [retained #150 receipt](2026-11-16-issue150-windows-native-receipt.md), [source register](../SOURCES.md) R1/R3 | Publisher-indexed text inspected on 28 November. Exceedance direction and complete 11-row table reconciled with the historical correction; not a selected-build default or a validated unconditional tail loss law. Page images unavailable. Retained 25-event report contradicts an attained-peak-only explanation (16/16 disjoint summary values at printed resolution); private originals not independently accessed here. |
+| S8 | [ARR Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf), Fig. 5.3.5 p.28, §3.6.1 pp.67–70, Fig. 5.3.26 p.69, Table 5.3.13 p.70, §§3.6.3/3.7.1 pp.70–71, §§3.7.4–3.7.5 pp.76–79; [Ladson correction](https://tonyladson.wordpress.com/arr2016/standardised-loss-factors/); [retained #150 receipt](2026-11-16-issue150-windows-native-receipt.md), [source register](../SOURCES.md) R1/R3 | Publisher-indexed text inspected on 28 November. Exceedance direction and complete 11-row table reconciled with the historical correction; not a selected-build default or a validated unconditional tail loss law. Subsequent original-PDF identity and rendered pp.29–30, 49–50, 68–71, 73–74 independently verified (§8); other locators retain their stated indexed-text evidence level. Retained 25-event report contradicts an attained-peak-only explanation (16/16 disjoint summary values at printed resolution); private originals not independently accessed here. |
 | S9 | [ARR Project 3, Stage 3, P3/S3/013, 3 December 2015](https://arr.ga.gov.au/arr-guideline/revision-projects/revision-project-reports/project-3-temporal-patterns-of-rainfall/ARR_Project_3_Stage3_Temporal_Patterns_Report.pdf), Part 3 §7.3 pp.43–44 (PDF indices 94–95) | Direct page-image and text verification. Report is explicitly preliminary testing, not a native probability law. Empirical counterexample to unconditional monotonicity. |
 | S10 | [ARR Project 6, Stage 3 Phase 4, P6/S3/016B, 23 October 2014](https://arr.ga.gov.au/arr-guideline/revision-projects/project-list/projects/project-6/downloads/ARR_Project6_Phase-4_Report.pdf), §§4.2.1 p.16, 5.3 p.27, 6.7 p.42, 6.9 pp.47–48/Fig. 6-22 (PDF indices 26, 37, 52, 57–58) | Printed pp.16, 27, 42 and 48 page images checked directly; p.47 discussion checked in indexed text. Study sampling and calibration exclusions constrain the target population; §6.7 states median normalisation although figure captions refer to mean. No primary figure/table bytes copied or parameters adopted. |
 
@@ -356,14 +356,11 @@ reproduction and hydrological applicability have independent statuses.
 **Remaining evidence and local-agent handoff (read-only):** On a local checkout of
 Chain-Frost/pyrorb, read AGENTS.md and this record. The relevant Book 2/5 v4.2
 text, equations, tables and selection/dependence evidence have been personally
-reviewed in §5.1; do not restart that literature review. Remaining source custody
-work is to obtain the exact publisher PDF bytes, record SHA-256/edition and compare
-the relevant rendered pages/tables/figures with the indexed text and the original
-reports; reconcile the median/mean caption and cross-reference anomalies, and
-any official correction or later applicable edition (owners #192/#193). If the
-complete files cannot be fetched, the public indexed-text and original-report
-image evidence still supports the bounded negative findings; report the precise
-visual/hash limitation. Check local ARR/BOM source identities for
+reviewed in §5.1; do not restart that literature review. The original-PDF identity and specified rendered-page custody work has since
+been independently completed (see §8); do not request a repeat retrieval.
+Additional edition applicability and any residual caption/cross-reference
+questions belong to the relevant source owner (#192/#193) and do not require
+adopting a new policy here. Check local ARR/BOM source identities for
 one proposed catchment/site/duration only if already retained and approved for
 read-only use; state whether appropriate tail source coverage and independently
 observed annual flood evidence exist, without deriving new storms or running
@@ -398,9 +395,9 @@ The [quality run for that head](https://github.com/Chain-Frost/pyrorb/actions/ru
 was still in progress when reconciliation began. Current-main reconciliation
 preserves the reviewed research findings and adds the merged #148 protocol
 reference; review and validation receipts must identify the resulting head.
-No unrelated scientific gates closed. Keep #228 open for physical evidence,
-remaining source-image/hash verification and independent scientific disposition;
-#9/#150/#148/#190 remain separate.
+No unrelated scientific gates closed. Keep #228 open for physical evidence
+and independent hydrological disposition; subsequent source-image/hash
+verification is recorded in §8. #9/#150/#148/#190 remain separate.
 
 ## 7. Subsequent evidence and integration boundary — 28 November 2026
 
@@ -432,5 +429,108 @@ Reconciliation retains all concurrent main changes, including #232 reader
 ownership and updated programme status. Review/CI for the new head must be
 verified separately. Integrating this bounded research record does not admit
 full annual flood frequency, close #228/#148/#9, change production, or permit
-native or Monte Carlo execution. Exact Book 2/5 publisher PDF visual/byte
-verification and independent hydrological acceptance remain outstanding.
+native or Monte Carlo execution. At that reconciliation the exact Book 2/5
+publisher PDF visual/byte verification was still outstanding; see §8 for the
+subsequent independently verified receipt. Independent hydrological acceptance
+remains outstanding.
+
+## 8. Independent original-source verification and current physical blockers
+
+**28 November 2026 — bounded evidence admitted; full physical/annual application
+remains blocked.** The
+[APP148-228-20261128 independent evidence receipt](https://github.com/Chain-Frost/pyrorb/issues/228#issuecomment-7224522130)
+and [#148 companion](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7224526672)
+supersede the earlier PDF retrieval, archived revision and TP-metadata access
+limitations. This report relies on their recorded independent original-byte
+and rendered-page checks, not a new author download or private-source rehash.
+The two original publisher files were reportedly downloaded with unchanged
+URLs/HTTP 200, version checked and independently rehashed against fresh and
+retained copies. Only the public source identities are repeated here.
+
+| Source | Bytes / PDF pages | Public SHA-256 | Independently inspected printed pages (one-based PDF pages) |
+| --- | --- | --- | --- |
+| S5, ARR Book 2 v4.2 | 14,932,303 / 201 | `c18df5714f07ca1a66ac053399b48b85fb5f5272806c5c4a74217c88b3e2c1bd` | 90, 93–97 (110, 113–117) |
+| S8, ARR Book 5 v4.2 | 14,287,332 / 202 | `28f8b8d8a4a9806d78557487e0a97a8832064909cc83af9306ee38c64096e1e7` | 29–30, 49–50, 68–71, 73–74 (46–47, 66–67, 85–88, 90–91) |
+
+PDF indices are one less than the one-based PDF pages. Other cited pages
+retain their earlier indexed-text or separately verified evidence level; no
+claim of reviewing every rendered page. The [merged #192 ARF numerical
+qualification](2026-11-25-issue192-arr2019-arf-qualification.md) is a separate
+receipt, based on v4.1 equations and bounded retained-input comparisons,
+not a qualification of native internal ARF or all rainfall source policies.
+Preserve those distinctions and #193 edition applicability. ARR attribution
+is as recorded in §5, including applicable licence exceptions.
+
+The independent source check confirms the area-based TP and borrowing guidance,
+storm/burst loss and preburst alternatives, at-site/regional/frequency-reconciled
+loss estimation and timestep-relevant CL calibration. The corrected empirical
+IL shape is confirmed (exceedance orientation, median 1, reversed nonexceedance
+endpoints 0.14 and 3.19); this does not adopt physically hard support, dimensional
+losses, independence, or native RORBwin behaviour. A frequency-reconciled
+effective loss is specific to its input/model choices; a fit target cannot
+also be treated as independent validation.
+
+**Candidate-specific scope.** The independent receipt resolves archived model
+revision selection, the two sites' common complete contributing-source set
+and the common areal TP category. The 18 h and 24 h pools each contain ten
+complete valid members; the original AllStats metadata now uniquely binds
+all twenty duration-members. This is source/accounting evidence, not physical
+site/area survey certification or geographic/borrowing applicability. The
+24 h candidate remains unadmitted; 18 h remains a cross-check. The two sites
+share forcing; they are not independent events. No automatic equal weighting,
+point TP substitution, category inference or unconditional loss/TP law
+follows. Rights, physical feature admission and the approved joint law remain
+pending.
+
+**Material climate-source correction.** The
+[#148 Prompt B continuation](https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7224533020)
+reports that the historical PAR references a climate-adjusted IFD derivative,
+while the original unadjusted BoM export is separately retained. Across all
+29 matched duration rows and six anchors, 174/174 adjusted values satisfy the
+duration-specific scaling relation; this does not uniquely identify a climate
+pathway or the appropriate loss adjustment. The proposed unadjusted baseline
+for the separate [#244](https://github.com/Chain-Frost/pyrorb/pull/244) study
+requires scenario/loss-policy approval and is not historical replay. No double
+uplift or mixed baseline/adjusted loss state; apply a qualified ARF once to
+the chosen gross depth. No new climate or source policy is adopted here.
+
+**Full-domain preburst compatibility, conditional result only.** Define
+a(p)=M*g_d(p), the nonnegative adopted storm-loss scale. For a(p)>0, v1
+subtract-reject accepts PB(p,d)<=a(p)*L, so the ideal inverse-law rejection
+probability is the strict left limit F_L(PB/a -) under an approved independent
+loss law; use the actual conditional CDF for dependent draws. Equality is
+accepted. If a=0, only PB=0 is compatible. A sufficient no-rejection certificate
+is PB(p,d)<=a(p)*L_min everywhere in the admitted interval. Conditional
+whole-interval endpoint bounds have been independently audited for convex
+interpolation and g=1; they do not cover an unapproved interpolant or scaling.
+The candidate factor endpoints alone do not fix dimensional losses. Account
+for finite midpoint-law and floating/Decimal boundary effects before making
+a software-exact certificate. No actual candidate rejection mass or
+compatibility certificate is established. Unavailable combinations retain
+original planned mass, never zero runoff, redraws or successful-only
+renormalisation.
+
+**Disposition and next evidence.** The owner reports the actual adopted
+loss/calibration record is on a different, inaccessible PC. Data Hub losses
+remain NaN; a retained deterministic pair cannot replace the missing median
+storm IL, CL and calibration provenance. Obtain that exact record first;
+then establish physical site/rights and feature evidence, approved regional
+TP/borrowing/weights, loss dependence, scenario and once-only ARF/preburst
+transforms. Independently audit complete-domain applicability or a rejected-mass
+enclosure and the #148 study design. A separately authorised, source-supported
+regional loss approach would need independent validation; do not invent
+a substitute or fill NaNs. The restricted research interpretation is supported
+in principle, the full event surrogate is bounded/incomplete, and annual
+flood-frequency point claims remain unsupported. The independent source
+review is not professional hydrological sign-off. No additional native
+or simulation run, method change, protocol freeze or scientific closure.
+Keep `simulation_authorised=false`, #228/#148/#9 open and #150 separate.
+
+The previous exact head `e8421c5b5d7e28c49e99b5a7c76c5582dd481185` passed
+[CI](https://github.com/Chain-Frost/pyrorb/actions/runs/46041210571)
+and [technical review](https://github.com/Chain-Frost/pyrorb/pull/236#issuecomment-7224348881).
+Main advanced to `cadd930db3e8ce8ea75bf9278ebc85bd06314bbd` through #238; this reconciliation
+preserves the new numerical tests and ARF work record/index without editing
+them. Only the original three documentation paths belong to #236. Fresh
+exact-head technical review and required quality checks apply before the
+owner-authorised documentation-only integration.
