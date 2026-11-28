@@ -3,7 +3,7 @@
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
   "owner_direction": "Current Prompt B: read-only source/loss/scenario qualification and proposal for owner decision; no native, routing, sampling, MC or timing. Section8 replay is historical; section9 preserves simulation_authorised=false.",
-  "repository_base": "cadd930db3e8ce8ea75bf9278ebc85bd06314bbd",
+  "repository_base": "e80e56dbd1089874b527b98f9d1606532474c733",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
   "historical_protocol": "physical_study_protocol_draft.json",
@@ -249,6 +249,75 @@
         "all_expected": true
       },
       "execution": "deterministic desk arithmetic only; no routed, sampled or synthetic MC events; no scientific sign-off"
+    },
+    "conditional_ledger_contract": {
+      "status": "proposed_read_only_research_boundary_not_implemented_or_scientifically_admitted",
+      "source_revision": "e80e56dbd1089874b527b98f9d1606532474c733",
+      "verified_reader": "runoff_routing.monte_carlo_execution.iter_verified_mc_results; exhaust iterator on pinned immutable inputs; do not invoke run/replay",
+      "allocation": "original MCAllocation Decimal masses and positive planned integer counts; derive exact rational mass per slot; keep original .49 denominator and .01/.50 tails; unknown/unstarted slots remain in preassigned plan",
+      "peak_identity": "unique verified print_id with accepted status; finite nonnegative ledger-represented peak; no printed precision rounding; identity corruption/undefined law unresolved",
+      "finite_ledger_cdf": "C_L/M and C_U/M from exact weighted I(u<=q) and I(l<=q); strict survival [1-C_U/M,1-C_L/M]; quantile first endpoint reaching exact absolute M*(1-a), upper unbounded if not reached; logical bounds not confidence",
+      "float_boundary": "production bridge converts Decimal allocations to floats and frequency API exact rank uses shortest-roundtrip decimal strings. Preserve original Decimal plan for research; no production change",
+      "controls": {
+        "complete": {
+          "absolute_masses": [
+            "0.20",
+            "0.29"
+          ],
+          "planned_counts": [
+            2,
+            2
+          ],
+          "peak_pairs": [
+            [
+              0,
+              20
+            ],
+            [
+              10,
+              10
+            ]
+          ],
+          "cdf_zero": "100/490",
+          "cdf_10": "390/490",
+          "median": 10,
+          "q99": 20
+        },
+        "missing": {
+          "unknown_mass": "0.145",
+          "cdf_zero": [
+            "100/490",
+            "245/490"
+          ],
+          "cdf_10": [
+            "245/490",
+            "390/490"
+          ],
+          "median_bounds": [
+            0,
+            10
+          ],
+          "q99_bounds": [
+            20,
+            null
+          ],
+          "null_upper": "unbounded"
+        },
+        "decimal_boundary": {
+          "masses": [
+            "0.48509999999999999999",
+            "0.00490000000000000001"
+          ],
+          "peaks": [
+            0,
+            1
+          ],
+          "absolute_target": "0.4851",
+          "exact_q99": 1,
+          "float_rounded_counterexample_q99": 0
+        }
+      },
+      "checks": "three deterministic arithmetic controls checked; actual reader integration and independent oracle review outstanding; no product execution"
     }
   },
   "synthetic_qualification": {
