@@ -3,7 +3,7 @@
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
   "owner_direction": "prioritise restricted-domain Python-only preparation; no approved numerical loss values, tolerances, cap, freeze or execution",
-  "repository_base": "ec395112a8d7fea026ed22585beecaec536ef7cd",
+  "repository_base": "cadd930db3e8ce8ea75bf9278ebc85bd06314bbd",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
   "historical_protocol": "physical_study_protocol_draft.json",
@@ -37,20 +37,22 @@
     "duration_expansion": "excluded"
   },
   "sources": {
-    "archived_ifd": "authenticated matched candidate export per B; 24h six anchors",
-    "archived_tp": "authenticated areal file and metadata per B; 10 source IDs at 24h, area category common to both sites per A",
+    "archived_ifd": "authenticated raw BoM parent and climate-adjusted IFD derivative; anchor PAR binds derivative, 174/174 anchor products verified in B continuation, not raw parent; 24h six anchors",
+    "archived_tp": "authenticated areal file, recovered AllStats metadata per D; 10 distinct structurally complete members at 24h, common contributing area/category per A, geographical borrowing/applicability and weights/joint law pending",
     "areal_tp_weights_proposed": "one explicit full-domain conditional pool of ten eligible members at 0.1 each; independent approval required",
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
-    "loss_basis": "NaN archived Data Hub values are not evidence; do not re-label archived deterministic IL/CL; source-backed regional/transfer or actual adopted storm-loss record, or expressly separate numerical scenario if approved",
+    "loss_basis": "actual adopted storm median IL/CL/calibration record on inaccessible other PC; NaN Data Hub values and historical deterministic/adjusted factors not substitutes; source-backed regional/transfer or separate expressly approved numerical scenario only",
     "loss_factor_table": "candidate corrected empirical factors, source/erratum/endpoint and applicability review pending",
     "dependence": "explicitly proposed independent empirical loss conditional on rainfall and eligible TP; not approved",
-    "preburst_proposal": "none/PB=0 as conditional numerical assumption only; no subtraction/clamp or climate change default without decision",
-    "arf": "applicable pinned ARR2019 region/area formula once, no extensions; review #192",
+    "preburst_proposal": "none/PB=0 under supported bridge as conditional numerical assumption only, not adopted hydrology; D full-domain guard conditional, not actual compatibility certificate; no subtraction/clamp or climate assumption without decision",
+    "arf": "applicable pinned ARR2019 region/area formula once on gross point depth, no extensions; #238 qualified bounded method, not candidate physical/source admission",
     "permissions": null,
     "calibration_or_limited_scope_decision": null,
-    "feature_site_review": null
+    "feature_site_review": null,
+    "baseline_ifd_proposal": "unadjusted authenticated parent, no uplift: new numerical scenario pending owner and independent source review, not historic anchor replay; adjusted alternative requires separate climate/loss policy approval, never double uplift",
+    "baseline_ifd_selection": null
   },
   "probability": {
     "rainfall_aep_bounds": [
@@ -191,10 +193,21 @@
         "inadequacy_at_0_90": 0.8
       },
       "not_achieved_physical_power": true
+    },
+    "rare_tail_candidate": {
+      "status": "analytical_only_not_adopted",
+      "source_pr": "https://github.com/Chain-Frost/pyrorb/pull/243",
+      "method": "split reference alpha between latent weighted Hoeffding and max-individual-weight Bernoulli-KL confidence regions; intersect pathwise after enclosure; no increased total alpha or changed tolerance",
+      "illustration_at_Fhat_0_99": {
+        "original_width": "0.00744487112",
+        "candidate_width": "0.00180370456",
+        "width_reduction_percent": "75.77"
+      },
+      "limitation": "mid-CDF split may widen interval; exact CDF step-boundary quantile remains unresolved; needs independent proof/numerical review and separate fixed qualification"
     }
   },
   "synthetic_qualification": {
-    "status": "future_separately_authorised_not_executed",
+    "status": "two_engine_prior_executed; remaining_one_engine_specific_design_proposed_unapproved",
     "control_count": 8,
     "studies_per_control": 1000,
     "planned_studies": 8000,
@@ -210,12 +223,23 @@
     "max_retries": 0,
     "coverage_metrics": "up to six predeclared metrics/control; two one-sided exact intervals allocated .05/(2*8*6); deterministic enclosure invariants must hold; uncertainty on empirical coverage, false decisions and power, no proof of nominal coverage",
     "requires_independent_truth_oracle": true,
-    "acceptance_power_thresholds_pending_owner": true
+    "acceptance_power_thresholds_pending_owner": true,
+    "prior_evidence": {
+      "issue_receipt": "https://github.com/Chain-Frost/pyrorb/issues/148#issuecomment-7224502800",
+      "pr": "https://github.com/Chain-Frost/pyrorb/pull/243",
+      "studies": 8000,
+      "reference_coverage_count": 7998,
+      "inverse_coverage_count": 8000,
+      "observed_false_equivalence": 0,
+      "observed_enclosure_violations": 0,
+      "limitations": "different two-engine error family/controls; missing independent exact-oracle/replay/scientific acceptance; no blanket coverage or physical qualification"
+    },
+    "reuse_rule": "do not repeat completed two-engine experiment; select only remaining one-engine-specific controls and any changed reference method under separate predeclared approval, cap and error allocation; existing numbers are ceilings, not permission"
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
     "policy": "source-supported loss values and factor table, TP weights, dependence, baseline/ARF/preburst/area/clock; no fabricated source",
-    "analytic": "independent amended latent-law/design review and separately approved coverage/power qualification",
+    "analytic": "independent amended latent-law/design review; reuse #243 prior evidence and complete only remaining separately approved one-engine-specific coverage/power qualification",
     "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
     "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
     "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"
@@ -225,6 +249,7 @@
     "physical_events": 0,
     "synthetic_events": 0,
     "timing_pilots": 0,
-    "new_preflight_runs": 0
+    "new_preflight_runs": 0,
+    "scope": "this preparation PR only; separate #243 synthetic experiment recorded as prior evidence, not execution here"
   }
 }
