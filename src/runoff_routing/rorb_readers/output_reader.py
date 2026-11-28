@@ -377,23 +377,36 @@ def _reported_scalars(doc: RorbDocument) -> None:
     section.completeness = "observed_scalar_lines"
 
 
+def _rainfall_header_start(doc: RorbDocument, index: int) -> int | None:
+    """Recognise the observed catchment/subarea and uniform catchment header forms."""
+    labels = doc.lines[index].split()
+    if labels[:2] != ["Incs", "ment"]:
+        return None
+    if len(labels) == 2:
+        if index >= 1 and doc.lines[index - 1].split() == ["Time", "Catch"]:
+            return index - 1
+        if index >= 2 and doc.lines[index - 2].split() == ["Time"] and doc.lines[index - 1].split() == ["Catch"]:
+            return index - 2
+        return None
+    if (
+        index >= 2
+        and doc.lines[index - 2].split() == ["Time", "Sub-"]
+        and doc.lines[index - 1].split() == ["Catch", "Area"]
+    ):
+        return index - 2
+    return None
+
+
 def _rainfall_columns(doc: RorbDocument, index: int) -> list[str] | None:
     labels = doc.lines[index].split()
     if labels[:2] != ["Incs", "ment"]:
         return None
     areas = labels[2:]
-    if not areas or any(re.fullmatch(r"[A-Za-z]+", a) is None for a in areas) or len(set(areas)) != len(areas):
+    if not areas:
+        return ["Inc", "Catchment_mm"] if _rainfall_header_start(doc, index) is not None else None
+    if any(re.fullmatch(r"[A-Za-z]+", a) is None for a in areas) or len(set(areas)) != len(areas):
         return None
     return ["Inc", "Catchment_mm", *[f"Subarea_{a}_mm" for a in areas]]
-
-
-def _rainfall_page_header(doc: RorbDocument, index: int) -> bool:
-    return (
-        index >= 2
-        and doc.lines[index - 2].split() == ["Time", "Sub-"]
-        and doc.lines[index - 1].split() == ["Catch", "Area"]
-        and _rainfall_columns(doc, index) is not None
-    )
 
 
 def _next_nonblank(doc: RorbDocument, index: int) -> int:
@@ -409,15 +422,19 @@ def _rainfall_page_end(doc: RorbDocument, table: Section) -> int | None:
     index = _next_nonblank(doc, int(str(table.rows[-1]["line"])))
     if index >= len(doc.lines):
         return None
-    tokens = doc.lines[index].split()
-    if tokens[:1] != ["Tot."] or len(tokens) != len(table.columns) - 1:
+    footer = doc.lines[index].strip()
+    if not footer.startswith("Tot."):
+        return None
+    # RORB may fill the catchment field completely, e.g. Tot.105.0.
+    tokens = footer.removeprefix("Tot.").split()
+    if len(tokens) != len(table.columns) - 2:
         return None
     try:
-        if any(number(token) < 0 for token in tokens[1:]):
+        if any(number(token) < 0 for token in tokens):
             return None
     except ValueError:
         return None
-    for column, token in zip(table.columns[2:], tokens[1:], strict=True):
+    for column, token in zip(table.columns[2:], tokens, strict=True):
         doc.metadata[f"{table.name}_reported_total_{column}"] = token
     doc.metadata[f"{table.name}_total_line"] = index + 1
     index = _next_nonblank(doc, index + 1)
@@ -447,7 +464,7 @@ def _read_rainfall_pages(doc: RorbDocument, index: int, name: str) -> None:
         doc.issue("unsupported_rainfall", "Rainfall header layout unsupported; raw block preserved.", index + 1)
         return
     header = candidates[0]
-    if not _rainfall_page_header(doc, header) or header != _next_nonblank(doc, index + 1) + 2:
+    if _rainfall_header_start(doc, header) != _next_nonblank(doc, index + 1):
         return
     pages = 1
     while True:
@@ -461,11 +478,11 @@ def _read_rainfall_pages(doc: RorbDocument, index: int, name: str) -> None:
             doc.metadata[f"{name}_page_count"] = pages
             return
         header = boundary + 2
-        if header >= len(doc.lines) or not _rainfall_page_header(doc, header):
+        if len(table.columns) <= 3 or header >= len(doc.lines) or _rainfall_header_start(doc, header) != boundary:
             return
         pages += 1
         next_table = _read_rainfall_table(doc, header, f"{name}_page_{pages}")
-        if next_table is None:
+        if next_table is None or len(next_table.columns) <= 3:
             return
         table = next_table
 

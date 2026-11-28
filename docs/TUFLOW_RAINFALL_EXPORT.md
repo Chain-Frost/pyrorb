@@ -24,7 +24,8 @@ print(result.columns, result.totals_mm, result.reported_totals_mm)
 ```
 
 Use `Catchment_mm` for the printed catchment series, or `Subarea_<label>_mm` for
-an exact printed subarea label. Repeat `--column` to select multiple columns in output order.
+an exact printed subarea label. Uniform direct-depth OUT reports may print only `Catchment_mm`;
+no individual subarea columns or physical mapping are inferred. Repeat `--column` to select multiple columns in output order.
 If the selected kind occurs more than once, inspect the canonical numbered sections and use
 `--section N` (Python: `section=N`) for the intended `rainfall_N`. No implicit first-match
 selection. `build_tuflow_rainfall(document, ...)` returns the same boundary without writing.
@@ -99,10 +100,11 @@ initial anchor and after the final dry entry under the documented convention.
 
 ## Qualification and limits
 
-The admitted format uses the observed three-line Time / Catch / Incs ment header,
-letter-only subarea labels, contiguous interval records, each page's printed Tot. footer,
-optional Pluvi. ref. no. line, and an identified next rainfall heading or Routing results
-boundary. Continuation pages are represented separately under the same numbered section.
+The admitted format uses the three-line Time / Catch / Incs ment subarea header,
+letter-only subarea labels, or the explicit uniform catchment-only Time/Catch and Incs ment
+header. Both require contiguous interval records, each page's printed Tot. footer (including
+compact `Tot.105.0`), an optional Pluvi. ref. no. line and an identified next rainfall
+heading or Routing results boundary. A catchment-only page is not a continuation page. Continuation pages are represented separately under the same numbered section.
 Repeated catchment values must agree between pages; repeated subarea identities are rejected.
 Every selected section page must match the declared rainfall horizon. Unsupported layouts,
 missing time information, malformed numbers, negative depths, incomplete intervals or invalid

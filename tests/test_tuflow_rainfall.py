@@ -123,7 +123,7 @@ def test_nonzero_declared_start_preserved_without_clock_reset() -> None:
         ("Time increment (hours)= 0.125", "Time increment (hours)= 0", "structurally valid"),
         ("0 2.00 3.00 1.25", "0 2.00 *** 1.25", "structurally valid"),
         ("0 2.00 3.00 1.25", "0 2.00 -3.00 1.25", "nonnegative finite decimals"),
-        ("1 0.00 0.00 0.00", "", "Missing complete rainfall page"),
+        ("\n1 0.00 0.00 0.00\n", "\n\n", "Missing complete rainfall page"),
         ("2 4.00 1.25 5.50", "3 4.00 1.25 5.50", "structurally valid"),
         ("Tot. 6.00 4.25 6.75", "Tot. 6.00 4.25", "Missing complete rainfall page"),
         ("Tot. 6.00 10.0", "Tot. 6.00 malformed", "Missing complete rainfall page"),
@@ -210,6 +210,93 @@ def test_cli_caller_verified_exact_timestep(tmp_path: Path, capsys: pytest.Captu
         "Time_hours,Subarea_A_mm\n0.000,0\n0.125,3.00\n0.250,0.00\n0.375,1.25\n0.500,0\n"
     )
     assert "Timestep: 0.125 h (caller_exact); report: 0.12 h" in capsys.readouterr().out
+
+
+def _five_minute_report(header: str, *, weighted: bool, footer: str) -> str:
+    """Artificial shape from the native-layout report; no unpublished source depths copied."""
+    depths = ("11.6", "0.0", *("10.0",) * 8, "5.0", "8.4")
+    records = [
+        f"{i} {depth} {Decimal(depth):.0f} {Decimal(depth):.0f}" if weighted else f"{i} {depth}"
+        for i, depth in enumerate(depths)
+    ]
+    times = [f"{i} {Decimal(i) / 12:.2f} 0.0" for i in range(201)]
+    return "\n".join(
+        (
+            _PREFIX.replace("0.125", "0.08").replace("0 3", "0 12").rstrip(),
+            _GROSS,
+            header,
+            "",
+            *records,
+            "",
+            footer,
+            "",
+            "Routing results:",
+            "Duration of calculations: 200",
+            "Hydrograph summary",
+            "Inc Time Hyd0001",
+            *times,
+            "",
+            "",
+        )
+    )
+
+
+@pytest.mark.parametrize("header", ["Time\nCatch\nIncs ment", "Time Catch\nIncs ment"])
+def test_uniform_catchment_only_compact_total(header: str) -> None:
+    report = _five_minute_report(header, weighted=False, footer="Tot.105.0")
+    document = read_rorb_bytes(report.encode())
+    assert document.section("rainfall_1").columns == ["line", "Inc", "Catchment_mm"]
+    with pytest.raises(RainfallExportError, match="cumulative OUT clock"):
+        build_tuflow_rainfall(document, kind="gross", columns=("Catchment_mm",))
+    result = build_tuflow_rainfall(
+        document, kind="gross", columns=("Catchment_mm",), exact_step_hours=Decimal("0.08333333333")
+    )
+    assert result.totals_mm == result.reported_totals_mm == (Decimal("105.0"),)
+    assert result.rows[1].time_hours == Decimal("0.08333333333")
+    assert result.rows[1].depths_mm == (Decimal("11.6"),)
+    assert result.rows[2].depths_mm == (Decimal("0.0"),)
+    assert result.rows[12].time_hours == Decimal("0.99999999996")
+    assert result.rows[12].depths_mm == (Decimal("8.4"),)
+    assert result.rows[-1].time_hours == Decimal("1.08333333329")
+    assert result.rows[-1].depths_mm == (Decimal(0),)
+    with pytest.raises(RainfallExportError, match="Unknown rainfall column"):
+        build_tuflow_rainfall(
+            document, kind="gross", columns=("Subarea_A_mm",), exact_step_hours=Decimal("0.08333333333")
+        )
+
+
+@pytest.mark.parametrize("footer", ["Tot.105.0 105 105", "Tot. 105.0 105 105"])
+def test_weighted_report_compact_or_spaced_total(footer: str) -> None:
+    report = _five_minute_report(_HEADER + "A B", weighted=True, footer=footer)
+    result = build_tuflow_rainfall(
+        read_rorb_bytes(report.encode()),
+        kind="gross",
+        columns=("Catchment_mm", "Subarea_A_mm", "Subarea_B_mm"),
+        exact_step_hours=Decimal("0.08333333333"),
+    )
+    assert result.totals_mm == result.reported_totals_mm == (Decimal("105.0"), Decimal(105), Decimal(105))
+    assert result.rows[1].depths_mm == (Decimal("11.6"), Decimal(12), Decimal(12))
+    assert result.rows[12].depths_mm == (Decimal("8.4"), Decimal(8), Decimal(8))
+
+
+@pytest.mark.parametrize(
+    ("header", "footer"),
+    [
+        ("Time\nUnknown\nIncs ment", "Tot.105.0"),
+        ("Time\nCatch\nIncs ment", "Tot.105.0 105"),
+        ("Time\nCatch\nIncs ment", "Tot.invalid"),
+        ("Time\nCatch\nIncs ment", "Tot.-105.0"),
+    ],
+)
+def test_uniform_report_rejects_unidentified_header_or_total(header: str, footer: str) -> None:
+    report = _five_minute_report(header, weighted=False, footer=footer)
+    with pytest.raises(RainfallExportError, match="Missing complete rainfall page"):
+        build_tuflow_rainfall(
+            read_rorb_bytes(report.encode()),
+            kind="gross",
+            columns=("Catchment_mm",),
+            exact_step_hours=Decimal("0.08333333333"),
+        )
 
 
 _ROOT = Path(__file__).absolute().parents[1]
