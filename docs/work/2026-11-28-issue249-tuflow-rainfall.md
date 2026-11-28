@@ -77,3 +77,16 @@ Do not merge, publish or migrate ryan-tools before separate owner approval.
 At `927bc6e53ed5c8406b82eefbd351b557dffe6c32`, the [Windows 3.11 run](https://github.com/Chain-Frost/pyrorb/actions/runs/46107570860) passed repository hygiene (683 files, zero errors), then stopped at seven Ruff findings. No source tests, wheel or regression verification ran on that attempt. The follow-up replaces successive-pair zip with pairwise, introduces a typed ValueError subclass for rainfall admission refusals, removes the unused suppression, strengthens negative-test diagnostic matching and adds source/destination protection checks. Rules and existing CI lanes are unchanged. Fresh exact-head quality evidence is required.
 
 TUFLOW 2026.3 manual section 8.4.3.2.1 identifies the actual native inspection outputs: `2d_bc_tables` and .tlf entries labelled `Rainfall histogram after Rainfall Boundary Factor adjustment` and `RF Rainfall histogram conversion`. Section 8.4.3.2.2 identifies RFR and RFC map outputs for rainfall rate and cumulative rainfall. Use these in the pending native polygon check rather than relying on solver success alone. Section 8.5 Table 8.13 confirms the named Column 1 and Column 2 mappings. See [manual](https://docs.tuflow.com/classic-hpc/manual/2026.3/07-Boundaries-and-Initial-Conditions.html).
+
+## Rounded OUT clocks and retained report extension
+
+The second hosted quality attempt at `291ee1595b1da43e6e0f588c6f3887c5ffc17c11` ([run](https://github.com/Chain-Frost/pyrorb/actions/runs/46108689397)) stopped at two RUF043 regex-intent findings; the follow-up fixes both without changing lint policy.
+
+A targeted inspection of eleven public CMD objects across short, long, wet-start, dry-end and multi-subarea cases found nine with fully consistent printed clocks and two with a header of 0.12 h but cumulative labels 0.12, 0.25, 0.38, 0.50, etc. The existing register binds both to 0.125 h STM inputs; their matching raw STM records were inspected. The exact clock is not identifiable from the rounded header alone.
+
+| Register case | Report SHA-256 prefix | STM SHA-256 prefix | Rainfall intervals | Gross A first / last / sum (mm) | Finish with source step (h) |
+| --- | --- | --- | ---: | --- | ---: |
+| H3-single-source-equality-chain | 437bd8d0 | e1d037f8 | 5 | 3 / 7 / 13 | 0.625 |
+| timestep-design-baseline-f4 | 1507a183 | edd936af | 96 | 1 / 1 / 96 | 12 |
+
+Default report-only refusal is preserved. An explicit caller-known exact source timestep is admitted only if it lies within the printed header resolution and agrees with a complete OUT clock covering the rainfall horizon and every printed time label. Both reported and selected values and the clock basis are returned. No external file is discovered or automatically read by the converter; the caller owns source association. Two retained-report tests cover default refusal, wrong supplied steps and the independently known 0.125 h option. Fresh exact-head execution is pending.

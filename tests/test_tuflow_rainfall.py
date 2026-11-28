@@ -56,6 +56,8 @@ def test_gross_multicolumn_csv_and_stepped_depth_conservation(tmp_path: Path) ->
     output = tmp_path / "rain.csv"
     boundary = export_tuflow_rainfall(source, output, kind="gross", columns=_COLUMNS)
     assert boundary.section == "rainfall_1"
+    assert boundary.clock_basis == "reported"
+    assert boundary.reported_step_hours == boundary.step_hours == Decimal("0.125")
     assert boundary.start_increment == 0
     assert boundary.finish_increment == 3
     assert boundary.trailing_zero_added
@@ -152,7 +154,7 @@ def test_rounded_step_with_cumulative_clock_drift_refuses() -> None:
 
 @pytest.mark.parametrize("columns", [(), ("Hyd001",), ("Subarea_A_mm", "Subarea_A_mm"), ("Subarea_Z_mm",)])
 def test_unknown_ambiguous_or_discharge_column_refuses(columns: tuple[str, ...]) -> None:
-    with pytest.raises(RainfallExportError, match="Select at least one unique|Unknown rainfall column"):
+    with pytest.raises(RainfallExportError, match=r"Select at least one unique|Unknown rainfall column"):
         build_tuflow_rainfall(read_rorb_bytes(_REPORT.encode()), kind="gross", columns=columns)
 
 
@@ -179,9 +181,36 @@ def test_source_and_destination_protection(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError):
         export_tuflow_rainfall(source, source, kind="gross", columns=_COLUMNS)
     assert source.read_bytes() == original
-    with pytest.raises(RainfallExportError, match="CSV extension|csv extension"):
+    with pytest.raises(RainfallExportError, match="csv extension"):
         export_tuflow_rainfall(source, tmp_path / "report.out", kind="gross", columns=_COLUMNS)
     assert not (tmp_path / "report.out").exists()
+
+
+def test_explicit_timestep_needs_complete_clock() -> None:
+    with pytest.raises(RainfallExportError, match="requires a complete OUT clock"):
+        build_tuflow_rainfall(
+            read_rorb_bytes(_REPORT.encode()), kind="gross", columns=_COLUMNS, exact_step_hours=Decimal("0.125")
+        )
+
+
+def test_cli_caller_verified_exact_timestep(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    report = _REPORT.replace("0.125", "0.12") + (
+        "\nDuration of calculations: 3\nHydrograph summary\nInc Time Hyd0001\n0 0.00 0\n"
+        "1 0.12 0\n2 0.25 0\n3 0.38 0\n\n"
+    )
+    source = tmp_path / "rounded.out"
+    source.write_text(report, encoding="utf-8")
+    output = tmp_path / "rain.csv"
+    args = [str(source), str(output), "--kind", "gross", "--column", "Subarea_A_mm"]
+    with pytest.raises(SystemExit) as default_refused:
+        main(args)
+    assert default_refused.value.code == 2
+    assert not output.exists()
+    assert main([*args, "--exact-step-hours", "0.125"]) == 0
+    assert output.read_text(encoding="utf-8") == (
+        "Time_hours,Subarea_A_mm\n0.000,0\n0.125,3.00\n0.250,0.00\n0.375,1.25\n0.500,0\n"
+    )
+    assert "Timestep: 0.125 h (caller_exact); report: 0.12 h" in capsys.readouterr().out
 
 
 _ROOT = Path(__file__).absolute().parents[1]
@@ -222,4 +251,37 @@ def test_retained_report_printed_depths(
     assert result.totals_mm == (Decimal(total),)
     assert result.reported_totals_mm == (Decimal(reported),)
     assert len(result.rows) == count + 1 + int(Decimal(last) != 0)
+    assert result.rows[-1].depths_mm == (Decimal(0),)
+
+
+@pytest.mark.parametrize(
+    ("name", "count", "first", "last", "total"),
+    [
+        ("437bd8d073280c9f2a5939d01b560c8c606f0df2c0dab26bdab37812a412b166", 5, 3, 7, 13),
+        ("1507a183b2b21247d217184026f60d20de434d191c84da61dc82726f57048450", 96, 1, 1, 96),
+    ],
+)
+def test_original_rounded_clock_requires_explicit_source_step(
+    name: str, count: int, first: int, last: int, total: int
+) -> None:
+    document = read_rorb_file(_CMD.with_name(f"{name}.out"))
+    assert document.sha256 == name
+    with pytest.raises(RainfallExportError, match="cumulative OUT clock"):
+        build_tuflow_rainfall(document, kind="gross", columns=("Subarea_A_mm",))
+    with pytest.raises(RainfallExportError, match="printed timestep resolution"):
+        build_tuflow_rainfall(document, kind="gross", columns=("Subarea_A_mm",), exact_step_hours=Decimal("0.13"))
+    with pytest.raises(RainfallExportError, match="cumulative OUT clock"):
+        build_tuflow_rainfall(document, kind="gross", columns=("Subarea_A_mm",), exact_step_hours=Decimal("0.124"))
+    # The existing public register binds each original report to a 0.125 h source STM.
+    result = build_tuflow_rainfall(document, kind="gross", columns=("Subarea_A_mm",), exact_step_hours=Decimal("0.125"))
+    assert result.reported_step_hours == Decimal("0.12")
+    assert result.step_hours == Decimal("0.125")
+    assert result.clock_basis == "caller_exact"
+    assert result.finish_increment == count
+    assert result.rows[1].time_hours == Decimal("0.125")
+    assert result.rows[1].depths_mm == (Decimal(first),)
+    assert result.rows[count].time_hours == Decimal("0.125") * count
+    assert result.rows[count].depths_mm == (Decimal(last),)
+    assert result.totals_mm == (Decimal(total),)
+    assert result.rows[-1].time_hours == Decimal("0.125") * (count + 1)
     assert result.rows[-1].depths_mm == (Decimal(0),)

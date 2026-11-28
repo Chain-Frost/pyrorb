@@ -33,6 +33,26 @@ or apply RORB losses again in TUFLOW when the intended input is already net of t
 The source report is read-only. The destination must have a CSV extension and an existing
 parent directory; an existing file is not overwritten.
 
+### Reports with rounded timestep labels
+
+The default clock uses the printed timestep and checks it against available OUT time labels.
+Some real reports print a rounded value (e.g. 0.12 h for a source STM specifying 0.125 h).
+If the cumulative clock contradicts the printed step, default export refuses. If you have
+independently established the exact timestep from the matching source STM or other reliable
+source evidence, supply it explicitly:
+
+```sh
+python -m runoff_routing.tuflow_rainfall report.out rain.csv --kind gross --column Subarea_A_mm --exact-step-hours 0.125
+```
+
+Python equivalent: pass `exact_step_hours=Decimal("0.125")` (import Decimal from decimal).
+The supplied step must be positive, within half the printed timestep's last digit, and
+consistent with every printed hydrograph time label to half its last digit. A complete
+canonical OUT hydrograph clock covering the rainfall horizon is required for this opt-in.
+No approximate step is inferred, no embedded STM path is followed, and association with the
+correct STM is the caller's responsibility. The API returns the reported and selected step
+separately and records `clock_basis` as `reported` or `caller_exact`; the CLI prints both.
+
 ## Literal input and output contract
 
 The [TUFLOW Classic/HPC 2026.3 manual, sections 8.4.3.1.1 and 8.5](https://docs.tuflow.com/classic-hpc/manual/2026.3/07-Boundaries-and-Initial-Conditions.html)
@@ -67,7 +87,7 @@ CSV, not a grid rainfall index, rainfall control file, BC database generator or 
 
 The RORB heading must literally identify either `Rainfall, mm, in time inc. following time shown`
 or `Rainfall-excess, mm, in time inc. following time shown`. For RORB increment i, the depth
-covers the interval from i times the printed step to (i+1) times that step. Assign it to the
+covers the interval from i times the selected step to (i+1) times that step. Assign it to the
 latter timestamp. The unique reported rainfall Start and Finish define the required
 half-open increment sequence [Start, Finish). Do not use the hydrograph calculation duration
 as the rainfall duration. Introduce one zero-depth anchor at Start times step; if the first
@@ -87,7 +107,7 @@ Repeated catchment values must agree between pages; repeated subarea identities 
 Every selected section page must match the declared rainfall horizon. Unsupported layouts,
 missing time information, malformed numbers, negative depths, incomplete intervals or invalid
 canonical reports are refused. Hydrograph clock labels, when present, must corroborate
-the cumulative printed time step to their printed resolution. The converter cannot infer
+the selected timestep to their printed resolution. The converter cannot infer
 an unprinted exact timestep or reconstruct unprinted rainfall precision. Its exact decimal
 domain limits absolute decimal exponents and adjusted exponents to 30; time values must remain
 distinct in floating-point representation. No arbitrary correction, interpolation or loss model
