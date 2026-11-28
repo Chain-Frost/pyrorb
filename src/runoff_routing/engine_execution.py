@@ -152,6 +152,7 @@ def _python_cmd(
         physical_time_hours=computed.physical_time_hours,
         internal_quantities="python_available",
         python_diagnostics=computed.diagnostics,
+        diagnostic_flows=computed.diagnostic_flows,
     )
 
 

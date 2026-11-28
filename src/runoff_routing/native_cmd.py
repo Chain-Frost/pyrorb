@@ -156,6 +156,9 @@ class NativeObservation:
 def _guard_native_effective_sources(loaded: LoadedProject) -> None:
     """Reject native capture runs that would misattribute edited source assets."""
     model = loaded.run
+    if any(step.code == 11 for step in model.catchment.controls):
+        message = "Native code-11 diagnostic capture is not yet supported by the selected adapter"
+        raise NativeBoundaryError(message, status="unsupported_feature", code="native_code11_output")
     # The S0 native capture regenerates only the effective parameter scalars;
     # it reads original immutable CATG/STM byte streams directly. A persisted
     # edit or selected event must never be attributed to stale original inputs.
@@ -318,6 +321,11 @@ def _inspect(  # noqa: C901 -- report verification deliberately checks each inde
     target = manifest_path.absolute().parent / str(reports[0]["path"])
     source_report = RorbSource.read(target)
     inspected = inspect_output(source_report)
+    if any(item.code == "cmd_diagnostic_report" for item in inspected.diagnostics):
+        message = "CMD diagnostic columns require a separate typed output contract; ordinary print mapping is invalid"
+        raise NativeBoundaryError(
+            message, status="incomplete_output", code="native_diagnostic_columns", manifest=manifest_path
+        )
     report = inspected.hydrographs
     expected_rows = loaded.run.storm.calculation_increments + 1
     required_columns = {column for _, column in config.print_columns}
