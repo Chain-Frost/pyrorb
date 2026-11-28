@@ -215,6 +215,40 @@
         "width_reduction_percent": "75.77"
       },
       "limitation": "mid-CDF split may widen interval; exact CDF step-boundary quantile remains unresolved; needs independent proof/numerical review and separate fixed qualification"
+    },
+    "rectangle_guard": {
+      "status": "proposed_clarification_pending_independent_review",
+      "valid_inputs": "nonempty ordered enclosures of well-defined latent components; finite nonnegative frozen margin; conservative endpoint arithmetic; invalid/undefined -> unresolved",
+      "definite_component_pass": "u-L<=Delta and U-l<=Delta; entire run enclosure contained in [U-Delta,L+Delta]",
+      "definite_component_failure": "u<L-Delta or l>U+Delta; strict beyond margin",
+      "whole_run": "all component passes -> definite pass; any component definite failure -> definite failure; else indeterminate; Cartesian outer rectangle, not assumed component independence",
+      "unbounded": "use set relations; do not subtract infinities; unbounded peak or reference upper endpoint cannot establish definite pass for finite margin",
+      "reference_feasibility": "on final tightened reference intervals, each finite U-L<=2*Delta necessary for any definite pass; if wider or unbounded, report adequacy structurally unavailable, not inadequacy; predeclared unresolved stop only or retain separately authorised fixed confirmation for inadequacy/descriptive spread",
+      "cdf_illustration": {
+        "epsilon": 0.00372244,
+        "margin": 0.01,
+        "remaining_point_margin": 0.00627756,
+        "raw_unclipped_untightened_endpoint_gap_max": 0.01255512,
+        "not_missing_mass_cap": true
+      },
+      "confirmation_accounting": {
+        "planned": 300,
+        "definite_pass_min": 294,
+        "possible_pass_max": 275,
+        "non_definite_pass_count_precludes_adequacy": 7,
+        "definite_failure_count_implies_possible_pass_max": 25,
+        "no_new_sequential_stopping": true,
+        "exact_binomial_tail_checks_at_p_0_95": {
+          "upper_293": 0.015968000797,
+          "upper_294": 0.0065793744,
+          "lower_275": 0.009348804278,
+          "lower_276": 0.016844074417,
+          "alpha": "3/200"
+        },
+        "deterministic_rectangle_examples_checked": 8,
+        "all_expected": true
+      },
+      "execution": "deterministic desk arithmetic only; no routed, sampled or synthetic MC events; no scientific sign-off"
     }
   },
   "synthetic_qualification": {
