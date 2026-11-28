@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import csv
 import gzip
 import hashlib
+import io
 import json
 import runpy
 import shutil
 from collections import Counter
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -15,7 +18,13 @@ from typing import Any
 import pytest
 
 from runoff_routing import regression_dataset as rd
-from runoff_routing.rorb_codec import parse_catg
+from runoff_routing.engine_execution import run_engine_project
+from runoff_routing.engine_types import EngineOutcome, EngineSelection
+from runoff_routing.native_cmd import NativeConfiguration
+from runoff_routing.project_batch import ProjectBatchReport
+from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, load_project, write_project
+from runoff_routing.rorb_codec import CatgWriterLossError, RorbFormatError, parse_catg, serialize_catg
+from runoff_routing.rorb_model import RunModel, from_json, to_json
 
 DATA = Path(__file__).absolute().parent / "fixtures" / "regression-v1"
 REGISTER = DATA / "register.json"
@@ -300,3 +309,173 @@ def test_eight_original_capture_dispositions_remain_explicit_gaps(case_id: str) 
     assert case["sets"] == ["all", "native-all", "native-gaps"]
     assert case["expectations"]["python-cmd"]["status"] == "not_assessed"
     assert "cmd-eligible" not in case["sets"]
+
+
+@pytest.fixture(scope="module")
+def code11_execution(tmp_path_factory: pytest.TempPathFactory) -> tuple[dict[str, Any], RunModel, EngineOutcome, Path]:
+    """Execute the exact retained triplet through the public selected engine."""
+    register = json.loads(REGISTER.read_bytes())
+    case = next(item for item in register["cases"] if item["case_id"] == "fig67-code11")
+    root = tmp_path_factory.mktemp("code11")
+    sources: dict[str, SourceFile] = {}
+    for item in case["inputs"]:
+        raw = (DATA / item["path"]).read_bytes()
+        assert len(raw) == item["size_bytes"]
+        assert hashlib.sha256(raw).hexdigest() == item["sha256"]
+        suffix = Path(item["path"]).suffix
+        name = f"input{suffix}"
+        (root / name).write_bytes(raw)
+        sources[suffix] = SourceFile(name, item["sha256"])
+    project = Project(
+        "fig67-code11",
+        "legacy-rorb",
+        LegacyRunFiles(sources[".par"], sources[".catg"], sources[".stm"]),
+        engine=EngineSelection.for_engine("python-cmd"),
+    )
+    path = root / "source.json"
+    write_project(path, project)
+    model = load_project(path).run
+    outcome = run_engine_project(path)
+    return case, model, outcome, path
+
+
+def test_code11_fresh_original_diagnostic_ordinates_and_scalars(
+    code11_execution: tuple[dict[str, Any], RunModel, EngineOutcome, Path],
+) -> None:
+    case, model, outcome, _ = code11_execution
+    assert from_json(to_json(model)) == model
+    assert outcome.status == "computed_unvalidated", outcome.diagnostics
+    assert outcome.control_order == (11, 3, 1, 4, 5, 3, 1, 4, 5, 3, 1, 4, 5, 3, 1, 4, 5, 7)
+    assert outcome.requested_print_ids == ("print_1",)
+    assert len(outcome.hydrographs) == 1
+    assert len(outcome.physical_time_hours) == 301
+    assert Decimal(outcome.physical_time_hours[0]) == 0
+    assert Decimal(outcome.physical_time_hours[-1]) == 150
+    assert not outcome.native_raw_time_tokens
+    assert not outcome.native_raw_increment_tokens
+    flows = outcome.diagnostic_flows
+    assert tuple(item.quantity_kind for item in flows) == (
+        "subarea_upstream_flow",
+        "rainfall_excess_flow",
+        "reach_downstream_flow",
+        "reach_upstream_flow",
+    )
+    assert flows[0].flow_m3_s == (0.0,) * 301
+    assert flows[1].flow_m3_s == flows[3].flow_m3_s
+    assert flows[1].series_id != flows[3].series_id
+    assert flows[1].subarea_id == "area_1"
+    assert flows[3].reach_id == "reach_1"
+    assert all(item.units == "m3/s" and len(item.flow_m3_s) == 301 for item in flows)
+
+    comparison = rd.compare_fresh_cmd_case(DATA, case, outcome)
+    assert comparison["classification"] == "pass", comparison
+    assert comparison["checked_ordinates"] == 1505
+    assert not comparison["mismatches"]
+    reporting = comparison["fresh_reporting"]
+    assert reporting["classification"] == "incomplete"
+    assert set(reporting["per_column"]) == {"Hyd001", "Hyd002", "Hyd003", "Hyd004", "Hyd005"}
+    for column, item in reporting["per_column"].items():
+        metrics = item["metrics"]
+        assert metrics["peak_magnitude"]["verdict"] == "pass"
+        assert metrics["native_reported_volume"]["verdict"] == "pass"
+        assert metrics["peak_time"]["verdict"] == ("incomplete" if column == "Hyd001" else "pass")
+    zero_peak = reporting["per_column"]["Hyd001"]["metrics"]["peak_time"]
+    assert zero_peak["reason"] == "zero_flow_time_undefined"
+    assert zero_peak["actual_exact"] is None
+    assert outcome.native_parity_status == "not_assessed"
+    assert case["coverage"] == "gap"
+
+
+def test_code11_result_products_keep_diagnostic_flows_out_of_physical_prints(
+    code11_execution: tuple[dict[str, Any], RunModel, EngineOutcome, Path],
+) -> None:
+    _, _, outcome, _ = code11_execution
+    result = ProjectBatchReport((outcome,))
+    single = json.loads(outcome.to_json())
+    assert len(single["hydrographs"]) == 1
+    assert len(single["diagnostic_flows"]) == 4
+    batch = json.loads(result.to_json())
+    assert len(batch["volumes"]) == 1
+    assert batch["volumes"][0]["native_inclusive_reported_volume_m3"] is None
+    rows = list(csv.DictReader(io.StringIO(result.to_csv())))
+    assert len(rows) == 1505
+    physical = [row for row in rows if row["print_id"]]
+    assert len(physical) == 301
+    assert all(row["print_id"] == "print_1" and not row["diagnostic_series_id"] for row in physical)
+    for flow in outcome.diagnostic_flows:
+        diagnostic = [row for row in rows if row["diagnostic_series_id"] == flow.series_id]
+        assert len(diagnostic) == 301
+        assert all(not row["print_id"] and not row["discharge_m3_s"] for row in diagnostic)
+        assert all(row["diagnostic_units"] == "m3/s" for row in diagnostic)
+        assert tuple(float(row["diagnostic_flow_m3_s"]) for row in diagnostic) == flow.flow_m3_s
+        assert tuple(row["physical_time_hours"] for row in diagnostic) == outcome.physical_time_hours
+        assert flow.series_id in result.to_text()
+
+
+@pytest.mark.parametrize("damage", ["missing", "duplicate", "identity", "truncated", "negative", "clock", "source"])
+def test_code11_comparator_rejects_invalid_candidate_attribution(
+    code11_execution: tuple[dict[str, Any], RunModel, EngineOutcome, Path], damage: str
+) -> None:
+    case, _, outcome, _ = code11_execution
+    flows = outcome.diagnostic_flows
+    if damage == "missing":
+        modified = replace(outcome, diagnostic_flows=flows[:-1])
+    elif damage == "duplicate":
+        modified = replace(outcome, diagnostic_flows=(flows[0], flows[0], *flows[2:]))
+    elif damage == "identity":
+        modified = replace(outcome, diagnostic_flows=(replace(flows[0], subarea_id="area_2"), *flows[1:]))
+    elif damage == "truncated":
+        modified = replace(outcome, diagnostic_flows=(replace(flows[0], flow_m3_s=flows[0].flow_m3_s[:-1]), *flows[1:]))
+    elif damage == "negative":
+        modified = replace(
+            outcome, diagnostic_flows=(replace(flows[0], flow_m3_s=(-1.0, *flows[0].flow_m3_s[1:])), *flows[1:])
+        )
+    elif damage == "clock":
+        modified = replace(outcome, native_raw_time_tokens=("0.50",))
+    else:
+        modified = replace(outcome, source_file_hashes=())
+    comparison = rd.compare_fresh_cmd_case(DATA, case, modified)
+    assert comparison["classification"] == ("incomplete" if damage in {"missing", "truncated"} else "invalid")
+    assert not comparison.get("checked_ordinates")
+
+
+def test_code11_unsupported_variants_and_other_engines_do_not_fallback(
+    code11_execution: tuple[dict[str, Any], RunModel, EngineOutcome, Path], tmp_path: Path
+) -> None:
+    _, model, _, path = code11_execution
+    engineering = run_engine_project(path, selection=EngineSelection.for_engine("python"))
+    assert engineering.status == "unsupported_feature"
+    assert engineering.effective_selection.engine == "python"
+    assert not engineering.hydrographs
+    assert not engineering.diagnostic_flows
+    native_config = NativeConfiguration(
+        executable=tmp_path / "not-installed.exe",
+        executable_sha256="0" * 64,
+        observed_version="6.44",
+        observed_banner="Synthetic rejection control",
+        numerical_profile="cmd-6.44",
+        output_root=tmp_path / "native",
+        print_columns=(("print_1", "Hyd005"),),
+    )
+    native = run_engine_project(path, selection=EngineSelection.for_engine("rorb-cmd"), native_config=native_config)
+    assert native.status == "unsupported_feature"
+    assert native.diagnostics[0].code == "native_code11_output"
+    assert not native.hydrographs
+    assert not native.diagnostic_flows
+    assert not native_config.output_root.exists()
+    params = replace(model.parameters, routing=(replace(model.parameters.routing[0], m=Decimal(1)),))
+    unsupported = tmp_path / "other-profile.json"
+    write_project(unsupported, Project("other_profile", "explicit", EmbeddedRun(replace(model, parameters=params))))
+    variant = run_engine_project(unsupported)
+    assert variant.status == "unsupported_feature"
+    assert variant.diagnostics[0].code == "cmd_code11_profile"
+    assert not variant.hydrographs
+    assert not variant.diagnostic_flows
+    with pytest.raises(CatgWriterLossError, match="code-11"):
+        serialize_catg(model.catchment)
+    original = (path.parent / "input.catg").read_bytes()
+    changed = original.replace(b"\r\n1, 4.000", b"\r\n11, 4.000", 1)
+    assert changed != original
+    with pytest.raises(RorbFormatError, match="first implicit natural") as caught:
+        parse_catg(changed)
+    assert caught.value.status == "unsupported"

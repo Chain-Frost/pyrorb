@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
+import json
 from decimal import Decimal
 from importlib.resources import files
 from pathlib import Path
@@ -12,8 +15,10 @@ import pytest
 from runoff_routing.regression_metrics import bind_report_metrics
 from runoff_routing.rorb_documents import RorbSource
 from runoff_routing.rorb_out import inspect_output
+from runoff_routing.rorb_readers.output_reader import bind_cmd_diagnostic_columns, bind_output_site_columns
 from runoff_routing.rorb_readers.reader_types import RorbDocument
 from runoff_routing.rorb_readers.readers import read_rorb_bytes, read_rorb_file, read_rorb_table_file
+from runoff_routing.rorb_report_views import report_csv, report_json
 
 
 def _report(increments: str = "1 0.50 0.000\n2 1.00 12.345000\n3 1.50 0.000\n") -> bytes:
@@ -176,3 +181,127 @@ def test_missing_report_path_preserves_bom_and_bom_free_utf8_bytes(tmp_path: Pat
     assert inspected.hydrographs is not None
     assert inspected.hydrographs.rows[1].raw_time == "1.00"
     assert any(d.code == "source_path_unavailable" for d in inspected.diagnostics)
+
+
+_CODE11_REPORT_SHA = "abf184be82df77a081799ebe1bfc68b4b37e1ba1eef069298c0203483796aa13"
+_CODE11_KINDS = (
+    "subarea_upstream_flow",
+    "rainfall_excess_flow",
+    "reach_downstream_flow",
+    "reach_upstream_flow",
+    "calculated_flow",
+)
+
+
+def test_cmd_diagnostic_original_legend_and_horizon() -> None:
+    """Use the authenticated published report, not a generated native golden."""
+    path = Path(__file__).absolute().parent / "fixtures/regression-v1/native-cmd/objects" / f"{_CODE11_REPORT_SHA}.out"
+    raw = path.read_bytes()
+    assert len(raw) == 32805
+    assert hashlib.sha256(raw).hexdigest() == _CODE11_REPORT_SHA
+    document = read_rorb_bytes(raw, path=path)
+    assert document.original_bytes == raw
+    columns = bind_cmd_diagnostic_columns(document)
+    assert tuple(item.column for item in columns) == ("Hyd001", "Hyd002", "Hyd003", "Hyd004", "Hyd005")
+    assert tuple(item.quantity_kind for item in columns) == _CODE11_KINDS
+    assert all(item.units == "m3/s" for item in columns)
+    table = document.section("hydrographs_1")
+    assert len(table.rows) == 301
+    assert table.increment_origin == 1
+    assert table.source_tokens[0]["Time"] == "0.50"
+    assert table.source_tokens[-1]["Time"] == "150.50"
+    peaks = tuple(max(table.source_decimal(index, item.column) for index in range(len(table.rows))) for item in columns)
+    assert peaks == tuple(map(Decimal, ("0.0000", "49.9197", "34.9086", "49.9197", "170.782")))
+    assert all(row["Hyd002"] == row["Hyd004"] for row in table.source_tokens)
+    # Equal effective parameters and original storm; no new comparator or parity promotion.
+    ordinary_sha = "5ee8604dd981b9c9c3a5dc64f2d578590d9e7107174f63f293c464ac38488e99"
+    ordinary_raw = path.with_name(f"{ordinary_sha}.out").read_bytes()
+    assert len(ordinary_raw) == 19721
+    assert hashlib.sha256(ordinary_raw).hexdigest() == ordinary_sha
+    ordinary = read_rorb_bytes(ordinary_raw).section("hydrographs_1")
+    assert ordinary.valid
+    assert len(ordinary.rows) == 301
+    assert [(row["Inc"], row["Time"], row["Hyd005"]) for row in table.source_tokens] == [
+        (row["Inc"], row["Time"], row["Hyd001"]) for row in ordinary.source_tokens
+    ]
+    with pytest.raises(ValueError, match="diagnostic columns"):
+        bind_output_site_columns(document, allow_unnamed=True)
+
+
+def _diagnostic_report() -> str:
+    return (
+        "RORBWin Output File\nProgram version 6.44\n"
+        "Time increment (hours)= 0.50\nDuration of calculations: 2\n"
+        "Peak discharge,m³/s 0 2\nPeak discharge,m³/s 1 2\nPeak discharge,m³/s 3\n"
+        "Hydrograph summary\nSite Description\n"
+        "01 Sub-area inflow point, sub-area A - Upstream\n"
+        "02 Sub-area inflow point, sub-area A - Rain ex.\n"
+        "03 Normal storage, reach no.   0   1 - Downstream\n"
+        "04 Normal storage, reach no.   0   1 - Upstream\n"
+        "05 Calculated hydrograph,\n\n"
+        "Inc Time Hyd001 Hyd002 Hyd003 Hyd004 Hyd005\n"
+        "1 0.50 0 0 0 0 0\n2 1.00 0 2 1 2 3\n3 1.50 0 0 0 0 0\n"
+    )
+
+
+def test_cmd_diagnostic_binding_uses_id_not_column_position_and_exports_roles() -> None:
+    source = _diagnostic_report().replace("Hyd001 Hyd002 Hyd003 Hyd004 Hyd005", "Hyd005 Hyd003 Hyd002 Hyd001 Hyd004")
+    source = source.replace("2 1.00 0 2 1 2 3", "2 1.00 3 1 2 0 2")
+    document = read_rorb_bytes(source.encode("utf-8"))
+    columns = bind_cmd_diagnostic_columns(document)
+    assert tuple(item.column for item in columns) == ("Hyd005", "Hyd003", "Hyd002", "Hyd001", "Hyd004")
+    assert tuple(item.quantity_kind for item in columns) == (
+        "calculated_flow",
+        "reach_downstream_flow",
+        "rainfall_excess_flow",
+        "subarea_upstream_flow",
+        "reach_upstream_flow",
+    )
+    section = document.section("cmd_diagnostic_sites")
+    assert section.valid
+    page = json.loads(report_json(document, section=section.name))
+    assert page["selection"]["rows"][2]["values"]["quantity_kind"] == "rainfall_excess_flow"
+    assert page["selection"]["rows"][2]["values"]["physical_site_verified"] is False
+    rows = list(csv.DictReader(io.StringIO(report_csv(document, section.name))))
+    assert tuple(item.site_id_token for item in columns) == ("05", "03", "02", "01", "04")
+    assert rows[2]["source_token__id_token"] == columns[2].site_id_token
+    assert rows[2]["units"] == "m3/s"
+
+
+@pytest.mark.parametrize(
+    ("original", "replacement"),
+    [
+        ("Hyd001 Hyd002", "Hyd001 Hyd0001"),
+        ("02 Sub-area", "01 Sub-area"),
+        (" - Rain ex.", " - Unknown"),
+        ("m³/s 0 2", "mm 0 2"),
+        ("3 1.50 0 0 0 0 0\n", ""),
+        ("1 0.50 0 0 0 0 0", "1 0.00 0 0 0 0 0"),
+        ("2 1.00 0 2 1 2 3", "2 1.00 0 -2 1 2 3"),
+    ],
+)
+def test_cmd_diagnostic_unsupported_or_ambiguous_layout_never_binds(original: str, replacement: str) -> None:
+    source = _diagnostic_report().replace(original, replacement)
+    document = read_rorb_bytes(source.encode("utf-8"))
+    with pytest.raises(
+        ValueError,
+        match=r"structurally valid|Incomplete or invalid|Ambiguous physical|Duplicate hydrograph|Unsupported CMD|"
+        r"complete one-based|Unsupported negative|CMD diagnostic discharge units or summary group counts",
+    ):
+        bind_cmd_diagnostic_columns(document)
+    with pytest.raises(ValueError, match="diagnostic columns"):
+        bind_output_site_columns(document, allow_unnamed=True)
+    section = document.section("cmd_diagnostic_sites")
+    assert not section.valid
+    assert not section.rows
+
+
+@pytest.mark.parametrize("version_line", ["Program version 6.52\n", ""])
+def test_cmd_diagnostic_other_native_version_is_not_admitted(version_line: str) -> None:
+    source = _diagnostic_report().replace("Program version 6.44\n", version_line)
+    document = read_rorb_bytes(source.encode("utf-8"))
+    with pytest.raises(ValueError, match=r"6\.44"):
+        bind_cmd_diagnostic_columns(document)
+    with pytest.raises(ValueError, match="diagnostic columns"):
+        bind_output_site_columns(document, allow_unnamed=True)
+    assert not document.section("cmd_diagnostic_sites").valid

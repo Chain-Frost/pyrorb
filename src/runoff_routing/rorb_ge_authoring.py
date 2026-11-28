@@ -255,6 +255,9 @@ def serialize_catg_with_drawing(model: CatchmentModel, drawing: GeDrawing) -> by
     normalized display XY or a fresh topology traversal.
     """
     model.__post_init__()
+    if any(step.code == 11 for step in model.controls):
+        message = "Edited code-11 graphical authoring is not characterised"
+        raise ValueError(message)
     network = _network(drawing)
     _matches_model(model, drawing, network)
     # Display rows must follow the native computational source order, even
