@@ -7,9 +7,9 @@ from bisect import bisect_left, bisect_right
 from collections.abc import Iterable, Mapping
 from decimal import Decimal
 from fractions import Fraction
-from itertools import accumulate
+from itertools import accumulate, pairwise
 from pathlib import Path
-from typing import NamedTuple, Never, cast
+from typing import Literal, NamedTuple, Never, cast
 
 DOMAIN = Fraction(49, 100)
 MAX_DRAWS = 1_000_000
@@ -234,3 +234,253 @@ def read_verified_cohort(
     curve = conditional_curve(allocations, rows, scenario=pop.scenario_id, duration=pop.duration_min, site_id=site_id)
     verify()
     return curve
+
+
+class CohortScope(NamedTuple):
+    """Common externally admitted scope for equal-allocation paired cohorts."""
+
+    project_sha256: str
+    wheel_sha256: str
+    scenario: str
+    duration: int
+    site_ids: tuple[str, str]
+    allocations: tuple[tuple[str, Decimal, int], ...]
+
+
+class PairedCohort(NamedTuple):
+    """Two marginals from the same pinned, verified event prefix."""
+
+    plan_sha256: str
+    request_sha256: str
+    ledger_sha256: str
+    scope: CohortScope
+    curves: tuple[ConditionalCurve, ConditionalCurve]
+
+
+def _check_digest(value: str) -> None:
+    if len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+        _fail("Expected a canonical SHA-256 identity")
+
+
+def _check_plan_ids(plan_ids: tuple[str, ...]) -> None:
+    if not plan_ids or len(set(plan_ids)) != len(plan_ids):
+        _fail("Expected distinct preassigned plan identities")
+    for identity in plan_ids:
+        _check_digest(identity)
+
+
+def _scope_count(scope: CohortScope) -> int:
+    _check_digest(scope.project_sha256)
+    _check_digest(scope.wheel_sha256)
+    if not scope.scenario or type(scope.duration) is not int or scope.duration <= 0:
+        _fail("Invalid paired cohort scope")
+    if len(scope.site_ids) != 2 or len(set(scope.site_ids)) != 2 or not all(scope.site_ids):
+        _fail("Expected two distinct paired print IDs")
+    allocations = {key: (mass, count) for key, mass, count in scope.allocations}
+    if len(allocations) != len(scope.allocations):
+        _fail("Duplicate paired cohort stratum")
+    return sum(count for _, count in _allocations(allocations).values())
+
+
+def read_verified_pair(
+    project: Artifact,
+    request: Artifact,
+    ledger: Artifact,
+    *,
+    site_ids: tuple[str, str],
+    wheel: Artifact,
+) -> PairedCohort:
+    """Read both sites from one immutable prefix using the existing verified reader.
+
+    The two passes deliberately avoid caching a full ledger in memory. The
+    caller must independently pin artifacts and establish preassigned plan/root
+    membership, source law, and feature eligibility. No execution is performed.
+    """
+    # Keep standalone research controls usable without the product installed.
+    from runoff_routing.monte_carlo_effective import read_header, sha256_file  # noqa: PLC0415
+
+    if sha256_file(request.path) != request.sha256:
+        _fail("Externally pinned artifact digest mismatch")
+    header = read_header(request.path)
+    if len(header.populations) != 1:
+        _fail("Expected one explicit paired cohort population")
+    pop = header.populations[0]
+    allocations = tuple(sorted((a.stratum_id, a.probability_mass, a.planned_samples) for a in header.strata))
+    scope = CohortScope(project.sha256, wheel.sha256, pop.scenario_id, pop.duration_min, site_ids, allocations)
+    _scope_count(scope)
+    _check_digest(header.plan_sha256)
+    first = read_verified_cohort(project, request, ledger, site_id=site_ids[0], wheel=wheel)
+    second = read_verified_cohort(project, request, ledger, site_id=site_ids[1], wheel=wheel)
+    if sha256_file(request.path) != request.sha256:
+        _fail("Externally pinned artifact digest mismatch")
+    return PairedCohort(header.plan_sha256, request.sha256, ledger.sha256, scope, (first, second))
+
+
+def _check_curve(curve: ConditionalCurve, planned_count: int) -> None:
+    if curve.planned_count != planned_count or sum(curve.status_counts.values()) != planned_count:
+        _fail("Curve status counts do not match the planned cohort")
+    if any(type(count) is not int or count < 0 for count in curve.status_counts.values()):
+        _fail("Invalid curve status counts")
+    for peak, mass in curve.known:
+        _require_fraction(peak, "Curve peak must be an exact fraction")
+        _require_fraction(mass, "Curve mass must be an exact fraction")
+        if peak < 0 or not 0 < mass <= DOMAIN:
+            _fail("Invalid curve group")
+    if any(left[0] >= right[0] for left, right in pairwise(curve.known)):
+        _fail("Curve peak keys must be strictly increasing")
+    cumulative = tuple(accumulate(mass for _, mass in curve.known))
+    _require_fraction(curve.unknown_mass, "Unknown mass must be an exact fraction")
+    known_total = cumulative[-1] if cumulative else Fraction(0)
+    if curve.cumulative != cumulative or curve.unknown_mass != DOMAIN - known_total:
+        _fail("Inconsistent curve mass accounting")
+    if not 0 <= curve.unknown_mass <= DOMAIN:
+        _fail("Invalid curve unknown mass")
+
+
+def _pool_site(
+    curves: Iterable[ConditionalCurve],
+    planned_cohorts: int,
+    draws_per_cohort: int,
+) -> ConditionalCurve:
+    groups: dict[Fraction, Fraction] = {}
+    statuses: dict[str, int] = {}
+    observed = 0
+    for curve in curves:
+        _check_curve(curve, draws_per_cohort)
+        observed += 1
+        for peak, mass in curve.known:
+            groups[peak] = groups.get(peak, Fraction(0)) + mass
+        for status, count in curve.status_counts.items():
+            statuses[status] = statuses.get(status, 0) + count
+    missing = (planned_cohorts - observed) * draws_per_cohort
+    statuses["unrecorded"] = statuses.get("unrecorded", 0) + missing
+    known = tuple((peak, mass / planned_cohorts) for peak, mass in sorted(groups.items()))
+    cumulative = tuple(accumulate(mass for _, mass in known))
+    unknown = DOMAIN - (cumulative[-1] if cumulative else Fraction(0))
+    return ConditionalCurve(known, cumulative, unknown, statuses, planned_cohorts * draws_per_cohort)
+
+
+def pool_paired_cohorts(
+    scope: CohortScope,
+    planned_plan_ids: tuple[str, ...],
+    observed: Iterable[PairedCohort],
+) -> tuple[ConditionalCurve, ConditionalCurve]:
+    """Pool equal-stratum-count cohorts using all preassigned slots, including absences.
+
+    Only verified pairs in the same exact scope may be supplied. The plan IDs
+    must come from an independently admitted stage manifest; equal scope and
+    distinct hashes alone do not prove identical source laws or independent roots.
+    """
+    _check_plan_ids(planned_plan_ids)
+    count = _scope_count(scope)
+    if count * len(planned_plan_ids) > MAX_DRAWS:
+        _fail("Pooled planned draw cap exceeded")
+    expected = set(planned_plan_ids)
+    seen: set[str] = set()
+    requests: set[str] = set()
+    ledgers: set[str] = set()
+    pairs: list[PairedCohort] = []
+    for pair in observed:
+        if pair.plan_sha256 not in expected or pair.plan_sha256 in seen:
+            _fail("Duplicate or unplanned cohort identity")
+        if pair.scope != scope or len(pair.curves) != 2:
+            _fail("Mismatched paired cohort scope or allocation")
+        _check_digest(pair.request_sha256)
+        _check_digest(pair.ledger_sha256)
+        if pair.request_sha256 in requests or pair.ledger_sha256 in ledgers:
+            _fail("Duplicate cohort artifact identity")
+        seen.add(pair.plan_sha256)
+        requests.add(pair.request_sha256)
+        ledgers.add(pair.ledger_sha256)
+        pairs.append(pair)
+    return (
+        _pool_site((pair.curves[0] for pair in pairs), len(planned_plan_ids), count),
+        _pool_site((pair.curves[1] for pair in pairs), len(planned_plan_ids), count),
+    )
+
+
+Interval = tuple[Fraction, Fraction | None]
+ComponentStatus = Literal["definite_pass", "definite_fail", "unresolved"]
+ReliabilityStatus = Literal["adequate", "inadequate", "unresolved"]
+
+
+class ComponentComparison(NamedTuple):
+    """One fixed component, with None denoting an unbounded upper endpoint."""
+
+    observed: Interval
+    reference: Interval
+    margin: Fraction
+
+
+def _check_interval(interval: Interval) -> None:
+    lower, upper = interval
+    _require_fraction(lower, "Interval endpoints must be exact fractions")
+    if upper is not None:
+        _require_fraction(upper, "Interval endpoints must be exact fractions")
+    if lower < 0 or (upper is not None and upper < lower):
+        _fail("Invalid nonnegative component enclosure")
+
+
+def classify_component(comparison: ComponentComparison) -> ComponentStatus:
+    """Classify all admissible observed/reference pairs, with inclusive margin."""
+    observed, reference, margin = comparison
+    _check_interval(observed)
+    _check_interval(reference)
+    _require_fraction(margin, "Margin must be an exact fraction")
+    if margin < 0:
+        _fail("Invalid negative component margin")
+    lower, upper = observed
+    ref_lower, ref_upper = reference
+    if (upper is not None and upper + margin < ref_lower) or (ref_upper is not None and ref_upper + margin < lower):
+        return "definite_fail"
+    if upper is not None and ref_upper is not None and upper <= ref_lower + margin and ref_upper <= lower + margin:
+        return "definite_pass"
+    return "unresolved"
+
+
+def classify_whole_run(
+    expected_components: tuple[str, ...],
+    comparisons: Mapping[str, ComponentComparison],
+) -> ComponentStatus:
+    """Use the complete frozen paired-output vector, never silently omit components."""
+    if (
+        not 1 <= len(expected_components) <= 14
+        or not all(expected_components)
+        or len(set(expected_components)) != len(expected_components)
+        or set(comparisons) != set(expected_components)
+    ):
+        _fail("Expected the exact frozen component family")
+    statuses = tuple(classify_component(comparisons[key]) for key in expected_components)
+    if "definite_fail" in statuses:
+        return "definite_fail"
+    return "definite_pass" if all(status == "definite_pass" for status in statuses) else "unresolved"
+
+
+class ReliabilityDecision(NamedTuple):
+    """Fixed 300-cohort count decision, not a population or source admission."""
+
+    definite_passes: int
+    possible_passes: int
+    unresolved: int
+    status: ReliabilityStatus
+
+
+def confirmation_decision(
+    planned_plan_ids: tuple[str, ...],
+    outcomes: Mapping[str, ComponentStatus],
+) -> ReliabilityDecision:
+    """Exact predeclared CP critical counts: n=300, target .95, alpha=.015 each tail.
+
+    The caller must verify the frozen reference coverage construction and
+    latent iid cohort law. Missing planned outcomes remain possible passes;
+    do not use this function for sequential stopping or a different design.
+    """
+    _check_plan_ids(planned_plan_ids)
+    if len(planned_plan_ids) != 300 or set(outcomes) - set(planned_plan_ids):
+        _fail("Expected the fixed family of 300 preassigned confirmations")
+    if any(status not in {"definite_pass", "definite_fail", "unresolved"} for status in outcomes.values()):
+        _fail("Invalid confirmation outcome")
+    definite = sum(status == "definite_pass" for status in outcomes.values())
+    possible = 300 - sum(status == "definite_fail" for status in outcomes.values())
+    status: ReliabilityStatus = "adequate" if definite >= 294 else "inadequate" if possible <= 275 else "unresolved"
+    return ReliabilityDecision(definite, possible, possible - definite, status)
