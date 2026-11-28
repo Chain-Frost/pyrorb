@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from .precision import UnsupportedNumericPath
+
 
 class InvalidInputError(ValueError):
     """Typed JSON event violates the declared structural or physical input contract."""
@@ -49,12 +51,19 @@ class Event:
     n: int
     loss_model: Literal[1, 2] = 1
 
+    def validate_code11_layout(self) -> None:
+        """Do not reinterpret arbitrary diagnostic placement in the internal kernel."""
+        codes = tuple(control.code for control in self.controls)
+        if 11 in codes and (codes[0] != 11 or codes.count(11) != 1 or codes.count(7) != 1 or codes[-1] != 7):
+            message = "Code 11 requires one first-source diagnostic control and one terminal print"
+            raise UnsupportedNumericPath(message)
+
     @property
     def source_count(self) -> int:
-        """Number of code-1 records in original encounter order."""
+        """Number of sources in original encounter order."""
         return len(self.areas)
 
     @property
     def reach_count(self) -> int:
-        """Number of code-1 and code-5 reaches."""
-        return sum(control.code in (1, 2, 5) for control in self.controls)
+        """Number of source and routing reaches, including the first code-11 reach."""
+        return sum(control.code in (1, 2, 5, 11) for control in self.controls)

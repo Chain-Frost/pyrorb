@@ -30,6 +30,7 @@ class ControlCode(IntEnum):
     JOIN_BRANCH = 4
     ROUTE_REACH = 5
     PRINT = 7
+    SOURCE_DIAGNOSTICS = 11
 
 
 class ReachMode(StrEnum):
@@ -270,7 +271,7 @@ class PrintLocation:
 
 @dataclass(frozen=True, slots=True)
 class ControlStep:
-    code: ControlCode | Literal[1, 2, 3, 4, 5, 7]
+    code: ControlCode | Literal[1, 2, 3, 4, 5, 7, 11]
     subarea_id: str | None = None
     reach_id: str | None = None
     print_id: str | None = None
@@ -303,6 +304,24 @@ class CatchmentModel:
         validate_catchment(self)
 
 
+def _validate_code11_layout(model: CatchmentModel) -> None:
+    """Only the observed first-source, single-terminal-print diagnostic layout is admitted."""
+    codes = tuple(step.code for step in model.controls)
+    if 11 not in codes:
+        return
+    if (
+        model.reach_mode != "implicit_natural"
+        or codes[0] != 11
+        or codes.count(11) != 1
+        or codes.count(7) != 1
+        or codes[-1] != 7
+    ):
+        message = (
+            "Code 11 requires one first-source diagnostic control and one terminal code-7 in implicit natural mode"
+        )
+        raise ValueError(message)
+
+
 def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit stack-machine validation
     """Validate the supported stack machine and one-to-one source/reach identity order."""
     if not model.title.strip() or not model.subareas or not model.reaches or not model.controls:
@@ -314,6 +333,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     if model.reach_mode not in ("implicit_natural", "explicit_reach_types"):
         message = "Unknown reach encoding mode"
         raise ValueError(message)
+    _validate_code11_layout(model)
     if any(step.code == 2 for step in model.controls) and model.reach_mode != "explicit_reach_types":
         message = "Source control code 2 requires an explicitly characterised reach encoding"
         raise ValueError(message)
@@ -337,7 +357,7 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
     running: set[str] | None = None
     stack: list[set[str]] = []
     for step in model.controls:
-        if step.code in (1, 2):
+        if step.code in (1, 2, 11):
             if (
                 area_cursor >= len(areas)
                 or reach_cursor >= len(reaches)
@@ -803,7 +823,7 @@ def _reach(raw: object) -> Reach:
 def _control(raw: object) -> ControlStep:
     record = _object(raw, {"code", "subarea_id", "reach_id", "print_id", "label"})
     code = _integer_field(record, "code")
-    if code not in (1, 2, 3, 4, 5, 7):
+    if code not in (1, 2, 3, 4, 5, 7, 11):
         message = "Unrecognised RORB computational control code"
         raise ValueError(message)
     return ControlStep(

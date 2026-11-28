@@ -19,7 +19,7 @@ from typing import Any, cast
 
 from runoff_routing.engine_execution import run_engine_project
 from runoff_routing.engine_types import EngineOutcome, EngineSelection
-from runoff_routing.project_json import EmbeddedRun, Project, project_to_json
+from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, project_to_json
 from runoff_routing.regression_dataset import compare_fresh_cmd_case
 from runoff_routing.rorb_codec import RorbFormatError, parse_catg, parse_cmd_par, parse_design_stm
 from runoff_routing.rorb_model import RunModel, to_json
@@ -225,7 +225,83 @@ def _required_case_results(
     return failures, incomplete
 
 
-def main(required_cases: tuple[str, ...] = ()) -> int:
+def _code11_probe(register: dict[str, Any]) -> dict[str, Any]:
+    """Separate diagnostic evidence; retain the existing 50-case admission population."""
+    matches = [item for item in register["cases"] if item["case_id"] == "fig67-code11"]
+    if len(matches) != 1:
+        return {"gate": "fail", "reason": "Missing or duplicate retained code-11 case"}
+    case = matches[0]
+    with TemporaryDirectory(prefix="cmd-code11-probe-") as directory:
+        root = Path(directory)
+        sources: list[SourceFile] = []
+        for suffix in (".par", ".catg", ".stm"):
+            raw = _original_source(case, suffix)
+            name = f"input{suffix}"
+            (root / name).write_bytes(raw)
+            sources.append(SourceFile(name, hashlib.sha256(raw).hexdigest()))
+        project = Project(
+            "fig67-code11",
+            "legacy-rorb",
+            LegacyRunFiles(sources[0], sources[1], sources[2]),
+            engine=EngineSelection.for_engine("python-cmd"),
+        )
+        path = root / "source.json"
+        path.write_bytes(project_to_json(project).encode("utf-8"))
+        outcome = run_engine_project(path)
+    if outcome.status != "computed_unvalidated":
+        return {"gate": "fail", "status": outcome.status, "reason": str(outcome.diagnostics)}
+    comparison = compare_fresh_cmd_case(ROOT, case, outcome)
+    reporting = comparison.get("fresh_reporting", {}).get("per_column", {})
+    expected = {
+        f"Hyd{ordinal:03d}": {
+            "peak_magnitude": "pass",
+            "peak_time": "incomplete" if ordinal == 1 else "pass",
+            "native_reported_volume": "pass",
+        }
+        for ordinal in range(1, 6)
+    }
+    observed = {
+        column: {name: field["verdict"] for name, field in item["metrics"].items()}
+        for column, item in reporting.items()
+    }
+    passed = (
+        comparison["classification"] == "pass"
+        and comparison.get("checked_ordinates") == 1505
+        and observed == expected
+        and reporting["Hyd001"]["metrics"]["peak_time"]["reason"] == "zero_flow_time_undefined"
+    )
+    return {
+        "gate": "pass" if passed else "fail",
+        "case_id": case["case_id"],
+        "coverage": case["coverage"],
+        "status": outcome.status,
+        "model_sha256": outcome.model_sha256,
+        "project_sha256": outcome.project_sha256,
+        "implementation_revision": outcome.implementation_revision,
+        "source_file_hashes": outcome.source_file_hashes,
+        "control_order": outcome.control_order,
+        "model_elapsed_hours": outcome.physical_time_hours,
+        "diagnostic_flows": [
+            {
+                "series_id": item.series_id,
+                "quantity_kind": item.quantity_kind,
+                "control_index_one_based": item.control_index_one_based,
+                "subarea_id": item.subarea_id,
+                "reach_id": item.reach_id,
+                "units": item.units,
+                "q_hex": [value.hex() for value in item.flow_m3_s],
+            }
+            for item in outcome.diagnostic_flows
+        ],
+        "outlets": [
+            {"print_id": item.print_id, "q_hex": [value.hex() for value in item.discharge_m3_s]}
+            for item in outcome.hydrographs
+        ],
+        "comparison": comparison,
+    }
+
+
+def main(required_cases: tuple[str, ...] = (), *, include_code11: bool = False) -> int:
     """Run the existing CMD comparator with optional exact required-case coverage."""
     register = json.loads(REGISTER.read_text(encoding="utf-8"))
     cases = [item for item in register["cases"] if "cmd-eligible" in item["sets"]]
@@ -238,6 +314,8 @@ def main(required_cases: tuple[str, ...] = ()) -> int:
         print("CMD probe: --require-case must name distinct registered CMD-eligible case IDs", file=sys.stderr)
         return 2
     outcomes = [_one(case) for case in cases]
+    diagnostic = _code11_probe(register) if include_code11 else None
+    diagnostic_ok = diagnostic is None or diagnostic["gate"] == "pass"
     counts = dict(sorted(Counter(str(item["status"]) for item in outcomes).items()))
     retained = [case for case in cases if "cmd-reviewed" in case["sets"] or "timestep" in case["sets"]]
     expected = {case["case_id"]: case["clock"]["row_count"] for case in retained}
@@ -286,12 +364,13 @@ def main(required_cases: tuple[str, ...] = ()) -> int:
                 "calculation_source": "actual installed public python-cmd backend",
                 "native_processes": 0,
                 "results": outcomes,
+                "retained_code11_diagnostic": diagnostic,
             },
             sort_keys=True,
             allow_nan=False,
         )
     )
-    return 0 if scalar_gate_ok and not nonretained_failures and not required_failures else 1
+    return 0 if scalar_gate_ok and not nonretained_failures and not required_failures and diagnostic_ok else 1
 
 
 if __name__ == "__main__":
@@ -304,4 +383,4 @@ if __name__ == "__main__":
         help="Require the named original case to compute complete printed Q with pass/incomplete scalar evidence",
     )
     arguments = parser.parse_args()
-    sys.exit(main(tuple(arguments.require_case)))
+    sys.exit(main(tuple(arguments.require_case), include_code11=True))
