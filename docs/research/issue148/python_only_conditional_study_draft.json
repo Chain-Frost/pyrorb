@@ -2,7 +2,7 @@
   "format": "pyrorb-mc148-python-only-study-design-draft/1",
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
-  "owner_direction": "Current Prompt B: read-only source/loss/scenario qualification and proposal for owner decision; no native, routing, sampling, MC or timing. Section8 replay is historical; section9 preserves simulation_authorised=false.",
+  "owner_direction": "Desk review of private source custody, literature and explicit uncalibrated numerical scope. The specific dimensional pair is accepted for preparation. Protocol freeze and execution remain pending.",
   "repository_base": "ef5c985a607545aee9f58d2a0f4f5712c410e46d",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
@@ -43,15 +43,15 @@
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
-    "loss_basis": "Recovered model-directory documents reviewed: no adopted storm median IL/CL or observed calibration established. A separate literature-anchored dimensional candidate has been proposed for an expressly uncalibrated constructed numerical law; exact values/rationale in private evidence record, no adopted losses. Do not infer values from historical deterministic settings or Data Hub NaNs.",
-    "loss_factor_table": "Independent primary-source desk review supports already-corrected ARR Book5 v4.2 Table5.3.13/Figure5.3.26 interpretation, reversed to nonexceedance; model applicability and dimensional scale unadmitted.",
-    "dependence": "explicitly proposed independent empirical loss conditional on rainfall and eligible TP; not approved",
+    "loss_basis": "Owner accepted the external dimensional pair for a constructed numerical experiment. The reviewed model documents establish neither observed calibration nor adopted losses. Actual loss fields remain null.",
+    "loss_factor_table": "Reviewed ARR Book 5 v4.2 Table 5.3.13: eleven reversed IL factors with median one. The source also describes a CL distribution; constant CL is a stipulated simplification.",
+    "dependence": "Proposed mutual independence of rainfall coordinate, IL-factor and TP category, with fixed CL.",
     "preburst_proposal": "none/PB=0 under supported bridge as conditional numerical assumption only, not adopted hydrology; D full-domain guard conditional, not actual compatibility certificate; no subtraction/clamp or climate assumption without decision",
     "arf": "applicable pinned ARR2019 region/area formula once on gross point depth, no extensions; #238 qualified bounded method, not candidate physical/source admission",
     "permissions": null,
     "calibration_or_limited_scope_decision": null,
     "feature_site_review": null,
-    "baseline_ifd_proposal": "unadjusted authenticated parent, no uplift: new numerical scenario pending owner and independent source review, not historic anchor replay; adjusted alternative requires separate climate/loss policy approval, never double uplift",
+    "baseline_ifd_proposal": "Independently verified unadjusted parent in local private custody. Proposed uniform raw point rainfall, no uplift, one common-area ARF, limited interval. Source-use permission and policy freeze pending.",
     "baseline_ifd_selection": null,
     "source_qualification_continuation": {
       "receipt": "B148-SOURCE-SCENARIO-20261128",
@@ -80,15 +80,17 @@
       "status": "owner_approved_for_preparation_not_admitted",
       "basis": "External published RORB Monte Carlo/flood-frequency reconciliation study; dimensional anchor for a constructed law only, not a catchment-specific calibrated transfer.",
       "owner_direction": "Owner accepted the recommended dimensional pair for numerical research only, subject to independent source verification and scientific review. Private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128 records exact values and basis. Do not request the same pair again; other source/policy and activation gates remain.",
-      "source_review": "Publisher-hosted indexed section 6.8.1, printed page 50 rechecked; direct PDF fetch HTTP 403, original-byte/page-image and independent scientific admission pending.",
-      "private_record": "See private custody PR92 continuation and redacted #245 receipt.",
-      "planning_screen": "Conditional analytical no-excess and positive-excess witnesses under conservative source/ARF envelope and nominal continuous independent law; no routing or sampler execution. Not a certified implemented finite-law bound or admission.",
+      "source_review": "Original authority-hosted report independently retrieved and rendered. Sections 5.1, 5.6.3, 6.7.1, 6.8.1 and Table 6-4 confirm a dimensioned storm IL and CL rate from another catchment with gauge frequency reconciliation, variable preburst and a local exception. The report does not identify the storm IL as an empirical event median. ARR Book 5 v4.2 factor knots and timestep/routing qualifications independently checked.",
+      "private_record": "Owner decision B148-CONSTRUCTED-LOSS-OWNER-20261128 and independent original-page receipt B245-LITERATURE-INDEPENDENT-20261128; exact values and donor identity held privately.",
+      "planning_screen": "Independent rational recheck on six actual raw 24 h anchors corroborates the IL moments, CL capacity, full-domain conservative ARF envelope and strictly positive lower bounds for both zero and positive rainfall excess under the proposed continuous independent law. Finite sampled and routed outcomes remain unverified.",
       "adopted": false
     },
     "raw_parent_custody": {
-      "status": "exact_identity_retained_bytes_not_in_selected_private_transfer",
-      "issue": "https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232983764",
-      "requirement": "Retrieve only the authenticated original object from the existing authorised archive, hash/size verify privately and reconcile raw/adjusted lineage. No replacement download or numerical reconstruction."
+      "status": "verified_original_in_local_private_custody",
+      "receipt": "B245-RAW-PARENT-INDEPENDENT-20261128",
+      "issue": "https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7233144404",
+      "verified": "Raw and historical adjusted objects matched recorded size, CRC, SHA-256 and Git blob; six 24-hour anchors matched exact uplift; archived PAR selects adjusted dependency. Raw bytes are retained locally.",
+      "source_admitted": false
     }
   },
   "probability": {
@@ -514,7 +516,7 @@
       "effective_count_approx": 366265.9486388616,
       "hoeffding_radius_K256_alpha002_approx": 0.0037224355572404388,
       "split_hoeffding_radius_approx": 0.0038474356768761317,
-      "split_KL_limit_approx": 0.00004106116317108456,
+      "split_KL_limit_approx": 4.106116317108456e-05,
       "roots_planned": 341,
       "root_collision_union_upper_approx": 3.1425599969492346e-15,
       "roots_generated": 0,
@@ -550,7 +552,7 @@
       "equal_z_50_approx_conditional_weight_min": 0.0026717469,
       "conditional_weight_max": 0.0378670935,
       "reference_n_h": 10000,
-      "S_approx": 0.00000273025654,
+      "S_approx": 2.73025654e-06,
       "effective_n_approx": 366265.95,
       "K_max": 256,
       "epsilon_approx": 0.00372244,
@@ -740,9 +742,9 @@
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "Owner-approved constructed dimensional candidate for preparation only; exact raw parent, independent external anchor/scientific and rights review, joint law, parameter-only derivative, feature/site/clock/horizon and numerical margins remain pending.",
+    "policy": "Raw-parent custody independently verified. Require source-use/derivative/disclosure rights, acceptance of the complete law, parameter-only derivative and supported features, paired prints, clock/horizon and numerical margins/caps.",
     "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
-    "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
+    "manifests": "Before freeze, independently audit actual source, weight, root, reference, confirmation, confidence allocation and synthetic qualification manifests against the approved protocol.",
     "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
     "preflight": "existing checker on local admitted declaration only; previous exit 1 unchanged; five lanes distinct; no execution approval even if external review required"
   },
@@ -776,7 +778,7 @@
     "fixed_cl_mm_per_h": null,
     "loss_source_sha256": null,
     "dimensional_parameter_basis": null,
-    "factor_law": "published corrected standardised IL table, reverse to nonexceedance, piecewise-linear inverse and scale once by subsequently approved median; one fixed approved CL",
+    "factor_law": "Reverse the corrected standardised IL table to nonexceedance, interpolate the inverse piecewise linearly and scale once by the owner-accepted candidate median. Fixed candidate CL applies at the proposed one-hour timestep.",
     "TP_law": "ten source-bound structurally qualified 24h areal members at proposed0.1 each; geographic/borrowing applicability pending",
     "dependence": "mutual independence of rainfall coordinate, IL-factor and TP category is proposed constructed assumption, not hydrological finding",
     "transformations": "uniform forcing; applicable ARR2019 region/common-area ARF once on gross raw point depth; PB0 as constructed boundary; no climate scaling, clamp/redraw or source substitution",
@@ -785,6 +787,27 @@
     "owner_dimensional_values_and_basis": "Specific dimensional pair accepted for preparation only, subject to independent scientific/source verification; exact private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128. Actual admitted loss fields remain null.",
     "owner_law_and_boundary_approval": null,
     "eligibility_guard": "No original physical gate cleared. Any narrower lawful numerical criterion requires explicit owner/independent review; no checker weakening.",
-    "record": "../../work/2026-11-28-issue148-python-only-conditional-study.md#9-prompt-b-source-loss-qualification-and-uncalibrated-proposal-28-november-2026"
+    "record": "../../work/2026-11-28-issue148-python-only-conditional-study.md#13-independent-desk-review-and-decisions-before-protocol-freeze",
+    "independent_scientific_review": {
+      "receipt": "E245-CONDITIONAL-LAW-DESK-20261128",
+      "scope": "Conditional numerical reliability of one fixed case under the stated law; scientific desk assessment only.",
+      "rainfall_and_loss": "Actual raw-parent anchors, nominal continuous-law IL moments, CL capacity, full-domain ARF envelope and two positive-probability rainfall-excess witnesses checked analytically.",
+      "required_model_binding": "Bind the archived routing tokens and new CL-only derivative to the selected engine, preserve sampled IL override and source order, both paired print IDs, units, pervious feature support, clock and initial state.",
+      "horizon": "Positive terminal archived flows. Select a finite-window peak (candidate 200 h) or justify complete-event capture independently.",
+      "owner_permissions": [
+        "internal use of named sources",
+        "creation and retention of model derivative and outputs",
+        "record private-only or specify audiences and permitted redacted disclosures; permission for external disclosure is required only if disclosure is proposed"
+      ],
+      "scientific_decisions": [
+        "constructed spatial, loss, temporal-pattern and dependence law",
+        "paired observables and finite-window or complete-event definition",
+        "site-specific absolute floors, statistical criteria and cost/stop limits",
+        "independent audit of the seven actual manifests"
+      ],
+      "protocol_frozen": false,
+      "simulation_authorised": false,
+      "source_weight_manifest_receipt": "B245-DESK-MANIFESTS-20261128"
+    }
   }
 }

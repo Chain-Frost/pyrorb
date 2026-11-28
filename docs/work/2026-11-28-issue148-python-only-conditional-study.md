@@ -1,6 +1,6 @@
 # #148 — Python-only restricted-domain study preparation (28 November 2026)
 
-**Disposition: narrowed preparation; archived candidate selected but scientific admission blocked; proposed, not frozen; `simulation_authorised=false`.** The owner directed proceeding with the restricted-domain Python-only preparation after the 28 November status/recommendation. This is not authorisation to execute even intake, approve loss values, relax physical-source eligibility or publish originals. No physical, native or synthetic simulation, timing pilot or product code changes.
+**Current disposition.** The owner accepted a dimensional loss pair for preparation of an explicitly uncalibrated numerical study. The recovered raw rainfall, external loss reference and conditional law are assessed in sections 11–13. The protocol remains unfrozen. Physical admission and execution remain blocked (`simulation_authorised=false`). Sections 1–10 retain the dated evidence and decisions that preceded this review.
 
 ## 1. Reconciliation and decision boundary
 
@@ -269,45 +269,44 @@ merge or release. `simulation_authorised=false`; #148/#9 stay open.
 
 ## 11. Literature-anchored constructed-loss candidate — 28 November 2026
 
-Owner directed proceeding with preparation of the explicitly uncalibrated
-numerical-reliability study. The direction permits development of a concrete
-candidate; it does not establish particular dimensional values, source rights,
-physical calibration or independent scientific admission. Sections 9–10 remain
-the historical evidence boundary.
+The owner accepted a specific median storm initial loss (IL) and fixed
+continuing loss (CL) for preparation of this uncalibrated study. The
+adopted catchment losses and their source hash remain null. Sections 9–10
+record the earlier document findings and section 12 records the owner decision.
 
-A separate private decision record now proposes a specific storm-IL median
-scale and fixed CL, anchored to a publicly reported RORB Monte Carlo study
-with flood-frequency reconciliation in another catchment. This is a
-dimensionally motivated **constructed numerical choice**, not a transfer of
-calibrated losses to M04, a claim that the referenced loss is the actual
-M04 median, or reproduction of the other study's preburst treatment. Indexed
-publisher PDF text was checked; original-byte and page-image retrieval was
-blocked by HTTP 403. Retain source verification and independent review as
-requirements before formal adoption. No historical deterministic burst-loss
-substitution, NaN filling, or reverse inference of climate-adjusted losses.
+**External dimensional evidence.** The independent reviewer retrieved the
+authority-hosted original report and examined the rendered pages. Sections
+6.7.1 and 6.8.1 (pp. 49–50) distinguish sampled storm IL and temporal patterns
+from the adopted storm IL (mm) and CL rate (mm/h). Section 6.8.1.1/Table 6-4
+(p. 51) compares simulated and fitted gauge quantiles. Section 5.1 (p. 25)
+describes probability-neutral empirical loss estimation. Section 5.6.3 (p. 33)
+documents low annual maxima censored from the frequency analysis and a rarity
+limit on the comparison used to validate the losses. The report uses
+duration- and probability-dependent preburst and describes a local IL exception.
 
-Under the proposed one-hour, no-preburst, fixed-CL law, scale the previously
-reviewed ARR factor inverse once by the proposed median. The separate
-parameter-only model derivative must bind the new continuing loss explicitly
-while retaining the archived source graph and independently qualified
-routing parameters; do not modify or misrepresent the original model. Exact
-piecewise-linear moments and a static, conservative rainfall/loss envelope
-calculation were independently checked using rational arithmetic. The
-conditional planning screen admits both a no-excess and a positive-excess
-witness under its stated continuous-law, source lineage and ARF assumptions.
-It does not verify finite midpoint sampling, actual routed peak behavior,
-nonzero physical runoff, or adequacy of a 1,000-event run. Recheck against
-authenticated raw bytes and the final approved law before activation. The
-exact candidate, source locator, calculations and limitations are retained
-privately to avoid disclosure of the restricted source evidence.
+The external study supports the dimensions and the reported pair in its own
+setting. It provides no observed event-loss median for the archived model.
+Scaling a standardised inverse distribution by that storm IL, holding CL
+fixed and setting preburst to zero define a different experiment. Historical
+deterministic burst losses and missing Data Hub values supply no additional
+dimensional basis. Private receipt `B245-LITERATURE-INDEPENDENT-20261128` binds the exact
+values, edition, URL, source bytes and rendered pages.
 
-The selected private custody transfer has the historical adjusted IFD but
-only the identity of the distinct unadjusted parent. Exact Git blob retrieval
-returned 404. [The finite #245 addendum](https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232983764)
-requires recovery of that one already identified original object from the
-existing authorised archive and verification against its recorded SHA-256
-and size. No repeat calibration-document search, coordinate re-download,
-inverse climate transformation or reconstructed replacement is authorised.
+For the proposed one-hour law, the model derivative must carry the new fixed
+CL and retain the archived graph and original routing tokens. The section 13
+analytical check used the recovered raw values to revisit the earlier
+conservative rainfall-excess argument. Changing the proposed law requires
+review of that argument before freeze.
+
+**Raw rainfall custody complete.** The selected private transfer contained the
+adjusted historical dependency and the raw parent's identity. A separate reviewer
+subsequently matched the local read-only raw copy and both archive objects to the
+pinned private record by size, archive CRC, SHA-256 and Git blob identity. The
+six 24 h probability columns and source values reconcile exactly under one
+nonunit historical multiplier. The saved PAR names the adjusted dependency.
+The unadjusted parent is available in local custody for the proposed baseline.
+Several climate pathways share the verified multiplier.
+[Independent #245 disposition](https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7233144404).
 
 The reviewed heads of #243, #244 and #246 had successful hosted Windows
 quality and exact-head technical review before this amendment. The new
@@ -329,10 +328,8 @@ records exact candidate values, source locator and factor-law/parameter-only
 derivative requirements. Do not request the same pair again. This is not
 calibrated loss adoption, physical-population admission, rights permission,
 margin/cap adoption or activation. All actual admitted loss values and hash,
-scenario and other admission fields remain null. Publisher-indexed section
-6.8.1, printed page 50 was checked again; direct PDF retrieval remains HTTP
-403, so original-byte and page-image verification are not claimed. The exact
-raw-parent retrieval in #245 remains outstanding.
+scenario and other admission fields remain null. Section 11 records the
+later independent original-page review and the completed raw-parent custody check.
 
 The existing sidecar now contains a deterministic, nonexecutable **candidate
 50-stratum geometry**. CPython 3.13.5 statistics.NormalDist gives zmax =
@@ -371,7 +368,70 @@ evidence. Candidate aggregation and confidence methods are implemented in
 research #246, not adopted. No repeat experiment, product sampler, roots,
 physical/native launch, timing, preflight, merge or release. Reconciled main
 `ef5c985a607545aee9f58d2a0f4f5712c410e46d`, preserving concurrent reader and adapter changes.
-Next: exact raw-parent bytes, independent scientific/source/rights and
-parameter-only derivative review, remaining law/horizon/margin/cap decisions,
-actual seven-manifest audit, staged activation only after gates.
+The current protocol-freeze decisions follow in section 13. The 50-stratum
+geometry remains a planning record.
 `simulation_authorised=false`; #148/#228/#9 remain open.
+
+## 13. Independent desk review and decisions before protocol freeze
+
+**Scientific disposition.** The proposed experiment can answer how reliably a
+1,000-event sample reproduces the conditional numerical response of one fixed
+model under one declared input law. Both reporting locations are outputs of
+the same event and share upstream forcing. Keep their paired results. The
+rainfall-coordinate interval [0.01, 0.50] has mass 0.49. Its rare tail (0.01)
+and frequent tail (0.50) remain unresolved. Calibration, annual flood AEP,
+physical-site predictions and general 1,000-event adequacy remain open.
+
+| Component | Desk finding | Decision or evidence needed to freeze |
+| --- | --- | --- |
+| Rainfall and areal reduction | The six verified 24 h raw point depths define a reproducible unadjusted baseline. The archived PAR names the adjusted file. A single uniform storm and a single common-area ARR2019 reduction fix the spatial experiment. | Bind the immutable raw parent, units, any parsing-only derivative, six knots, normal-coordinate interpolation, common area and regional coefficients. Approve the interval, uniform forcing, one reduction and zero climate uplift. |
+| Initial and continuing loss | Scale the corrected ARR Book 5 v4.2 Table 5.3.13 factors once by the owner-accepted dimensional scale. Reverse exceedance to nonexceedance and linearly interpolate the inverse between knots. Holding CL constant at its stated hourly rate fixes a source of variation. | Accept this complete loss law at the one-hour timestep, including its finite sampling convention. Preserve pervious IL/CL semantics and the sampled event IL override. Keep adopted catchment losses and source hash null. |
+| Preburst | With PB=0, effective burst IL equals the sampled complete-storm IL for every draw. This removes negative effective IL by construction. It represents a declared antecedent condition. | Explicitly adopt PB=0 for this numerical question. A nonzero policy changes the population and requires a full-domain subtraction/rejection assessment. |
+| Temporal patterns | Ten structurally complete 24 h areal members provide alternative storm timings. Equal member weights and independent rainfall, IL-factor and pattern draws specify a reproducible joint distribution. Evidence for natural event frequencies or hydrological independence is absent. | Bind source IDs, order, area bin, increments, timestep and joint draw rule. Authorise this fixed pool across the full interval. A geographic or borrowing claim needs independent evidence. |
+| Routing and outputs | Archived fixed kc and m can serve as fixed computational settings. The bridge reads CL from the model and checks the fixed parameters. Both print aliases share eleven upstream sources. Archived end flows are positive. | Hash and diff a separate parameter-only model derivative with just the fixed CL change. Bind original topology/order, initial state, feature support, engine profile, sampled IL override, both print IDs and units. Choose either a finite-window peak or a separately justified peak-completeness criterion. For the candidate 200 h window, specify 24 h rain plus 176 dry hourly steps, 201 inclusive samples, boundary conventions, exact-zero and incomplete-result handling. |
+| Reliability decision | Completed #243 and #246 evidence and section 12 geometry remain available for independent inference review. The analytical rainfall-excess check provides no routed peak or empirical power estimate. | Freeze site-specific positive absolute floors in m³/s, relative peak and absolute CDF/zero-mass margins, reliability target, simultaneous confidence/error allocation, screen/grid and reference method, power criteria and censoring rules. Decide cohort counts and resource caps before seeing study outcomes. |
+
+**Primary guidance.** ARR Book 5 v4.2, pp. 69–71, gives the standardised
+IL factors and a separate CL distribution and discusses fixed-CL practice.
+Pages 73–74 discuss timestep effects and p. 83 discusses dependence between
+IL and routing parameters. Those passages support the factor transcription
+and help explain the fixed-CL simplification. They leave the joint law and
+site application to the protocol decision. The external comparator used a censored annual-maxima record and shows weaker
+agreement at the frequent end. It supplies context for a dimensional choice. It supplies
+no observations at the two study prints. [ARR Book 5 v4.2](https://www.arr-software.org/pdfs/ARR_190514_Book5_V4.2.pdf).
+
+**Analytical check on the recovered input.** An independent reviewer used the
+raw six-anchor row, the retained area/coefficient set and the proposed loss law.
+Exact arithmetic corroborated the piecewise-linear IL moments, the fixed-CL
+upper capacity and the conservative ARF envelope over the entire interval.
+Sufficient conditions for both zero and positive total rainfall excess have
+strictly positive probability under the nominal continuous independent law.
+This establishes a property of the inputs. The finite sampled law, individual
+routed peaks, physical runoff probabilities and achieved precision were outside
+that calculation. Private receipt `E245-CONDITIONAL-LAW-DESK-20261128`.
+
+**Source owner and scientific reviewer.** Record who may use the archived graph,
+rainfall, temporal patterns, metadata and reporting locations for this private
+study, create and retain a CL-only derivative and outputs, and disclose which
+redacted results to which audiences. A limited numerical protocol can describe
+computational print IDs and stipulated spatial inputs. Physical site/asset/CRS
+identity, regional applicability and observed calibration require independent
+evidence for any wider interpretation. Keep permission to use, permission to
+disclose and later authority to execute as separate decisions. An explicit
+private-only disposition is sufficient for this permission decision if it
+covers the required internal use, derivative and retained outputs. The
+external report restricts copying. Any reproduction of its material requires
+the permission identified in the report.
+
+Private manifest amendment `B245-DESK-MANIFESTS-20261128` preserves the
+previous and updated source and weight records and binds all three reviews.
+Actual admission fields retain their prior values.
+
+Before freezing, the protocol owner and independent reviewer must bind the
+agreed rules and evidence in the seven actual manifests (sources, weights,
+roots, reference, confirmation, confidence allocation and synthetic qualification).
+Keep the proposed 830,250 attempts, 42 h ceiling and stage budgets as proposals
+until accepted. Agree stage-specific stop rules and preserve unknown mass for
+failed or unstarted events. The owner has already accepted the dimensional pair
+for preparation. Formal freeze and any subsequent stage launch require separate
+decisions. `simulation_authorised=false`. #148, #228 and #9 remain open.
