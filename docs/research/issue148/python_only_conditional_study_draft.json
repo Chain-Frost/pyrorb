@@ -20,7 +20,7 @@
     ],
     "actual_site_ids": null,
     "source_manifest_sha256": null,
-    "physical_calibration": "unverified",
+    "physical_calibration": "Specific observed-flood calibration records unavailable. Historical models have adopted whole-storm loss inputs. Applicability and statistical interpretation for the proposed study remain unestablished.",
     "uncalibrated_case_route": "requires independent applicability decision; no engineering or physical calibration claim",
     "engine_profile": "python-cmd/cmd-6.44",
     "sampling_policy": "monte-carlo-statistics/1",
@@ -43,10 +43,10 @@
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
-    "loss_basis": "Owner accepted the external dimensional pair for a constructed numerical experiment. The reviewed model documents establish neither observed calibration nor adopted losses. Actual loss fields remain null.",
+    "loss_basis": "The owner confirms adopted historical model storm losses, with whole-storm IL effective from storm onset including preburst. The two reviewed documents establish neither a statistical median nor historical preburst/climate implementation. The accepted external dimensional pair is a separate constructed choice. Study admission values remain null.",
     "loss_factor_table": "Reviewed ARR Book 5 v4.2 Table 5.3.13: eleven reversed IL factors with median one. The source also describes a CL distribution; constant CL is a stipulated simplification.",
     "dependence": "Proposed mutual independence of rainfall coordinate, IL-factor and TP category, with fixed CL.",
-    "preburst_proposal": "none/PB=0 under supported bridge as conditional numerical assumption only, not adopted hydrology; D full-domain guard conditional, not actual compatibility certificate; no subtraction/clamp or climate assumption without decision",
+    "preburst_proposal": "PB=0 proposed for the constructed law. Whole-storm IL includes preburst; with PB=0 the full sampled IL is available at burst onset. A nonzero policy must account for preburst once, carry forward remaining IL and qualify the full-domain rejection/subtraction rule.",
     "arf": "applicable pinned ARR2019 region/area formula once on gross point depth, no extensions; #238 qualified bounded method, not candidate physical/source admission",
     "permissions": null,
     "calibration_or_limited_scope_decision": null,
@@ -807,7 +807,8 @@
       ],
       "protocol_frozen": false,
       "simulation_authorised": false,
-      "source_weight_manifest_receipt": "B245-DESK-MANIFESTS-20261128"
+      "source_weight_manifest_receipt": "B245-DESK-MANIFESTS-20261128",
+      "owner_clarification": "https://github.com/Chain-Frost/pyrorb/pull/244#issuecomment-7233198601"
     }
   }
 }

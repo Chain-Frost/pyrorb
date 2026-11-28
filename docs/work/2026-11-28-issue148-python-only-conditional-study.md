@@ -271,8 +271,16 @@ merge or release. `simulation_authorised=false`; #148/#9 stay open.
 
 The owner accepted a specific median storm initial loss (IL) and fixed
 continuing loss (CL) for preparation of this uncalibrated study. The
-adopted catchment losses and their source hash remain null. Sections 9–10
+physical-admission loss fields and their source hash remain null. Sections 9–10
 record the earlier document findings and section 12 records the owner decision.
+
+The owner clarified that the historical models contain adopted storm-loss
+inputs. Whole-storm IL starts at storm onset and includes preburst. The
+specific observed-flood calibration records are unavailable. The structural
+documents do not establish a statistical median or how the historical run
+applied preburst or climate adjustments. Preserve the historical inputs,
+constructed pair and admission fields as separate records.
+[Owner clarification and readiness audit](https://github.com/Chain-Frost/pyrorb/pull/244#issuecomment-7233198601).
 
 **External dimensional evidence.** The independent reviewer retrieved the
 authority-hosted original report and examined the rendered pages. Sections
@@ -386,9 +394,9 @@ physical-site predictions and general 1,000-event adequacy remain open.
 | --- | --- | --- |
 | Rainfall and areal reduction | The six verified 24 h raw point depths define a reproducible unadjusted baseline. The archived PAR names the adjusted file. A single uniform storm and a single common-area ARR2019 reduction fix the spatial experiment. | Bind the immutable raw parent, units, any parsing-only derivative, six knots, normal-coordinate interpolation, common area and regional coefficients. Approve the interval, uniform forcing, one reduction and zero climate uplift. |
 | Initial and continuing loss | Scale the corrected ARR Book 5 v4.2 Table 5.3.13 factors once by the owner-accepted dimensional scale. Reverse exceedance to nonexceedance and linearly interpolate the inverse between knots. Holding CL constant at its stated hourly rate fixes a source of variation. | Accept this complete loss law at the one-hour timestep, including its finite sampling convention. Preserve pervious IL/CL semantics and the sampled event IL override. Keep adopted catchment losses and source hash null. |
-| Preburst | With PB=0, effective burst IL equals the sampled complete-storm IL for every draw. This removes negative effective IL by construction. It represents a declared antecedent condition. | Explicitly adopt PB=0 for this numerical question. A nonzero policy changes the population and requires a full-domain subtraction/rejection assessment. |
+| Preburst | With PB=0, effective burst IL equals the sampled complete-storm IL for every draw. This removes negative effective IL by construction. It represents a declared antecedent condition. | Explicitly adopt PB=0 for this numerical question. For a nonzero policy, account for preburst once from storm onset, carry the remaining IL into the burst, and assess subtraction/rejection over the full domain. |
 | Temporal patterns | Ten structurally complete 24 h areal members provide alternative storm timings. Equal member weights and independent rainfall, IL-factor and pattern draws specify a reproducible joint distribution. Evidence for natural event frequencies or hydrological independence is absent. | Bind source IDs, order, area bin, increments, timestep and joint draw rule. Authorise this fixed pool across the full interval. A geographic or borrowing claim needs independent evidence. |
-| Routing and outputs | Archived fixed kc and m can serve as fixed computational settings. The bridge reads CL from the model and checks the fixed parameters. Both print aliases share eleven upstream sources. Archived end flows are positive. | Hash and diff a separate parameter-only model derivative with just the fixed CL change. Bind original topology/order, initial state, feature support, engine profile, sampled IL override, both print IDs and units. Choose either a finite-window peak or a separately justified peak-completeness criterion. For the candidate 200 h window, specify 24 h rain plus 176 dry hourly steps, 201 inclusive samples, boundary conventions, exact-zero and incomplete-result handling. |
+| Routing and outputs | Archived fixed kc and m can serve as fixed computational settings. The bridge reads CL from the model and checks the fixed parameters. Both print aliases share eleven upstream sources. Archived end flows are positive. | Hash and diff a separate parameter-only model derivative with just the fixed CL change. Bind original topology/order, initial state, feature support, exact engine source and installed artifact, sampled IL override, both print IDs and units. Choose either a finite-window peak or a separately justified peak-completeness criterion. For the candidate 200 h window, specify 24 h rain plus 176 dry hourly steps, 201 inclusive samples, boundary conventions, exact-zero and incomplete-result handling. |
 | Reliability decision | Completed #243 and #246 evidence and section 12 geometry remain available for independent inference review. The analytical rainfall-excess check provides no routed peak or empirical power estimate. | Freeze site-specific positive absolute floors in m³/s, relative peak and absolute CDF/zero-mass margins, reliability target, simultaneous confidence/error allocation, screen/grid and reference method, power criteria and censoring rules. Decide cohort counts and resource caps before seeing study outcomes. |
 
 **Primary guidance.** ARR Book 5 v4.2, pp. 69–71, gives the standardised
