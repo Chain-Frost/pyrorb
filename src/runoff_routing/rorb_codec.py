@@ -448,12 +448,15 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
                 raise _problem(message, line_no)
             end_index = cursor + 1
             break
-        if code not in ((1, 2, 3, 4, 5, 7) if explicit_types else (1, 3, 4, 5, 7)):
+        if code == 11 and (explicit_types or cursor != 1):
+            message = "Code 11 is characterised only as the first implicit natural source control"
+            raise _problem(message, line_no, unsupported=True)
+        if code not in ((1, 2, 3, 4, 5, 7) if explicit_types else (1, 3, 4, 5, 7, 11)):
             message = f"Uncharacterised numerical control code {code}"
             raise _problem(message, line_no, unsupported=True)
         parts = [part.strip() for part in raw.split(",", maxsplit=4 if explicit_types else 3)]
         label = ""
-        if code in (1, 2, 5):
+        if code in (1, 2, 5, 11):
             if explicit_types:
                 if len(parts) < 4:
                     message = "Explicit reach needs code, type, length and -99"
@@ -491,7 +494,7 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
                 raise _problem(message, line_no)
             reach_id = f"reach_{len(reaches) + 1}"
             reaches.append(Reach(reach_id, length, label))
-            if code in (1, 2):
+            if code in (1, 2, 11):
                 area_id = f"area_{len(names) + 1}"
                 match = _AREA_NAME.search(label)
                 names.append(match[1] if match is not None else "")
@@ -537,6 +540,9 @@ def parse_catg(data: bytes) -> ParsedDocument[CatchmentModel]:  # noqa: C901 -- 
     if end_index is None:
         message = "Missing zero control vector terminator"
         raise _problem(message)
+    if controls and controls[0].code == 11 and len(prints) != 1:
+        message = "Code 11 with multiple or missing ordinary prints is not characterised"
+        raise _problem(message, unsupported=True)
     areas, next_index, area_spans = _terminated(records, end_index, "subarea_area_km2")
     spans.extend(area_spans)
     if next_index >= len(records):
@@ -808,6 +814,9 @@ def render_catg_with_graphics(
 ) -> bytes:
     """Adapt validated ordered model records to the pinned PyRomb renderer."""
     model.__post_init__()
+    if any(step.code == 11 for step in model.controls):
+        message = "Edited code-11 CATG export is unsupported by the pinned PyRomb renderer"
+        raise CatgWriterLossError(message)
     _canonical_ids(model)
     try:
         writer = importlib.import_module("pyromb.models.rorb")
@@ -944,6 +953,9 @@ def _as_float(value: Decimal) -> float:
 def to_s2_payload(model: RunModel) -> S2Payload:
     """Convert only the explicitly supported S2 single-storm subset, without importing S2."""
     parameters, catchment, storm = model.parameters, model.catchment, model.storm
+    if any(step.code == 11 for step in catchment.controls):
+        message = "The independent Python engine does not implement code-11 diagnostic output"
+        raise ValueError(message)
     if parameters.num_isa != 1 or parameters.loss_model not in (1, 2) or not parameters.lumped_kc:
         message = "S2 adapter only accepts one-ISA, lumped, pervious IL/CL or IL/RoC inputs"
         raise ValueError(message)

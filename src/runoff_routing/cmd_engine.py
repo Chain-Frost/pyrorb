@@ -16,8 +16,8 @@ from ._cmd644.geometry import Geometry, compute_geometry
 from ._cmd644.models import Control, Event, NumberInput
 from ._cmd644.native_diagnostics import DIAGNOSTIC_PROFILE, TargetOperands, target_diagnostic
 from ._cmd644.precision import UnsupportedNumericPath, store
-from ._cmd644.reporting import CONTRACT_ID, execute
-from .engine_types import EngineHydrograph, EngineStatus
+from ._cmd644.reporting import CONTRACT_ID, CandidateResult, execute
+from .engine_types import EngineDiagnosticFlow, EngineHydrograph, EngineStatus
 from .project_json import LoadedProject
 from .rorb_model import CatchmentModel, RoutingValue, to_json
 
@@ -46,6 +46,7 @@ class CmdComputed:
     hydrographs: tuple[EngineHydrograph, ...]
     physical_time_hours: tuple[str, ...]
     diagnostics: dict[str, object]
+    diagnostic_flows: tuple[EngineDiagnosticFlow, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,6 +93,23 @@ def _number(value: Decimal) -> NumberInput:
     return NumberInput(lexeme, widened, stored)
 
 
+def _check_code11_scope(loaded: LoadedProject) -> None:
+    """Keep diagnostic execution within the observed pervious natural IL/CL profile."""
+    run = loaded.run
+    if run.catchment.controls[0].code != 11:
+        return
+    if (
+        run.parameters.loss_model != 1
+        or run.parameters.routing[0].m != Decimal("0.8")
+        or run.storm.start_increment != 0
+        or any(area.impervious_fraction != 0 for area in run.catchment.subareas)
+        or any(reach.length_km <= 0 for reach in run.catchment.reaches)
+    ):
+        _unsupported(
+            "cmd_code11_profile", "Code 11 requires the observed pervious, positive natural-reach IL/CL profile (m=0.8)"
+        )
+
+
 def _check_scope(loaded: LoadedProject) -> None:
     """Reject every input dimension not present in the qualified event path."""
 
@@ -122,10 +140,11 @@ def _check_scope(loaded: LoadedProject) -> None:
         catchment.print_locations
     ):
         _unsupported("cmd_print_sites", "Every code-7 print needs a distinct explicit physical site")
-    if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7) for step in catchment.controls):
+    if catchment.controls[-1].code != 7 or any(step.code not in (1, 2, 3, 4, 5, 7, 11) for step in catchment.controls):
         _unsupported("cmd_controls", "Unknown control order or non-terminal outlet")
     if storm.start_increment + len(storm.percentages) > storm.calculation_increments:
         _unsupported("cmd_horizon", "Event calculation horizon does not include all rainfall bins")
+    _check_code11_scope(loaded)
 
 
 def adapt_event(loaded: LoadedProject) -> Event:
@@ -136,7 +155,7 @@ def adapt_event(loaded: LoadedProject) -> Event:
     control_values: list[Control] = []
     reach_index = 0
     for step in run.catchment.controls:
-        if step.code in (1, 2, 5):
+        if step.code in (1, 2, 5, 11):
             length = run.catchment.reaches[reach_index].length_km
             reach_index += 1
         else:
@@ -167,6 +186,48 @@ def adapt_event(loaded: LoadedProject) -> Event:
         _number(parameters.losses[0].continuing),
         run.storm.calculation_increments,
         native_loss_mode,
+    )
+
+
+def _code11_flows(loaded: LoadedProject, result: CandidateResult) -> tuple[EngineDiagnosticFlow, ...]:
+    """Bind the four observed first-control taps to actual computed source/reach state."""
+    first = loaded.run.catchment.controls[0]
+    if first.code != 11:
+        return ()
+    if (
+        first.subarea_id is None
+        or first.reach_id is None
+        or len(result.preparation.hydrographs) != result.event.source_count
+        or not result.network.reaches
+    ):
+        raise CmdBoundaryError(
+            _INCOMPLETE_OUTPUT, "cmd_code11_identity", "Missing first-control diagnostic source/reach"
+        )
+    source = result.preparation.hydrographs[0]
+    reach = result.network.reaches[0]
+    if reach.reach_id != 1 or reach.membership != (1,) or reach.incoming != source:
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_code11_identity", "First reach does not carry the first source")
+    if any(
+        len(values) != result.event.n + 1 or any(not math.isfinite(value) or value < 0 for value in values)
+        for values in (source, reach.incoming, reach.q)
+    ):
+        raise CmdBoundaryError(_INCOMPLETE_OUTPUT, "cmd_code11_values", "Incomplete or invalid diagnostic flow series")
+    # The admitted control occurs before any branch exists: upstream inflow
+    # is structurally zero, independently of the observed all-zero Hyd001.
+    upstream = (0.0,) * len(source)
+    return (
+        EngineDiagnosticFlow(
+            "code11:1:subarea_upstream_flow", "subarea_upstream_flow", 1, first.subarea_id, None, upstream
+        ),
+        EngineDiagnosticFlow(
+            "code11:1:rainfall_excess_flow", "rainfall_excess_flow", 1, first.subarea_id, None, source
+        ),
+        EngineDiagnosticFlow(
+            "code11:1:reach_downstream_flow", "reach_downstream_flow", 1, None, first.reach_id, reach.q
+        ),
+        EngineDiagnosticFlow(
+            "code11:1:reach_upstream_flow", "reach_upstream_flow", 1, None, first.reach_id, reach.incoming
+        ),
     )
 
 
@@ -292,4 +353,5 @@ def run_cmd_model(
         ),
         tuple(str(index * loaded.run.storm.timestep_hours) for index in range(event.n + 1)),
         diagnostics,
+        _code11_flows(loaded, result),
     )

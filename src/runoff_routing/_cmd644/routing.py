@@ -295,7 +295,8 @@ def _require_code_two_running_branch(code: int, active: tuple[float, ...] | None
 def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/print control cases
     event: Event, geometry: Geometry, preparation: Preparation
 ) -> NetworkResult:
-    """Execute the ordered code-1/2/3/4/5/7 machine, preserving independent branches."""
+    """Execute ordered controls, retaining the characterised first-source code 11."""
+    event.validate_code11_layout()
     active: tuple[float, ...] | None = None
     members: tuple[int, ...] = ()
     stack: list[tuple[tuple[float, ...], tuple[int, ...]]] = []
@@ -305,7 +306,7 @@ def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/
     next_reach = 0
     for control_index, control in enumerate(event.controls, start=1):
         _require_code_two_running_branch(control.code, active)
-        if control.code in (1, 2):
+        if control.code in (1, 2, 11):
             source = preparation.hydrographs[next_source]
             next_source += 1
             if active is None:
@@ -328,7 +329,7 @@ def route_network(  # noqa: C901 -- preserve explicit ordered CMD source/branch/
                 message = "code-7 print has no active hydrograph"
                 raise UnsupportedNumericPath(message)
             prints.append(PrintResult(control_index, members, active))
-        if control.code in (1, 2, 5):
+        if control.code in (1, 2, 5, 11):
             if active is None:
                 message = "reach has no active source"
                 raise UnsupportedNumericPath(message)
