@@ -76,6 +76,8 @@
 - [#150 independent native/source qualification](2026-11-15-mc150-independent-qualification.md), [local Windows handoff](2026-11-16-issue150-local-windows-native-handoff.md) and [bounded native observation receipt](2026-11-16-issue150-windows-native-receipt.md) — 22 November retained rehash and 23 November bounded nonexecuting field/export investigation; saved-PAR drift excluded; F1–F6/native equivalence unresolved. [Deferred future-agent prompt](https://github.com/Chain-Frost/pyrorb/issues/150#issuecomment-7106607565).
 
 ## Retained diagnostic/reference evidence
+
+- [ARR2019 ARF precision qualification (#192)](2026-11-25-issue192-arr2019-arf-qualification.md) - retained native header and written-input precision, independent published controls, and explicit internal-ARF/effective-rainfall limitations (review pending).
 - [Four original CMD profile admission decisions](2026-11-15-four-profile-admission-review.md) - original native IL/RoC and m-boundary profiles; source/wheel printed-Q study, honest pending scalar and physical-site acceptance.
 
 - [Independent original CMD evidence and pinned closeout](2026-11-15-independent-native-closeout.md) - eight authenticated captures, exact PR16 source identity, separately pinned source/wheel diagnostics, and post-merge admission limits.

@@ -34,3 +34,56 @@ Simultaneous 95% MC intervals allocate .05/(2*8*6) per endpoint (48 possible met
 ## Acceptance boundary and next steps
 
 Independent #150 scientific reviewer should verify latent proof, exact-law aggregation, integer step boundaries and oracle independence, reproduce or independently evaluate archived bytes and all counts/intervals; investigate inability to resolve rare-atom and near-margin equivalence. The research archive is not independently reviewed or fully lint/type validated. A separate predeclared reference design/power investigation is justified if owners need stronger discrimination; no adaptive continuation of this experiment. Owner still needs physical engineering margins, exact scope, power objective, event/time caps, reference/confirmation manifest identities, A/B source approvals and D conditional interpretation; native C remains stopped. No physical declaration field is changed and no repeat checker run. #148 and #9 remain open.
+
+## Analytical continuation — 28 November 2026
+
+Owner directed progressing statistical review, merge preparation and rare-tail precision without relaxing tolerances. Reconciled current main `cadd930db3e8ce8ea75bf9278ebc85bd06314bbd` (#238; ARF test/work receipt and index only) with the original research head `7b03ca1345d192845b9df7b80440cdd9e7705dd1`. Prior exact-head [Windows quality](https://github.com/Chain-Frost/pyrorb/actions/runs/46042487247) passed, [Codex review](https://github.com/Chain-Frost/pyrorb/pull/243#issuecomment-7224534207) found no issues and there were no review threads. These do not qualify the archived text experiment scientifically and do not qualify this amended head. Preserve exact executed source and numerical result blobs unchanged.
+
+### Independent arithmetic cross-check (not a new Monte Carlo experiment)
+
+Reviewed the archived source's integer weighted step inversion, exact pooled multinomial count distribution, separate pilot/reference/confirmation child streams, complete latent observation enclosure and monotone CP proof. No separate reviewer attestation or replay of the 8,000 studies is claimed. Independent finite binomial sums using log-PMF and bisection, without the archive's shared vector/quantile helper, reproduce the simultaneous MC endpoints for count 0: [0,.00753157494]; 154: [.11877122934,.19449647145]; 993: [.97954544768,.99863901707]; 999: [.99009067581,.99999947903]; 1000: [.99246842506,1]. This corroborates the summary's interval arithmetic, not the raw counts (not retained). For the two-state populations, zero mass is a primary component; whenever its empirical error is <=.01 the 95/98/99% attained quantiles are the true positive state, all other threshold differences also <=.01. Independent exact-binomial summation gives latent whole-run pass probabilities .4933399574, .4933612099 and .4941067660 at zero masses .50, .505 and .53 respectively, under the fixed synthetic vector/margins. Both constant laws have latent reliability 1. This supplies a separate analytic oracle for the six previously oracle-qualified cases; case 3 and 4 reliability remains unverified. Numeric checks are floating evaluations of finite sums, not certified outward-rounding arithmetic.
+
+Case 3 is a nonregular target, not just a larger-reference-budget problem: in exact units P(Q=0)=.95, first site F(1)=.98, second site F(1)=.96, both F(2)=.99 and F(100)=1. The .99 attained quantile is 2 at both sites, but an arbitrarily small transfer of probability from the states at or below 2 to the state at 100 changes it to 100. At any grid threshold in [2,100), an honest lower CDF band can exceed .99 only with its allocated upper-deviation error at the equality boundary (equality needs the same conservative treatment; a finite uniformly valid test cannot have high power at the boundary against arbitrarily close alternatives). On coverage, an upper inverse >=100 or unbounded prevents a 2% equivalence claim; no smoothing, interpolation, changed probability target, engineering-margin enlargement or post-hoc tail grid. The rare atom result is scientifically useful. A tighter CDF band does not guarantee a tighter inverse there.
+
+### Candidate rare-tail concentration method (analytical only)
+
+Keep the latent complete-ledger and pilot-frozen grid, fixed planned stratum weights and independent draws. Write each individual weight a_i=v_h/n_h, sum a_i=1, b=max a_i, S=sum a_i², Y=sum a_i I_i, E[Y]=p=F(x). All positive strata need positive allocation. For every real lambda, convexity in the scale t of log E exp(lambda*t*I_i) with value zero at t=0 implies
+`log E exp(lambda*a_i*I_i/b) <= (a_i/b) log(1+p_i*(exp(lambda)-1))`.
+Summing and applying Jensen's concavity in p_i with weights a_i yields
+`log E exp(lambda*Y/b) <= log(1+p*(exp(lambda)-1))/b`.
+Chernoff optimisation over lambda of the appropriate sign yields upper tail Pr(Y>=y) for y>p and lower tail Pr(Y<=y) for y<p bounded by exp(-d(y||p)/b), where d is Bernoulli KL divergence. This is valid for unequal known weights and heterogeneous independent Bernoulli laws; it does not replace them with iid Bernoulli draws or treat 1/b as an integer sample size. See [Hoeffding (1963), Theorem 1, eq. (2.1), p.15](https://doi.org/10.1080/01621459.1963.10500830) for the bounded-variable exponential argument; the weighted adaptation is derived here, not an asserted quote.
+
+For a fixed one-engine reference family of K latent grid points and alpha_ref=.02, split alpha_ref equally between the additive weighted Hoeffding and weighted KL constructions, union-bound both tails and all K points. Additive radius H=sqrt(S*ln(4*K/alpha_ref)/2). Invert d(y||p)<=b*ln(4*K/alpha_ref) to obtain monotone lower and upper endpoints L_K(y), U_K(y), using continuous limits at 0/1 (L_K(0)=0, U_K(0)=1-exp(-c), L_K(1)=exp(-c), U_K(1)=1 for c=b*ln(4*K/alpha_ref)). A one-sided tail rejection is monotone in the observation and candidate mean; invert on each side of y. With observation enclosure y_lo<=Y<=y_hi, take lower max(0,y_lo-H,L_K(y_lo)), upper min(1,y_hi+H,U_K(y_hi)). The event that both latent intervals cover simultaneously implies these observable bounds cover pathwise, even under dependent censoring. Monotone tighten and invert as in the corrected protocol, retain all unknown slots and CP latent-count argument unchanged. No using both at their full separate alpha, no choosing a method on the reference outcome without accounting for selection. No guarantee of improved central precision; candidate must be frozen before reference, separately approved and independently implemented/qualified. Production v1 and the existing physical draft are unchanged.
+
+Illustrative equal-z 50-stratum weights and 10,000 reference draws/stratum from [PR #244's draft](https://github.com/Chain-Frost/pyrorb/pull/244): S=.00000273025654, b=.00000378670935, K=256, original radius .00372243556, split additive radius .00384743568, c=.00004106116319. Independent scalar bisection of KL roots and clipping, complete empirical CDF y only (no physical data):
+
+| y | Original Hoeffding interval | Candidate split intersection | Width change |
+| ---: | --- | --- | ---: |
+| 0 | [0,.003722436] | [0,.000041060] | -98.90% |
+| .01 | [.006277564,.013722436] | [.009124971,.010928676] | -75.77% |
+| .02 | [.016277564,.023722436] | [.018757468,.021295087] | -65.91% |
+| .05 | [.046277564,.053722436] | [.048049552,.051999719] | -46.94% |
+| .50 | [.496277564,.503722436] | [.496152564,.503847436] | +3.36% |
+| .95 | [.946277564,.953722436] | [.948000281,.951950448] | -46.94% |
+| .98 | [.976277564,.983722436] | [.978704913,.981242532] | -65.91% |
+| .99 | [.986277564,.993722436] | [.989071324,.990875029] | -75.77% |
+| 1 | [.996277564,1] | [.999958940,1] | -98.90% |
+
+No achieved M04 precision or power follows. These approximate planning weights are not admitted source weights. More efficient reference-only allocation roughly proportional to v_h would reduce both S and b at fixed total draws (retain positive integer counts and weights; not change the production 1,000-event allocation); evaluate separately before freeze, not an automatic change. Grid bracketing still requires actual finite support on either side of targets and margins. Failure remains unresolved, not extrapolation.
+
+### Deterministic finite-law checks
+
+A separate small integer probability convolution verified the split intersection and observation enclosure on seven independent Bernoulli designs, 100 indicators each. Use weights w_i=1 for equal, w_i=(1,2,3,4) repeated for unequal, a_i=w_i/sum(w_i), p_i rational hundredths. Starting C_0(0)=1, update integer numerator C_{i+1}(j)=(100-P_i) C_i(j)+P_i C_i(j-w_i), missing terms zero, P_i=100*p_i; denominator 100^100. Verified exact probability mass sum and enumerated every attainable weighted indicator sum. For a one-point alpha_ref=.02 family, use S,b and split bounds above. A deterministic informative coarsening subtracts up to 7 integer weight ticks from y_lo if y>=true mean, otherwise adds up to 11 ticks to y_hi; all values clipped to [0,1]. This is an adversarial interval enclosure control, not a simulated censoring mechanism. Tested endpoint monotonicity across the whole lattice and that coarsened intervals contain uncensored intervals. Summed exact integer masses of noncoverage, with numeric bound comparisons (1e-13 boundary comparison guard; not interval arithmetic). Results, complete/coarsened noncoverage:
+
+| weights | p pattern repeated | mean | complete | coarsened |
+| --- | --- | ---: | ---: | ---: |
+| equal | .01 | .01 | .000534534464 | 3.16352e-11 |
+| equal | .50 | .50 | .000873719837 | 8.416339889e-7 |
+| unequal | .01,.02,.03,.04 | .03 | .000173059667 | .000004818254 |
+| unequal | .05,.40,.70,.95 | .675 | .000009018007 | 6.81216816e-8 |
+| unequal | .96,.97,.98,.99 | .98 | .000023395510 | 9.3124838e-9 |
+| unequal | 0 | 0 | 0 | 0 |
+| unequal | 1 | 1 | 0 | 0 |
+
+All seven controls below .02; zero observed interval/enclosure/monotonicity violations. Exact masses by BigInt convolution, scalar floating KL bisection and probability sums; no random draws or hydrology. This is a deterministic check, not a new coverage/power simulation, full validation of a production implementation or proof by seven examples. Formal bound derives from independence and the weighted mgf proof above. Require exact/outward-conservative numerical endpoints, monotone inversion, invalid inputs, heterogeneous-stratum oracle, zero/one, atoms, unstarted slots and independently reviewed separately fixed synthetic reference-power study before candidate adoption. A complete replay or independent scientific attestation of the original 8,000 studies remains outstanding. No private source, native run, physical pilot, new synthetic Monte Carlo, product tests or new checker execution; `simulation_authorised=false`. #148 and #9 remain open.
+
