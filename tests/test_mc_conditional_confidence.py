@@ -89,6 +89,14 @@ def test_invalid_design_or_observation_rejected() -> None:
     design = mc.reference_design([(Fraction(1), 10)], grid_points=1, alpha=Fraction(1, 50))
     with pytest.raises(ValueError, match="Invalid observed"):
         mc.reference_interval(design, Fraction(3, 4), Fraction(1, 4))
+    with pytest.raises(ValueError, match="reference alpha"):
+        mc.reference_design([(Fraction(1), 10)], grid_points=1, alpha=0.02)
+    with pytest.raises(ValueError, match="Positive conditional"):
+        mc.reference_design([(1.0, 10)], grid_points=1, alpha=Fraction(1, 50))
+    with pytest.raises(ValueError, match="exact fractions"):
+        mc.reference_interval(design, 0.0, Fraction(1))
+    with pytest.raises(ValueError, match="exact fractions"):
+        mc.reference_interval(design, Fraction(0), 1.0)
 
 
 def test_finite_grid_inversion_zero_atom_tie_and_unbounded_tail() -> None:

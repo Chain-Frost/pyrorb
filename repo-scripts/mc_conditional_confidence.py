@@ -27,6 +27,12 @@ def _fail(message: str) -> Never:
     raise ValueError(message)
 
 
+def _require_fraction(value: object, message: str) -> Fraction:
+    if not isinstance(value, Fraction):
+        _fail(message)
+    return value
+
+
 def _log_bounds(value: Fraction) -> tuple[Fraction, Fraction]:
     """Directed ratio enclosure and correctly rounded Decimal logarithms.
 
@@ -67,19 +73,16 @@ def reference_design(strata: Iterable[tuple[Fraction, int]], *, grid_points: int
     Grid points count the complete fixed family across all sites. Cross-output
     dependence is allowed; independence is required for the latent draws.
     """
-    if (
-        not isinstance(alpha, Fraction)
-        or type(grid_points) is not int
-        or not 1 <= grid_points <= 256
-        or not 0 < alpha < 1
-    ):
+    alpha = _require_fraction(alpha, "Invalid fixed-grid family or reference alpha")
+    if type(grid_points) is not int or not 1 <= grid_points <= 256 or not 0 < alpha < 1:
         _fail("Invalid fixed-grid family or reference alpha")
     total = Fraction(0)
     squared = Fraction(0)
     largest = Fraction(0)
     draws = 0
     for mass, count in strata:
-        if not isinstance(mass, Fraction) or not 0 < mass <= 1 or type(count) is not int or count <= 0:
+        mass = _require_fraction(mass, "Positive conditional masses and planned counts required")
+        if not 0 < mass <= 1 or type(count) is not int or count <= 0:
             _fail("Positive conditional masses and planned counts required")
         total += mass
         draws += count
@@ -128,8 +131,8 @@ def reference_interval(
     and never authorises simulation. The KL limit and Hoeffding radius were
     rounded upward; the inverted endpoints are rounded outward.
     """
-    if not isinstance(observed_lower, Fraction) or not isinstance(observed_upper, Fraction):
-        _fail("Observed CDF endpoints must be exact fractions")
+    observed_lower = _require_fraction(observed_lower, "Observed CDF endpoints must be exact fractions")
+    observed_upper = _require_fraction(observed_upper, "Observed CDF endpoints must be exact fractions")
     if not 0 <= observed_lower <= observed_upper <= 1:
         _fail("Invalid observed CDF enclosure")
     return (
