@@ -266,3 +266,56 @@ unchanged in this public continuation; their custodian must reconcile admitted
 source/policy decisions before an authorised physical stage. No physical,
 native, or new synthetic execution in this amendment, no preflight rerun,
 merge or release. `simulation_authorised=false`; #148/#9 stay open.
+
+## 11. Literature-anchored constructed-loss candidate — 28 November 2026
+
+Owner directed proceeding with preparation of the explicitly uncalibrated
+numerical-reliability study. The direction permits development of a concrete
+candidate; it does not establish particular dimensional values, source rights,
+physical calibration or independent scientific admission. Sections 9–10 remain
+the historical evidence boundary.
+
+A separate private decision record now proposes a specific storm-IL median
+scale and fixed CL, anchored to a publicly reported RORB Monte Carlo study
+with flood-frequency reconciliation in another catchment. This is a
+dimensionally motivated **constructed numerical choice**, not a transfer of
+calibrated losses to M04, a claim that the referenced loss is the actual
+M04 median, or reproduction of the other study's preburst treatment. Indexed
+publisher PDF text was checked; original-byte and page-image retrieval was
+blocked by HTTP 403. Retain source verification and independent review as
+requirements before formal adoption. No historical deterministic burst-loss
+substitution, NaN filling, or reverse inference of climate-adjusted losses.
+
+Under the proposed one-hour, no-preburst, fixed-CL law, scale the previously
+reviewed ARR factor inverse once by the proposed median. The separate
+parameter-only model derivative must bind the new continuing loss explicitly
+while retaining the archived source graph and independently qualified
+routing parameters; do not modify or misrepresent the original model. Exact
+piecewise-linear moments and a static, conservative rainfall/loss envelope
+calculation were independently checked using rational arithmetic. The
+conditional planning screen admits both a no-excess and a positive-excess
+witness under its stated continuous-law, source lineage and ARF assumptions.
+It does not verify finite midpoint sampling, actual routed peak behavior,
+nonzero physical runoff, or adequacy of a 1,000-event run. Recheck against
+authenticated raw bytes and the final approved law before activation. The
+exact candidate, source locator, calculations and limitations are retained
+privately to avoid disclosure of the restricted source evidence.
+
+The selected private custody transfer has the historical adjusted IFD but
+only the identity of the distinct unadjusted parent. Exact Git blob retrieval
+returned 404. [The finite #245 addendum](https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232983764)
+requires recovery of that one already identified original object from the
+existing authorised archive and verification against its recorded SHA-256
+and size. No repeat calibration-document search, coordinate re-download,
+inverse climate transformation or reconstructed replacement is authorised.
+
+The reviewed heads of #243, #244 and #246 had successful hosted Windows
+quality and exact-head technical review before this amendment. The new
+documentation head requires its own checks. This is not independent
+scientific acceptance of the bounded synthetic results. Preserve the
+proposed 830,250-event physical cap, 42-hour ceiling, inference family,
+unapproved engineering margins, existing checker, declaration, historical
+replay and all null adopted loss/source/scenario values. No new synthetic
+campaign, sampler, routing, native launch, timing pilot, preflight, merge or
+release. Reconciled main `4d864747a6a1bd327057d60644c7140165770878` without changing the separate reader or
+other concurrent work. `simulation_authorised=false`; #148/#228/#9 remain open.

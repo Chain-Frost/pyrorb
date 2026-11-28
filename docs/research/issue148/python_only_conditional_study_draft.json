@@ -3,7 +3,7 @@
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
   "owner_direction": "Current Prompt B: read-only source/loss/scenario qualification and proposal for owner decision; no native, routing, sampling, MC or timing. Section8 replay is historical; section9 preserves simulation_authorised=false.",
-  "repository_base": "282a49201991da60efd16cb59a616dc2b9309421",
+  "repository_base": "4d864747a6a1bd327057d60644c7140165770878",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
   "historical_protocol": "physical_study_protocol_draft.json",
@@ -43,7 +43,7 @@
     "median_storm_il_mm": null,
     "continuing_loss_mm_per_h": null,
     "loss_source_sha256": null,
-    "loss_basis": "Both exact model-directory documents recovered and separately reviewed in #245; structural/programmatic validation only, no adopted storm median IL/CL or observed calibration established. Data Hub NaNs and historical deterministic/adjusted settings are not substitutes. Applicable transfer or expressly approved numerical scenario required.",
+    "loss_basis": "Recovered model-directory documents reviewed: no adopted storm median IL/CL or observed calibration established. A separate literature-anchored dimensional candidate has been proposed for an expressly uncalibrated constructed numerical law; exact values/rationale in private evidence record, no adopted losses. Do not infer values from historical deterministic settings or Data Hub NaNs.",
     "loss_factor_table": "Independent primary-source desk review supports already-corrected ARR Book5 v4.2 Table5.3.13/Figure5.3.26 interpretation, reversed to nonexceedance; model applicability and dimensional scale unadmitted.",
     "dependence": "explicitly proposed independent empirical loss conditional on rainfall and eligible TP; not approved",
     "preburst_proposal": "none/PB=0 under supported bridge as conditional numerical assumption only, not adopted hydrology; D full-domain guard conditional, not actual compatibility certificate; no subtraction/clamp or climate assumption without decision",
@@ -75,6 +75,20 @@
       "loss_values_adopted": false,
       "permissions_adopted": false,
       "limitation": "No applicable calibration/IL/CL basis or site/region/rights evidence from these two documents; no conclusion about records elsewhere."
+    },
+    "constructed_dimensional_candidate": {
+      "status": "proposed_not_admitted",
+      "basis": "External published RORB Monte Carlo/flood-frequency reconciliation study; dimensional anchor for a constructed law only, not a catchment-specific calibrated transfer.",
+      "owner_direction": "Proceed with preparing the explicitly uncalibrated numerical study; specific dimensional pair and remaining scientific and source policy choices still require confirmation.",
+      "source_review": "Publisher-hosted PDF indexed text checked; direct PDF image/byte retrieval denied (HTTP 403), source byte/page verification and independent scientific review pending.",
+      "private_record": "See private custody PR92 continuation and redacted #245 receipt.",
+      "planning_screen": "Conditional analytical no-excess and positive-excess witnesses under conservative source/ARF envelope and nominal continuous independent law; no routing or sampler execution. Not a certified implemented finite-law bound or admission.",
+      "adopted": false
+    },
+    "raw_parent_custody": {
+      "status": "exact_identity_retained_bytes_not_in_selected_private_transfer",
+      "issue": "https://github.com/Chain-Frost/pyrorb/issues/245#issuecomment-7232983764",
+      "requirement": "Retrieve only the authenticated original object from the existing authorised archive, hash/size verify privately and reconcile raw/adjusted lineage. No replacement download or numerical reconstruction."
     }
   },
   "probability": {
@@ -386,7 +400,7 @@
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "Adopt an independently defensible dimensional loss basis, factor table and approved constructed joint law or actual applicable source law, physical site/rights/region and baseline/ARF/preburst/clock. Recovered structural documents do not supply losses or calibration.",
+    "policy": "Specific constructed dimensional candidate proposed, not adopted; recover exact raw-parent bytes, verify external reference, resolve scientific/scoped rights and constructed joint-law decisions, parameter-only derivative, feature/site/clock/horizon and margins. No recovered physical loss basis.",
     "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
     "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
     "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",

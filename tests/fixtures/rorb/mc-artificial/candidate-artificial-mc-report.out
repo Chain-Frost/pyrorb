@@ -1,0 +1,155 @@
+ RORBWin Monte-Carlo Run Summary
+ *******************************
+ 
+ Program version 6.52 (last updated 1st June 2023)
+ Copyright Monash University and Hydrology and Risk Consulting
+ 
+ Date run: 02 Feb 2040 03:04
+
+ Catchment file   : ARTIFICIAL_MODEL_REFERENCE
+ Rainfall location: ARTIFICIAL_LOCATION
+ Spatial pattern  : ARTIFICIAL_SPATIAL_DESCRIPTION
+ Areal Red. Fact. : ARTIFICIAL_ARF_DESCRIPTION
+ Loss factors     : ARTIFICIAL_LOSS_DESCRIPTION
+
+ Temporal pattern : Areal temporal patterns Monte-Carlo sampled from ARTIFICIAL_PATTERN_REFERENCE based on  750 km² sample
+                    Duration(hr)     36.0
+                    Num avail          10 
+ 
+
+ Parameters:  kc =    23.40    m = 0.65
+
+ Loss parameters     Initial loss (mm)   Cont. loss (mm/h)
+                           31.50              2.75
+
+
+Results for Storm Duration of 36 hour
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rorb model check run completed OK:
+   No. of time increments in run    = 361
+   Simulation time increment (hrs)  =   0.500
+   Number of incs in rainfall burst =  72
+   Number of sub- & intrstn-areas   =   9  2
+   Number of hydrographs to track   =   1
+
+Monte-Carlo sampling undertaken using   5 runs over each rainfall interval,
+where the rainfall distribution is discretised into   5 intervals.
+
+Label   Description
+
+-----   -----------
+Div     Number of discretised rainfall interval
+Run     Number of run within given rainfall interval
+ARI     ARI of stochastic rainfall depth
+Depth   Depth (mm) of stochastic design rainfall burst
+TPat    Rank of temporal pattern selected from *_mc.pat file for given duration
+I.L.    Stochastic factor applied to initial loss parameter
+IL_F    ARI-dependent deterministic factors applied to initial loss parameter
+LR_F    ARI-dependent deterministic factors applied to loss rate parameter
+Peak  07  ARTIFICIAL_OUTPUT_DESCRIPTION,
+
+Div  Run            AEP  Depth TPat    I.L.  IL_F  LR_F    Peak  07
+  1    1          2.043   15.4    3    0.21  0.83  1.17        0.00
+  1    2          2.060   18.5    6    0.28  0.83  1.17       15.34
+  1    3          2.077   21.6    9    0.35  0.83  1.17       19.47
+  1    4          2.094   24.7    2    0.42  0.83  1.17       23.60
+  1    5          2.111   27.8    5    0.49  0.83  1.17       27.73
+  2    1          2.128   30.9    8    0.56  0.83  1.17       31.86
+  2    2          2.145   33.0    1    0.63  0.83  1.17       35.99
+  2    3          2.162   36.1    4    0.70  0.83  1.17        0.00
+  2    4          2.179   39.2    7    0.77  0.83  1.17       43.25
+  2    5          2.196   42.3   10    0.84  0.83  1.17       47.38
+  3    1          2.213   45.4    3    0.91  0.83  1.17       51.51
+  3    2          2.230   48.5    6    0.98  0.83  1.17       55.64
+  3    3          2.247   51.6    9    1.05  0.83  1.17       59.77
+  3    4          2.264   54.7    2    1.12  0.83  1.17       63.90
+  3    5          2.281   57.8    5    1.19  0.83  1.17        0.00
+  4    1          2.298   60.9    8    1.26  0.83  1.17       71.16
+  4    2            190   63.0    1    1.33  0.83  1.17       75.29
+  4    3            201   66.1    4    1.40  0.83  1.17       79.42
+  4    4            212   69.2    7    1.47  0.83  1.17       83.55
+  4    5            223   72.3   10    1.54  0.83  1.17       87.68
+  5    1            234   75.4    3    1.61  0.83  1.17       91.81
+  5    2            245   78.5    6    1.68  0.83  1.17        0.00
+  5    3            256   81.6    9    1.75  0.83  1.17       99.07
+  5    4            267   84.7    2    1.82  0.83  1.17      103.20
+  5    5            278   87.8    5    1.89  0.83  1.17      107.33
+ 
+
+
+>>> Distributional check on temporal patterns
+
+Pattern#:       1      2      3      4      5      6      7      8      9     10
+Freq%   :    8.00  12.00  12.00   8.00  12.00  12.00   8.00   8.00  12.00   8.00
+
+
+>>> Exceedance frequency percentiles check on losses (prior to factoring)
+
+Percentile   Initial Loss
+      0              3.87
+      5              3.71
+     10              3.55
+     15              3.39
+     20              3.23
+     25              3.07
+     30              2.91
+     35              2.75
+     40              2.59
+     45              2.43
+     50              2.27
+     55              2.11
+     60              1.95
+     65              1.79
+     70              1.63
+     75              1.47
+     80              1.31
+     85              1.15
+     90              0.99
+     95              0.83
+    100              0.67
+
+
+>>> Frequency distributional check on losses (prior to factoring)
+
+Upper Limit  Init Loss   Upper Limit  Init Loss
+(Lin intvl)    Freq(%)   (Log intvl)    Freq(%)
+       0.31      10.00          0.25      10.00
+       0.54      10.00          0.53      10.00
+       0.77      10.00          0.81      10.00
+       1.00      10.00          1.09      10.00
+       1.23      10.00          1.37      10.00
+       1.46      10.00          1.65      10.00
+       1.69      10.00          1.93      10.00
+       1.92      10.00          2.21      10.00
+       2.15      10.00          2.49      10.00
+       2.38      10.00          2.77      10.00
+                100.00                   100.00
+
+
+>>> Analysis of flow results
+
+Peak      Min Value      Max value   Description
+  07           0.00         107.33   ARTIFICIAL_OUTPUT_DESCRIPTION,
+
+Peak flows for selected AEPs (* indicates value unreliable, ie bounded by interval contributions to AEP > 20% total)
+
+  No.      AEP(1inY)        Peak 07 
+    1          3.000           2.33
+    2          7.000           8.00*
+    3         11.000          13.67
+    4         15.000          19.34
+    5         19.000          25.01*
+    6         23.000          30.68
+    7         27.000          36.35
+    8         31.000          42.02*
+    9         35.000          47.69
+   10          39.00          53.36
+   11          43.00          59.03*
+   12          47.00          64.70
+   13           51.0          70.37
+   14           55.0          76.04*
+   15           59.0          81.71
+   16             63          87.38
+
+Elapsed Run Time (hh:mm:ss) = 00:12:34

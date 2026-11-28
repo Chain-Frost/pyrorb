@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [Bounded canonical native MC printed-report reader (#232)](2026-11-28-issue232-native-mc-reader.md) — owner-approved four-file artificial/redacted packet, independent source/map scope, canonical parsing and explicit scientific unavailable fields; #191 Phase 2 follows reader review.
+
 - [Physical-source candidate and draft study protocol (#148)](2026-11-25-issue148-physical-source-protocol.md) — candidate-only admission, five separate blockers, proposed inference/cost design and no-simulation preflight; documentation review complete and #239 merged; independent source/scientific admission remains pending.
 
 - [Canonical reader ownership transfer (#231)](2026-11-24-canonical-reader-transfer.md) — source provenance, test transfer and staged dependency reversal (historical preparation; #231 closed following downstream #344 acceptance); no new native/scientific acceptance claim.
