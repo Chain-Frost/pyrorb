@@ -1,0 +1,42 @@
+{
+  "packet_kind": "artificial_structural_reader_fixture_candidate",
+  "status": "private_pending_owner_custodian_sharing_permission",
+  "independent_review_disposition": "Recorded separately in the private review receipt, not asserted by this candidate metadata alone.",
+  "purpose": "Bounded canonical reader grammar and lexical/structural tests for #232; later printed-evidence adaptation in #191.",
+  "grounding": "Structure independently compared to an authenticated retained report and its existing older printed-field map. Exact original evidence and review bindings remain private and are not included in this candidate packet.",
+  "newer_line_map_verification": "The separately reported newer line map has not been located; no claim that its exact bytes were reviewed.",
+  "fixture_native_output": false,
+  "statistical_consistency": "Not asserted. Diagnostic and summary values are separately authored for lexical/structural parsing; do not use as an inference, histogram or numerical-consistency golden.",
+  "fixture_values": "Authored metadata/settings/results, generated independently of source magnitudes. Fixed format/version/copyright labels and count/ordinal/percentile scaffolding are retained as structure. Artificial duration/output ordinal do not expand native source qualification.",
+  "source_project_data_included": false,
+  "source_paths_or_private_hashes_included": false,
+  "scientific_fields_unavailable": [
+    "physical_site_binding",
+    "peak_discharge_unit",
+    "probability_interpretation",
+    "native_event_weights",
+    "full_precision_effective_inputs",
+    "source_TP_EventID",
+    "RNG_stream_and_independence",
+    "native_frequency_law"
+  ],
+  "unsupported_layouts": [
+    "multiple_duration_or_peak_layouts",
+    "native_failure_records",
+    "representative_or_extraction_blocks",
+    "unobserved_numeric_spellings"
+  ],
+  "candidate_files": [
+    "candidate-redacted-grammar.md",
+    "candidate-artificial-mc-report.out",
+    "candidate-artificial-expected.json",
+    "candidate-provenance.json"
+  ],
+  "permission_scope_to_confirm": "Owner/custodian permission to share only these four reviewed structural/artificial candidate files in a public #232 implementation PR and its focused tests; no original report, original values, map, generator, detailed private audit, paths or private hashes.",
+  "sharing_approved": false,
+  "native_execution": 0,
+  "routing": 0,
+  "sampling": 0,
+  "simulation_authorised": false,
+  "scientific_qualification": "None. F1-F6/native physical/statistical gates remain separate and do not block separately admitted bounded reader software."
+}

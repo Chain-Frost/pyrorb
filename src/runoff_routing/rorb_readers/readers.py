@@ -3,6 +3,7 @@
 from hashlib import sha256
 from pathlib import Path
 
+from .mc_output_reader import read_mc_output
 from .output_reader import read_output
 from .parameter_reader import read_cmd_parameters, read_saved_settings, resembles_saved_settings
 from .reader_types import RorbDocument
@@ -63,7 +64,10 @@ def read_rorb_bytes(  # noqa: C901 - one bounded dispatch retains source evidenc
         doc.issue("empty_file", "Empty file; no format evidence.", error=True)
         return doc
     first = lines[0].strip()
-    if first == "RORBWin Batch Run Summary":
+    if first == "RORBWin Monte-Carlo Run Summary":
+        doc.kind = "monte_carlo_output"
+        read_mc_output(doc)
+    elif first == "RORBWin Batch Run Summary":
         doc.kind = "batch_output"
         read_batch(doc)
     elif first == "RORBWin CSV Output File":
