@@ -1,5 +1,7 @@
 # Current work and evidence index
 
+- [RORB-to-TUFLOW rainfall boundary export (#249)](2026-11-28-issue249-tuflow-rainfall.md) — explicit printed-depth selection, interval-end mapping, paginated source tables, and native validation boundary.
+
 - [Canonical printed MC adapter and comparison I/O (#191 Phase 2)](2026-11-28-issue191-canonical-adapter.md) — dependent on #247, source-bound raw observations, caller-scoped identities and unchanged scientific unavailable/readiness gates.
 
 - [Bounded canonical native MC printed-report reader (#232)](2026-11-28-issue232-native-mc-reader.md) — owner-approved four-file artificial/redacted packet, independent source/map scope, canonical parsing and explicit scientific unavailable fields; #191 Phase 2 follows reader review.
