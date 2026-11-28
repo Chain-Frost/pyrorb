@@ -130,3 +130,109 @@ process, default change, reference/tolerance change, merge or release.
 The frozen `cmd644-report-scalars-v1` gate selects the 50 original terminal prints. This new
 case uses the unchanged arithmetic and intervals only as a diagnostic study outside that population;
 no policy scope extension or independent admission is claimed.
+
+## Independent exact-head review — 28 November 2026
+
+**Decision: ACCEPT the bounded software and retained-report numerical comparison at
+`5d273167c209afa6ef334090b116a11af0007bbf`. No substantive software defect found.**
+This is an independent review of the production changes and existing evidence, not the
+author's JavaScript calculation. No RORB process, research replay, CI rerun, merge, release,
+default change or issue closure was performed. #91/#5 remain open for their wider gates.
+This receipt is committed on a separate review branch so the reviewed feature head stays fixed.
+
+### Source admission, computation and output
+
+Reviewed all 19 changed files against base `b6788a83fbe5eb9ccd68232fe8d92dfb596e0f6b`.
+CATG parsing, JSON round-trip and typed stack validation retain control 11 as the first and
+only implicit-natural source/reach, with one terminal code 7. Source encounter order and
+branch membership remain intact. Geometry and routing treat that source/reach through the
+existing arithmetic; no native tokens, report values or new numerical method feed computation.
+The first-control position makes pre-source inflow structurally zero. Source excess flow is
+the existing area/depth/time conversion in m3/s, and the first reach's upstream/downstream taps
+come from actual kernel state. Equal rainfall-excess and reach-upstream arrays retain distinct
+roles. Four diagnostic series remain separate from the sole ordinary EngineHydrograph, including
+JSON, CSV fields, elapsed clock and text. Native inclusive reported volume remains separate from
+the derived trapezoidal flow integral; neither establishes physical conservation.
+
+The canonical reader checks the retained version, legend, units, ordinal identities and complete
+one-based report clock. Scalar selectors were independently checked against the raw report's
+three named summary groups and exact token positions. Ordinary physical-site binding rejects
+diagnostic legends. Physical node identity remains unverified; report-local roles and source
+identities do not establish it. Independent Python execution, selected native diagnostic capture,
+edited CATG export and broader layouts remain unsupported without fallback.
+
+Supplementary local boundary checks on Windows/Python 3.14 rejected IL/RoC, nonzero rainfall start,
+impervious area and a terminal zero-length reach with `unsupported_feature/cmd_code11_profile`
+and no output arrays. Typed construction rejected explicit reach types, repeated code 11 and
+nonfirst code 11. Existing CI tests cover the other exponent, engines, malformed report layouts,
+missing/duplicate diagnostic roles, source attribution, truncation, negative flow and clocks.
+These checks add boundary evidence; they do not repeat the original calculation or establish
+native equivalence for unsupported variants.
+
+### CI and independent numerical audit
+
+Inspected [run 46040292492](https://github.com/Chain-Frost/pyrorb/actions/runs/46040292492),
+job `140645999622`, including checkout, failure propagation, source execution, build, installed
+import origin and complete probe records. It checked out merge commit
+`c3221a48ed82ff81ea0426cf7d9c621581855096`, whose parents are main
+`9a9b45c02204b75f95c87ef250014f6479a73187` and the requested feature head. Its source,
+developer-script and test trees equal the reviewed feature head. This is an audit of the
+approved CI receipt, not a personally executed second source/wheel quality campaign.
+
+- Actual environment: Windows Server 2025, CPython 3.11.9. Repository check 667 files/0 errors;
+  Ruff lint and format 341 files; strict Pyright 0 errors/warnings; source 1,737 passed and three
+  explicitly POSIX-only skips. Installed-wheel suites: 241 + 41 + 115 = 397 passed. Both
+  activation-only release checks were appropriately skipped. Required aggregate succeeded.
+- Wheel SHA-256: `72150f090a99c5c4ade9e27442817970cac8306a9c692b269ae1ef0b956dab74`.
+  Import was `D:\a\_temp\runoff-wheel-smoke\runoff_routing\__init__.py`, outside the checkout.
+  The explicit wheel-to-installed-source provenance check succeeded. Full-index preflight
+  authenticated all 254 indexed files. No downloadable workflow artifacts exist; the evidence
+  used here is the detailed retained job log, not an independently downloaded wheel binary.
+- Package fingerprint: `package-code-v1-sha256:5f80989bb10f2828d54004c5c897dc5612c4429784e519e0df976df4ad39cb2b`.
+  Independently recomputed it from the exact-head checkout bytes. Both complete logged JSON
+  objects are equal, including all individual 50-case Q/scalar/status/source/model/project
+  records and the new diagnostic identities, clocks and full float.hex arrays.
+- Independently extracted the retained report bytes, verified all five registered file
+  sizes/hashes, and compared the logged production binary64 arrays using exact rational
+  half-last-printed-unit intervals, without importing the product comparator or rerunning the
+  solver. **1,505/1,505 ordinates pass.** Recomputed peaks, elapsed peak times and inclusive
+  volumes directly from those arrays and checked the original scalar tokens/positions:
+  **14/14 defined fields pass; Hyd001 peak time is correctly incomplete/undefined.** Its 301
+  tied zero ordinates do not justify adopting the printed native 32.2 h as a physical peak.
+
+| Column | Samples | Maximum absolute Q difference (m3/s) | Unique elapsed peak (h) |
+| --- | ---: | ---: | ---: |
+| Hyd001 | 301 | 0 | undefined |
+| Hyd002 | 301 | 0.0000494873046875 | 30.5 |
+| Hyd003 | 301 | 0.0000499408781528 | 36.0 |
+| Hyd004 | 301 | 0.0000494873046875 | 30.5 |
+| Hyd005 | 301 | 0.000494656741619 | 36.5 |
+
+All native Inc/Time tokens remain 1–301/0.50–150.50 h; generated elapsed times are 0–150 h.
+The largest absolute signed peak percentage difference relative to the original printed series
+is 0.000233659198% (Hyd005, signed negative); the largest absolute trapezoidal-integral percentage
+difference is 0.000193078383% (also Hyd005, signed negative). These are diagnostics, not new
+tolerances. Zero reference denominators remain undefined.
+
+### Regression policies, compatibility and remaining limits
+
+All 50 existing individual records match source to wheel: 19,550 printed ordinate passes,
+48 complete scalar passes and the two existing zero-flow peak-time incompletes. Exact input
+identities and horizons were checked per case. The retained-36 gate, nonretained gate and
+synthetic nonzero-exit propagation controls passed. Native references, register/index, snapshots,
+`.gitattributes`, tolerance arithmetic, scalar policy, 50-case membership, defaults and workflow
+are unchanged. The new code-11 study remains outside the frozen terminal scalar-policy population;
+its register coverage stays `gap` and result status stays `computed_unvalidated`.
+
+Remote heads were re-read: feature remains the requested SHA; current main is
+`cadd930db3e8ce8ea75bf9278ebc85bd06314bbd`. Its three commits since the original base have
+no changed-file intersection with this PR. A nonmutating `git merge-tree --write-tree` succeeds
+with tree `61ecfa30e5ac6a3b13ae3d7a6a2613ec88097d5c`; its product source and developer-script
+trees equal the reviewed head. This establishes clean integration and unchanged reviewed runtime
+code, not a claim that CI executed that future merge tree.
+
+No software repair or duplicate full CI run is warranted by the audit. The bounded first-control
+profile and original retained numerical observations are independently accepted at the exact head.
+General code-11 semantics, independently observed physical sites, broader native/scientific CMD
+acceptance, engineering-engine accuracy and release remain separate. Next action: owner disposition
+of PR #240; keep #91/#5 open and do not extend acceptance to unreviewed profiles or future heads.
