@@ -5,6 +5,7 @@ import math
 import pytest
 
 from runoff_routing.reach_routing import RoutingDomainError
+from runoff_routing.rorb_model import PatternBasis
 from runoff_routing.single_storm import (
     Catchment,
     Control,
@@ -91,3 +92,62 @@ def test_bad_horizon_or_depths_fail() -> None:
         calculate_storm(model, Storm(1, 1, (50, 50), (1,)), losses=Losses(0, 0), kc=1, m=1)
     with pytest.raises(RoutingDomainError, match="depth"):
         calculate_storm(model, Storm(1, 2, (100,), ()), losses=Losses(0, 0), kc=1, m=1)
+
+
+@pytest.mark.parametrize(
+    ("losses", "expected"),
+    [(Losses(25, 2), (0.0, 24.0, 69.0)), (Losses(25, 0, 0.5), (0.0, 12.5, 35.0))],
+)
+def test_combined_preburst_normalizes_total_depth_and_carries_loss(losses: Losses, expected: tuple[float, ...]) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, (20.0, 30.0, 70.0), (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
+    result = calculate_storm(model, storm, losses=losses, kc=0, m=1)
+    assert result.rainfall_excess_mm[0] == pytest.approx(expected)
+    assert result.outlets_m3_s[0] == pytest.approx((0.0, *(value / 1.8 for value in expected), 0.0, 0.0))
+    assert storm.percentages == (20.0, 30.0, 70.0)
+    assert storm.preburst_bins == 1
+
+
+@pytest.mark.parametrize(
+    ("basis", "weights", "split"),
+    [
+        (PatternBasis.COMBINED_PREBURST_PERCENT, (20.0, 100.0), 0),
+        (PatternBasis.COMBINED_PREBURST_PERCENT, (20.0, 100.0), 2),
+        (PatternBasis.COMBINED_PREBURST_PERCENT, (20.0, 100.0), True),
+        (PatternBasis.COMBINED_PREBURST_PERCENT, (0.0, 100.0), 1),
+        (PatternBasis.COMBINED_PREBURST_PERCENT, (20.0, 90.0), 1),
+        (PatternBasis.PERCENT_OF_DEPTH, (20.0, 80.0), 1),
+        (PatternBasis.PERCENT_OF_DEPTH, (20.0, 100.0), 0),
+        (PatternBasis.RELATIVE_WEIGHTS, (20.0, 100.0), 1),
+    ],
+)
+def test_combined_preburst_does_not_admit_ambiguous_patterns(
+    basis: PatternBasis, weights: tuple[float, ...], split: int
+) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, weights, (120.0,), basis, split)
+    with pytest.raises(RoutingDomainError, match=r"pre-burst|Pre-burst|percentages must total"):
+        calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)
+
+
+@pytest.mark.parametrize("weights", [(2.1, 0.07, 99.88), (2.1, 0.01, 100.04)])
+def test_combined_preburst_accepts_float_rounding_at_inclusive_burst_endpoints(weights: tuple[float, ...]) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, weights, (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
+    result = calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)
+    expected = tuple(120.0 * weight / math.fsum(weights) for weight in weights)
+    assert result.rainfall_excess_mm[0] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "burst",
+    [
+        math.nextafter(math.nextafter(99.95, -math.inf), -math.inf),
+        math.nextafter(math.nextafter(100.05, math.inf), math.inf),
+    ],
+)
+def test_combined_preburst_rejects_beyond_float_roundoff_allowance(burst: float) -> None:
+    model = Catchment((Control(1, 1), Control(7)), (1.0,))
+    storm = Storm(0.5, 5, (2.1, burst), (120.0,), PatternBasis.COMBINED_PREBURST_PERCENT, 1)
+    with pytest.raises(RoutingDomainError, match="full 100% burst"):
+        calculate_storm(model, storm, losses=Losses(0, 0), kc=0, m=1)

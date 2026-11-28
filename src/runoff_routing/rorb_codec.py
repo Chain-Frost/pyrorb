@@ -928,6 +928,7 @@ class S2Payload:
     runoff_coefficient: float | None = None
     impervious_fractions: tuple[float, ...] = ()
     pattern_basis: PatternBasis = PatternBasis.PERCENT_OF_DEPTH
+    preburst_bins: int = 0
 
 
 def _as_float(value: Decimal) -> float:
@@ -954,9 +955,8 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         message = "S2 adapter needs rainfall starting in the first increment"
         raise ValueError(message)
     basis = PatternBasis(storm.pattern_basis)
-    if basis not in ("percent_of_depth", "relative_weights"):
-        message = "S2 cannot represent combined preburst/burst patterns with a single denominator"
-        raise ValueError(message)
+    # The typed model validates the separate pre-burst and full burst segments.
+    # Preserve their weights and split; S2 normalizes the complete event depth once.
     if catchment.reach_mode not in ("implicit_natural", "explicit_reach_types"):
         message = "S2 accepts only characterised natural-reach computation modes"
         raise ValueError(message)
@@ -981,4 +981,5 @@ def to_s2_payload(model: RunModel) -> S2Payload:
         _as_float(parameters.losses[0].continuing) if parameters.loss_model == 2 else None,
         tuple(_as_float(area.impervious_fraction) for area in catchment.subareas),
         basis,
+        storm.preburst_bins,
     )

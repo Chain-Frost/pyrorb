@@ -897,8 +897,14 @@ def test_original_102p10_all_eight_three_file_imports_are_typed_without_rewritin
     assert compatible.status == "computed_unvalidated"
     assert len(compatible.hydrographs) == 1
     assert len(compatible.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
-    improved = run_engine_project(manifest, selection=EngineSelection.for_engine("python"))
-    assert improved.status == "unsupported_feature"
+    selection = EngineSelection.for_engine("python")
+    improved = run_engine_project(manifest, selection=selection)
+    assert improved.status == "computed_unvalidated", improved.diagnostics
+    assert improved.effective_selection == selection
+    assert improved.native_parity_status == "not_assessed"
+    assert len(improved.hydrographs) == 1
+    assert len(improved.hydrographs[0].discharge_m3_s) == case["clock"]["row_count"]
+    assert load_project(manifest).run == model
 
 
 def _n4_original_catchment() -> bytes:

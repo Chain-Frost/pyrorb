@@ -19,7 +19,7 @@ from runoff_routing.engine_types import EngineSelection
 from runoff_routing.integration import prepare_run_model, run_model
 from runoff_routing.project_batch import ProjectEvent, run_project_events
 from runoff_routing.project_json import EmbeddedRun, LegacyRunFiles, Project, SourceFile, write_project
-from runoff_routing.rorb_codec import parse_catg, serialize_cmd_par, serialize_design_stm
+from runoff_routing.rorb_codec import parse_catg, serialize_cmd_par, serialize_design_stm, to_s2_payload
 from runoff_routing.rorb_model import RunModel, from_json
 
 ROOT = Path(__file__).parents[1]
@@ -265,7 +265,7 @@ def test_relative_weights_are_explicit_and_not_substituted_for_percentages(tmp_p
     assert result.native_parity_status == "not_assessed"
 
 
-def test_combined_preburst_remains_explicitly_unsupported(tmp_path: Path) -> None:
+def test_combined_preburst_preserves_typed_basis_and_runs_independent_engine(tmp_path: Path) -> None:
     model = _imported_model()
     storm = replace(
         model.storm,
@@ -273,9 +273,43 @@ def test_combined_preburst_remains_explicitly_unsupported(tmp_path: Path) -> Non
         percentages=(Decimal(20), Decimal(100)),
         preburst_bins=1,
     )
-    project = _project(tmp_path / "preburst.json", replace(model, storm=storm))
+    combined = replace(model, storm=storm)
+    payload = to_s2_payload(combined)
+    assert payload.pattern_basis == "combined_preburst_percent"
+    assert payload.percentages == (20.0, 100.0)
+    assert payload.preburst_bins == 1
+    project = _project(tmp_path / "preburst.json", combined)
     result = run_engine_project(project)
-    assert result.status == "unsupported_feature"
-    assert result.effective_selection == SELECTION
-    assert result.diagnostics[0].code == "unsupported_s2_profile"
-    assert not result.hydrographs
+    assert result.status == "computed_unvalidated", result.diagnostics
+    assert result.stored_selection == result.effective_selection == SELECTION
+    assert result.native_parity_status == "not_assessed"
+    direct = run_model(combined)
+    assert result.hydrographs[0].discharge_m3_s == direct.prints[0].discharge_m3_s
+    assert direct == run_model(combined, prepared=prepare_run_model(combined))
+
+
+@pytest.mark.parametrize(("first", "second"), [("0.07", "99.88"), ("0.01", "100.04")])
+def test_combined_preburst_inclusive_decimal_burst_endpoints_run(first: str, second: str) -> None:
+    model = _imported_model()
+    storm = replace(
+        model.storm,
+        pattern_basis="combined_preburst_percent",
+        percentages=(Decimal("2.10"), Decimal(first), Decimal(second)),
+        preburst_bins=1,
+    )
+    combined = replace(model, storm=storm)
+    direct = run_model(combined)
+    assert direct == run_model(combined, prepared=prepare_run_model(combined))
+    assert len(direct.prints[0].discharge_m3_s) == storm.calculation_increments + 1
+
+
+@pytest.mark.parametrize(("first", "second"), [("0.07", "99.879999999999"), ("0.01", "100.040000000001")])
+def test_combined_preburst_decimal_burst_outside_endpoints_still_rejected(first: str, second: str) -> None:
+    model = _imported_model()
+    with pytest.raises(ValueError, match="full 100% burst segment"):
+        replace(
+            model.storm,
+            pattern_basis="combined_preburst_percent",
+            percentages=(Decimal("2.10"), Decimal(first), Decimal(second)),
+            preburst_bins=1,
+        )

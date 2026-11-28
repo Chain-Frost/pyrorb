@@ -259,7 +259,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         message = "S2 requires percentages to total 100 within its 0.01 numerical tolerance"
         error = RunInputError("unsupported", "storm_precision", message, role="storm")
         raise error
-    if payload.pattern_basis == "relative_weights":
+    if payload.pattern_basis in ("relative_weights", "combined_preburst_percent"):
         # The original Decimal ratios, not the rounded absolute magnitudes,
         # establish the source storm. Equal subnormal floats may conceal
         # materially different source weights and fabricate a new event.
@@ -283,6 +283,7 @@ def _validated_solver_inputs(model: RunModel) -> tuple[Catchment, Storm, Losses,
         payload.percentages,
         payload.depths_mm,
         payload.pattern_basis,
+        payload.preburst_bins,
     )
     losses = Losses(payload.initial_loss_mm, payload.continuing_loss_mm_h, payload.runoff_coefficient)
     return catchment, storm, losses, payload.kc, payload.m
