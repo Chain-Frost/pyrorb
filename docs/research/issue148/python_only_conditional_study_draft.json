@@ -3,7 +3,7 @@
   "status": "proposed_unfrozen",
   "simulation_authorised": false,
   "owner_direction": "Current Prompt B: read-only source/loss/scenario qualification and proposal for owner decision; no native, routing, sampling, MC or timing. Section8 replay is historical; section9 preserves simulation_authorised=false.",
-  "repository_base": "4d864747a6a1bd327057d60644c7140165770878",
+  "repository_base": "ef5c985a607545aee9f58d2a0f4f5712c410e46d",
   "historical_packet": "../../work/2026-11-25-issue148-physical-source-protocol.md",
   "amendment": "../../work/2026-11-28-issue148-python-only-conditional-study.md",
   "historical_protocol": "physical_study_protocol_draft.json",
@@ -77,10 +77,10 @@
       "limitation": "No applicable calibration/IL/CL basis or site/region/rights evidence from these two documents; no conclusion about records elsewhere."
     },
     "constructed_dimensional_candidate": {
-      "status": "proposed_not_admitted",
+      "status": "owner_approved_for_preparation_not_admitted",
       "basis": "External published RORB Monte Carlo/flood-frequency reconciliation study; dimensional anchor for a constructed law only, not a catchment-specific calibrated transfer.",
-      "owner_direction": "Proceed with preparing the explicitly uncalibrated numerical study; specific dimensional pair and remaining scientific and source policy choices still require confirmation.",
-      "source_review": "Publisher-hosted PDF indexed text checked; direct PDF image/byte retrieval denied (HTTP 403), source byte/page verification and independent scientific review pending.",
+      "owner_direction": "Owner accepted the recommended dimensional pair for numerical research only, subject to independent source verification and scientific review. Private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128 records exact values and basis. Do not request the same pair again; other source/policy and activation gates remain.",
+      "source_review": "Publisher-hosted indexed section 6.8.1, printed page 50 rechecked; direct PDF fetch HTTP 403, original-byte/page-image and independent scientific admission pending.",
       "private_record": "See private custody PR92 continuation and redacted #245 receipt.",
       "planning_screen": "Conditional analytical no-excess and positive-excess witnesses under conservative source/ARF envelope and nominal continuous independent law; no routing or sampler execution. Not a certified implemented finite-law bound or admission.",
       "adopted": false
@@ -193,7 +193,346 @@
     "max_concurrent_cohorts": 1,
     "max_retries": 0,
     "larger_screens": "5k/10k screens, alternative budget confirmation, extra duration and native/replay excluded; separately approved new protocol only",
-    "stop": "pre-launch worst-case cohort incl cleanup fits remaining caps, actual complete planned allocations and identity verified; stop on budget, law/identity or unsupported state; keep all preassigned unstarted/aborted slots unknown; no outcome-dependent replacement or optional CI stopping"
+    "stop": "pre-launch worst-case cohort incl cleanup fits remaining caps, actual complete planned allocations and identity verified; stop on budget, law/identity or unsupported state; keep all preassigned unstarted/aborted slots unknown; no outcome-dependent replacement or optional CI stopping",
+    "candidate_stratum_geometry": {
+      "status": "deterministic_candidate_not_frozen_or_admitted",
+      "generation": "CPython 3.13.5 statistics.NormalDist, zmax=inv_cdf(.99), z_i=zmax*i/50; reverse and Decimal(str(1-cdf(z))); explicitly pin external endpoints .01 and .50; preserve strings rather than regenerate",
+      "raw_rare_endpoint": "0.010000000000000009",
+      "zmax": "2.3263478740408408",
+      "mass_total": "0.49",
+      "strata": [
+        {
+          "id": "h0000",
+          "aep_lower": "0.01",
+          "aep_upper": "0.011309155967932916",
+          "probability_mass": "0.001309155967932916"
+        },
+        {
+          "id": "h0001",
+          "aep_lower": "0.011309155967932916",
+          "aep_upper": "0.012764782815436027",
+          "probability_mass": "0.001455626847503111"
+        },
+        {
+          "id": "h0002",
+          "aep_lower": "0.012764782815436027",
+          "aep_upper": "0.014379768776775714",
+          "probability_mass": "0.001614985961339687"
+        },
+        {
+          "id": "h0003",
+          "aep_lower": "0.014379768776775714",
+          "aep_upper": "0.016167686267521963",
+          "probability_mass": "0.001787917490746249"
+        },
+        {
+          "id": "h0004",
+          "aep_lower": "0.016167686267521963",
+          "aep_upper": "0.01814277322737956",
+          "probability_mass": "0.001975086959857597"
+        },
+        {
+          "id": "h0005",
+          "aep_lower": "0.01814277322737956",
+          "aep_upper": "0.020319906411787714",
+          "probability_mass": "0.002177133184408154"
+        },
+        {
+          "id": "h0006",
+          "aep_lower": "0.020319906411787714",
+          "aep_upper": "0.02271456608407907",
+          "probability_mass": "0.002394659672291356"
+        },
+        {
+          "id": "h0007",
+          "aep_lower": "0.02271456608407907",
+          "aep_upper": "0.02534279161980768",
+          "probability_mass": "0.00262822553572861"
+        },
+        {
+          "id": "h0008",
+          "aep_lower": "0.02534279161980768",
+          "aep_upper": "0.028221127608604846",
+          "probability_mass": "0.002878335988797166"
+        },
+        {
+          "id": "h0009",
+          "aep_lower": "0.028221127608604846",
+          "aep_upper": "0.03136656012670347",
+          "probability_mass": "0.003145432518098624"
+        },
+        {
+          "id": "h0010",
+          "aep_lower": "0.03136656012670347",
+          "aep_upper": "0.03479644295487838",
+          "probability_mass": "0.00342988282817491"
+        },
+        {
+          "id": "h0011",
+          "aep_lower": "0.03479644295487838",
+          "aep_upper": "0.038528413631500946",
+          "probability_mass": "0.003731970676622566"
+        },
+        {
+          "id": "h0012",
+          "aep_lower": "0.038528413631500946",
+          "aep_upper": "0.04258029935789365",
+          "probability_mass": "0.004051885726392704"
+        },
+        {
+          "id": "h0013",
+          "aep_lower": "0.04258029935789365",
+          "aep_upper": "0.04697001291204139",
+          "probability_mass": "0.00438971355414774"
+        },
+        {
+          "id": "h0014",
+          "aep_lower": "0.04697001291204139",
+          "aep_upper": "0.05171543887551533",
+          "probability_mass": "0.00474542596347394"
+        },
+        {
+          "id": "h0015",
+          "aep_lower": "0.05171543887551533",
+          "aep_upper": "0.056834310635362706",
+          "probability_mass": "0.005118871759847376"
+        },
+        {
+          "id": "h0016",
+          "aep_lower": "0.056834310635362706",
+          "aep_upper": "0.06234407878560555",
+          "probability_mass": "0.005509768150242844"
+        },
+        {
+          "id": "h0017",
+          "aep_lower": "0.06234407878560555",
+          "aep_upper": "0.06826177171942271",
+          "probability_mass": "0.00591769293381716"
+        },
+        {
+          "id": "h0018",
+          "aep_lower": "0.06826177171942271",
+          "aep_upper": "0.07460384937037823",
+          "probability_mass": "0.00634207765095552"
+        },
+        {
+          "id": "h0019",
+          "aep_lower": "0.07460384937037823",
+          "aep_upper": "0.08138605122626552",
+          "probability_mass": "0.00678220185588729"
+        },
+        {
+          "id": "h0020",
+          "aep_lower": "0.08138605122626552",
+          "aep_upper": "0.088623239899142",
+          "probability_mass": "0.00723718867287648"
+        },
+        {
+          "id": "h0021",
+          "aep_lower": "0.088623239899142",
+          "aep_upper": "0.09632924168668688",
+          "probability_mass": "0.00770600178754488"
+        },
+        {
+          "id": "h0022",
+          "aep_lower": "0.09632924168668688",
+          "aep_upper": "0.10451668569981742",
+          "probability_mass": "0.00818744401313054"
+        },
+        {
+          "id": "h0023",
+          "aep_lower": "0.10451668569981742",
+          "aep_upper": "0.11319684325622315",
+          "probability_mass": "0.00868015755640573"
+        },
+        {
+          "id": "h0024",
+          "aep_lower": "0.11319684325622315",
+          "aep_upper": "0.1223794693459026",
+          "probability_mass": "0.00918262608967945"
+        },
+        {
+          "id": "h0025",
+          "aep_lower": "0.1223794693459026",
+          "aep_upper": "0.13207264805982533",
+          "probability_mass": "0.00969317871392273"
+        },
+        {
+          "id": "h0026",
+          "aep_lower": "0.13207264805982533",
+          "aep_upper": "0.14228264393364576",
+          "probability_mass": "0.01020999587382043"
+        },
+        {
+          "id": "h0027",
+          "aep_lower": "0.14228264393364576",
+          "aep_upper": "0.15301376119243337",
+          "probability_mass": "0.01073111725878761"
+        },
+        {
+          "id": "h0028",
+          "aep_lower": "0.15301376119243337",
+          "aep_upper": "0.16426821288750004",
+          "probability_mass": "0.01125445169506667"
+        },
+        {
+          "id": "h0029",
+          "aep_lower": "0.16426821288750004",
+          "aep_upper": "0.17604600189090025",
+          "probability_mass": "0.01177778900340021"
+        },
+        {
+          "id": "h0030",
+          "aep_lower": "0.17604600189090025",
+          "aep_upper": "0.18834481565588868",
+          "probability_mass": "0.01229881376498843"
+        },
+        {
+          "id": "h0031",
+          "aep_lower": "0.18834481565588868",
+          "aep_upper": "0.20115993656191344",
+          "probability_mass": "0.01281512090602476"
+        },
+        {
+          "id": "h0032",
+          "aep_lower": "0.20115993656191344",
+          "aep_upper": "0.21448416954063765",
+          "probability_mass": "0.01332423297872421"
+        },
+        {
+          "id": "h0033",
+          "aep_lower": "0.21448416954063765",
+          "aep_upper": "0.2283077885256437",
+          "probability_mass": "0.01382361898500605"
+        },
+        {
+          "id": "h0034",
+          "aep_lower": "0.2283077885256437",
+          "aep_upper": "0.24261850308420785",
+          "probability_mass": "0.01431071455856415"
+        },
+        {
+          "id": "h0035",
+          "aep_lower": "0.24261850308420785",
+          "aep_upper": "0.2574014463768147",
+          "probability_mass": "0.01478294329260685"
+        },
+        {
+          "id": "h0036",
+          "aep_lower": "0.2574014463768147",
+          "aep_upper": "0.27263918535150933",
+          "probability_mass": "0.01523773897469463"
+        },
+        {
+          "id": "h0037",
+          "aep_lower": "0.27263918535150933",
+          "aep_upper": "0.288311753819003",
+          "probability_mass": "0.01567256846749367"
+        },
+        {
+          "id": "h0038",
+          "aep_lower": "0.288311753819003",
+          "aep_upper": "0.30439670877444147",
+          "probability_mass": "0.01608495495543847"
+        },
+        {
+          "id": "h0039",
+          "aep_lower": "0.30439670877444147",
+          "aep_upper": "0.3208692100372077",
+          "probability_mass": "0.01647250126276623"
+        },
+        {
+          "id": "h0040",
+          "aep_lower": "0.3208692100372077",
+          "aep_upper": "0.33770212297577085",
+          "probability_mass": "0.01683291293856315"
+        },
+        {
+          "id": "h0041",
+          "aep_lower": "0.33770212297577085",
+          "aep_upper": "0.35486614377547687",
+          "probability_mass": "0.01716402079970602"
+        },
+        {
+          "id": "h0042",
+          "aep_lower": "0.35486614377547687",
+          "aep_upper": "0.37232994639856043",
+          "probability_mass": "0.01746380262308356"
+        },
+        {
+          "id": "h0043",
+          "aep_lower": "0.37232994639856043",
+          "aep_upper": "0.3900603500829688",
+          "probability_mass": "0.01773040368440837"
+        },
+        {
+          "id": "h0044",
+          "aep_lower": "0.3900603500829688",
+          "aep_upper": "0.4080225059352207",
+          "probability_mass": "0.0179621558522519"
+        },
+        {
+          "id": "h0045",
+          "aep_lower": "0.4080225059352207",
+          "aep_upper": "0.4261801008977857",
+          "probability_mass": "0.018157594962565"
+        },
+        {
+          "id": "h0046",
+          "aep_lower": "0.4261801008977857",
+          "aep_upper": "0.44449557711843624",
+          "probability_mass": "0.01831547622065054"
+        },
+        {
+          "id": "h0047",
+          "aep_lower": "0.44449557711843624",
+          "aep_upper": "0.462930364522426",
+          "probability_mass": "0.01843478740398976"
+        },
+        {
+          "id": "h0048",
+          "aep_lower": "0.462930364522426",
+          "aep_upper": "0.48144512419246066",
+          "probability_mass": "0.01851475967003466"
+        },
+        {
+          "id": "h0049",
+          "aep_lower": "0.48144512419246066",
+          "aep_upper": "0.50",
+          "probability_mass": "0.01855487580753934"
+        }
+      ],
+      "allocation_counts_per_stratum": {
+        "intake": 5,
+        "screen": 20,
+        "reference_per_cohort": 1000,
+        "confirmation": 20,
+        "pooled_reference": 10000
+      },
+      "exact_reference_S": "1638836485430008758823903048897131/600250000000000000000000000000000000000",
+      "exact_max_individual_weight": "927743790376967/245000000000000000000",
+      "effective_count_approx": 366265.9486388616,
+      "hoeffding_radius_K256_alpha002_approx": 0.0037224355572404388,
+      "split_hoeffding_radius_approx": 0.0038474356768761317,
+      "split_KL_limit_approx": 0.00004106116317108456,
+      "roots_planned": 341,
+      "root_collision_union_upper_approx": 3.1425599969492346e-15,
+      "roots_generated": 0,
+      "conditional_midpoint_tp_counts_if_equal_weights": [
+        900719925474099,
+        900719925474099,
+        900719925474100,
+        900719925474099,
+        900719925474099,
+        900719925474099,
+        900719925474099,
+        900719925474100,
+        900719925474099,
+        900719925474099
+      ],
+      "midpoint_tp_law_note": "Exact counts out of 2^53 for cumulative cutpoints k/10 under idealised uniform 53-bit midpoint law; actual source membership/weights and computational HMAC independence remain to review. Not empirical TP occurrence probabilities.",
+      "limits": "Deterministic planning arithmetic only; no admitted weights, plan hash, roots, sampler or physical execution. Review actual law before freeze."
+    }
   },
   "inference": {
     "status": "proposed_independent_scientific_review_required",
@@ -232,7 +571,7 @@
       "not_achieved_physical_power": true
     },
     "rare_tail_candidate": {
-      "status": "analytical_only_not_adopted",
+      "status": "implemented_and_bounded_development_qualified_in_PR246_independent_scientific_adoption_pending",
       "source_pr": "https://github.com/Chain-Frost/pyrorb/pull/243",
       "method": "split reference alpha between latent weighted Hoeffding and max-individual-weight Bernoulli-KL confidence regions; intersect pathwise after enclosure; no increased total alpha or changed tolerance",
       "illustration_at_Fhat_0_99": {
@@ -240,7 +579,8 @@
         "candidate_width": "0.00180370456",
         "width_reduction_percent": "75.77"
       },
-      "limitation": "mid-CDF split may widen interval; exact CDF step-boundary quantile remains unresolved; needs independent proof/numerical review and separate fixed qualification"
+      "limitation": "mid-CDF split may widen interval; exact CDF step-boundary quantile remains unresolved; needs independent proof/numerical review and separate fixed qualification",
+      "source_independent_implementation": "https://github.com/Chain-Frost/pyrorb/pull/246"
     },
     "rectangle_guard": {
       "status": "proposed_clarification_pending_independent_review",
@@ -277,7 +617,7 @@
       "execution": "deterministic desk arithmetic only; no routed, sampled or synthetic MC events; no scientific sign-off"
     },
     "conditional_ledger_contract": {
-      "status": "proposed_read_only_research_boundary_not_implemented_or_scientifically_admitted",
+      "status": "implemented_in_research_PR246_final_head_checks_and_integration_pending",
       "source_revision": "e80e56dbd1089874b527b98f9d1606532474c733",
       "verified_reader": "runoff_routing.monte_carlo_execution.iter_verified_mc_results; exhaust iterator on pinned immutable inputs; do not invoke run/replay",
       "allocation": "original MCAllocation Decimal masses and positive planned integer counts; derive exact rational mass per slot; keep original .49 denominator and .01/.50 tails; unknown/unstarted slots remain in preassigned plan",
@@ -400,7 +740,7 @@
   },
   "gates": {
     "candidate_scope": "archived revision adopted as candidate only; review A/B source evidence and rights/calibration limitation",
-    "policy": "Specific constructed dimensional candidate proposed, not adopted; recover exact raw-parent bytes, verify external reference, resolve scientific/scoped rights and constructed joint-law decisions, parameter-only derivative, feature/site/clock/horizon and margins. No recovered physical loss basis.",
+    "policy": "Owner-approved constructed dimensional candidate for preparation only; exact raw parent, independent external anchor/scientific and rights review, joint law, parameter-only derivative, feature/site/clock/horizon and numerical margins remain pending.",
     "analytic": "Independent amended latent-law/design review and candidate implementation/scientific review; reuse completed #243/#246 evidence; only separately justified remaining qualification.",
     "manifests": "actual source, weights, roots, reference, confirmation, confidence and synthetic validation manifests reviewed; no generator now",
     "owner": "review proposed numerical margins/absolute floors, power objectives, 300 confirmations and resource limits, separately approve each execution stage",
@@ -427,7 +767,7 @@
   "simulation_authorised_field_scope": "Current Prompt B explicitly excludes execution; physical-source preflight remains blocked and false. Historical section8 permission/replay is not authority for this continuation.",
   "historical_owner_execution_permission": true,
   "uncalibrated_numerical_proposal": {
-    "status": "parameter_unassigned_owner_decision_required",
+    "status": "owner_approved_dimensional_candidate_preparation_pending_scientific_admission",
     "simulation_authorised": false,
     "model": "same immutable M04 archived graph with computational P01/P02; physical/site/support/rights eligibility pending",
     "duration_minutes": 1440,
@@ -441,8 +781,8 @@
     "dependence": "mutual independence of rainfall coordinate, IL-factor and TP category is proposed constructed assumption, not hydrological finding",
     "transformations": "uniform forcing; applicable ARR2019 region/common-area ARF once on gross raw point depth; PB0 as constructed boundary; no climate scaling, clamp/redraw or source substitution",
     "interpretation": "conditional numerical response reliability only, fixed mass0.49 and outside0.51 unresolved; not annual/physical/design/native/calibrated accuracy",
-    "owner_structural_scope_approval": null,
-    "owner_dimensional_values_and_basis": null,
+    "owner_structural_scope_approval": "Owner directed uncalibrated numerical-study preparation only; original physical criteria not admitted.",
+    "owner_dimensional_values_and_basis": "Specific dimensional pair accepted for preparation only, subject to independent scientific/source verification; exact private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128. Actual admitted loss fields remain null.",
     "owner_law_and_boundary_approval": null,
     "eligibility_guard": "No original physical gate cleared. Any narrower lawful numerical criterion requires explicit owner/independent review; no checker weakening.",
     "record": "../../work/2026-11-28-issue148-python-only-conditional-study.md#9-prompt-b-source-loss-qualification-and-uncalibrated-proposal-28-november-2026"

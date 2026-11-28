@@ -319,3 +319,59 @@ replay and all null adopted loss/source/scenario values. No new synthetic
 campaign, sampler, routing, native launch, timing pilot, preflight, merge or
 release. Reconciled main `4d864747a6a1bd327057d60644c7140165770878` without changing the separate reader or
 other concurrent work. `simulation_authorised=false`; #148/#228/#9 remain open.
+
+## 12. Owner-approved candidate and deterministic study geometry — 28 November 2026
+
+Owner accepted the recommended specific dimensional pair for **uncalibrated
+numerical-reliability research only**, subject to independent source
+verification and scientific review. Private receipt B148-CONSTRUCTED-LOSS-OWNER-20261128
+records exact candidate values, source locator and factor-law/parameter-only
+derivative requirements. Do not request the same pair again. This is not
+calibrated loss adoption, physical-population admission, rights permission,
+margin/cap adoption or activation. All actual admitted loss values and hash,
+scenario and other admission fields remain null. Publisher-indexed section
+6.8.1, printed page 50 was checked again; direct PDF retrieval remains HTTP
+403, so original-byte and page-image verification are not claimed. The exact
+raw-parent retrieval in #245 remains outstanding.
+
+The existing sidecar now contains a deterministic, nonexecutable **candidate
+50-stratum geometry**. CPython 3.13.5 statistics.NormalDist gives zmax =
+inv_cdf(.99) = 2.3263478740408408; use z_i=zmax*i/50, reverse the edges, and
+Decimal(str(1-cdf(z))). The floating rare endpoint is .010000000000000009,
+not .01; explicitly pin the two external endpoints to .01 and .50 before
+forming exact Decimal widths. Preserve the resulting edge strings rather
+than regenerate per host. Independent exact integer recomputation confirms
+50 positive contiguous widths summing to .49 and the same rational S and b.
+
+| Planning item | Candidate value |
+| --- | ---: |
+| Strata | 50 |
+| Intake / screen / confirmation draws per stratum | 5 / 20 / 20 |
+| Reference draws per stratum per cohort / pooled | 1,000 / 10,000 |
+| Conditional effective reference count 1/S | 366,265.95 |
+| Original Hoeffding radius, K=256, alpha=.02 | .00372243556 |
+| Split-alpha Hoeffding radius | .00384743568 |
+| Split-alpha KL limit | .0000410611632 |
+
+These are planning calculations, not measured precision or estimator adoption.
+Retain proposed 830,250 events and 42h ceiling. The 341 planned independent
+uint64 roots include intake. Under the declared independent uniform
+with-replacement computational model, the root collision union upper bound
+is 341*340/(2*2^64), approximately 3.143e-15. Abort unresolved on overlap;
+do not condition on collision-free selection or redraw. No roots generated.
+The sidecar records exact ten-category counts on the idealised uniform 53-bit
+midpoint lattice at cumulative k/10 cutpoints. Each is one of the adjacent
+integers to 2^53/10; maximum per-category deviation from .1 is 8.882e-17.
+This is not empirical TP weighting, source eligibility or proof of HMAC
+independence. Verify actual source order and joint law before freeze.
+
+Reconciled the #243 separate analytical review and #246 exact Fraction query
+boundary correction without changing those branches or original research
+evidence. Candidate aggregation and confidence methods are implemented in
+research #246, not adopted. No repeat experiment, product sampler, roots,
+physical/native launch, timing, preflight, merge or release. Reconciled main
+`ef5c985a607545aee9f58d2a0f4f5712c410e46d`, preserving concurrent reader and adapter changes.
+Next: exact raw-parent bytes, independent scientific/source/rights and
+parameter-only derivative review, remaining law/horizon/margin/cap decisions,
+actual seven-manifest audit, staged activation only after gates.
+`simulation_authorised=false`; #148/#228/#9 remain open.
