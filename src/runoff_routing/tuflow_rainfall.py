@@ -9,6 +9,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal, DecimalException, Inexact, localcontext
+from itertools import pairwise
 from pathlib import Path
 from typing import Literal
 
@@ -22,6 +23,10 @@ _HEADINGS = {
 }
 _TIME_COLUMN = "Time_hours"
 _ZERO = Decimal(0)
+
+
+class RainfallExportError(ValueError):
+    """Malformed, unsupported or ambiguous rainfall source or output selection."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +68,7 @@ def _decimal(value: Decimal) -> Decimal:
     exponent = value.as_tuple().exponent
     if not isinstance(exponent, int) or abs(exponent) > 30 or value.adjusted() > 30 or value < 0:
         msg = "Rainfall values must be nonnegative finite decimals within the supported precision"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     return value
 
 
@@ -71,14 +76,14 @@ def _metadata_decimal(document: RorbDocument, key: str) -> Decimal:
     token = document.metadata.get(key)
     if not isinstance(token, str):
         msg = f"Missing printed decimal: {key}"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     return _decimal(exact_number(token))
 
 
 def _select_section(document: RorbDocument, kind: RainfallKind, section: int | None) -> str:
     if kind not in _HEADINGS:
         msg = "Explicitly select gross or excess rainfall"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     candidates = [
         match[1]
         for key, value in document.metadata.items()
@@ -89,16 +94,16 @@ def _select_section(document: RorbDocument, kind: RainfallKind, section: int | N
     if section is None:
         if len(candidates) != 1:
             msg = f"Expected one {kind} rainfall section; explicitly select an available section: {candidates}"
-            raise ValueError(msg)
+            raise RainfallExportError(msg)
         selected = candidates[0]
     else:
         selected = f"rainfall_{section}"
         if selected not in candidates:
             msg = f"{selected} does not identify the requested {kind} rainfall"
-            raise ValueError(msg)
+            raise RainfallExportError(msg)
     if document.metadata[f"{selected}_meaning"] != f"{_HEADINGS[kind]} following time shown":
         msg = f"Unsupported interval timing in {selected}"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     return selected
 
 
@@ -108,7 +113,7 @@ def _clock(document: RorbDocument) -> tuple[Decimal, int, int]:
     finish = document.metadata.get("rainfall_finish_increment")
     if step <= 0 or not isinstance(start, int) or not isinstance(finish, int) or not 0 <= start < finish:
         msg = "Expected an unambiguous positive time increment and complete declared rainfall horizon"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     _verify_printed_clock(document, step)
     return step, start, finish
 
@@ -123,11 +128,11 @@ def _verify_printed_clock(document: RorbDocument, step: Decimal) -> None:
             exponent = observed.as_tuple().exponent
             if not isinstance(exponent, int):
                 msg = "Invalid printed hydrograph time"
-                raise ValueError(msg)
+                raise RainfallExportError(msg)
             expected = step * int(str(row["Inc"]))
             if abs(expected - observed) > Decimal(1).scaleb(exponent) / 2:
                 msg = "Printed rainfall timestep disagrees with the cumulative OUT clock"
-                raise ValueError(msg)
+                raise RainfallExportError(msg)
 
 
 def _validate_page(page: Section, start: int, finish: int) -> None:
@@ -139,7 +144,7 @@ def _validate_page(page: Section, start: int, finish: int) -> None:
         or any(row["Inc"] != increment for increment, row in enumerate(page.rows, start))
     ):
         msg = f"Incomplete or invalid rainfall interval sequence in {page.name}"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
 
 
 def _collect_columns(
@@ -148,7 +153,7 @@ def _collect_columns(
     page_count = document.metadata.get(f"{name}_page_count")
     if not isinstance(page_count, int) or page_count < 1:
         msg = f"Missing complete rainfall page/header/total boundary for {name}"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     values: dict[str, tuple[Decimal, ...]] = {}
     reported: dict[str, Decimal] = {}
     seen: set[str] = set()
@@ -161,11 +166,11 @@ def _collect_columns(
             if column == "Catchment_mm" and column in values:
                 if values[column] != depths or reported[column] != total:
                     msg = "Conflicting repeated catchment rainfall across pages"
-                    raise ValueError(msg)
+                    raise RainfallExportError(msg)
                 continue
             if column.casefold() in seen:
                 msg = f"Ambiguous repeated rainfall column: {column}"
-                raise ValueError(msg)
+                raise RainfallExportError(msg)
             seen.add(column.casefold())
             values[column] = depths
             reported[column] = total
@@ -184,9 +189,9 @@ def _boundary_rows(
     trailing = any(rows[-1].depths_mm)
     if trailing:
         rows.append(RainfallRow(step * (finish + 1), zeros))
-    if any(float(a.time_hours) >= float(b.time_hours) for a, b in zip(rows, rows[1:], strict=False)):
+    if any(float(a.time_hours) >= float(b.time_hours) for a, b in pairwise(rows)):
         msg = "Rainfall clock cannot be represented as distinct floating-point timestamps"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     return tuple(rows), trailing
 
 
@@ -200,11 +205,11 @@ def build_tuflow_rainfall(
     """
     if document.kind != "standard_output" or document.status == "invalid":
         msg = "A structurally valid standard RORB report is required"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     requested = tuple(columns)
     if not requested or len(set(requested)) != len(requested):
         msg = "Select at least one unique canonical rainfall column"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     name = _select_section(document, kind, section)
     try:
         with localcontext() as context:
@@ -214,13 +219,13 @@ def build_tuflow_rainfall(
             values, reported = _collect_columns(document, name, start, finish)
             if any(column not in values for column in requested):
                 msg = f"Unknown rainfall column; available columns: {tuple(values)}"
-                raise ValueError(msg)  # noqa: TRY301 -- preserve one conversion error boundary
+                raise RainfallExportError(msg)
             selected = tuple(values[column] for column in requested)
             rows, trailing = _boundary_rows(selected, step, start, finish)
             totals = tuple(sum(depths, _ZERO) for depths in selected)
     except (DecimalException, StopIteration, KeyError) as exc:
         msg = "Invalid or unsupported canonical rainfall source tokens or clock"
-        raise ValueError(msg) from exc
+        raise RainfallExportError(msg) from exc
     return RainfallBoundary(
         document.sha256,
         name,
@@ -242,7 +247,7 @@ def export_tuflow_rainfall(
     """Convert one report to a new CSV; refuse to overwrite any existing file."""
     if output.suffix.lower() != ".csv":
         msg = "TUFLOW boundary data output must have a .csv extension"
-        raise ValueError(msg)
+        raise RainfallExportError(msg)
     result = build_tuflow_rainfall(read_rorb_file(source), kind=kind, columns=columns, section=section)
     payload = result.to_csv()
     with output.open("x", encoding="utf-8", newline="") as stream:

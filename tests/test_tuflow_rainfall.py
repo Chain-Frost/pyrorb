@@ -5,12 +5,19 @@ from __future__ import annotations
 import csv
 import io
 from decimal import Decimal
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
 
 from runoff_routing.rorb_readers.readers import read_rorb_bytes, read_rorb_file
-from runoff_routing.tuflow_rainfall import RainfallKind, build_tuflow_rainfall, export_tuflow_rainfall, main
+from runoff_routing.tuflow_rainfall import (
+    RainfallExportError,
+    RainfallKind,
+    build_tuflow_rainfall,
+    export_tuflow_rainfall,
+    main,
+)
 
 _GROSS = "Rainfall, mm, in time inc. following time shown"
 _EXCESS = "Rainfall-excess, mm, in time inc. following time shown"
@@ -60,7 +67,7 @@ def test_gross_multicolumn_csv_and_stepped_depth_conservation(tmp_path: Path) ->
     rows = list(csv.DictReader(io.StringIO(output.read_text(encoding="utf-8"))))
     for column, expected in zip(_COLUMNS, boundary.totals_mm, strict=True):
         applied = Decimal(0)
-        for earlier, later in zip(rows, rows[1:], strict=False):
+        for earlier, later in pairwise(rows):
             dt = Decimal(later["Time_hours"]) - Decimal(earlier["Time_hours"])
             rate = Decimal(later[column]) / dt
             applied += rate * dt
@@ -79,13 +86,13 @@ def test_excess_is_not_gross_and_existing_dry_end_needs_no_padding() -> None:
     assert boundary.totals_mm == (Decimal("1.50"),)
     assert not boundary.trailing_zero_added
     assert boundary.to_csv() == "Time_hours,Subarea_A_mm\n0.000,0\n0.125,1.50\n0.250,0.00\n0.375,0.00\n"
-    with pytest.raises(ValueError, match="does not identify"):
+    with pytest.raises(RainfallExportError, match="does not identify"):
         build_tuflow_rainfall(document, kind="excess", columns=_COLUMNS, section=1)
 
 
 def test_repeated_section_requires_explicit_selection() -> None:
     document = read_rorb_bytes((_PREFIX + _GROSS_PAGES + _GROSS_PAGES + "\nRouting results:\n").encode())
-    with pytest.raises(ValueError, match="explicitly select"):
+    with pytest.raises(RainfallExportError, match="explicitly select"):
         build_tuflow_rainfall(document, kind="gross", columns=_COLUMNS)
     boundary = build_tuflow_rainfall(document, kind="gross", columns=_COLUMNS, section=2)
     assert boundary.section == "rainfall_2"
@@ -102,46 +109,50 @@ def test_nonzero_declared_start_preserved_without_clock_reset() -> None:
 
 
 @pytest.mark.parametrize(
-    ("original", "replacement"),
+    ("original", "replacement", "message"),
     [
-        ("following time shown", "before time shown"),
-        ("Rainfall times: 0 3", "Rainfall times: 0 4"),
-        ("Rainfall times: 0 3", "Rainfall times: 0 3\nRainfall times: 0 3"),
-        ("Time increment (hours)= 0.125", "Time increment (hours)= 0.125\nTime increment (hours)= 0.25"),
-        ("Time increment (hours)= 0.125", "Time increment (hours)= 0"),
-        ("0 2.00 3.00 1.25", "0 2.00 *** 1.25"),
-        ("0 2.00 3.00 1.25", "0 2.00 -3.00 1.25"),
-        ("1 0.00 0.00 0.00", ""),
-        ("2 4.00 1.25 5.50", "3 4.00 1.25 5.50"),
-        ("Tot. 6.00 4.25 6.75", "Tot. 6.00 4.25"),
-        ("Tot. 6.00 10.0", "Tot. 6.00 malformed"),
-        ("Incs ment Q", "Incs ment A"),
-        ("0 2.00 2.5", "0 3.00 2.5"),
-        ("Incs ment Q", "Incs other Q"),
-        ("2 4.00 7.5", "2 4.00"),
+        ("following time shown", "before time shown", "Unsupported interval timing"),
+        ("Rainfall times: 0 3", "Rainfall times: 0 4", "Incomplete or invalid rainfall interval"),
+        ("Rainfall times: 0 3", "Rainfall times: 0 3\nRainfall times: 0 3", "complete declared rainfall horizon"),
+        (
+            "Time increment (hours)= 0.125",
+            "Time increment (hours)= 0.125\nTime increment (hours)= 0.25",
+            "structurally valid",
+        ),
+        ("Time increment (hours)= 0.125", "Time increment (hours)= 0", "structurally valid"),
+        ("0 2.00 3.00 1.25", "0 2.00 *** 1.25", "structurally valid"),
+        ("0 2.00 3.00 1.25", "0 2.00 -3.00 1.25", "nonnegative finite decimals"),
+        ("1 0.00 0.00 0.00", "", "Missing complete rainfall page"),
+        ("2 4.00 1.25 5.50", "3 4.00 1.25 5.50", "structurally valid"),
+        ("Tot. 6.00 4.25 6.75", "Tot. 6.00 4.25", "Missing complete rainfall page"),
+        ("Tot. 6.00 10.0", "Tot. 6.00 malformed", "Missing complete rainfall page"),
+        ("Incs ment Q", "Incs ment A", "Ambiguous repeated rainfall column"),
+        ("0 2.00 2.5", "0 3.00 2.5", "Conflicting repeated catchment rainfall"),
+        ("Incs ment Q", "Incs other Q", "Missing complete rainfall page"),
+        ("2 4.00 7.5", "2 4.00", "structurally valid"),
     ],
 )
 def test_bad_or_unidentified_report_refuses_without_creating_output(
-    tmp_path: Path, original: str, replacement: str
+    tmp_path: Path, original: str, replacement: str, message: str
 ) -> None:
     assert original in _REPORT
     source = tmp_path / "bad.out"
     source.write_text(_REPORT.replace(original, replacement), encoding="utf-8")
     output = tmp_path / "bad.csv"
-    with pytest.raises(ValueError):
+    with pytest.raises(RainfallExportError, match=message):
         export_tuflow_rainfall(source, output, kind="gross", columns=_COLUMNS)
     assert not output.exists()
 
 
 def test_rounded_step_with_cumulative_clock_drift_refuses() -> None:
     report = _REPORT + "\nHydrograph summary\nInc Time Hyd0001\n0 0.00 0\n1 0.12 0\n2 0.24 0\n3 0.36 0\n\n"
-    with pytest.raises(ValueError, match="cumulative OUT clock"):
+    with pytest.raises(RainfallExportError, match="cumulative OUT clock"):
         build_tuflow_rainfall(read_rorb_bytes(report.encode()), kind="gross", columns=_COLUMNS)
 
 
 @pytest.mark.parametrize("columns", [(), ("Hyd001",), ("Subarea_A_mm", "Subarea_A_mm"), ("Subarea_Z_mm",)])
 def test_unknown_ambiguous_or_discharge_column_refuses(columns: tuple[str, ...]) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(RainfallExportError, match="Select at least one unique|Unknown rainfall column"):
         build_tuflow_rainfall(read_rorb_bytes(_REPORT.encode()), kind="gross", columns=columns)
 
 
@@ -159,6 +170,18 @@ def test_cli_requires_selection_and_writes_literal_csv(tmp_path: Path, capsys: p
     assert main(args) == 0
     assert output.read_bytes() == _EXPECTED.encode()
     assert "Subarea_Q_mm: printed increments 10.0 mm" in capsys.readouterr().out
+
+
+def test_source_and_destination_protection(tmp_path: Path) -> None:
+    source = tmp_path / "report.csv"
+    original = _REPORT.encode()
+    source.write_bytes(original)
+    with pytest.raises(FileExistsError):
+        export_tuflow_rainfall(source, source, kind="gross", columns=_COLUMNS)
+    assert source.read_bytes() == original
+    with pytest.raises(RainfallExportError, match="CSV extension|csv extension"):
+        export_tuflow_rainfall(source, tmp_path / "report.out", kind="gross", columns=_COLUMNS)
+    assert not (tmp_path / "report.out").exists()
 
 
 _ROOT = Path(__file__).absolute().parents[1]

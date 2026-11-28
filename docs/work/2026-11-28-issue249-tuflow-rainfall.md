@@ -71,3 +71,9 @@ per-column depth differences and outcome; use no restricted public data. If no
 licensed environment is available, retain native consumption as unverified.
 
 Do not merge, publish or migrate ryan-tools before separate owner approval.
+
+## Follow-up on initial hosted quality run
+
+At `927bc6e53ed5c8406b82eefbd351b557dffe6c32`, the [Windows 3.11 run](https://github.com/Chain-Frost/pyrorb/actions/runs/46107570860) passed repository hygiene (683 files, zero errors), then stopped at seven Ruff findings. No source tests, wheel or regression verification ran on that attempt. The follow-up replaces successive-pair zip with pairwise, introduces a typed ValueError subclass for rainfall admission refusals, removes the unused suppression, strengthens negative-test diagnostic matching and adds source/destination protection checks. Rules and existing CI lanes are unchanged. Fresh exact-head quality evidence is required.
+
+TUFLOW 2026.3 manual section 8.4.3.2.1 identifies the actual native inspection outputs: `2d_bc_tables` and .tlf entries labelled `Rainfall histogram after Rainfall Boundary Factor adjustment` and `RF Rainfall histogram conversion`. Section 8.4.3.2.2 identifies RFR and RFC map outputs for rainfall rate and cumulative rainfall. Use these in the pending native polygon check rather than relying on solver success alone. Section 8.5 Table 8.13 confirms the named Column 1 and Column 2 mappings. See [manual](https://docs.tuflow.com/classic-hpc/manual/2026.3/07-Boundaries-and-Initial-Conditions.html).
