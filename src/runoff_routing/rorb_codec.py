@@ -23,6 +23,7 @@ from .rorb_model import (
     CatchmentModel,
     ControlCode,
     ControlStep,
+    DirectDepthStorm,
     LossValue,
     ParameterSet,
     PatternBasis,
@@ -39,7 +40,13 @@ T = TypeVar("T", infer_variance=True)
 _ORIGINAL_BYTES_T = TypeVar("_ORIGINAL_BYTES_T")
 
 Dialect = Literal[
-    "cmd_v2", "rorb_ge_002", "rorb_ge_645", "design_explicit", "design_relative_weights", "design_preburst_combined"
+    "cmd_v2",
+    "rorb_ge_002",
+    "rorb_ge_645",
+    "design_explicit",
+    "design_relative_weights",
+    "design_preburst_combined",
+    "design_direct_depth",
 ]
 Status = Literal["invalid", "unsupported"]
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eEdD][+-]?[0-9]+)?\Z")
@@ -728,6 +735,93 @@ def parse_design_stm(data: bytes) -> ParsedDocument[StormModel]:  # noqa: C901 -
         else "design_explicit"
     )
     return ParsedDocument(dialect, source, model, spans)
+
+
+def _direct_design_header(records: list[tuple[int, str]]) -> tuple[Decimal, int, int, int, tuple[SourceSpan, ...]]:
+    header_line, header = records[0]
+    fields = _csv(header, header_line)
+    if len(fields) != 6:
+        message = "Expected six DESIGN metadata values"
+        raise _problem(message, header_line)
+    dt = _number(fields[0], header_line)
+    horizon = _integer(fields[1], header_line, minimum=1, maximum=2000)
+    flags = tuple(_integer(token, header_line, minimum=-99) for token in fields[2:])
+    if flags != (1, 1, 0, -99):
+        message = "Direct DESIGN requires one burst, one pluviograph and uniform flag zero"
+        raise _problem(message, header_line, unsupported=True)
+    timing_line, timing = records[1]
+    timing_fields = _csv(timing, timing_line)
+    if len(timing_fields) != 2:
+        message = "Expected start and finish increment"
+        raise _problem(message, timing_line)
+    start = _integer(timing_fields[0], timing_line)
+    finish = _integer(timing_fields[1], timing_line, minimum=1, maximum=2000)
+    if start != 0:
+        message = "Direct DESIGN supports only start increment zero"
+        raise _problem(message, timing_line, unsupported=True)
+    spans = (
+        SourceSpan("timestep_hours", header_line, fields[0]),
+        SourceSpan("calculation_increments", header_line, fields[1]),
+        SourceSpan("burst_count", header_line, fields[2]),
+        SourceSpan("pluviograph_count", header_line, fields[3]),
+        SourceSpan("uniform_rainfall_flag", header_line, fields[4]),
+        SourceSpan("start_increment", timing_line, timing_fields[0]),
+        SourceSpan("finish_increment", timing_line, timing_fields[1]),
+    )
+    return dt, horizon, start, finish, spans
+
+
+def parse_direct_design_stm(data: bytes) -> ParsedDocument[DirectDepthStorm]:
+    """Read the #118 direct-depth DESIGN layout without normalising rainfall."""
+    source = SourceDocument.from_bytes(data)
+    lines = source.lines
+    if len(lines) < 4 or lines[1].strip() != "DESIGN":
+        message = "Only title followed by a DESIGN storm is supported"
+        raise _problem(message, unsupported=True)
+    records = _raw_records(lines, 2)
+    if len(records) < 4:
+        message = "Missing direct DESIGN storm records"
+        raise _problem(message)
+    dt, horizon, start, finish, header_spans = _direct_design_header(records)
+    marker_line, marker = records[2]
+    if marker != "Pluviograph 1":
+        message = "Only the Pluviograph 1 direct DESIGN layout is characterised"
+        raise _problem(message, marker_line, unsupported=True)
+    depths, final_index, depth_spans = _terminated(records, 3, "interval_depth_mm")
+    if len(depths) != finish - start:
+        message = "Direct DESIGN rainfall length differs from the declared burst interval count"
+        raise _problem(message, records[1][0])
+    if final_index != len(records):
+        message = "Trailing records after the direct DESIGN rainfall depths"
+        raise _problem(message, records[final_index][0])
+    try:
+        model = DirectDepthStorm(lines[0], dt, horizon, depths, start_increment=start)
+    except ValueError as exc:
+        raise _problem(str(exc)) from exc
+    spans = (*header_spans, SourceSpan("pluviograph_name", marker_line, marker), *depth_spans)
+    return ParsedDocument("design_direct_depth", source, model, spans)
+
+
+def serialize_direct_design_stm(model: DirectDepthStorm) -> bytes:
+    """Write direct mm depths, one per interval; no padding, scaling or clipping."""
+    model.__post_init__()
+    lines = [
+        model.title,
+        "DESIGN",
+        "C time increment (hours), run increments, bursts, pluviographs, uniform flag",
+        f"{model.timestep_hours},{model.calculation_increments},1,1,0,-99",
+        "C start and finish increment of the single rainfall burst",
+        f"{model.start_increment},{model.finish_increment}",
+        "Pluviograph 1",
+        *(str(value) for value in model.interval_depths_mm),
+        "-99",
+        "",
+    ]
+    result = "\n".join(lines).encode("utf-8")
+    if parse_direct_design_stm(result).model != model:
+        message = "Direct DESIGN export would alter the typed storm model"
+        raise ValueError(message)
+    return result
 
 
 def parse_bytes(

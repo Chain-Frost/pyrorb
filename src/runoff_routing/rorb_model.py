@@ -440,6 +440,52 @@ def validate_catchment(model: CatchmentModel) -> None:  # noqa: C901 -- explicit
 
 
 @dataclass(frozen=True, slots=True)
+class DirectDepthStorm:
+    """Single uniform DESIGN hyetograph, in mm per interval (not weights).
+
+    This format-only model fixes one burst, one pluviograph (Pluviograph 1),
+    uniform rainfall flag 0 and start increment zero. No subarea mapping or
+    numerical execution is implied.
+    """
+
+    title: str
+    timestep_hours: Decimal
+    calculation_increments: int
+    interval_depths_mm: tuple[Decimal, ...]
+    start_increment: int = 0
+
+    def __post_init__(self) -> None:
+        if (
+            not self.title.strip()
+            or len(self.title) > 68
+            or self.title.splitlines() != [self.title]
+            or any(ord(char) < 32 for char in self.title)
+        ):
+            message = "Direct DESIGN title must be a single nonempty line of at most 68 characters"
+            raise ValueError(message)
+        _finite(self.timestep_hours, "storm timestep", positive=True)
+        if type(self.start_increment) is not int or self.start_increment != 0:
+            message = "Direct DESIGN supports only start increment zero"
+            raise ValueError(message)
+        if type(self.calculation_increments) is not int or not 1 <= self.calculation_increments <= 2000:
+            message = "Direct DESIGN run increments must be in [1, 2000]"
+            raise ValueError(message)
+        if (
+            type(self.interval_depths_mm) is not tuple
+            or not 1 <= len(self.interval_depths_mm) <= self.calculation_increments
+        ):
+            message = "Direct DESIGN run length must cover at least one and all rainfall intervals"
+            raise ValueError(message)
+        for value in self.interval_depths_mm:
+            _finite(value, "interval depth in mm")
+
+    @property
+    def finish_increment(self) -> int:
+        """Right edge of the last rainfall interval, not the routing horizon."""
+        return self.start_increment + len(self.interval_depths_mm)
+
+
+@dataclass(frozen=True, slots=True)
 class StormModel:
     """DESIGN raw temporal tokens; basis distinguishes percentages from weights.
 
